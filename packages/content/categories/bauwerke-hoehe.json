@@ -1,0 +1,31 @@
+{
+  "id": "bauwerke-hoehe",
+  "title": "Bauwerke nach Höhe",
+  "question": "Welches Bauwerk ist höher?",
+  "topLabel": "höchstes Bauwerk",
+  "bottomLabel": "niedrigstes Bauwerk",
+  "unit": "m",
+  "order": "desc",
+  "source": "offizielle Höhen, Gebäude bis zur architektonischen Spitze (gerundet)",
+  "items": [
+    { "name": "Burj Khalifa (Dubai)", "value": 828 },
+    { "name": "Merdeka 118 (Kuala Lumpur)", "value": 679 },
+    { "name": "Tokyo Skytree", "value": 634 },
+    { "name": "Shanghai Tower", "value": 632 },
+    { "name": "One World Trade Center (New York)", "value": 541 },
+    { "name": "Taipei 101", "value": 508 },
+    { "name": "Petronas Towers (Kuala Lumpur)", "value": 452 },
+    { "name": "Empire State Building (Dach)", "value": 381 },
+    { "name": "Berliner Fernsehturm", "value": 368 },
+    { "name": "Eiffelturm", "value": 330 },
+    { "name": "Commerzbank Tower (Frankfurt)", "value": 259 },
+    { "name": "Ulmer Münster", "value": 162 },
+    { "name": "Kölner Dom", "value": 157 },
+    { "name": "Cheops-Pyramide", "value": 139 },
+    { "name": "Elbphilharmonie (Hamburg)", "value": 110 },
+    { "name": "Big Ben (Elizabeth Tower)", "value": 96 },
+    { "name": "Freiheitsstatue (mit Sockel)", "value": 93 },
+    { "name": "Schiefer Turm von Pisa", "value": 57 },
+    { "name": "Brandenburger Tor", "value": 26 }
+  ]
+}

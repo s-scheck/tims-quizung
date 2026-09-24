@@ -1,0 +1,27 @@
+{
+  "id": "formel1-siege",
+  "title": "Formel-1-Fahrer nach Grand-Prix-Siegen",
+  "question": "Wer hat mehr Grand-Prix-Siege?",
+  "topLabel": "meiste Siege",
+  "bottomLabel": "wenigste Siege",
+  "unit": "Siege",
+  "order": "desc",
+  "source": "Stand Saisonende 2024",
+  "items": [
+    { "name": "Lewis Hamilton", "value": 105 },
+    { "name": "Michael Schumacher", "value": 91 },
+    { "name": "Max Verstappen", "value": 63 },
+    { "name": "Sebastian Vettel", "value": 53 },
+    { "name": "Alain Prost", "value": 51 },
+    { "name": "Ayrton Senna", "value": 41 },
+    { "name": "Fernando Alonso", "value": 32 },
+    { "name": "Nigel Mansell", "value": 31 },
+    { "name": "Jackie Stewart", "value": 27 },
+    { "name": "Niki Lauda", "value": 25 },
+    { "name": "Nico Rosberg", "value": 23 },
+    { "name": "Damon Hill", "value": 22 },
+    { "name": "Kimi Räikkönen", "value": 21 },
+    { "name": "Mika Häkkinen", "value": 20 },
+    { "name": "Jenson Button", "value": 15 }
+  ]
+}

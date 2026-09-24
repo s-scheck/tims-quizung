@@ -1,0 +1,28 @@
+{
+  "id": "tiere-lebenserwartung",
+  "title": "Tiere nach Lebenserwartung",
+  "question": "Welches Tier lebt länger?",
+  "topLabel": "längstes Leben",
+  "bottomLabel": "kürzestes Leben",
+  "unit": "Jahre",
+  "order": "desc",
+  "source": "typische Lebenserwartung (gerundet)",
+  "items": [
+    { "name": "Grönlandhai", "value": 400 },
+    { "name": "Grönlandwal", "value": 200 },
+    { "name": "Riesenschildkröte", "value": 150 },
+    { "name": "Mensch", "value": 73 },
+    { "name": "Elefant", "value": 65 },
+    { "name": "Ara (Papagei)", "value": 60 },
+    { "name": "Schimpanse", "value": 40 },
+    { "name": "Pferd", "value": 28 },
+    { "name": "Kuh", "value": 20 },
+    { "name": "Hauskatze", "value": 15 },
+    { "name": "Löwe", "value": 14 },
+    { "name": "Hund", "value": 12 },
+    { "name": "Goldfisch", "value": 10 },
+    { "name": "Kaninchen", "value": 9 },
+    { "name": "Eichhörnchen", "value": 6 },
+    { "name": "Hausmaus", "value": 2 }
+  ]
+}

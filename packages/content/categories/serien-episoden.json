@@ -1,0 +1,28 @@
+{
+  "id": "serien-episoden",
+  "title": "Serien nach Episodenzahl",
+  "question": "Welche Serie hat mehr Episoden?",
+  "topLabel": "meiste Episoden",
+  "bottomLabel": "wenigste Episoden",
+  "unit": "Episoden",
+  "order": "desc",
+  "source": "Stand 2025, laufende Serien gerundet",
+  "items": [
+    { "name": "Die Simpsons", "value": 790 },
+    { "name": "Grey's Anatomy", "value": 450 },
+    { "name": "Supernatural", "value": 327 },
+    { "name": "The Big Bang Theory", "value": 279 },
+    { "name": "Two and a Half Men", "value": 262 },
+    { "name": "Friends", "value": 236 },
+    { "name": "How I Met Your Mother", "value": 208 },
+    { "name": "The Office (US)", "value": 201 },
+    { "name": "Scrubs", "value": 182 },
+    { "name": "Seinfeld", "value": 180 },
+    { "name": "The Walking Dead", "value": 177 },
+    { "name": "Lost", "value": 121 },
+    { "name": "Dexter", "value": 96 },
+    { "name": "Die Sopranos", "value": 86 },
+    { "name": "Game of Thrones", "value": 73 },
+    { "name": "Breaking Bad", "value": 62 }
+  ]
+}

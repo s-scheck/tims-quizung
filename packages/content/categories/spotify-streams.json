@@ -1,0 +1,27 @@
+{
+  "id": "spotify-streams",
+  "title": "Meistgestreamte Songs auf Spotify",
+  "question": "Welcher Song wurde häufiger gestreamt?",
+  "topLabel": "meiste Streams",
+  "bottomLabel": "wenigste Streams",
+  "unit": "Mrd. Streams",
+  "order": "desc",
+  "source": "Spotify, Näherung Stand 2025",
+  "items": [
+    { "name": "Blinding Lights – The Weeknd", "value": 4.8 },
+    { "name": "Shape of You – Ed Sheeran", "value": 4.4 },
+    { "name": "Someone You Loved – Lewis Capaldi", "value": 4.0 },
+    { "name": "As It Was – Harry Styles", "value": 3.9 },
+    { "name": "Sunflower – Post Malone & Swae Lee", "value": 3.8 },
+    { "name": "Starboy – The Weeknd", "value": 3.7 },
+    { "name": "Sweater Weather – The Neighbourhood", "value": 3.6 },
+    { "name": "One Dance – Drake", "value": 3.5 },
+    { "name": "Stay – The Kid LAROI & Justin Bieber", "value": 3.4 },
+    { "name": "Believer – Imagine Dragons", "value": 3.3 },
+    { "name": "Closer – The Chainsmokers", "value": 3.2 },
+    { "name": "Dance Monkey – Tones and I", "value": 3.1 },
+    { "name": "Perfect – Ed Sheeran", "value": 3.0 },
+    { "name": "Señorita – Shawn Mendes & Camila Cabello", "value": 2.9 },
+    { "name": "lovely – Billie Eilish & Khalid", "value": 2.8 }
+  ]
+}

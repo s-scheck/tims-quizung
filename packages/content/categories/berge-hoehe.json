@@ -1,0 +1,28 @@
+{
+  "id": "berge-hoehe",
+  "title": "Berge nach Höhe",
+  "question": "Welcher Berg ist höher?",
+  "topLabel": "höchster Berg",
+  "bottomLabel": "niedrigster Berg",
+  "unit": "m",
+  "order": "desc",
+  "source": "gängige Angaben",
+  "items": [
+    { "name": "Mount Everest", "value": 8849 },
+    { "name": "K2", "value": 8611 },
+    { "name": "Kangchendzönga", "value": 8586 },
+    { "name": "Lhotse", "value": 8516 },
+    { "name": "Makalu", "value": 8485 },
+    { "name": "Cho Oyu", "value": 8188 },
+    { "name": "Aconcagua", "value": 6961 },
+    { "name": "Denali", "value": 6190 },
+    { "name": "Kilimandscharo", "value": 5895 },
+    { "name": "Elbrus", "value": 5642 },
+    { "name": "Mont Blanc", "value": 4808 },
+    { "name": "Matterhorn", "value": 4478 },
+    { "name": "Großglockner", "value": 3798 },
+    { "name": "Zugspitze", "value": 2962 },
+    { "name": "Feldberg (Schwarzwald)", "value": 1493 },
+    { "name": "Brocken", "value": 1141 }
+  ]
+}

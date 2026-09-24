@@ -1,0 +1,27 @@
+{
+  "id": "laender-einwohner",
+  "title": "Länder nach Einwohnern",
+  "question": "Welches Land hat mehr Einwohner?",
+  "topLabel": "meiste Einwohner",
+  "bottomLabel": "wenigste Einwohner",
+  "unit": "Mio. Einwohner",
+  "order": "desc",
+  "source": "UN World Population Prospects 2024 (gerundet)",
+  "items": [
+    { "name": "Indien", "value": 1441 },
+    { "name": "China", "value": 1425 },
+    { "name": "USA", "value": 341 },
+    { "name": "Indonesien", "value": 279 },
+    { "name": "Pakistan", "value": 245 },
+    { "name": "Nigeria", "value": 229 },
+    { "name": "Brasilien", "value": 217 },
+    { "name": "Bangladesch", "value": 174 },
+    { "name": "Russland", "value": 144 },
+    { "name": "Mexiko", "value": 129 },
+    { "name": "Japan", "value": 123 },
+    { "name": "Ägypten", "value": 114 },
+    { "name": "Vietnam", "value": 100 },
+    { "name": "Türkei", "value": 86 },
+    { "name": "Deutschland", "value": 84 }
+  ]
+}

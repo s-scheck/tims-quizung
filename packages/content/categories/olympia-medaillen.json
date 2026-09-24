@@ -1,0 +1,27 @@
+{
+  "id": "olympia-medaillen",
+  "title": "Länder nach Olympia-Medaillen",
+  "question": "Welches Land hat mehr Medaillen bei Olympischen Sommerspielen gewonnen?",
+  "topLabel": "meiste Medaillen",
+  "bottomLabel": "wenigste Medaillen",
+  "unit": "Medaillen",
+  "order": "desc",
+  "source": "ewiger Medaillenspiegel Sommerspiele, Stand nach Paris 2024 (gerundet)",
+  "items": [
+    { "name": "USA", "value": 2985 },
+    { "name": "Sowjetunion", "value": 1204 },
+    { "name": "Großbritannien", "value": 979 },
+    { "name": "Frankreich", "value": 898 },
+    { "name": "Deutschland", "value": 892 },
+    { "name": "Italien", "value": 772 },
+    { "name": "China", "value": 715 },
+    { "name": "Japan", "value": 599 },
+    { "name": "Australien", "value": 592 },
+    { "name": "Russland", "value": 547 },
+    { "name": "Schweden", "value": 528 },
+    { "name": "Ungarn", "value": 521 },
+    { "name": "Niederlande", "value": 336 },
+    { "name": "Kanada", "value": 334 },
+    { "name": "Spanien", "value": 178 }
+  ]
+}

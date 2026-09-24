@@ -1,0 +1,27 @@
+{
+  "id": "filme-einspielergebnis",
+  "title": "Filme nach Einspielergebnis",
+  "question": "Welcher Film hat weltweit mehr eingespielt?",
+  "topLabel": "meiste Einnahmen",
+  "bottomLabel": "wenigste Einnahmen",
+  "unit": "Mio. US-Dollar",
+  "order": "desc",
+  "source": "Box Office Mojo, weltweit inkl. Wiederaufführungen, Stand 2024 (gerundet)",
+  "items": [
+    { "name": "Avatar", "value": 2923 },
+    { "name": "Avengers: Endgame", "value": 2799 },
+    { "name": "Avatar: The Way of Water", "value": 2320 },
+    { "name": "Titanic", "value": 2264 },
+    { "name": "Star Wars: Das Erwachen der Macht", "value": 2071 },
+    { "name": "Avengers: Infinity War", "value": 2052 },
+    { "name": "Spider-Man: No Way Home", "value": 1921 },
+    { "name": "Alles steht Kopf 2", "value": 1699 },
+    { "name": "Jurassic World", "value": 1671 },
+    { "name": "Der König der Löwen (2019)", "value": 1663 },
+    { "name": "Marvel's The Avengers", "value": 1520 },
+    { "name": "Top Gun: Maverick", "value": 1496 },
+    { "name": "Barbie", "value": 1446 },
+    { "name": "Harry Potter und die Heiligtümer des Todes – Teil 2", "value": 1342 },
+    { "name": "Die Eiskönigin – Völlig unverfroren", "value": 1290 }
+  ]
+}

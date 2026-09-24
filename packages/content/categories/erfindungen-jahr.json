@@ -1,0 +1,30 @@
+{
+  "id": "erfindungen-jahr",
+  "title": "Erfindungen nach Jahr",
+  "question": "Was wurde früher erfunden?",
+  "topLabel": "älteste Erfindung",
+  "bottomLabel": "jüngste Erfindung",
+  "unit": "",
+  "order": "asc",
+  "valueFormat": "plain",
+  "source": "gängige Datierung des ersten funktionierenden Exemplars",
+  "items": [
+    { "name": "Buchdruck mit beweglichen Lettern", "value": 1450 },
+    { "name": "Teleskop", "value": 1608 },
+    { "name": "Dampfmaschine (James Watt)", "value": 1769 },
+    { "name": "Fotografie", "value": 1826 },
+    { "name": "Telefon", "value": 1876 },
+    { "name": "Glühlampe", "value": 1879 },
+    { "name": "Automobil", "value": 1886 },
+    { "name": "Kinematograph", "value": 1895 },
+    { "name": "Motorflugzeug", "value": 1903 },
+    { "name": "Fernsehen", "value": 1926 },
+    { "name": "Penicillin", "value": 1928 },
+    { "name": "Programmierbarer Computer (Z3)", "value": 1941 },
+    { "name": "Transistor", "value": 1947 },
+    { "name": "Internet (ARPANET)", "value": 1969 },
+    { "name": "Mobiltelefon", "value": 1973 },
+    { "name": "World Wide Web", "value": 1989 },
+    { "name": "Smartphone (iPhone)", "value": 2007 }
+  ]
+}

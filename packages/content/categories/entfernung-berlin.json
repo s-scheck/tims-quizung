@@ -1,0 +1,28 @@
+{
+  "id": "entfernung-berlin",
+  "title": "Entfernung von Berlin",
+  "question": "Welche Stadt ist weiter von Berlin entfernt?",
+  "topLabel": "am weitesten entfernt",
+  "bottomLabel": "am nächsten",
+  "unit": "km Luftlinie",
+  "order": "desc",
+  "source": "Luftlinie Stadtzentrum zu Stadtzentrum (gerundet)",
+  "items": [
+    { "name": "Madrid", "value": 1870 },
+    { "name": "Moskau", "value": 1608 },
+    { "name": "Rom", "value": 1181 },
+    { "name": "London", "value": 932 },
+    { "name": "Paris", "value": 878 },
+    { "name": "Stockholm", "value": 810 },
+    { "name": "Zürich", "value": 670 },
+    { "name": "Amsterdam", "value": 577 },
+    { "name": "Wien", "value": 524 },
+    { "name": "Warschau", "value": 517 },
+    { "name": "München", "value": 504 },
+    { "name": "Köln", "value": 477 },
+    { "name": "Kopenhagen", "value": 355 },
+    { "name": "Prag", "value": 280 },
+    { "name": "Hamburg", "value": 255 },
+    { "name": "Leipzig", "value": 150 }
+  ]
+}

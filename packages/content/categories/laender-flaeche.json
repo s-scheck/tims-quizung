@@ -1,0 +1,27 @@
+{
+  "id": "laender-flaeche",
+  "title": "Länder nach Fläche",
+  "question": "Welches Land ist größer?",
+  "topLabel": "größte Fläche",
+  "bottomLabel": "kleinste Fläche",
+  "unit": "km²",
+  "order": "desc",
+  "source": "CIA World Factbook (gerundet)",
+  "items": [
+    { "name": "Russland", "value": 17098000 },
+    { "name": "Kanada", "value": 9985000 },
+    { "name": "USA", "value": 9834000 },
+    { "name": "China", "value": 9597000 },
+    { "name": "Brasilien", "value": 8516000 },
+    { "name": "Australien", "value": 7692000 },
+    { "name": "Indien", "value": 3287000 },
+    { "name": "Argentinien", "value": 2780000 },
+    { "name": "Kasachstan", "value": 2725000 },
+    { "name": "Algerien", "value": 2382000 },
+    { "name": "Demokratische Republik Kongo", "value": 2345000 },
+    { "name": "Saudi-Arabien", "value": 2150000 },
+    { "name": "Mexiko", "value": 1964000 },
+    { "name": "Indonesien", "value": 1905000 },
+    { "name": "Deutschland", "value": 357600 }
+  ]
+}

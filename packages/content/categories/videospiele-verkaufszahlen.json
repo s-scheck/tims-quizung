@@ -1,0 +1,26 @@
+{
+  "id": "videospiele-verkaufszahlen",
+  "title": "Meistverkaufte Videospiele",
+  "question": "Welches Spiel wurde häufiger verkauft?",
+  "topLabel": "meiste Verkäufe",
+  "bottomLabel": "wenigste Verkäufe",
+  "unit": "Mio. Exemplare",
+  "order": "desc",
+  "source": "Herstellerangaben, Näherung Stand 2024",
+  "items": [
+    { "name": "Minecraft", "value": 300 },
+    { "name": "Grand Theft Auto V", "value": 210 },
+    { "name": "Wii Sports", "value": 83 },
+    { "name": "PUBG: Battlegrounds", "value": 75 },
+    { "name": "Red Dead Redemption 2", "value": 70 },
+    { "name": "Mario Kart 8 Deluxe", "value": 68 },
+    { "name": "Terraria", "value": 60 },
+    { "name": "Super Mario Bros.", "value": 58 },
+    { "name": "The Witcher 3: Wild Hunt", "value": 50 },
+    { "name": "Pokémon Rot / Blau / Gelb", "value": 47 },
+    { "name": "Animal Crossing: New Horizons", "value": 46 },
+    { "name": "Tetris (Game Boy)", "value": 35 },
+    { "name": "The Elder Scrolls V: Skyrim", "value": 30 },
+    { "name": "FIFA 18", "value": 24 }
+  ]
+}

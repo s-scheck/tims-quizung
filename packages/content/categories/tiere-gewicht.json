@@ -1,0 +1,29 @@
+{
+  "id": "tiere-gewicht",
+  "title": "Tiere nach Gewicht",
+  "question": "Welches Tier ist schwerer?",
+  "topLabel": "schwerstes Tier",
+  "bottomLabel": "leichtestes Tier",
+  "unit": "kg",
+  "order": "desc",
+  "source": "typisches Gewicht ausgewachsener Tiere (gerundet)",
+  "items": [
+    { "name": "Blauwal", "value": 150000 },
+    { "name": "Afrikanischer Elefant", "value": 6000 },
+    { "name": "Breitmaulnashorn", "value": 2300 },
+    { "name": "Flusspferd", "value": 1500 },
+    { "name": "Giraffe", "value": 1200 },
+    { "name": "Eisbär", "value": 450 },
+    { "name": "Grizzlybär", "value": 300 },
+    { "name": "Tiger", "value": 220 },
+    { "name": "Löwe", "value": 190 },
+    { "name": "Gorilla", "value": 160 },
+    { "name": "Strauß", "value": 120 },
+    { "name": "Großer Panda", "value": 100 },
+    { "name": "Mensch", "value": 70 },
+    { "name": "Rotes Riesenkänguru", "value": 66 },
+    { "name": "Schimpanse", "value": 45 },
+    { "name": "Wolf", "value": 40 },
+    { "name": "Hauskatze", "value": 4.5 }
+  ]
+}

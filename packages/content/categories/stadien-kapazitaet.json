@@ -1,0 +1,28 @@
+{
+  "id": "stadien-kapazitaet",
+  "title": "Stadien nach Kapazität",
+  "question": "In welches Stadion passen mehr Zuschauer?",
+  "topLabel": "größtes Stadion",
+  "bottomLabel": "kleinstes Stadion",
+  "unit": "Plätze",
+  "order": "desc",
+  "source": "offizielle Kapazitäten, Stand 2024 (gerundet)",
+  "items": [
+    { "name": "Rungrado-Stadion (Pjöngjang)", "value": 114000 },
+    { "name": "Camp Nou (Barcelona)", "value": 99354 },
+    { "name": "Wembley-Stadion (London)", "value": 90000 },
+    { "name": "Estadio Azteca (Mexiko-Stadt)", "value": 87523 },
+    { "name": "Signal Iduna Park (Dortmund)", "value": 81365 },
+    { "name": "Santiago Bernabéu (Madrid)", "value": 78297 },
+    { "name": "San Siro (Mailand)", "value": 75817 },
+    { "name": "Allianz Arena (München)", "value": 75024 },
+    { "name": "Olympiastadion Berlin", "value": 74475 },
+    { "name": "Old Trafford (Manchester)", "value": 74310 },
+    { "name": "Veltins-Arena (Gelsenkirchen)", "value": 62271 },
+    { "name": "Anfield (Liverpool)", "value": 61276 },
+    { "name": "Deutsche Bank Park (Frankfurt)", "value": 58000 },
+    { "name": "Volksparkstadion (Hamburg)", "value": 57000 },
+    { "name": "Red Bull Arena (Leipzig)", "value": 47069 },
+    { "name": "Stadion An der Alten Försterei (Berlin)", "value": 22012 }
+  ]
+}

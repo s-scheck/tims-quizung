@@ -1,0 +1,32 @@
+{
+  "id": "lebensmittel-kalorien",
+  "title": "Lebensmittel nach Kalorien",
+  "question": "Welches Lebensmittel hat mehr Kalorien pro 100 g?",
+  "topLabel": "meiste Kalorien",
+  "bottomLabel": "wenigste Kalorien",
+  "unit": "kcal pro 100 g",
+  "order": "desc",
+  "source": "Bundeslebensmittelschlüssel / Herstellerangaben (gerundet)",
+  "items": [
+    { "name": "Olivenöl", "value": 884 },
+    { "name": "Butter", "value": 741 },
+    { "name": "Erdnüsse", "value": 567 },
+    { "name": "Kartoffelchips", "value": 539 },
+    { "name": "Vollmilchschokolade", "value": 535 },
+    { "name": "Haferflocken", "value": 372 },
+    { "name": "Gouda", "value": 356 },
+    { "name": "Honig", "value": 304 },
+    { "name": "Pizza Margherita", "value": 270 },
+    { "name": "Weißbrot", "value": 265 },
+    { "name": "Lachs", "value": 208 },
+    { "name": "Hähnchenbrust (gegart)", "value": 165 },
+    { "name": "Avocado", "value": 160 },
+    { "name": "Nudeln (gekocht)", "value": 158 },
+    { "name": "Hühnerei", "value": 155 },
+    { "name": "Reis (gekocht)", "value": 130 },
+    { "name": "Banane", "value": 89 },
+    { "name": "Kartoffeln (gekocht)", "value": 86 },
+    { "name": "Apfel", "value": 52 },
+    { "name": "Tomate", "value": 18 }
+  ]
+}

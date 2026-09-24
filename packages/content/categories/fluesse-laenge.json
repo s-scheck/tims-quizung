@@ -1,0 +1,27 @@
+{
+  "id": "fluesse-laenge",
+  "title": "Flüsse nach Länge",
+  "question": "Welcher Fluss ist länger?",
+  "topLabel": "längster Fluss",
+  "bottomLabel": "kürzester Fluss",
+  "unit": "km",
+  "order": "desc",
+  "source": "gängige Angaben, Flusssystem inkl. Quellflüssen (gerundet)",
+  "items": [
+    { "name": "Nil", "value": 6650 },
+    { "name": "Amazonas", "value": 6400 },
+    { "name": "Jangtsekiang", "value": 6300 },
+    { "name": "Mississippi-Missouri", "value": 6275 },
+    { "name": "Jenissei", "value": 5539 },
+    { "name": "Gelber Fluss", "value": 5464 },
+    { "name": "Ob", "value": 5410 },
+    { "name": "Kongo", "value": 4700 },
+    { "name": "Amur", "value": 4444 },
+    { "name": "Lena", "value": 4400 },
+    { "name": "Mekong", "value": 4350 },
+    { "name": "Niger", "value": 4200 },
+    { "name": "Wolga", "value": 3530 },
+    { "name": "Donau", "value": 2850 },
+    { "name": "Rhein", "value": 1233 }
+  ]
+}

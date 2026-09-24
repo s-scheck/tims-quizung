@@ -1,0 +1,58 @@
+import { describe, expect, test } from 'bun:test';
+import { isClientMsg, isValidName, isValidScore, normalizeName } from './validate.ts';
+import { generateRoomCode, isValidRoomCode, normalizeRoomCode } from './ids.ts';
+
+describe('isClientMsg', () => {
+  test('akzeptiert gültige Nachrichten', () => {
+    expect(isClientMsg({ type: 'create', name: 'Tim', version: 1 })).toBe(true);
+    expect(isClientMsg({ type: 'join', code: 'ABCD', version: 1 })).toBe(true);
+    expect(isClientMsg({ type: 'join', code: 'ABCD', token: 'x', version: 1 })).toBe(true);
+    expect(isClientMsg({ type: 'select', turnNo: 3, cardId: 'c1' })).toBe(true);
+    expect(isClientMsg({ type: 'select', turnNo: 3 })).toBe(true);
+    expect(isClientMsg({ type: 'submit_scores', scores: { a: 1, b: -2 } })).toBe(true);
+    expect(isClientMsg({ type: 'set_settings', timerSeconds: 30 })).toBe(true);
+    expect(isClientMsg({ type: 'ping' })).toBe(true);
+  });
+
+  test('lehnt kaputte Nachrichten ab', () => {
+    expect(isClientMsg(null)).toBe(false);
+    expect(isClientMsg('join')).toBe(false);
+    expect(isClientMsg({ type: 'nope' })).toBe(false);
+    expect(isClientMsg({ type: 'create', name: 5, version: 1 })).toBe(false);
+    expect(isClientMsg({ type: 'select', turnNo: 'x' })).toBe(false);
+    expect(isClientMsg({ type: 'select', turnNo: 1, gapIndex: -1 })).toBe(false);
+    expect(isClientMsg({ type: 'submit_scores', scores: { a: 1.5 } })).toBe(false);
+    expect(isClientMsg({ type: 'submit_scores', scores: { a: 5000 } })).toBe(false);
+    expect(isClientMsg({ type: 'set_settings', timerSeconds: 45 })).toBe(false);
+    expect(isClientMsg({ type: 'host_decision', continue: 'ja' })).toBe(false);
+  });
+});
+
+describe('Namen und Scores', () => {
+  test('normalizeName trimmt und fasst Leerzeichen zusammen', () => {
+    expect(normalizeName('  Tim   S. ')).toBe('Tim S.');
+  });
+  test('isValidName', () => {
+    expect(isValidName('Tim')).toBe(true);
+    expect(isValidName('   ')).toBe(false);
+    expect(isValidName('x'.repeat(21))).toBe(false);
+  });
+  test('isValidScore', () => {
+    expect(isValidScore(0)).toBe(true);
+    expect(isValidScore(-3)).toBe(true);
+    expect(isValidScore(1.5)).toBe(false);
+    expect(isValidScore(1000)).toBe(false);
+    expect(isValidScore('1')).toBe(false);
+  });
+});
+
+describe('Raumcodes', () => {
+  test('erzeugt Codes aus dem Alphabet', () => {
+    for (let i = 0; i < 50; i++) expect(isValidRoomCode(generateRoomCode())).toBe(true);
+  });
+  test('normalisiert Eingaben', () => {
+    expect(normalizeRoomCode(' ab-cd ')).toBe('ABCD');
+    expect(isValidRoomCode('ABC1')).toBe(false);
+    expect(isValidRoomCode('ABCDE')).toBe(false);
+  });
+});

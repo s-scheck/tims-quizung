@@ -1,0 +1,28 @@
+{
+  "id": "bundeslaender-flaeche",
+  "title": "Bundesländer nach Fläche",
+  "question": "Welches Bundesland ist größer?",
+  "topLabel": "größte Fläche",
+  "bottomLabel": "kleinste Fläche",
+  "unit": "km²",
+  "order": "desc",
+  "source": "Statistisches Bundesamt (gerundet)",
+  "items": [
+    { "name": "Bayern", "value": 70550 },
+    { "name": "Niedersachsen", "value": 47710 },
+    { "name": "Baden-Württemberg", "value": 35750 },
+    { "name": "Nordrhein-Westfalen", "value": 34110 },
+    { "name": "Brandenburg", "value": 29650 },
+    { "name": "Mecklenburg-Vorpommern", "value": 23290 },
+    { "name": "Hessen", "value": 21116 },
+    { "name": "Sachsen-Anhalt", "value": 20450 },
+    { "name": "Rheinland-Pfalz", "value": 19850 },
+    { "name": "Sachsen", "value": 18450 },
+    { "name": "Thüringen", "value": 16200 },
+    { "name": "Schleswig-Holstein", "value": 15800 },
+    { "name": "Saarland", "value": 2570 },
+    { "name": "Berlin", "value": 891 },
+    { "name": "Hamburg", "value": 755 },
+    { "name": "Bremen", "value": 419 }
+  ]
+}

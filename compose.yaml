@@ -1,0 +1,9 @@
+services:
+  quiz:
+    build: .
+    image: tims-quizung:latest
+    ports:
+      - "3000:3000"
+    environment:
+      ROOM_TTL_MINUTES: "120"
+    restart: unless-stopped

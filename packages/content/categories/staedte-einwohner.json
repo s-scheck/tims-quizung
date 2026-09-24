@@ -1,0 +1,27 @@
+{
+  "id": "staedte-einwohner",
+  "title": "Deutsche Städte nach Einwohnern",
+  "question": "Welche Stadt hat mehr Einwohner?",
+  "topLabel": "meiste Einwohner",
+  "bottomLabel": "wenigste Einwohner",
+  "unit": "Einwohner",
+  "order": "desc",
+  "source": "Statistisches Bundesamt, Stand Ende 2023 (gerundet)",
+  "items": [
+    { "name": "Berlin", "value": 3755000 },
+    { "name": "Hamburg", "value": 1892000 },
+    { "name": "München", "value": 1512000 },
+    { "name": "Köln", "value": 1084000 },
+    { "name": "Frankfurt am Main", "value": 773000 },
+    { "name": "Stuttgart", "value": 633000 },
+    { "name": "Düsseldorf", "value": 629000 },
+    { "name": "Leipzig", "value": 620000 },
+    { "name": "Dortmund", "value": 593000 },
+    { "name": "Essen", "value": 585000 },
+    { "name": "Bremen", "value": 570000 },
+    { "name": "Dresden", "value": 563000 },
+    { "name": "Hannover", "value": 548000 },
+    { "name": "Nürnberg", "value": 523000 },
+    { "name": "Duisburg", "value": 503000 }
+  ]
+}

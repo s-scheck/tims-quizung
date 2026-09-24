@@ -1,0 +1,26 @@
+{
+  "id": "planeten-durchmesser",
+  "title": "Himmelskörper nach Durchmesser",
+  "question": "Welcher Himmelskörper ist größer?",
+  "topLabel": "größter Durchmesser",
+  "bottomLabel": "kleinster Durchmesser",
+  "unit": "km",
+  "order": "desc",
+  "source": "NASA, mittlerer Durchmesser (gerundet)",
+  "items": [
+    { "name": "Sonne", "value": 1392700 },
+    { "name": "Jupiter", "value": 139820 },
+    { "name": "Saturn", "value": 116460 },
+    { "name": "Uranus", "value": 50724 },
+    { "name": "Neptun", "value": 49244 },
+    { "name": "Erde", "value": 12742 },
+    { "name": "Venus", "value": 12104 },
+    { "name": "Mars", "value": 6779 },
+    { "name": "Ganymed (Jupitermond)", "value": 5268 },
+    { "name": "Titan (Saturnmond)", "value": 5150 },
+    { "name": "Merkur", "value": 4879 },
+    { "name": "Mond", "value": 3474 },
+    { "name": "Pluto", "value": 2377 },
+    { "name": "Ceres", "value": 940 }
+  ]
+}

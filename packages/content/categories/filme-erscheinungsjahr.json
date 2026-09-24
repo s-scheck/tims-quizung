@@ -1,0 +1,28 @@
+{
+  "id": "filme-erscheinungsjahr",
+  "title": "Filme nach Erscheinungsjahr",
+  "question": "Welcher Film kam früher ins Kino?",
+  "topLabel": "ältester Film",
+  "bottomLabel": "neuester Film",
+  "unit": "",
+  "order": "asc",
+  "valueFormat": "plain",
+  "source": "Kinostart im Ursprungsland",
+  "items": [
+    { "name": "Der Zauberer von Oz", "value": 1939 },
+    { "name": "Casablanca", "value": 1942 },
+    { "name": "Psycho", "value": 1960 },
+    { "name": "Der Pate", "value": 1972 },
+    { "name": "Der weiße Hai", "value": 1975 },
+    { "name": "Star Wars: Eine neue Hoffnung", "value": 1977 },
+    { "name": "E.T. – Der Außerirdische", "value": 1982 },
+    { "name": "Zurück in die Zukunft", "value": 1985 },
+    { "name": "Pulp Fiction", "value": 1994 },
+    { "name": "Titanic", "value": 1997 },
+    { "name": "Matrix", "value": 1999 },
+    { "name": "Der Herr der Ringe: Die Gefährten", "value": 2001 },
+    { "name": "Inception", "value": 2010 },
+    { "name": "Parasite", "value": 2019 },
+    { "name": "Oppenheimer", "value": 2023 }
+  ]
+}
