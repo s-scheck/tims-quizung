@@ -88,6 +88,7 @@
       return 'Passt? Dann bestätigen.';
     }
     if (client.isEliminated) return 'Du bist raus. Schau zu, wie es weitergeht.';
+    if (client.isModerator) return 'Du moderierst diese Runde.';
     if (!client.inRound) return 'Du bist ab der nächsten Runde dabei.';
     return '';
   });

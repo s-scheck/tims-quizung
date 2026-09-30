@@ -1,10 +1,12 @@
 <script lang="ts">
   import { SCORE_MAX, SCORE_MIN, type RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
+  import { scoredPlayers } from '../lib/format.ts';
 
   let { view }: { view: RoomView } = $props();
 
   const round = $derived(view.round!);
+  const players = $derived(scoredPlayers(view));
   // Svelte liefert bei type="number" eine Zahl oder null, beim Tippen kann auch ein String ankommen.
   let inputs = $state<Record<string, number | string | null | undefined>>({});
 
@@ -16,7 +18,7 @@
     return n >= SCORE_MIN && n <= SCORE_MAX ? n : null;
   }
 
-  const allValid = $derived(view.players.every((p) => parsed(p.id) !== null));
+  const allValid = $derived(players.every((p) => parsed(p.id) !== null));
 
   function statusOf(id: string): string {
     if (!round.turnOrder.includes(id)) return 'nicht dabei';
@@ -27,7 +29,7 @@
   function submit() {
     if (!allValid) return;
     const scores: Record<string, number> = {};
-    for (const p of view.players) scores[p.id] = parsed(p.id)!;
+    for (const p of players) scores[p.id] = parsed(p.id)!;
     client.send({ type: 'submit_scores', scores });
   }
 </script>
@@ -40,7 +42,7 @@
   </header>
 
   <form class="card space-y-3" onsubmit={(e) => { e.preventDefault(); submit(); }}>
-    {#each view.players as p (p.id)}
+    {#each players as p (p.id)}
       {@const eliminated = round.eliminated.includes(p.id)}
       <label class="flex items-center gap-3">
         <span class="min-w-0 flex-1">

@@ -11,6 +11,8 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'select', turnNo: 3 })).toBe(true);
     expect(isClientMsg({ type: 'submit_scores', scores: { a: 1, b: -2 } })).toBe(true);
     expect(isClientMsg({ type: 'set_settings', timerSeconds: 30 })).toBe(true);
+    expect(isClientMsg({ type: 'set_settings', hostPlays: false })).toBe(true);
+    expect(isClientMsg({ type: 'set_settings', timerSeconds: 60, hostPlays: true })).toBe(true);
     expect(isClientMsg({ type: 'ping' })).toBe(true);
   });
 
@@ -24,6 +26,8 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'submit_scores', scores: { a: 1.5 } })).toBe(false);
     expect(isClientMsg({ type: 'submit_scores', scores: { a: 5000 } })).toBe(false);
     expect(isClientMsg({ type: 'set_settings', timerSeconds: 45 })).toBe(false);
+    expect(isClientMsg({ type: 'set_settings' })).toBe(false);
+    expect(isClientMsg({ type: 'set_settings', hostPlays: 'ja' })).toBe(false);
     expect(isClientMsg({ type: 'host_decision', continue: 'ja' })).toBe(false);
   });
 });

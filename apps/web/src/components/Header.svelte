@@ -25,7 +25,7 @@
     <div class="flex items-center gap-2 text-sm">
       {#if me}
         <span class="max-w-[8rem] truncate text-slate-300">{me.name}</span>
-        {#if client.isHost}<span class="badge bg-indigo-500/20 text-indigo-300">Host</span>{/if}
+        {#if client.isHost}<span class="badge bg-indigo-500/20 text-indigo-300">{client.isModerator ? "Moderator" : "Host"}</span>{/if}
       {/if}
       <button class="btn-ghost text-xs {confirming ? 'bg-rose-600/20 text-rose-300' : ''}" onclick={leaveClick}>
         {confirming ? 'Wirklich verlassen?' : 'Verlassen'}

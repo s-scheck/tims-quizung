@@ -10,6 +10,7 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 - Bleibt nur ein Spieler übrig, entscheidet der Host, ob die Runde endet oder der Letzte allein weiterlegt.
 - Am Rundenende werden alle Werte aufgedeckt, der Host trägt Punkte pro Spieler ein. Danach nächste Runde oder Spiel beenden.
 - Optionales Zeitlimit pro Zug (30 s / 60 s), bei Ablauf scheidet der Spieler aus.
+- Der Host entscheidet in der Lobby, ob er mitspielt oder nur moderiert. Ein moderierender Host wählt Kategorien und vergibt Punkte, steht aber nicht in der Wertung.
 
 ## Entwicklung
 

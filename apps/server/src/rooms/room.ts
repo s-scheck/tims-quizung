@@ -44,7 +44,7 @@ export class Room {
   readonly createdAt: number;
   hostId: string | null = null;
   players: Player[] = [];
-  settings: RoomSettings = { timerSeconds: 0 };
+  settings: RoomSettings = { timerSeconds: 0, hostPlays: true };
   scores: Record<string, number> = {};
   phase: Phase = 'lobby';
   gameId: string | null = null;
@@ -105,6 +105,16 @@ export class Room {
     return [...this.players].sort((a, b) => a.order - b.order);
   }
 
+  /** Moderiert der Host nur, statt mitzuspielen? */
+  isModerator(playerId: string): boolean {
+    return this.hostId === playerId && !this.settings.hostPlays;
+  }
+
+  /** Spieler in Beitrittsreihenfolge, die in Runden mitspielen (ohne moderierenden Host). */
+  playingPlayers(): Player[] {
+    return this.playersByOrder().filter((p) => !this.isModerator(p.id));
+  }
+
   private nameTaken(name: string, exceptId?: string): boolean {
     const key = name.toLowerCase();
     return this.players.some((p) => p.id !== exceptId && p.name.toLowerCase() === key);
@@ -157,7 +167,11 @@ export class Room {
     this.touch();
     this.players = this.players.filter((p) => p.id !== playerId);
     delete this.scores[playerId];
-    if (this.hostId === playerId) this.hostId = this.pickNewHost();
+    if (this.hostId === playerId) {
+      this.hostId = this.pickNewHost();
+      // Ein nachrückender Host spielt immer mit, sonst würde er ungewollt aussetzen.
+      this.settings = { ...this.settings, hostPlays: true };
+    }
     this.game?.onPlayerRemoved(this, playerId);
     return OK;
   }
@@ -182,14 +196,22 @@ export class Room {
 
   // ------------------------------------------------------------ Einstellungen
 
-  setSettings(byId: string, timerSeconds: unknown): Result {
+  setSettings(byId: string, patch: { timerSeconds?: unknown; hostPlays?: unknown }): Result {
     if (!this.isHost(byId)) return fail('not_host', 'Nur der Host darf Einstellungen ändern');
     if (this.phase !== 'lobby' && this.phase !== 'choosing_category') {
       return fail('invalid_action', 'Einstellungen nur in der Lobby oder vor einer Runde');
     }
-    if (!isTimerSeconds(timerSeconds)) return fail('bad_message', 'Ungültiger Timer');
+    const next = { ...this.settings };
+    if (patch.timerSeconds !== undefined) {
+      if (!isTimerSeconds(patch.timerSeconds)) return fail('bad_message', 'Ungültiger Timer');
+      next.timerSeconds = patch.timerSeconds;
+    }
+    if (patch.hostPlays !== undefined) {
+      if (typeof patch.hostPlays !== 'boolean') return fail('bad_message', 'Ungültige Einstellung');
+      next.hostPlays = patch.hostPlays;
+    }
     this.touch();
-    this.settings = { timerSeconds };
+    this.settings = next;
     return OK;
   }
 
@@ -227,7 +249,7 @@ export class Room {
     this.touch();
     switch (msg.type) {
       case 'set_settings':
-        return this.setSettings(playerId, msg.timerSeconds);
+        return this.setSettings(playerId, { timerSeconds: msg.timerSeconds, hostPlays: msg.hostPlays });
       case 'start_game':
         return this.startGame(playerId, msg.gameId);
       case 'back_to_lobby':

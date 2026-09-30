@@ -42,6 +42,31 @@ describe('Rundenstart', () => {
     expect(values).toEqual([...values].sort((a, b) => b - a));
   });
 
+  test('moderierender Host ist nicht in der Zugreihenfolge und bekommt keine Punkte', () => {
+    const h = makeHarness(['Host', 'B', 'C']);
+    expectOk(h.act(h.host, { type: 'set_settings', hostPlays: false }));
+    startRound(h);
+    expect(h.room.round!.turnOrder).toEqual([h.ids[1]!, h.ids[2]!]);
+    expect(h.room.round!.soloMode).toBe(false);
+    place(h, false);
+    resolve(h);
+    expect(h.room.phase).toBe('host_decision');
+    expectOk(h.act(h.host, { type: 'host_decision', continue: false }));
+    expectOk(h.act(h.host, { type: 'to_scoring' }));
+    expectOk(h.act(h.host, { type: 'submit_scores', scores: { [h.host]: 5, [h.ids[2]!]: 2 } }));
+    expect(h.room.scores[h.host]).toBe(0);
+    expect(h.room.scores[h.ids[2]!]).toBe(2);
+    expect(h.room.rounds[0]!.scores[h.host]).toBeUndefined();
+  });
+
+  test('moderierender Host allein: Runde startet nicht', () => {
+    const h = makeHarness(['Host']);
+    expectOk(h.act(h.host, { type: 'set_settings', hostPlays: false }));
+    expectOk(h.act(h.host, { type: 'start_game', gameId: 'sort' }));
+    expect(h.act(h.host, { type: 'choose_category', categoryId: 'cities' })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expect(h.room.phase).toBe('choosing_category');
+  });
+
   test('getrennte Spieler sind in dieser Runde nicht dabei', () => {
     const h = makeHarness(['A', 'B', 'C']);
     h.room.setConnected(h.ids[1]!, false);

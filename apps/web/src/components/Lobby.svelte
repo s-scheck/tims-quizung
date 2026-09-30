@@ -20,6 +20,13 @@
     client.send({ type: 'set_settings', timerSeconds: seconds });
   }
 
+  function setHostPlays(hostPlays: boolean) {
+    client.send({ type: 'set_settings', hostPlays });
+  }
+
+  const playingCount = $derived(view.players.filter((p) => view.settings.hostPlays || p.id !== view.hostId).length);
+  const hostName = $derived(playerName(view, view.hostId));
+
   function timerLabel(s: TimerSeconds): string {
     return s === 0 ? 'Aus' : `${s} s`;
   }
@@ -38,6 +45,30 @@
     <p class="text-xs text-slate-500">
       Für den Fernseher: <a class="underline hover:text-slate-300" href={screenUrl(view.code)} target="_blank" rel="noopener">{screenUrl(view.code).replace(/^https?:\/\//, '')}</a>
     </p>
+
+    <div class="space-y-2 border-t border-slate-800 pt-4">
+      <p class="text-sm font-semibold">Rolle des Hosts</p>
+      <div class="flex gap-2">
+        {#each [true, false] as plays (plays)}
+          <button
+            class="flex-1 rounded-xl border px-3 py-2 text-sm font-semibold transition
+              {view.settings.hostPlays === plays ? 'border-indigo-500 bg-indigo-500/20 text-white' : 'border-slate-700 text-slate-400'}
+              {client.isHost ? 'hover:border-slate-500' : 'cursor-default'}"
+            disabled={!client.isHost}
+            onclick={() => setHostPlays(plays)}
+          >
+            {plays ? 'Spielt mit' : 'Moderiert nur'}
+          </button>
+        {/each}
+      </div>
+      <p class="text-xs text-slate-500">
+        {#if view.settings.hostPlays}
+          {client.isHost ? 'Du' : hostName} wählt Kategorien, vergibt Punkte und spielt selbst mit.
+        {:else}
+          {client.isHost ? 'Du' : hostName} wählt Kategorien und vergibt Punkte, ist aber nicht in der Wertung.
+        {/if}
+      </p>
+    </div>
 
     <div class="space-y-2 border-t border-slate-800 pt-4">
       <p class="text-sm font-semibold">Zeitlimit pro Zug</p>
@@ -62,10 +93,12 @@
     <h2 class="text-lg font-bold">Spieler ({view.players.length})</h2>
     <PlayerList {view} canKick={client.isHost} />
     {#if client.isHost}
-      <button class="btn-primary w-full text-lg" onclick={() => client.send({ type: 'start_game', gameId: 'sort' })}>
+      <button class="btn-primary w-full text-lg" disabled={playingCount === 0} onclick={() => client.send({ type: 'start_game', gameId: 'sort' })}>
         Sortieren starten
       </button>
-      {#if view.players.length < 2}
+      {#if playingCount === 0}
+        <p class="text-center text-xs text-amber-300">Du moderierst nur. Es braucht mindestens einen Mitspieler.</p>
+      {:else if playingCount < 2}
         <p class="text-center text-xs text-slate-500">Allein geht's auch, macht aber zu zweit mehr Spaß.</p>
       {/if}
     {:else}

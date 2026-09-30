@@ -55,6 +55,14 @@ describe('Lobby: Verlassen, Host, Kick, Einstellungen', () => {
     expect(h.room.scores[a]).toBeUndefined();
   });
 
+  test('nachrückender Host spielt immer mit', () => {
+    const h = makeHarness(['A', 'B']);
+    expect(h.room.setSettings(h.host, { hostPlays: false }).ok).toBe(true);
+    expect(h.room.leave(h.host).ok).toBe(true);
+    expect(h.room.hostId).toBe(h.ids[1]!);
+    expect(h.room.settings.hostPlays).toBe(true);
+  });
+
   test('ensureHost besetzt eine leere Host-Rolle', () => {
     const h = makeHarness(['A', 'B']);
     h.room.hostId = null;
@@ -74,14 +82,16 @@ describe('Lobby: Verlassen, Host, Kick, Einstellungen', () => {
   test('Einstellungen nur vom Host, nur in Lobby oder Kategoriewahl', () => {
     const h = makeHarness(['A', 'B']);
     const [a, b] = h.ids as [string, string];
-    expect(h.room.setSettings(b, 30)).toMatchObject({ ok: false, code: 'not_host' });
-    expect(h.room.setSettings(a, 45)).toMatchObject({ ok: false, code: 'bad_message' });
-    expect(h.room.setSettings(a, 30).ok).toBe(true);
-    expect(h.room.settings.timerSeconds).toBe(30);
+    expect(h.room.setSettings(b, { timerSeconds: 30 })).toMatchObject({ ok: false, code: 'not_host' });
+    expect(h.room.setSettings(a, { timerSeconds: 45 })).toMatchObject({ ok: false, code: 'bad_message' });
+    expect(h.room.setSettings(a, { timerSeconds: 30 }).ok).toBe(true);
+    expect(h.room.settings).toEqual({ timerSeconds: 30, hostPlays: true });
+    expect(h.room.setSettings(a, { hostPlays: false }).ok).toBe(true);
+    expect(h.room.settings).toEqual({ timerSeconds: 30, hostPlays: false });
     h.act(a, { type: 'start_game', gameId: 'sort' });
-    expect(h.room.setSettings(a, 60).ok).toBe(true);
+    expect(h.room.setSettings(a, { timerSeconds: 60 }).ok).toBe(true);
     h.act(a, { type: 'choose_category', categoryId: 'cities' });
-    expect(h.room.setSettings(a, 0)).toMatchObject({ ok: false, code: 'invalid_action' });
+    expect(h.room.setSettings(a, { timerSeconds: 0 })).toMatchObject({ ok: false, code: 'invalid_action' });
   });
 
   test('start_game setzt Scores zurück und braucht ein bekanntes Spiel', () => {

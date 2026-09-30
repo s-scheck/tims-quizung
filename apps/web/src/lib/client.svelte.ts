@@ -73,6 +73,11 @@ export class Client {
     return !!this.view && !!this.myId && this.view.hostId === this.myId;
   }
 
+  /** Ich bin Host und moderiere nur, ohne mitzuspielen. */
+  get isModerator(): boolean {
+    return this.isHost && !!this.view && !this.view.settings.hostPlays;
+  }
+
   get isActive(): boolean {
     return !!this.myId && this.view?.round?.activePlayerId === this.myId;
   }

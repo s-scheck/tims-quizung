@@ -19,9 +19,19 @@ export function playerById(view: RoomView | null, id: string | null | undefined)
   return view.players.find((p) => p.id === id);
 }
 
+/** Moderiert dieser Spieler nur (Host, der nicht mitspielt)? */
+export function isModerator(view: RoomView | null, id: string | null | undefined): boolean {
+  return !!view && !!id && view.hostId === id && !view.settings.hostPlays;
+}
+
+/** Spieler, die in der Wertung stehen: alle außer einem moderierenden Host. */
+export function scoredPlayers(view: RoomView): PlayerView[] {
+  return view.players.filter((p) => !isModerator(view, p.id));
+}
+
 /** Spieler nach Punkten sortiert, bei Gleichstand nach Beitrittsreihenfolge. */
 export function ranking(view: RoomView): { player: PlayerView; score: number; rank: number }[] {
-  const rows = view.players
+  const rows = scoredPlayers(view)
     .map((player) => ({ player, score: view.scores[player.id] ?? 0 }))
     .sort((a, b) => b.score - a.score || a.player.order - b.player.order);
   let rank = 0;

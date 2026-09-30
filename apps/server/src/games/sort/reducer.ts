@@ -63,9 +63,11 @@ function chooseCategory(room: Room, playerId: string, categoryId: string): Resul
   }));
   const startCard = cards[Math.floor(room.random() * cards.length)]!;
 
-  const allIds = room.playersByOrder().map((p) => p.id);
-  const connectedIds = room.playersByOrder().filter((p) => p.connected).map((p) => p.id);
+  const playing = room.playingPlayers();
+  const allIds = playing.map((p) => p.id);
+  const connectedIds = playing.filter((p) => p.connected).map((p) => p.id);
   const eligible = connectedIds.length > 0 ? connectedIds : allIds;
+  if (eligible.length === 0) return fail('invalid_action', 'Ohne Mitspieler geht es nicht los');
   const startPlayerId = pickStartPlayer(allIds, eligible, room.lastStartPlayerId);
   const turnOrder = rotateTo(eligible, startPlayerId);
   room.lastStartPlayerId = startPlayerId;
@@ -298,7 +300,7 @@ function submitScores(room: Room, playerId: string, scores: Record<string, numbe
   const round = room.round;
   if (room.phase !== 'scoring' || !round) return fail('invalid_action', 'Gerade keine Punkteeingabe');
   const deltas: Record<string, number> = {};
-  for (const p of room.players) {
+  for (const p of room.playingPlayers()) {
     const raw = scores[p.id];
     if (raw !== undefined && !isValidScore(raw)) return fail('bad_message', 'Punkte müssen ganze Zahlen sein');
     const delta = raw ?? 0;

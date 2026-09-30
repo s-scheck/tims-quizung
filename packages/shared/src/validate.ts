@@ -60,7 +60,11 @@ export function isClientMsg(x: unknown): x is ClientMsg {
     case 'kick':
       return isStr(x.playerId, 100);
     case 'set_settings':
-      return isTimerSeconds(x.timerSeconds);
+      return (
+        (x.timerSeconds !== undefined || x.hostPlays !== undefined) &&
+        (x.timerSeconds === undefined || isTimerSeconds(x.timerSeconds)) &&
+        (x.hostPlays === undefined || typeof x.hostPlays === 'boolean')
+      );
     case 'start_game':
       return isStr(x.gameId, 50);
     case 'choose_category':

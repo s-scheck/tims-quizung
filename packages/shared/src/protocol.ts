@@ -31,7 +31,7 @@ export type ClientMsg =
   | { type: 'watch'; code: string; version: number }
   | { type: 'leave' }
   | { type: 'kick'; playerId: string }
-  | { type: 'set_settings'; timerSeconds: TimerSeconds }
+  | { type: 'set_settings'; timerSeconds?: TimerSeconds; hostPlays?: boolean }
   | { type: 'start_game'; gameId: string }
   | { type: 'choose_category'; categoryId: string }
   | ({ type: 'select'; turnNo: number } & Selection)

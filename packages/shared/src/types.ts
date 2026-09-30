@@ -17,6 +17,8 @@ export type Role = 'player' | 'screen';
 
 export interface RoomSettings {
   timerSeconds: TimerSeconds;
+  /** false: der Host moderiert nur, spielt nicht mit und taucht nicht in der Wertung auf. */
+  hostPlays: boolean;
 }
 
 export interface PlayerView {

@@ -71,7 +71,7 @@ export function makeHarness(names: string[], opts: { timer?: TimerSeconds; seed?
     ids.push(res.player.id);
   }
   const host = ids[0]!;
-  if (opts.timer !== undefined) room.setSettings(host, opts.timer);
+  if (opts.timer !== undefined) room.setSettings(host, { timerSeconds: opts.timer });
   return {
     room,
     scheduler,
