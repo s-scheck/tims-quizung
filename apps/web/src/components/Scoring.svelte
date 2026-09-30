@@ -21,8 +21,15 @@
   const allValid = $derived(players.every((p) => parsed(p.id) !== null));
 
   function statusOf(id: string): string {
-    if (!round.turnOrder.includes(id)) return 'nicht dabei';
-    if (round.eliminated.includes(id)) return `raus als ${round.eliminated.indexOf(id) + 1}.`;
+    const r = round;
+    if (!r.turnOrder.includes(id)) return 'nicht dabei';
+    if (r.game === 'topx') {
+      const hits = r.hits[id] ?? 0;
+      const lives = r.lives[id] ?? 0;
+      const hitText = `${hits} ${hits === 1 ? 'Treffer' : 'Treffer'}`;
+      return lives === 0 ? `${hitText}, keine Leben mehr` : `${hitText}, ${lives} ${lives === 1 ? 'Leben' : 'Leben'} übrig`;
+    }
+    if (r.eliminated.includes(id)) return `raus als ${r.eliminated.indexOf(id) + 1}.`;
     return 'durchgekommen';
   }
 

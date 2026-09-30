@@ -1,0 +1,24 @@
+{
+  "id": "topx-formel1-siege",
+  "title": "Top 11 Formel-1-Fahrer nach Siegen",
+  "question": "Welche Fahrer haben die meisten Grand-Prix-Siege?",
+  "topLabel": "meiste Siege",
+  "bottomLabel": "wenigste Siege",
+  "unit": "Siege",
+  "order": "desc",
+  "games": ["topx"],
+  "source": "Stand Saisonende 2024",
+  "items": [
+    { "name": "Lewis Hamilton", "value": 105, "aliases": ["Hamilton", "Lewis"] },
+    { "name": "Michael Schumacher", "value": 91, "aliases": ["Schumacher", "Schumi"] },
+    { "name": "Max Verstappen", "value": 63, "aliases": ["Verstappen", "Max"] },
+    { "name": "Sebastian Vettel", "value": 53, "aliases": ["Vettel", "Seb"] },
+    { "name": "Alain Prost", "value": 51, "aliases": ["Prost"] },
+    { "name": "Ayrton Senna", "value": 41, "aliases": ["Senna"] },
+    { "name": "Fernando Alonso", "value": 32, "aliases": ["Alonso"] },
+    { "name": "Nigel Mansell", "value": 31, "aliases": ["Mansell"] },
+    { "name": "Jackie Stewart", "value": 27, "aliases": ["Stewart"] },
+    { "name": "Niki Lauda", "value": 25, "aliases": ["Lauda"] },
+    { "name": "Jim Clark", "value": 25, "aliases": ["Clark"] }
+  ]
+}

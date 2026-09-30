@@ -1,0 +1,23 @@
+{
+  "id": "topx-nba-punkte",
+  "title": "Top 10 NBA-Spieler nach Karrierepunkten",
+  "question": "Wer hat die meisten Punkte in der NBA-Hauptrunde erzielt?",
+  "topLabel": "meiste Punkte",
+  "bottomLabel": "wenigste Punkte",
+  "unit": "Punkte",
+  "order": "desc",
+  "games": ["topx"],
+  "source": "NBA, Regular Season, Stand Saisonende 2024/25 (gerundet)",
+  "items": [
+    { "name": "LeBron James", "value": 42184, "aliases": ["LeBron", "James", "King James"] },
+    { "name": "Kareem Abdul-Jabbar", "value": 38387, "aliases": ["Kareem", "Abdul-Jabbar", "Abdul Jabbar", "Jabbar"] },
+    { "name": "Karl Malone", "value": 36928, "aliases": ["Malone", "Mailman"] },
+    { "name": "Kobe Bryant", "value": 33643, "aliases": ["Kobe", "Bryant"] },
+    { "name": "Michael Jordan", "value": 32292, "aliases": ["Jordan", "MJ", "Air Jordan"] },
+    { "name": "Dirk Nowitzki", "value": 31560, "aliases": ["Nowitzki", "Dirk"] },
+    { "name": "Wilt Chamberlain", "value": 31419, "aliases": ["Chamberlain", "Wilt"] },
+    { "name": "Kevin Durant", "value": 30571, "aliases": ["Durant", "KD"] },
+    { "name": "Shaquille O'Neal", "value": 28596, "aliases": ["Shaq", "O'Neal", "ONeal", "Shaquille"] },
+    { "name": "Carmelo Anthony", "value": 28289, "aliases": ["Carmelo", "Melo", "Anthony"] }
+  ]
+}

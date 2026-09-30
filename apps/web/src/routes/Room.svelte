@@ -8,7 +8,9 @@
   import Lobby from '../components/Lobby.svelte';
   import CategoryPicker from '../components/CategoryPicker.svelte';
   import Board from '../components/Board.svelte';
+  import TopXBoard from '../components/TopXBoard.svelte';
   import Reveal from '../components/Reveal.svelte';
+  import TopXReveal from '../components/TopXReveal.svelte';
   import Scoring from '../components/Scoring.svelte';
   import Scoreboard from '../components/Scoreboard.svelte';
   import FinalStandings from '../components/FinalStandings.svelte';
@@ -96,12 +98,18 @@
       {:else if view.phase === 'choosing_category'}
         <CategoryPicker {view} />
       {:else if view.phase === 'playing' || view.phase === 'host_decision'}
-        <Board {view} />
+        {#if view.round?.game === 'topx'}
+          <TopXBoard {view} round={view.round} />
+        {:else if view.round?.game === 'sort'}
+          <Board {view} round={view.round} />
+        {/if}
       {:else if view.phase === 'reveal' || view.phase === 'scoring'}
         {#if view.phase === 'scoring' && client.isHost}
           <Scoring {view} />
-        {:else}
-          <Reveal {view} />
+        {:else if view.round?.game === 'topx'}
+          <TopXReveal {view} round={view.round} />
+        {:else if view.round?.game === 'sort'}
+          <Reveal {view} round={view.round} />
         {/if}
       {:else if view.phase === 'scoreboard'}
         <Scoreboard {view} />

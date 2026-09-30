@@ -1,17 +1,23 @@
-import type { CategoryInfo, SortOrder } from '@quiz/shared';
+import { GAME_IDS, type CategoryInfo, type GameId, type SortOrder } from '@quiz/shared';
 
 export interface CategoryItem {
   name: string;
   value: number;
   /** Überschreibt die Standardformatierung des Werts in der Auflösung. */
   label?: string;
+  /** Weitere Schreibweisen für den Namensabgleich bei Top X. */
+  aliases?: string[];
 }
 
 export interface Category extends CategoryInfo {
+  /** Für welche Spiele die Liste taugt. Standard: nur Sortieren. */
+  games: GameId[];
   items: CategoryItem[];
 }
 
+/** Sortieren braucht 10 Karten und eindeutige Werte, eine Top-Liste darf kürzer sein und Gleichstände haben. */
 export const MIN_ITEMS = 10;
+export const MIN_ITEMS_TOPX = 5;
 export const MAX_ITEMS = 20;
 
 export class CategoryValidationError extends Error {
@@ -50,9 +56,19 @@ export function validateCategory(raw: unknown, file: string): Category {
     throw new CategoryValidationError(file, 'valueFormat muss "grouped" oder "plain" sein');
   }
 
+  let games: GameId[] = ['sort'];
+  if (raw.games !== undefined) {
+    if (!Array.isArray(raw.games) || raw.games.length === 0 || !raw.games.every((g) => (GAME_IDS as readonly unknown[]).includes(g))) {
+      throw new CategoryValidationError(file, `games muss eine nicht leere Liste aus ${GAME_IDS.join(', ')} sein`);
+    }
+    games = [...new Set(raw.games as GameId[])];
+  }
+  const forSort = games.includes('sort');
+  const minItems = forSort ? MIN_ITEMS : MIN_ITEMS_TOPX;
+
   const itemsRaw = raw.items;
   if (!Array.isArray(itemsRaw)) throw new CategoryValidationError(file, 'items fehlt');
-  if (itemsRaw.length < MIN_ITEMS) throw new CategoryValidationError(file, `mindestens ${MIN_ITEMS} Einträge nötig, ${itemsRaw.length} vorhanden`);
+  if (itemsRaw.length < minItems) throw new CategoryValidationError(file, `mindestens ${minItems} Einträge nötig, ${itemsRaw.length} vorhanden`);
   if (itemsRaw.length > MAX_ITEMS) throw new CategoryValidationError(file, `höchstens ${MAX_ITEMS} Einträge erlaubt`);
 
   const names = new Set<string>();
@@ -67,12 +83,18 @@ export function validateCategory(raw: unknown, file: string): Category {
     if (typeof value !== 'number' || !Number.isFinite(value)) {
       throw new CategoryValidationError(file, `items[${idx}] "${name}": value ist keine Zahl`);
     }
-    if (values.has(value)) throw new CategoryValidationError(file, `doppelter Wert ${value} bei "${name}"`);
+    if (forSort && values.has(value)) throw new CategoryValidationError(file, `doppelter Wert ${value} bei "${name}"`);
     values.add(value);
     if (it.label !== undefined && typeof it.label !== 'string') {
       throw new CategoryValidationError(file, `items[${idx}] "${name}": label muss ein String sein`);
     }
-    return it.label === undefined ? { name, value } : { name, value, label: it.label };
+    if (it.aliases !== undefined && (!Array.isArray(it.aliases) || !it.aliases.every((a) => typeof a === 'string' && a.trim().length > 0))) {
+      throw new CategoryValidationError(file, `items[${idx}] "${name}": aliases muss eine Liste von Strings sein`);
+    }
+    const item: CategoryItem = { name, value };
+    if (it.label !== undefined) item.label = it.label;
+    if (it.aliases !== undefined) item.aliases = it.aliases as string[];
+    return item;
   });
 
   return {
@@ -85,6 +107,7 @@ export function validateCategory(raw: unknown, file: string): Category {
     order: order as SortOrder,
     source: typeof raw.source === 'string' ? raw.source : undefined,
     ...(valueFormat !== undefined ? { valueFormat } : {}),
+    games,
     items,
   };
 }

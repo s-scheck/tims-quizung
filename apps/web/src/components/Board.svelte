@@ -2,7 +2,7 @@
   import { crossfade } from 'svelte/transition';
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
-  import type { RoomView } from '@quiz/shared';
+  import type { RoomView, SortRoundView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
   import Card from './Card.svelte';
@@ -10,9 +10,8 @@
   import HostDecision from './HostDecision.svelte';
   import PlayerList from './PlayerList.svelte';
 
-  let { view, readonly = false }: { view: RoomView; readonly?: boolean } = $props();
+  let { view, round, readonly = false }: { view: RoomView; round: SortRoundView; readonly?: boolean } = $props();
 
-  const round = $derived(view.round!);
   const category = $derived(round.category);
   const cardsById = $derived(new Map(round.cards.map((c) => [c.id, c])));
   const placement = $derived(round.placement);

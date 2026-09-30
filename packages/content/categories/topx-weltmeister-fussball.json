@@ -1,0 +1,21 @@
+{
+  "id": "topx-weltmeister-fussball",
+  "title": "Top 8 Fußball-Weltmeister",
+  "question": "Welche Nationen haben die Fußball-WM der Männer gewonnen?",
+  "topLabel": "meiste Titel",
+  "bottomLabel": "wenigste Titel",
+  "unit": "Titel",
+  "order": "desc",
+  "games": ["topx"],
+  "source": "FIFA, Stand nach der WM 2022",
+  "items": [
+    { "name": "Brasilien", "value": 5, "aliases": ["Brasil", "Brazil"] },
+    { "name": "Deutschland", "value": 4, "aliases": ["Germany", "BRD", "DFB"] },
+    { "name": "Italien", "value": 4, "aliases": ["Italy", "Italia"] },
+    { "name": "Argentinien", "value": 3, "aliases": ["Argentina"] },
+    { "name": "Frankreich", "value": 2, "aliases": ["France"] },
+    { "name": "Uruguay", "value": 2 },
+    { "name": "England", "value": 1 },
+    { "name": "Spanien", "value": 1, "aliases": ["Spain", "España", "Espana"] }
+  ]
+}

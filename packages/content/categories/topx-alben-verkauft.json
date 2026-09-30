@@ -1,0 +1,23 @@
+{
+  "id": "topx-alben-verkauft",
+  "title": "Top 10 meistverkaufte Alben",
+  "question": "Welche Alben wurden weltweit am häufigsten verkauft?",
+  "topLabel": "meiste Verkäufe",
+  "bottomLabel": "wenigste Verkäufe",
+  "unit": "Mio. Exemplare",
+  "order": "desc",
+  "games": ["topx"],
+  "source": "Branchenschätzungen inkl. Zertifizierungen, Näherung Stand 2024",
+  "items": [
+    { "name": "Thriller – Michael Jackson", "value": 70, "aliases": ["Thriller", "Michael Jackson"] },
+    { "name": "Back in Black – AC/DC", "value": 50, "aliases": ["Back in Black", "AC/DC", "ACDC", "AC DC"] },
+    { "name": "The Dark Side of the Moon – Pink Floyd", "value": 45, "aliases": ["Dark Side of the Moon", "The Dark Side of the Moon", "Pink Floyd"] },
+    { "name": "The Bodyguard (Soundtrack) – Whitney Houston", "value": 45, "aliases": ["Bodyguard", "The Bodyguard", "Whitney Houston"] },
+    { "name": "Bat Out of Hell – Meat Loaf", "value": 43, "aliases": ["Bat Out of Hell", "Meat Loaf", "Meatloaf"] },
+    { "name": "Their Greatest Hits (1971–1975) – Eagles", "value": 42, "aliases": ["Greatest Hits", "Eagles", "Eagles Greatest Hits", "Their Greatest Hits"] },
+    { "name": "Saturday Night Fever (Soundtrack) – Bee Gees", "value": 40, "aliases": ["Saturday Night Fever", "Bee Gees"] },
+    { "name": "Rumours – Fleetwood Mac", "value": 40, "aliases": ["Rumours", "Rumors", "Fleetwood Mac"] },
+    { "name": "Come On Over – Shania Twain", "value": 40, "aliases": ["Come On Over", "Shania Twain"] },
+    { "name": "Grease (Soundtrack)", "value": 38, "aliases": ["Grease"] }
+  ]
+}

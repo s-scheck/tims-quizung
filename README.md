@@ -1,6 +1,6 @@
 # Tims Quizung
 
-Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Erstes Spiel: **Sortieren**.
+Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Spiele: **Sortieren** und **Top X**. Der Host wählt vor jeder Runde das Spiel und die Kategorie, der Punktestand läuft über alle Runden durch.
 
 ## Spielregeln „Sortieren"
 
@@ -11,6 +11,14 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 - Am Rundenende werden alle Werte aufgedeckt, der Host trägt Punkte pro Spieler ein. Danach nächste Runde oder Spiel beenden.
 - Optionales Zeitlimit pro Zug (30 s / 60 s), bei Ablauf scheidet der Spieler aus.
 - Der Host entscheidet in der Lobby, ob er mitspielt oder nur moderiert. Ein moderierender Host wählt Kategorien und vergibt Punkte, steht aber nicht in der Wertung.
+
+## Spielregeln „Top X"
+
+- Eine echte Top-Liste (z. B. Top 10 Fußballer nach Marktwert) liegt verdeckt auf nummerierten Plätzen. Vor der Runde legt der Host die Leben pro Spieler fest (1 bis 5).
+- Wer dran ist, tippt einen Namen. Ein Treffer deckt die Karte mit Wert an ihrem Platz auf, ein Fehltipp kostet ein Leben. Auch ein Tipp auf eine schon aufgedeckte Karte oder ein wiederholter Fehltipp kostet ein Leben.
+- Moderiert der Host, sieht er alle Karten und prüft jeden Tipp mit einem Vorschlag des Servers. Spielt er mit, entscheidet der Server automatisch: Name, Alias oder eindeutiger Nachname, ohne Tippfehler-Toleranz.
+- Ohne Leben ist man für die Runde raus. Bleibt nur einer übrig, entscheidet der Host wie bei Sortieren. Die Runde endet, wenn alle Karten offen sind oder niemand mehr Leben hat.
+- Zeitlimit und Punktevergabe funktionieren wie bei Sortieren.
 
 ## Entwicklung
 
@@ -73,6 +81,8 @@ Eine Datei `packages/content/categories/<id>.json` anlegen:
 
 Regeln: 10 bis 20 Einträge, Namen und Werte eindeutig, `order` `desc` (größter Wert oben) oder `asc` (kleinster oben). `valueFormat: "plain"` unterdrückt Tausenderpunkte, etwa bei Jahreszahlen. Ein optionales `label` pro Eintrag überschreibt die Anzeige des Werts. `bun test` prüft alle Dateien.
 
+Für Top X kommt `"games": ["topx"]` dazu (Standard ist `["sort"]`, beides zusammen geht auch). Top-X-Listen müssen echte Top-Listen ohne Gleichstand über die Listengrenze sein, dürfen ab 5 Einträgen kurz sein und Gleichstände enthalten. Pro Eintrag helfen `aliases` beim Abgleich, etwa `["Mbappe", "Mbappé"]`; ein eindeutiger Nachname trifft automatisch. Dateien beginnen mit `topx-`.
+
 ## Weitere Spiele
 
-Ein Spiel ist ein `GameModule` (`apps/server/src/games/registry.ts`): `start`, `handle`, `onPlayerRemoved`, `roundView`. Der Raum kümmert sich um Spieler, Host, Scores und Lobby. Client-seitig schaltet `routes/Room.svelte` nach `view.phase`.
+Ein Spiel ist ein `GameModule` (`apps/server/src/games/registry.ts`) mit `startRound`, `handle`, `roundView` und einigen Hooks. Timer, Host-Entscheidung, Auflösung, Punkte und Rundenwechsel liefert `games/common.ts` für alle Spiele. Der Raum kümmert sich um Spieler, Host, Scores und Lobby. Client-seitig schaltet `routes/Room.svelte` nach `view.phase` und `view.round.game`. Module werden in `games/index.ts` registriert.

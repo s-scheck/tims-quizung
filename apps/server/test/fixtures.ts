@@ -2,7 +2,7 @@ import type { Category } from '@quiz/content';
 import type { ClientMsg, TimerSeconds } from '@quiz/shared';
 import { Room, type CategoryProvider } from '../src/rooms/room.ts';
 import { FakeScheduler } from '../src/rooms/scheduler.ts';
-import '../src/games/sort/index.ts';
+import '../src/games/index.ts';
 
 export const CITIES: Category = {
   id: 'cities',
@@ -12,6 +12,7 @@ export const CITIES: Category = {
   bottomLabel: 'wenigste Einwohner',
   unit: 'Einwohner',
   order: 'desc',
+  games: ['sort'],
   items: Array.from({ length: 10 }, (_, i) => ({ name: `Stadt ${i + 1}`, value: (10 - i) * 100 })),
 };
 
@@ -23,12 +24,34 @@ export const TIMES: Category = {
   bottomLabel: 'langsamste Zeit',
   unit: 's',
   order: 'asc',
+  games: ['sort'],
   items: Array.from({ length: 12 }, (_, i) => ({ name: `Läufer ${i + 1}`, value: 100 + i * 7 })),
 };
 
+export const TOPX: Category = {
+  id: 'players',
+  title: 'Top 5 Spieler',
+  question: 'Wer ist am wertvollsten?',
+  topLabel: 'wertvollster',
+  bottomLabel: 'günstigster',
+  unit: 'Mio. €',
+  order: 'desc',
+  games: ['topx'],
+  source: 'Test',
+  items: [
+    { name: 'Erling Haaland', value: 100, aliases: ['Haaland'] },
+    { name: 'Kylian Mbappé', value: 90, aliases: ['Mbappe'] },
+    { name: 'Gerd Müller', value: 80 },
+    { name: 'Thomas Müller', value: 70 },
+    { name: 'Pedri', value: 60 },
+  ],
+};
+
+const ALL = [CITIES, TIMES, TOPX];
+
 export const provider: CategoryProvider = {
-  list: () => [CITIES, TIMES],
-  get: (id) => [CITIES, TIMES].find((c) => c.id === id),
+  list: () => ALL,
+  get: (id) => ALL.find((c) => c.id === id),
 };
 
 /** Deterministischer Zufall (mulberry32). */
@@ -84,18 +107,28 @@ export function makeHarness(names: string[], opts: { timer?: TimerSeconds; seed?
       return res;
     },
     valueOf(cardId) {
-      return room.round!.cards.find((c) => c.id === cardId)!.value;
+      const round = room.round;
+      if (round?.game !== 'sort') throw new Error('keine Sortieren-Runde');
+      return round.cards.find((c) => c.id === cardId)!.value;
     },
     chainValues() {
-      return room.round!.chain.map((id) => this.valueOf(id));
+      const round = room.round;
+      if (round?.game !== 'sort') throw new Error('keine Sortieren-Runde');
+      return round.chain.map((id) => this.valueOf(id));
     },
   };
 }
 
-/** Startet Spiel und Runde, damit Tests direkt in `playing` beginnen. */
+/** Startet Spiel und Sortieren-Runde, damit Tests direkt in `playing` beginnen. */
 export function startRound(h: Harness, categoryId = 'cities'): void {
-  expectOk(h.act(h.host, { type: 'start_game', gameId: 'sort' }));
-  expectOk(h.act(h.host, { type: 'choose_category', categoryId }));
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId }));
+}
+
+/** Startet Spiel und Top-X-Runde. */
+export function startTopX(h: Harness, lives?: number): void {
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'topx', categoryId: 'players', ...(lives !== undefined ? { lives } : {}) }));
 }
 
 export function expectOk(res: { ok: boolean; message?: string }): void {
@@ -104,7 +137,8 @@ export function expectOk(res: { ok: boolean; message?: string }): void {
 
 /** Wählt für den aktiven Spieler eine Poolkarte und legt sie richtig oder falsch. */
 export function place(h: Harness, correct: boolean): { cardId: string; gapIndex: number } {
-  const round = h.room.round!;
+  const round = h.room.round;
+  if (round?.game !== 'sort') throw new Error('keine Sortieren-Runde');
   const active = round.activePlayerId!;
   const cardId = round.pool[0]!;
   const value = h.valueOf(cardId);

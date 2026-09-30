@@ -1,6 +1,6 @@
-import type { Role, RoomView, Selection, TimerSeconds } from './types.ts';
+import type { GameId, Role, RoomView, Selection, TimerSeconds } from './types.ts';
 
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 
 export const CLOSE_CODES = {
   KICKED: 4001,
@@ -32,10 +32,12 @@ export type ClientMsg =
   | { type: 'leave' }
   | { type: 'kick'; playerId: string }
   | { type: 'set_settings'; timerSeconds?: TimerSeconds; hostPlays?: boolean }
-  | { type: 'start_game'; gameId: string }
-  | { type: 'choose_category'; categoryId: string }
+  | { type: 'start_game' }
+  | { type: 'choose_category'; gameId: GameId; categoryId: string; lives?: number }
   | ({ type: 'select'; turnNo: number } & Selection)
   | { type: 'confirm'; turnNo: number }
+  | { type: 'guess'; turnNo: number; text: string }
+  | { type: 'judge'; turnNo: number; correct: boolean; rank?: number }
   | { type: 'skip_turn'; turnNo: number }
   | { type: 'host_decision'; continue: boolean }
   | { type: 'to_scoring' }

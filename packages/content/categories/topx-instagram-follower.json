@@ -1,0 +1,23 @@
+{
+  "id": "topx-instagram-follower",
+  "title": "Top 10 Personen mit den meisten Instagram-Followern",
+  "question": "Welche Personen haben die meisten Follower auf Instagram?",
+  "topLabel": "meiste Follower",
+  "bottomLabel": "wenigste Follower",
+  "unit": "Mio. Follower",
+  "order": "desc",
+  "games": ["topx"],
+  "source": "Instagram, Näherung Stand Mitte 2025, ohne Marken-Accounts",
+  "items": [
+    { "name": "Cristiano Ronaldo", "value": 660, "aliases": ["Ronaldo", "CR7", "Cristiano"] },
+    { "name": "Lionel Messi", "value": 505, "aliases": ["Messi", "Leo Messi"] },
+    { "name": "Selena Gomez", "value": 420, "aliases": ["Selena", "Gomez"] },
+    { "name": "Kylie Jenner", "value": 393, "aliases": ["Kylie"] },
+    { "name": "Dwayne Johnson", "value": 392, "aliases": ["The Rock", "Rock", "Dwayne The Rock Johnson", "Dwayne"] },
+    { "name": "Ariana Grande", "value": 375, "aliases": ["Ariana", "Grande"] },
+    { "name": "Kim Kardashian", "value": 356, "aliases": ["Kim", "Kim K"] },
+    { "name": "Beyoncé", "value": 310, "aliases": ["Beyonce", "Beyoncé Knowles", "Queen B"] },
+    { "name": "Khloé Kardashian", "value": 302, "aliases": ["Khloe", "Khloé", "Khloe Kardashian"] },
+    { "name": "Justin Bieber", "value": 295, "aliases": ["Bieber", "Justin"] }
+  ]
+}

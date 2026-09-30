@@ -1,0 +1,24 @@
+{
+  "id": "topx-filme-einspiel",
+  "title": "Top 11 erfolgreichste Filme",
+  "question": "Welche Filme haben weltweit am meisten eingespielt?",
+  "topLabel": "meiste Einnahmen",
+  "bottomLabel": "wenigste Einnahmen",
+  "unit": "Mio. US-Dollar",
+  "order": "desc",
+  "games": ["topx"],
+  "source": "Box Office Mojo, weltweit inkl. Wiederaufführungen, Näherung Stand Mitte 2025",
+  "items": [
+    { "name": "Avatar", "value": 2923, "aliases": ["Avatar 1", "Avatar Aufbruch nach Pandora"] },
+    { "name": "Avengers: Endgame", "value": 2799, "aliases": ["Endgame", "Avengers Endgame"] },
+    { "name": "Avatar: The Way of Water", "value": 2320, "aliases": ["Avatar 2", "The Way of Water", "Way of Water"] },
+    { "name": "Titanic", "value": 2264 },
+    { "name": "Ne Zha 2", "value": 2200, "aliases": ["Ne Zha", "Nezha 2", "Nezha"] },
+    { "name": "Star Wars: Das Erwachen der Macht", "value": 2071, "aliases": ["Das Erwachen der Macht", "The Force Awakens", "Star Wars 7", "Episode 7", "Episode VII", "Star Wars Episode 7"] },
+    { "name": "Avengers: Infinity War", "value": 2052, "aliases": ["Infinity War", "Avengers Infinity War"] },
+    { "name": "Spider-Man: No Way Home", "value": 1921, "aliases": ["No Way Home", "Spider-Man No Way Home", "Spiderman No Way Home"] },
+    { "name": "Alles steht Kopf 2", "value": 1699, "aliases": ["Inside Out 2", "Alles steht Kopf"] },
+    { "name": "Jurassic World", "value": 1671 },
+    { "name": "Der König der Löwen (2019)", "value": 1663, "aliases": ["König der Löwen", "Der König der Löwen", "The Lion King", "Lion King", "Koenig der Loewen"] }
+  ]
+}

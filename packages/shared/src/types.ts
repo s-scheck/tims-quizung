@@ -9,11 +9,20 @@ export type Phase =
   | 'scoreboard'
   | 'finished';
 
+export type GameId = 'sort' | 'topx';
+export const GAME_IDS: readonly GameId[] = ['sort', 'topx'];
+
 export type SortOrder = 'asc' | 'desc';
 export type TimerSeconds = 0 | 30 | 60;
 export const TIMER_OPTIONS: readonly TimerSeconds[] = [0, 30, 60];
 export type PlacementStatus = 'pending' | 'correct' | 'wrong';
+export type GuessStatus = 'judging' | 'pending' | 'correct' | 'wrong';
 export type Role = 'player' | 'screen';
+
+export const LIVES_MIN = 1;
+export const LIVES_MAX = 5;
+export const LIVES_DEFAULT = 3;
+export const GUESS_MAX_LENGTH = 60;
 
 export interface RoomSettings {
   timerSeconds: TimerSeconds;
@@ -55,6 +64,13 @@ export interface CategorySummary {
   question: string;
   count: number;
   played: boolean;
+  games: GameId[];
+}
+
+export interface GameInfo {
+  id: GameId;
+  name: string;
+  description: string;
 }
 
 export interface Selection {
@@ -71,25 +87,66 @@ export interface PlacementView {
   applyAt: number;
 }
 
-export interface RoundView {
+/** Felder, die jede Runde unabhängig vom Spiel hat. */
+export interface BaseRoundView {
   category: CategoryInfo;
-  cards: CardView[];
-  chain: string[];
-  pool: string[];
-  startCardId: string;
   turnOrder: string[];
   turnNo: number;
   activePlayerId: string | null;
   eliminated: string[];
-  selection: Selection;
-  placement: PlacementView | null;
   turnDeadline: number | null;
   soloMode: boolean;
+}
+
+export interface SortRoundView extends BaseRoundView {
+  game: 'sort';
+  cards: CardView[];
+  chain: string[];
+  pool: string[];
+  startCardId: string;
+  selection: Selection;
+  placement: PlacementView | null;
   /** Karten-IDs in der richtigen Reihenfolge, nur ab der Auflösung. */
   solution?: string[];
 }
 
+export interface TopXSlotView {
+  rank: number;
+  revealed: boolean;
+  name?: string;
+  value?: number;
+  label?: string;
+  revealedBy?: string;
+}
+
+export interface GuessView {
+  by: string;
+  text: string;
+  status: GuessStatus;
+  /** Vorschlag bzw. Treffer des Servers, null wenn kein Treffer. */
+  matchRank: number | null;
+  resolveAt: number | null;
+  applyAt: number | null;
+}
+
+export interface TopXRoundView extends BaseRoundView {
+  game: 'topx';
+  slots: TopXSlotView[];
+  lives: Record<string, number>;
+  maxLives: number;
+  hits: Record<string, number>;
+  wrongGuesses: { by: string; text: string }[];
+  guess: GuessView | null;
+  /** true: der moderierende Host prüft Tipps von Hand. */
+  hostJudges: boolean;
+  /** Nur in der Sicht des moderierenden Hosts: alle Slots sind gefüllt. */
+  privileged?: boolean;
+}
+
+export type RoundView = SortRoundView | TopXRoundView;
+
 export interface RoundResult {
+  gameId: GameId;
   categoryId: string;
   categoryTitle: string;
   survivors: string[];
@@ -104,9 +161,13 @@ export interface RoomView {
   settings: RoomSettings;
   scores: Record<string, number>;
   phase: Phase;
-  gameId: string | null;
+  gameId: GameId | null;
   round: RoundView | null;
   rounds: RoundResult[];
+  /** Zuletzt gewählte Leben für Top X. */
+  topxLives: number;
   /** Nur in `choosing_category` enthalten. */
   categories?: CategorySummary[];
+  /** Nur in `choosing_category` enthalten. */
+  games?: GameInfo[];
 }

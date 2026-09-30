@@ -93,8 +93,8 @@
     <h2 class="text-lg font-bold">Spieler ({view.players.length})</h2>
     <PlayerList {view} canKick={client.isHost} />
     {#if client.isHost}
-      <button class="btn-primary w-full text-lg" disabled={playingCount === 0} onclick={() => client.send({ type: 'start_game', gameId: 'sort' })}>
-        Sortieren starten
+      <button class="btn-primary w-full text-lg" disabled={playingCount === 0} onclick={() => client.send({ type: 'start_game' })}>
+        Spiel starten
       </button>
       {#if playingCount === 0}
         <p class="text-center text-xs text-amber-300">Du moderierst nur. Es braucht mindestens einen Mitspieler.</p>
@@ -107,9 +107,16 @@
   </section>
 </div>
 
-<section class="card mt-6 space-y-2 text-sm text-slate-400">
-  <h3 class="font-semibold text-slate-200">So geht Sortieren</h3>
-  <p>Alle Karten einer Kategorie liegen offen. Eine zufällige Karte startet die Kette. Wer dran ist, wählt eine Karte und eine Lücke in der Kette und bestätigt.</p>
-  <p>Liegt die Karte richtig zwischen ihren Nachbarn, bleibt sie. Liegt sie falsch, fliegt sie zurück und du bist für diese Runde raus. Die Werte siehst du erst am Ende.</p>
-  <p>Punkte vergibt der Host nach jeder Runde von Hand.</p>
+<section class="mt-6 grid gap-4 md:grid-cols-2">
+  <div class="card space-y-2 text-sm text-slate-400">
+    <h3 class="font-semibold text-slate-200">Sortieren</h3>
+    <p>Alle Karten einer Kategorie liegen offen. Eine zufällige Karte startet die Kette. Wer dran ist, wählt eine Karte und eine Lücke in der Kette und bestätigt.</p>
+    <p>Liegt die Karte richtig zwischen ihren Nachbarn, bleibt sie. Liegt sie falsch, fliegt sie zurück und du bist für diese Runde raus. Die Werte siehst du erst am Ende.</p>
+  </div>
+  <div class="card space-y-2 text-sm text-slate-400">
+    <h3 class="font-semibold text-slate-200">Top X</h3>
+    <p>Eine echte Top-Liste liegt verdeckt auf nummerierten Plätzen. Wer dran ist, tippt einen Namen. Ein Treffer deckt die Karte mit Wert auf, ein Fehltipp kostet ein Leben.</p>
+    <p>Moderiert der Host, prüft er jeden Tipp und sieht alle Karten. Spielt er mit, entscheidet der Server automatisch.</p>
+  </div>
 </section>
+<p class="mt-4 text-center text-xs text-slate-500">Der Host wählt vor jeder Runde das Spiel und die Kategorie. Punkte vergibt er nach jeder Runde von Hand.</p>

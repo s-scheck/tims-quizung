@@ -1,12 +1,11 @@
 <script lang="ts">
   import { fly } from 'svelte/transition';
-  import type { RoomView } from '@quiz/shared';
+  import type { RoomView, SortRoundView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { formatValue, playerName } from '../lib/format.ts';
 
-  let { view, readonly = false }: { view: RoomView; readonly?: boolean } = $props();
+  let { view, round, readonly = false }: { view: RoomView; round: SortRoundView; readonly?: boolean } = $props();
 
-  const round = $derived(view.round!);
   const rows = $derived(
     (round.solution ?? []).map((id, i) => {
       const card = round.cards.find((c) => c.id === id)!;

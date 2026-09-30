@@ -1,4 +1,4 @@
-import type { PlacementStatus, Selection } from '@quiz/shared';
+import type { GuessStatus, PlacementStatus, Selection } from '@quiz/shared';
 import type { Category } from '@quiz/content';
 
 export interface Player {
@@ -8,6 +8,19 @@ export interface Player {
   order: number;
   connected: boolean;
 }
+
+/** Felder, die jede Runde unabhängig vom Spiel hat. `games/common.ts` arbeitet nur damit. */
+export interface BaseRound {
+  category: Category;
+  turnOrder: string[];
+  turnNo: number;
+  activePlayerId: string | null;
+  eliminated: string[];
+  turnDeadline: number | null;
+  soloMode: boolean;
+}
+
+// ---------------------------------------------------------------- Sortieren
 
 export interface SortCard {
   id: string;
@@ -27,18 +40,46 @@ export interface Placement {
   applyAt: number;
 }
 
-export interface SortRound {
-  category: Category;
+export interface SortRound extends BaseRound {
+  game: 'sort';
   cards: SortCard[];
   startCardId: string;
   chain: string[];
   pool: string[];
-  turnOrder: string[];
-  turnNo: number;
-  activePlayerId: string | null;
-  eliminated: string[];
   selection: Selection;
   placement: Placement | null;
-  turnDeadline: number | null;
-  soloMode: boolean;
 }
+
+// -------------------------------------------------------------------- Top X
+
+export interface TopXCard {
+  rank: number;
+  name: string;
+  value: number;
+  label?: string;
+  aliases: string[];
+}
+
+export interface Guess {
+  by: string;
+  text: string;
+  status: GuessStatus;
+  /** Treffer des Abgleichs auf eine noch verdeckte Karte, sonst null. */
+  matchRank: number | null;
+  resolveAt: number | null;
+  applyAt: number | null;
+}
+
+export interface TopXRound extends BaseRound {
+  game: 'topx';
+  cards: TopXCard[];
+  /** Rang → Spieler, der die Karte aufgedeckt hat. */
+  revealed: Record<number, string>;
+  lives: Record<string, number>;
+  maxLives: number;
+  hits: Record<string, number>;
+  wrongGuesses: { by: string; text: string }[];
+  guess: Guess | null;
+}
+
+export type Round = SortRound | TopXRound;

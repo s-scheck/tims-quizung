@@ -3,7 +3,9 @@
   import { client } from '../lib/client.svelte.ts';
   import { joinUrl, playerName } from '../lib/format.ts';
   import Board from '../components/Board.svelte';
+  import TopXBoard from '../components/TopXBoard.svelte';
   import Reveal from '../components/Reveal.svelte';
+  import TopXReveal from '../components/TopXReveal.svelte';
   import Scoreboard from '../components/Scoreboard.svelte';
   import FinalStandings from '../components/FinalStandings.svelte';
   import PlayerList from '../components/PlayerList.svelte';
@@ -59,7 +61,7 @@
     {:else if view.phase === 'choosing_category'}
       <div class="grid gap-10 lg:grid-cols-[1fr_1fr]">
         <div class="space-y-3">
-          <p class="text-3xl font-bold">{playerName(view, view.hostId)} wählt eine Kategorie…</p>
+          <p class="text-3xl font-bold">{playerName(view, view.hostId)} wählt Spiel und Kategorie…</p>
           {#if view.rounds.length > 0}
             <p class="text-slate-400">Runde {view.rounds.length + 1}</p>
           {/if}
@@ -67,9 +69,17 @@
         <Scoreboard {view} readonly compact />
       </div>
     {:else if view.phase === 'playing' || view.phase === 'host_decision'}
-      <Board {view} readonly />
+      {#if view.round?.game === 'topx'}
+        <TopXBoard {view} round={view.round} readonly />
+      {:else if view.round?.game === 'sort'}
+        <Board {view} round={view.round} readonly />
+      {/if}
     {:else if view.phase === 'reveal' || view.phase === 'scoring'}
-      <Reveal {view} readonly />
+      {#if view.round?.game === 'topx'}
+        <TopXReveal {view} round={view.round} readonly />
+      {:else if view.round?.game === 'sort'}
+        <Reveal {view} round={view.round} readonly />
+      {/if}
     {:else if view.phase === 'scoreboard'}
       <Scoreboard {view} readonly />
     {:else if view.phase === 'finished'}

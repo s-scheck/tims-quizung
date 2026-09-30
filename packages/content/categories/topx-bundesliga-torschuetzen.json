@@ -1,0 +1,23 @@
+{
+  "id": "topx-bundesliga-torschuetzen",
+  "title": "Top 10 Bundesliga-Rekordtorschützen",
+  "question": "Wer hat die meisten Bundesliga-Tore erzielt?",
+  "topLabel": "meiste Tore",
+  "bottomLabel": "wenigste Tore",
+  "unit": "Tore",
+  "order": "desc",
+  "games": ["topx"],
+  "source": "kicker, Stand Saisonende 2024/25",
+  "items": [
+    { "name": "Gerd Müller", "value": 365, "aliases": ["Gerd Mueller", "Bomber"] },
+    { "name": "Robert Lewandowski", "value": 312, "aliases": ["Lewandowski", "Lewy"] },
+    { "name": "Klaus Fischer", "value": 268, "aliases": ["Fischer"] },
+    { "name": "Jupp Heynckes", "value": 220, "aliases": ["Heynckes", "Jupp"] },
+    { "name": "Manfred Burgsmüller", "value": 213, "aliases": ["Burgsmüller", "Burgsmueller"] },
+    { "name": "Claudio Pizarro", "value": 197, "aliases": ["Pizarro"] },
+    { "name": "Ulf Kirsten", "value": 182, "aliases": ["Kirsten"] },
+    { "name": "Stefan Kuntz", "value": 179, "aliases": ["Kuntz"] },
+    { "name": "Dieter Müller", "value": 177, "aliases": ["Dieter Mueller"] },
+    { "name": "Klaus Allofs", "value": 177, "aliases": ["Allofs"] }
+  ]
+}

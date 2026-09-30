@@ -1,6 +1,6 @@
 import { serve, type Server } from 'bun';
 import { getCategories, getCategory } from '@quiz/content';
-import './games/sort/index.ts';
+import './games/index.ts';
 import { createStaticHandler } from './http/static.ts';
 import { RoomRegistry } from './rooms/registry.ts';
 import type { CategoryProvider } from './rooms/room.ts';
@@ -64,7 +64,7 @@ export function createServer(opts: ServerOptions): QuizServer {
     },
   });
 
-  hub = new Hub(registry, (topic, data) => server.publish(topic, data));
+  hub = new Hub(registry);
 
   const sweeper = setInterval(() => {
     const removed = registry.sweep();

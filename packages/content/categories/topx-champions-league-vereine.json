@@ -1,0 +1,21 @@
+{
+  "id": "topx-champions-league-vereine",
+  "title": "Top 8 Champions-League-Sieger",
+  "question": "Welche Vereine haben die Champions League (inkl. Landesmeisterpokal) am häufigsten gewonnen?",
+  "topLabel": "meiste Titel",
+  "bottomLabel": "wenigste Titel",
+  "unit": "Titel",
+  "order": "desc",
+  "games": ["topx"],
+  "source": "UEFA, Stand nach der Saison 2024/25",
+  "items": [
+    { "name": "Real Madrid", "value": 15, "aliases": ["Real", "Madrid"] },
+    { "name": "AC Mailand", "value": 7, "aliases": ["Milan", "AC Milan", "Mailand"] },
+    { "name": "FC Bayern München", "value": 6, "aliases": ["Bayern", "Bayern München", "FC Bayern", "Bayern Muenchen"] },
+    { "name": "FC Liverpool", "value": 6, "aliases": ["Liverpool"] },
+    { "name": "FC Barcelona", "value": 5, "aliases": ["Barcelona", "Barca", "Barça"] },
+    { "name": "Ajax Amsterdam", "value": 4, "aliases": ["Ajax"] },
+    { "name": "Inter Mailand", "value": 3, "aliases": ["Inter", "Internazionale", "Inter Milan"] },
+    { "name": "Manchester United", "value": 3, "aliases": ["Man United", "ManUtd", "Man Utd", "United", "Manchester Utd"] }
+  ]
+}

@@ -14,6 +14,12 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'set_settings', hostPlays: false })).toBe(true);
     expect(isClientMsg({ type: 'set_settings', timerSeconds: 60, hostPlays: true })).toBe(true);
     expect(isClientMsg({ type: 'ping' })).toBe(true);
+    expect(isClientMsg({ type: 'start_game' })).toBe(true);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'topx', categoryId: 'x', lives: 3 })).toBe(true);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'sort', categoryId: 'x' })).toBe(true);
+    expect(isClientMsg({ type: 'guess', turnNo: 2, text: 'Haaland' })).toBe(true);
+    expect(isClientMsg({ type: 'judge', turnNo: 2, correct: true, rank: 3 })).toBe(true);
+    expect(isClientMsg({ type: 'judge', turnNo: 2, correct: false })).toBe(true);
   });
 
   test('lehnt kaputte Nachrichten ab', () => {
@@ -29,6 +35,10 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'set_settings' })).toBe(false);
     expect(isClientMsg({ type: 'set_settings', hostPlays: 'ja' })).toBe(false);
     expect(isClientMsg({ type: 'host_decision', continue: 'ja' })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'chess', categoryId: 'x' })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'topx', categoryId: 'x', lives: 9 })).toBe(false);
+    expect(isClientMsg({ type: 'guess', turnNo: 1 })).toBe(false);
+    expect(isClientMsg({ type: 'judge', turnNo: 1, correct: true, rank: 0 })).toBe(false);
   });
 });
 

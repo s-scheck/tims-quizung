@@ -127,7 +127,7 @@ describe('WebSocket-Ablauf', () => {
     screen.send({ type: 'watch', code, version: PROTOCOL_VERSION });
     expect(await screen.nextOfType('welcome')).toMatchObject({ role: 'screen', playerId: null });
     expect((await screen.nextOfType('state')).room.players.length).toBe(2);
-    screen.send({ type: 'start_game', gameId: 'sort' });
+    screen.send({ type: 'start_game' });
     expect(await screen.nextOfType('error')).toMatchObject({ code: 'not_allowed' });
 
     // Tab-Übernahme: zweiter Socket mit Tims Token verdrängt den ersten.
@@ -142,12 +142,13 @@ describe('WebSocket-Ablauf', () => {
     expect(s.room.players.find((p) => p.name === 'Tim')?.connected).toBe(true);
 
     // Host startet das Spiel, Anna darf nicht.
-    anna.send({ type: 'start_game', gameId: 'sort' });
+    anna.send({ type: 'start_game' });
     expect(await anna.nextOfType('error')).toMatchObject({ code: 'not_host' });
-    tim2.send({ type: 'start_game', gameId: 'sort' });
+    tim2.send({ type: 'start_game' });
     const started = await tim2.nextOfType('state');
     expect(started.room.phase).toBe('choosing_category');
-    expect(started.room.categories?.length).toBe(2);
+    expect(started.room.categories?.length).toBe(3);
+    expect(started.room.games?.length).toBe(2);
 
     // Kick schließt Annas Socket mit 4001.
     tim2.send({ type: 'kick', playerId: annaWelcome.playerId! });
@@ -193,10 +194,10 @@ describe('WebSocket-Ablauf', () => {
     await b.nextOfType('state');
     await a.nextOfType('state');
 
-    a.send({ type: 'start_game', gameId: 'sort' });
+    a.send({ type: 'start_game' });
     await a.nextOfType('state');
     await b.nextOfType('state');
-    a.send({ type: 'choose_category', categoryId: 'cities' });
+    a.send({ type: 'choose_category', gameId: 'sort', categoryId: 'cities' });
     const playing = await a.nextOfType('state');
     await b.nextOfType('state');
     expect(playing.room.phase).toBe('playing');
@@ -205,7 +206,8 @@ describe('WebSocket-Ablauf', () => {
 
     // Richtige Lücke serverseitig bestimmen, der Client kennt keine Werte.
     const room = app.registry.get(w.code)!;
-    const round = room.round!;
+    const round = room.round;
+    if (round?.game !== 'sort') throw new Error('keine Sortieren-Runde');
     const cardId = round.pool[0]!;
     const value = round.cards.find((c) => c.id === cardId)!.value;
     const chainValues = round.chain.map((id) => round.cards.find((c) => c.id === id)!.value);
@@ -214,23 +216,25 @@ describe('WebSocket-Ablauf', () => {
 
     a.send({ type: 'select', turnNo: 1, cardId, gapIndex });
     const selected = await b.nextOfType('state');
-    expect(selected.room.round?.selection).toEqual({ cardId, gapIndex });
+    expect(selected.room.round?.game === 'sort' ? selected.room.round.selection : null).toEqual({ cardId, gapIndex });
     await a.nextOfType('state');
 
     const t0 = Date.now();
     a.send({ type: 'confirm', turnNo: 1 });
     const pending = await b.nextOfType('state');
-    expect(pending.room.round?.placement).toMatchObject({ cardId, gapIndex, status: 'pending' });
-    expect(pending.room.round?.chain[gapIndex]).toBe(cardId);
+    const pr = pending.room.round;
+    if (pr?.game !== 'sort') throw new Error('keine Sortieren-Runde');
+    expect(pr.placement).toMatchObject({ cardId, gapIndex, status: 'pending' });
+    expect(pr.chain[gapIndex]).toBe(cardId);
     await a.nextOfType('state');
 
     const resolved = await b.nextOfType('state', 3000);
-    expect(resolved.room.round?.placement?.status).toBe('correct');
+    expect(resolved.room.round?.game === 'sort' ? resolved.room.round.placement?.status : null).toBe('correct');
     expect(Date.now() - t0).toBeGreaterThanOrEqual(1900);
     await a.nextOfType('state', 3000);
 
     const applied = await b.nextOfType('state', 3000);
-    expect(applied.room.round?.placement).toBeNull();
+    expect(applied.room.round?.game === 'sort' ? applied.room.round.placement : 'x').toBeNull();
     expect(applied.room.round?.activePlayerId).toBe(wb.playerId);
     expect(applied.room.round?.turnNo).toBe(2);
     expect(Date.now() - t0).toBeGreaterThanOrEqual(3400);
@@ -238,4 +242,54 @@ describe('WebSocket-Ablauf', () => {
     a.close();
     b.close();
   }, 15_000);
+
+  test('moderierender Host bekommt bei Top X eine eigene Sicht, Mitspieler und Screen nicht', async () => {
+    const host = new Client(wsUrl);
+    await host.open();
+    host.send({ type: 'create', name: 'Host', version: PROTOCOL_VERSION });
+    const w = await host.nextOfType('welcome');
+    await host.nextOfType('state');
+    const b = new Client(wsUrl);
+    await b.open();
+    b.send({ type: 'join', code: w.code, name: 'B', version: PROTOCOL_VERSION });
+    await b.nextOfType('welcome');
+    await b.nextOfType('state');
+    await host.nextOfType('state');
+    const screen = new Client(wsUrl);
+    await screen.open();
+    screen.send({ type: 'watch', code: w.code, version: PROTOCOL_VERSION });
+    await screen.nextOfType('welcome');
+    await screen.nextOfType('state');
+
+    host.send({ type: 'set_settings', hostPlays: false });
+    await host.nextOfType('state');
+    await b.nextOfType('state');
+    await screen.nextOfType('state');
+    host.send({ type: 'start_game' });
+    await host.nextOfType('state');
+    await b.nextOfType('state');
+    await screen.nextOfType('state');
+    host.send({ type: 'choose_category', gameId: 'topx', categoryId: 'players', lives: 2 });
+
+    const hostState = await host.nextOfType('state');
+    const bState = await b.nextOfType('state');
+    const screenState = await screen.nextOfType('state');
+    expect(hostState.seq).toBe(bState.seq);
+    expect(hostState.seq).toBe(screenState.seq);
+    const hr = hostState.room.round;
+    const br = bState.room.round;
+    const sr = screenState.room.round;
+    if (hr?.game !== 'topx' || br?.game !== 'topx' || sr?.game !== 'topx') throw new Error('keine Top-X-Runde');
+    expect(hr.privileged).toBe(true);
+    expect(hr.slots.map((s) => s.name)).toContain('Pedri');
+    expect(hr.maxLives).toBe(2);
+    expect(br.privileged).toBeUndefined();
+    expect(JSON.stringify(br)).not.toContain('Pedri');
+    expect(JSON.stringify(sr)).not.toContain('Pedri');
+    expect(br.turnOrder).toEqual([bState.room.players.find((p) => p.name === 'B')!.id]);
+
+    host.close();
+    b.close();
+    screen.close();
+  });
 });

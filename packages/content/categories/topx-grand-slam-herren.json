@@ -1,0 +1,21 @@
+{
+  "id": "topx-grand-slam-herren",
+  "title": "Top 8 Grand-Slam-Sieger (Herren)",
+  "question": "Welche Tennisspieler haben die meisten Grand-Slam-Einzeltitel?",
+  "topLabel": "meiste Titel",
+  "bottomLabel": "wenigste Titel",
+  "unit": "Titel",
+  "order": "desc",
+  "games": ["topx"],
+  "source": "ATP, Stand 2025",
+  "items": [
+    { "name": "Novak Djokovic", "value": 24, "aliases": ["Djokovic", "Nole", "Novak"] },
+    { "name": "Rafael Nadal", "value": 22, "aliases": ["Nadal", "Rafa"] },
+    { "name": "Roger Federer", "value": 20, "aliases": ["Federer", "Roger"] },
+    { "name": "Pete Sampras", "value": 14, "aliases": ["Sampras"] },
+    { "name": "Roy Emerson", "value": 12, "aliases": ["Emerson"] },
+    { "name": "Rod Laver", "value": 11, "aliases": ["Laver"] },
+    { "name": "Björn Borg", "value": 11, "aliases": ["Borg", "Bjorn Borg", "Bjoern Borg"] },
+    { "name": "Bill Tilden", "value": 10, "aliases": ["Tilden"] }
+  ]
+}

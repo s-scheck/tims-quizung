@@ -1,0 +1,24 @@
+{
+  "id": "topx-deutsche-meister",
+  "title": "Top 11 deutsche Fußballmeister",
+  "question": "Welche Vereine haben die meisten deutschen Meistertitel?",
+  "topLabel": "meiste Titel",
+  "bottomLabel": "wenigste Titel",
+  "unit": "Titel",
+  "order": "desc",
+  "games": ["topx"],
+  "source": "DFB, alle deutschen Meisterschaften seit 1903, Stand 2025",
+  "items": [
+    { "name": "FC Bayern München", "value": 34, "aliases": ["Bayern", "Bayern München", "FC Bayern", "Bayern Muenchen", "FCB"] },
+    { "name": "1. FC Nürnberg", "value": 9, "aliases": ["Nürnberg", "Nuernberg", "FC Nürnberg", "Club", "Der Club", "FCN"] },
+    { "name": "Borussia Dortmund", "value": 8, "aliases": ["Dortmund", "BVB"] },
+    { "name": "FC Schalke 04", "value": 7, "aliases": ["Schalke", "S04", "Schalke 04"] },
+    { "name": "Hamburger SV", "value": 6, "aliases": ["HSV", "Hamburg"] },
+    { "name": "Borussia Mönchengladbach", "value": 5, "aliases": ["Gladbach", "Mönchengladbach", "Moenchengladbach", "Borussia Moenchengladbach"] },
+    { "name": "VfB Stuttgart", "value": 5, "aliases": ["Stuttgart", "VfB"] },
+    { "name": "Werder Bremen", "value": 4, "aliases": ["Bremen", "Werder", "SV Werder Bremen"] },
+    { "name": "1. FC Kaiserslautern", "value": 4, "aliases": ["Kaiserslautern", "Lautern", "FCK", "FC Kaiserslautern"] },
+    { "name": "1. FC Köln", "value": 3, "aliases": ["Köln", "Koeln", "FC Köln", "FC Koeln", "Effzeh"] },
+    { "name": "SpVgg Greuther Fürth", "value": 3, "aliases": ["Fürth", "Fuerth", "Greuther Fürth", "Greuther Fuerth", "SpVgg Fürth"] }
+  ]
+}

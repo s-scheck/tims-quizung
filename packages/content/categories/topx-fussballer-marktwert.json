@@ -1,0 +1,23 @@
+{
+  "id": "topx-fussballer-marktwert",
+  "title": "Top 10 Fußballer nach Marktwert",
+  "question": "Welche Fußballer haben den höchsten Marktwert?",
+  "topLabel": "höchster Marktwert",
+  "bottomLabel": "niedrigster Marktwert",
+  "unit": "Mio. €",
+  "order": "desc",
+  "games": ["topx"],
+  "source": "Transfermarkt, Stand Sommer 2025 (gerundet)",
+  "items": [
+    { "name": "Lamine Yamal", "value": 200, "aliases": ["Yamal", "Lamine"] },
+    { "name": "Jude Bellingham", "value": 180, "aliases": ["Bellingham"] },
+    { "name": "Erling Haaland", "value": 180, "aliases": ["Haaland"] },
+    { "name": "Kylian Mbappé", "value": 180, "aliases": ["Mbappe", "Mbappé"] },
+    { "name": "Vinícius Júnior", "value": 170, "aliases": ["Vinicius", "Vini Jr", "Vini", "Vinicius Junior", "Vinicius Jr"] },
+    { "name": "Florian Wirtz", "value": 140, "aliases": ["Wirtz"] },
+    { "name": "Bukayo Saka", "value": 140, "aliases": ["Saka"] },
+    { "name": "Jamal Musiala", "value": 140, "aliases": ["Musiala"] },
+    { "name": "Pedri", "value": 140, "aliases": ["Pedri Gonzalez", "Pedri González"] },
+    { "name": "Federico Valverde", "value": 130, "aliases": ["Valverde", "Fede Valverde"] }
+  ]
+}

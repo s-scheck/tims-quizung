@@ -88,28 +88,31 @@ describe('Lobby: Verlassen, Host, Kick, Einstellungen', () => {
     expect(h.room.settings).toEqual({ timerSeconds: 30, hostPlays: true });
     expect(h.room.setSettings(a, { hostPlays: false }).ok).toBe(true);
     expect(h.room.settings).toEqual({ timerSeconds: 30, hostPlays: false });
-    h.act(a, { type: 'start_game', gameId: 'sort' });
+    h.act(a, { type: 'start_game' });
     expect(h.room.setSettings(a, { timerSeconds: 60 }).ok).toBe(true);
-    h.act(a, { type: 'choose_category', categoryId: 'cities' });
+    h.act(a, { type: 'choose_category', gameId: 'sort', categoryId: 'cities' });
     expect(h.room.setSettings(a, { timerSeconds: 0 })).toMatchObject({ ok: false, code: 'invalid_action' });
   });
 
-  test('start_game setzt Scores zurück und braucht ein bekanntes Spiel', () => {
+  test('start_game setzt Scores zurück, Kategorie muss zum Spiel passen', () => {
     const h = makeHarness(['A', 'B']);
     h.room.scores[h.ids[0]!] = 7;
-    expect(h.act(h.host, { type: 'start_game', gameId: 'nope' })).toMatchObject({ ok: false });
-    expect(h.act(h.ids[1]!, { type: 'start_game', gameId: 'sort' })).toMatchObject({ ok: false, code: 'not_host' });
-    expect(h.act(h.host, { type: 'start_game', gameId: 'sort' }).ok).toBe(true);
+    expect(h.act(h.ids[1]!, { type: 'start_game' })).toMatchObject({ ok: false, code: 'not_host' });
+    expect(h.act(h.host, { type: 'start_game' }).ok).toBe(true);
     expect(h.room.phase).toBe('choosing_category');
     expect(h.room.scores[h.ids[0]!]).toBe(0);
     expect(h.emits.length).toBe(1);
+    expect(h.room.chooseCategory(h.host, 'nope', 'cities')).toMatchObject({ ok: false, code: 'invalid_action' });
+    expect(h.act(h.host, { type: 'choose_category', gameId: 'topx', categoryId: 'cities' })).toMatchObject({ ok: false, code: 'unknown_category' });
+    expect(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId: 'players' })).toMatchObject({ ok: false, code: 'unknown_category' });
+    expect(h.room.phase).toBe('choosing_category');
   });
 });
 
 describe('View', () => {
   test('enthält keine Tokens und listet Spieler nach Reihenfolge', () => {
     const h = makeHarness(['B', 'A']);
-    const view = toView(h.room);
+    const view = toView(h.room, null);
     expect(JSON.stringify(view)).not.toContain('token');
     expect(view.players.map((p) => p.name)).toEqual(['B', 'A']);
     expect(view.round).toBeNull();
@@ -118,15 +121,18 @@ describe('View', () => {
 
   test('Kategorienliste nur bei der Kategoriewahl, mit gespielt-Markierung', () => {
     const h = makeHarness(['A']);
-    h.act(h.host, { type: 'start_game', gameId: 'sort' });
-    let view = toView(h.room);
-    expect(view.categories?.map((c) => [c.id, c.played, c.count])).toEqual([
-      ['cities', false, 10],
-      ['times', false, 12],
+    h.act(h.host, { type: 'start_game' });
+    let view = toView(h.room, null);
+    expect(view.categories?.map((c) => [c.id, c.played, c.count, c.games])).toEqual([
+      ['cities', false, 10, ['sort']],
+      ['times', false, 12, ['sort']],
+      ['players', false, 5, ['topx']],
     ]);
-    h.act(h.host, { type: 'choose_category', categoryId: 'times' });
-    view = toView(h.room);
+    expect(view.games?.map((g) => g.id)).toEqual(['sort', 'topx']);
+    h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId: 'times' });
+    view = toView(h.room, null);
     expect(view.categories).toBeUndefined();
+    expect(view.games).toBeUndefined();
     expect(h.room.playedCategoryIds).toEqual(['times']);
   });
 });

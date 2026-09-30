@@ -3,17 +3,20 @@ import {
   generateToken,
   isValidName,
   isTimerSeconds,
+  LIVES_DEFAULT,
   normalizeName,
   type ClientMsg,
+  type GameId,
   type Phase,
   type RoomSettings,
   type RoundResult,
 } from '@quiz/shared';
 import type { Category } from '@quiz/content';
 import type { Scheduler, TimerHandle } from './scheduler.ts';
-import type { Player, SortRound } from './state.ts';
+import type { Player, Round } from './state.ts';
 import { fail, OK, type Result } from './result.ts';
-import { getGame, type GameModule } from '../games/registry.ts';
+import { getGame, type GameModule, type StartRoundOptions } from '../games/registry.ts';
+import { handleCommon, removePlayerFromRound } from '../games/common.ts';
 
 export interface CategoryProvider {
   list(): Category[];
@@ -47,11 +50,14 @@ export class Room {
   settings: RoomSettings = { timerSeconds: 0, hostPlays: true };
   scores: Record<string, number> = {};
   phase: Phase = 'lobby';
-  gameId: string | null = null;
-  round: SortRound | null = null;
+  /** Spiel der laufenden bzw. zuletzt gespielten Runde. */
+  gameId: GameId | null = null;
+  round: Round | null = null;
   rounds: RoundResult[] = [];
   playedCategoryIds: string[] = [];
   lastStartPlayerId: string | null = null;
+  /** Zuletzt gewählte Leben für Top X, Vorgabe für die nächste Runde. */
+  topxLives: number = LIVES_DEFAULT;
   seq = 0;
   lastActivity: number;
   screenCount = 0;
@@ -167,12 +173,8 @@ export class Room {
     this.touch();
     this.players = this.players.filter((p) => p.id !== playerId);
     delete this.scores[playerId];
-    if (this.hostId === playerId) {
-      this.hostId = this.pickNewHost();
-      // Ein nachrückender Host spielt immer mit, sonst würde er ungewollt aussetzen.
-      this.settings = { ...this.settings, hostPlays: true };
-    }
-    this.game?.onPlayerRemoved(this, playerId);
+    if (this.hostId === playerId) this.transferHost();
+    removePlayerFromRound(this, playerId);
     return OK;
   }
 
@@ -181,10 +183,17 @@ export class Room {
     return ordered.find((p) => p.connected)?.id ?? ordered[0]?.id ?? null;
   }
 
-  /** Reconnect eines Spielers, der Host werden soll, weil der Raum gerade keinen Host hat. */
+  private transferHost(): void {
+    this.hostId = this.pickNewHost();
+    // Ein nachrückender Host spielt immer mit, sonst würde er ungewollt aussetzen.
+    this.settings = { ...this.settings, hostPlays: true };
+    if (this.hostId !== null) this.game?.onHostChanged(this);
+  }
+
+  /** Besetzt eine leere Host-Rolle, etwa nach dem Reconnect in einen verwaisten Raum. */
   ensureHost(): void {
     if (this.hostId !== null && this.getPlayer(this.hostId)) return;
-    this.hostId = this.pickNewHost();
+    this.transferHost();
   }
 
   kick(byId: string, targetId: string): Result {
@@ -217,19 +226,36 @@ export class Room {
 
   // ------------------------------------------------------------------- Spiel
 
-  startGame(byId: string, gameId: string): Result {
+  /** Aus der Lobby zur Spiel- und Kategoriewahl. Scores beginnen bei null. */
+  startGame(byId: string): Result {
     if (!this.isHost(byId)) return fail('not_host', 'Nur der Host darf das Spiel starten');
     if (this.phase !== 'lobby') return fail('invalid_action', 'Ein Spiel läuft bereits');
-    const game = getGame(gameId);
-    if (!game) return fail('invalid_action', `Unbekanntes Spiel „${gameId}“`);
     this.touch();
-    this.gameId = gameId;
+    this.cancelAllTimers();
+    this.gameId = null;
+    this.round = null;
     this.scores = Object.fromEntries(this.players.map((p) => [p.id, 0]));
     this.rounds = [];
     this.playedCategoryIds = [];
     this.lastStartPlayerId = null;
-    game.start(this);
+    this.phase = 'choosing_category';
     return OK;
+  }
+
+  /** Spiel und Kategorie für die nächste Runde festlegen und die Runde starten. */
+  chooseCategory(byId: string, gameId: string, categoryId: string, opts: StartRoundOptions = {}): Result {
+    if (!this.isHost(byId)) return fail('not_host', 'Nur der Host wählt die Kategorie');
+    if (this.phase !== 'choosing_category') return fail('invalid_action', 'Gerade keine Kategoriewahl');
+    const game = getGame(gameId);
+    if (!game) return fail('invalid_action', `Unbekanntes Spiel „${gameId}“`);
+    const category = this.categories.get(categoryId);
+    if (!category) return fail('unknown_category', 'Kategorie unbekannt');
+    if (!category.games.includes(game.id)) return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
+    this.touch();
+    this.gameId = game.id;
+    const res = game.startRound(this, category, opts);
+    if (res.ok && !this.playedCategoryIds.includes(category.id)) this.playedCategoryIds.push(category.id);
+    return res;
   }
 
   backToLobby(byId: string): Result {
@@ -251,7 +277,9 @@ export class Room {
       case 'set_settings':
         return this.setSettings(playerId, { timerSeconds: msg.timerSeconds, hostPlays: msg.hostPlays });
       case 'start_game':
-        return this.startGame(playerId, msg.gameId);
+        return this.startGame(playerId);
+      case 'choose_category':
+        return this.chooseCategory(playerId, msg.gameId, msg.categoryId, msg.lives !== undefined ? { lives: msg.lives } : {});
       case 'back_to_lobby':
         return this.backToLobby(playerId);
       case 'create':
@@ -262,6 +290,8 @@ export class Room {
       case 'kick':
         return fail('invalid_action', 'Nachricht hier nicht erlaubt');
       default: {
+        const common = handleCommon(this, playerId, msg);
+        if (common) return common;
         const game = this.game;
         if (!game) return fail('invalid_action', 'Kein Spiel gestartet');
         return game.handle(this, playerId, msg);

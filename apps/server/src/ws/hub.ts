@@ -23,22 +23,16 @@ export interface WsData {
 
 export type Socket = ServerWebSocket<WsData>;
 
-export function roomTopic(code: string): string {
-  return `room:${code}`;
-}
-
 /**
  * Verbindet Sockets mit Räumen. Hält pro Raum die Spieler-Sockets, damit Kick und
- * Tab-Übernahme gezielt schließen können. Der Broadcast läuft über Pub/Sub des Servers.
+ * Tab-Übernahme gezielt schließen können. Der Broadcast geht an jeden Socket einzeln,
+ * weil ein moderierender Host bei Top X eine eigene Sicht bekommt.
  */
 export class Hub {
   private conns = new Map<string, Map<string, Socket>>();
   private screens = new Map<string, Set<Socket>>();
 
-  constructor(
-    private readonly registry: RoomRegistry,
-    private readonly publish: (topic: string, data: string) => void,
-  ) {}
+  constructor(private readonly registry: RoomRegistry) {}
 
   // -------------------------------------------------------------- Senden
 
@@ -50,13 +44,20 @@ export class Hub {
     this.send(ws, { type: 'error', code, message });
   }
 
-  stateMessage(room: Room): string {
-    const msg: ServerMsg = { type: 'state', seq: room.seq, serverNow: room.now, room: toView(room) };
+  stateMessage(room: Room, viewerId: string | null): string {
+    const msg: ServerMsg = { type: 'state', seq: room.seq, serverNow: room.now, room: toView(room, viewerId) };
     return JSON.stringify(msg);
   }
 
+  /** Öffentliche Sicht an alle, die private Sicht nur an den moderierenden Host, wenn das Spiel eine hat. */
   broadcast(room: Room): void {
-    this.publish(roomTopic(room.code), this.stateMessage(room));
+    const publicJson = this.stateMessage(room, null);
+    const privateFor =
+      room.game?.hasPrivateView && room.round && room.hostId !== null && room.isModerator(room.hostId) ? room.hostId : null;
+    for (const [playerId, ws] of this.conns.get(room.code) ?? []) {
+      ws.send(playerId === privateFor ? this.stateMessage(room, playerId) : publicJson);
+    }
+    for (const ws of this.screens.get(room.code) ?? []) ws.send(publicJson);
   }
 
   closeRoomSockets(code: string, closeCode: number = CLOSE_CODES.ROOM_CLOSED, reason = 'Raum geschlossen'): void {
@@ -82,7 +83,6 @@ export class Hub {
       this.conns.set(room.code, map);
     }
     map.set(playerId, ws);
-    ws.subscribe(roomTopic(room.code));
   }
 
   private attachScreen(ws: Socket, room: Room): void {
@@ -95,13 +95,11 @@ export class Hub {
     }
     set.add(ws);
     room.screenCount = set.size;
-    ws.subscribe(roomTopic(room.code));
   }
 
   private detach(ws: Socket): void {
     const { code, role, playerId } = ws.data;
     if (code) {
-      ws.unsubscribe(roomTopic(code));
       if (role === 'player' && playerId) {
         const map = this.conns.get(code);
         if (map?.get(playerId) === ws) map.delete(playerId);
@@ -262,7 +260,7 @@ export class Hub {
         if (!room) return this.error(ws, 'room_not_found', 'Diesen Raum gibt es nicht');
         this.attachScreen(ws, room);
         this.send(ws, { type: 'welcome', code: room.code, role: 'screen', playerId: null });
-        ws.send(this.stateMessage(room));
+        ws.send(this.stateMessage(room, null));
         return;
       }
       default:

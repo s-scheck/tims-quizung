@@ -1,15 +1,17 @@
 import { sortCards, type CardView, type RoundView } from '@quiz/shared';
 import type { Room } from '../../rooms/room.ts';
+import { sortRound } from './reducer.ts';
 
-/** Sicht auf die Runde. Werte und Lösung gibt es nur mit `revealed`. */
+/** Sicht auf die Runde. Werte und Lösung gibt es nur mit `revealed`. Alle Empfänger sehen dasselbe. */
 export function sortRoundView(room: Room, revealed: boolean): RoundView | null {
-  const r = room.round;
+  const r = sortRound(room);
   if (!r) return null;
-  const { items: _items, ...category } = r.category;
+  const { items: _items, games: _games, ...category } = r.category;
   const cards: CardView[] = r.cards.map((c) =>
     revealed ? { id: c.id, name: c.name, value: c.value, ...(c.label !== undefined ? { label: c.label } : {}) } : { id: c.id, name: c.name },
   );
   return {
+    game: 'sort',
     category,
     cards,
     chain: [...r.chain],

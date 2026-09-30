@@ -1,5 +1,5 @@
 import type { ClientMsg } from './protocol.ts';
-import { TIMER_OPTIONS, type TimerSeconds } from './types.ts';
+import { GAME_IDS, GUESS_MAX_LENGTH, LIVES_MAX, LIVES_MIN, TIMER_OPTIONS, type GameId, type TimerSeconds } from './types.ts';
 
 export const NAME_MIN = 1;
 export const NAME_MAX = 20;
@@ -21,6 +21,20 @@ export function isValidScore(value: unknown): value is number {
 
 export function isTimerSeconds(value: unknown): value is TimerSeconds {
   return typeof value === 'number' && (TIMER_OPTIONS as readonly number[]).includes(value);
+}
+
+export function isGameId(value: unknown): value is GameId {
+  return typeof value === 'string' && (GAME_IDS as readonly string[]).includes(value);
+}
+
+export function isLives(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= LIVES_MIN && value <= LIVES_MAX;
+}
+
+/** Ein Tipp nach Trimmen: 1 bis GUESS_MAX_LENGTH Zeichen. */
+export function isValidGuess(text: string): boolean {
+  const t = text.trim();
+  return t.length >= 1 && t.length <= GUESS_MAX_LENGTH;
 }
 
 function isRecord(x: unknown): x is Record<string, unknown> {
@@ -66,9 +80,17 @@ export function isClientMsg(x: unknown): x is ClientMsg {
         (x.hostPlays === undefined || typeof x.hostPlays === 'boolean')
       );
     case 'start_game':
-      return isStr(x.gameId, 50);
+      return true;
     case 'choose_category':
-      return isStr(x.categoryId, 100);
+      return isGameId(x.gameId) && isStr(x.categoryId, 100) && (x.lives === undefined || isLives(x.lives));
+    case 'guess':
+      return isInt(x.turnNo) && isStr(x.text, 200);
+    case 'judge':
+      return (
+        isInt(x.turnNo) &&
+        typeof x.correct === 'boolean' &&
+        (x.rank === undefined || (isInt(x.rank) && x.rank >= 1))
+      );
     case 'select':
       return (
         isInt(x.turnNo) &&

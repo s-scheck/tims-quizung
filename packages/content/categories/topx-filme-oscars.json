@@ -1,0 +1,20 @@
+{
+  "id": "topx-filme-oscars",
+  "title": "Top 7 Filme mit den meisten Oscars",
+  "question": "Welche Filme haben die meisten Oscars gewonnen?",
+  "topLabel": "meiste Oscars",
+  "bottomLabel": "wenigste Oscars",
+  "unit": "Oscars",
+  "order": "desc",
+  "games": ["topx"],
+  "source": "Academy Awards, Stand 2025",
+  "items": [
+    { "name": "Ben Hur", "value": 11, "aliases": ["Ben-Hur"] },
+    { "name": "Titanic", "value": 11 },
+    { "name": "Der Herr der Ringe: Die Rückkehr des Königs", "value": 11, "aliases": ["Herr der Ringe", "Die Rückkehr des Königs", "Rückkehr des Königs", "Return of the King", "Lord of the Rings", "Herr der Ringe 3", "Der Herr der Ringe"] },
+    { "name": "West Side Story (1961)", "value": 10, "aliases": ["West Side Story"] },
+    { "name": "Gigi", "value": 9 },
+    { "name": "Der letzte Kaiser", "value": 9, "aliases": ["The Last Emperor", "Last Emperor", "Letzter Kaiser"] },
+    { "name": "Der englische Patient", "value": 9, "aliases": ["The English Patient", "English Patient", "Englischer Patient"] }
+  ]
+}

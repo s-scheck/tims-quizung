@@ -1,0 +1,23 @@
+{
+  "id": "topx-spotify-kuenstler",
+  "title": "Top 10 meistgestreamte Künstler auf Spotify",
+  "question": "Welche Künstler haben auf Spotify die meisten Streams insgesamt?",
+  "topLabel": "meiste Streams",
+  "bottomLabel": "wenigste Streams",
+  "unit": "Mrd. Streams",
+  "order": "desc",
+  "games": ["topx"],
+  "source": "Spotify, Gesamtstreams, Näherung Stand Mitte 2025",
+  "items": [
+    { "name": "Drake", "value": 110 },
+    { "name": "Taylor Swift", "value": 100, "aliases": ["Swift", "Taylor"] },
+    { "name": "Bad Bunny", "value": 95, "aliases": ["Bunny"] },
+    { "name": "The Weeknd", "value": 90, "aliases": ["Weeknd", "Weekend", "The Weekend"] },
+    { "name": "Ed Sheeran", "value": 75, "aliases": ["Sheeran"] },
+    { "name": "Justin Bieber", "value": 65, "aliases": ["Bieber", "Justin"] },
+    { "name": "Ariana Grande", "value": 60, "aliases": ["Ariana", "Grande"] },
+    { "name": "Eminem", "value": 55, "aliases": ["Slim Shady", "Marshall Mathers"] },
+    { "name": "Post Malone", "value": 52, "aliases": ["Posty", "Post"] },
+    { "name": "Billie Eilish", "value": 48, "aliases": ["Billie", "Eilish"] }
+  ]
+}
