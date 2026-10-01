@@ -11,13 +11,14 @@
   const roundNo = $derived(view.rounds.length + 1);
   // Startwerte bewusst nur einmal lesen: danach steuert der Host die Auswahl selbst.
   let gameId = $state<GameId>(untrack(() => view.gameId ?? 'sort'));
-  let lives = $state(untrack(() => view.topxLives));
+  let lives = $state(untrack(() => view.defaultLives));
+  const usesLives = $derived(gameId === 'topx' || gameId === 'match');
 
   const categories = $derived((view.categories ?? []).filter((c) => c.games.includes(gameId)));
   const currentGame = $derived(games.find((g) => g.id === gameId));
 
   function choose(categoryId: string) {
-    client.send({ type: 'choose_category', gameId, categoryId, ...(gameId === 'topx' ? { lives } : {}) });
+    client.send({ type: 'choose_category', gameId, categoryId, ...(usesLives ? { lives } : {}) });
   }
 </script>
 
@@ -44,11 +45,11 @@
       {/each}
     </div>
 
-    {#if gameId === 'topx'}
+    {#if usesLives}
       <div class="card flex flex-wrap items-center justify-between gap-3">
         <div>
           <p class="font-semibold">Leben pro Spieler</p>
-          <p class="text-xs text-slate-500">Jeder Fehltipp kostet eins. Ohne Leben ist man für diese Runde raus.</p>
+          <p class="text-xs text-slate-500">Jeder Fehler kostet eins. Ohne Leben ist man für diese Runde raus.</p>
         </div>
         <div class="flex items-center gap-2">
           <button class="btn-secondary px-4" disabled={lives <= LIVES_MIN} onclick={() => (lives = Math.max(LIVES_MIN, lives - 1))} aria-label="weniger Leben">−</button>

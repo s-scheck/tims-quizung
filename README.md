@@ -1,6 +1,6 @@
 # Tims Quizung
 
-Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Spiele: **Sortieren** und **Top X**. Der Host wählt vor jeder Runde das Spiel und die Kategorie, der Punktestand läuft über alle Runden durch.
+Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Spiele: **Sortieren**, **Top X** und **Zuordnen**. Der Host wählt vor jeder Runde das Spiel und die Kategorie, der Punktestand läuft über alle Runden durch.
 
 ## Spielregeln „Sortieren"
 
@@ -19,6 +19,13 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 - Moderiert der Host, sieht er alle Karten und prüft jeden Tipp mit einem Vorschlag des Servers. Spielt er mit, entscheidet der Server automatisch: Name, Alias oder eindeutiger Nachname, ohne Tippfehler-Toleranz.
 - Ohne Leben ist man für die Runde raus. Bleibt nur einer übrig, entscheidet der Host wie bei Sortieren. Die Runde endet, wenn alle Karten offen sind oder niemand mehr Leben hat.
 - Zeitlimit und Punktevergabe funktionieren wie bei Sortieren.
+
+## Spielregeln „Zuordnen"
+
+- Eine Kategorie gibt Karten (z. B. Hauptstädte) und mehr Ziele (z. B. Länder) vor. Die überzähligen Ziele sind Köder ohne passende Karte. Vor der Runde legt der Host die Leben fest.
+- Wer dran ist, wählt eine Karte und ein Ziel und bestätigt. Nach zwei Sekunden bleibt die Karte grün im Zielfeld liegen oder fliegt rot zurück und kostet ein Leben. Ob ein Ziel ein Köder war, bleibt geheim.
+- Der moderierende Host sieht Lösung und Köder, alle anderen nicht.
+- Rundenende, Host-Entscheidung, Zeitlimit und Punkte wie bei den anderen Spielen.
 
 ## Entwicklung
 
@@ -80,6 +87,23 @@ Eine Datei `packages/content/categories/<id>.json` anlegen:
 ```
 
 Regeln: 10 bis 20 Einträge, Namen und Werte eindeutig, `order` `desc` (größter Wert oben) oder `asc` (kleinster oben). `valueFormat: "plain"` unterdrückt Tausenderpunkte, etwa bei Jahreszahlen. Ein optionales `label` pro Eintrag überschreibt die Anzeige des Werts. `bun test` prüft alle Dateien.
+
+Für Zuordnen gibt es Paarlisten statt Werten:
+
+```json
+{
+  "id": "match-beispiel",
+  "title": "Hauptstädte",
+  "question": "Welche Hauptstadt gehört zu welchem Land?",
+  "leftLabel": "Hauptstadt",
+  "rightLabel": "Land",
+  "games": ["match"],
+  "pairs": [{ "left": "Lima", "right": "Peru" }, { "left": "Oslo", "right": "Norwegen" }],
+  "decoys": ["Chile", "Lettland"]
+}
+```
+
+Regeln: 4 bis 12 Paare, 0 bis 5 Köder, Karten, Ziele und Köder jeweils eindeutig, kein Köder darf ein Ziel sein. Wichtig beim Schreiben: Kein Köder darf fachlich zu einer Karte passen. Dateien beginnen mit `match-`.
 
 Für Top X kommt `"games": ["topx"]` dazu (Standard ist `["sort"]`, beides zusammen geht auch). Top-X-Listen müssen echte Top-Listen ohne Gleichstand über die Listengrenze sein, dürfen ab 5 Einträgen kurz sein und Gleichstände enthalten. Pro Eintrag helfen `aliases` beim Abgleich, etwa `["Mbappe", "Mbappé"]`; ein eindeutiger Nachname trifft automatisch. Dateien beginnen mit `topx-`.
 

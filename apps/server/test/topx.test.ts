@@ -39,7 +39,7 @@ describe('Top X: Rundenstart', () => {
     ]);
     expect(r.lives).toEqual({ [h.ids[0]!]: 4, [h.ids[1]!]: 4 });
     expect(r.maxLives).toBe(4);
-    expect(h.room.topxLives).toBe(4);
+    expect(h.room.defaultLives).toBe(4);
     expect(r.turnOrder).toEqual(h.ids);
     expect(r.guess).toBeNull();
 
@@ -59,7 +59,7 @@ describe('Top X: Rundenstart', () => {
     expectOk(h.act(h.host, { type: 'to_scoring' }));
     expectOk(h.act(h.host, { type: 'submit_scores', scores: {} }));
     expectOk(h.act(h.host, { type: 'next_round' }));
-    h.room.topxLives = 2;
+    h.room.defaultLives = 2;
     expectOk(h.act(h.host, { type: 'choose_category', gameId: 'topx', categoryId: 'players' }));
     expect(tr(h).maxLives).toBe(2);
     expect(tr(h).lives[h.host]).toBe(2);

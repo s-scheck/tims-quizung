@@ -21,10 +21,11 @@ export function hostJudges(room: Room): boolean {
 }
 
 export function startTopXRound(room: Room, category: Category, opts: StartRoundOptions): Result {
+  if (category.kind !== 'ranked') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
   const turnOrder = buildTurnOrder(room);
   if (turnOrder.length === 0) return fail('invalid_action', 'Ohne Mitspieler geht es nicht los');
-  const lives = opts.lives ?? room.topxLives;
-  room.topxLives = lives;
+  const lives = opts.lives ?? room.defaultLives;
+  room.defaultLives = lives;
 
   const cards: TopXCard[] = sortCards(category.items, category.order).map((item, i) => ({
     rank: i + 1,
@@ -37,6 +38,7 @@ export function startTopXRound(room: Room, category: Category, opts: StartRoundO
   room.round = {
     ...baseRound(category, turnOrder),
     game: 'topx',
+    category,
     cards,
     revealed: {},
     lives: Object.fromEntries(turnOrder.map((id) => [id, lives])),

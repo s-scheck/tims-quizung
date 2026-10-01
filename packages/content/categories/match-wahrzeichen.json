@@ -1,0 +1,22 @@
+{
+  "id": "match-wahrzeichen",
+  "title": "Wahrzeichen",
+  "question": "Welches Wahrzeichen steht in welcher Stadt?",
+  "leftLabel": "Wahrzeichen",
+  "rightLabel": "Stadt",
+  "games": ["match"],
+  "source": "Allgemeinwissen",
+  "pairs": [
+    { "left": "Sagrada Família", "right": "Barcelona" },
+    { "left": "Kolosseum", "right": "Rom" },
+    { "left": "Golden Gate Bridge", "right": "San Francisco" },
+    { "left": "Christusstatue", "right": "Rio de Janeiro" },
+    { "left": "Akropolis", "right": "Athen" },
+    { "left": "Petronas Towers", "right": "Kuala Lumpur" },
+    { "left": "Hagia Sophia", "right": "Istanbul" },
+    { "left": "Karlsbrücke", "right": "Prag" },
+    { "left": "Atomium", "right": "Brüssel" },
+    { "left": "Fischerbastei", "right": "Budapest" }
+  ],
+  "decoys": ["Lissabon", "Wien", "Madrid"]
+}

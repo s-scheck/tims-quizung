@@ -56,8 +56,8 @@ export class Room {
   rounds: RoundResult[] = [];
   playedCategoryIds: string[] = [];
   lastStartPlayerId: string | null = null;
-  /** Zuletzt gewählte Leben für Top X, Vorgabe für die nächste Runde. */
-  topxLives: number = LIVES_DEFAULT;
+  /** Zuletzt gewählte Leben, Vorgabe für Top X und Zuordnen. */
+  defaultLives: number = LIVES_DEFAULT;
   seq = 0;
   lastActivity: number;
   screenCount = 0;

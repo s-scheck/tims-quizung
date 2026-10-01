@@ -1,0 +1,22 @@
+{
+  "id": "match-regisseure",
+  "title": "Regisseure",
+  "question": "Welcher Regisseur hat welchen Film gedreht?",
+  "leftLabel": "Regisseur",
+  "rightLabel": "Film",
+  "games": ["match"],
+  "source": "Allgemeinwissen",
+  "pairs": [
+    { "left": "Christopher Nolan", "right": "Inception" },
+    { "left": "Quentin Tarantino", "right": "Pulp Fiction" },
+    { "left": "James Cameron", "right": "Titanic" },
+    { "left": "Steven Spielberg", "right": "Jurassic Park" },
+    { "left": "Peter Jackson", "right": "Der Herr der Ringe" },
+    { "left": "Ridley Scott", "right": "Gladiator" },
+    { "left": "Martin Scorsese", "right": "Goodfellas" },
+    { "left": "Alfred Hitchcock", "right": "Psycho" },
+    { "left": "Stanley Kubrick", "right": "Shining" },
+    { "left": "Wes Anderson", "right": "Grand Budapest Hotel" }
+  ],
+  "decoys": ["Forrest Gump", "Matrix", "Die fabelhafte Welt der Amélie"]
+}

@@ -23,11 +23,11 @@
   function statusOf(id: string): string {
     const r = round;
     if (!r.turnOrder.includes(id)) return 'nicht dabei';
-    if (r.game === 'topx') {
+    if (r.game === 'topx' || r.game === 'match') {
       const hits = r.hits[id] ?? 0;
       const lives = r.lives[id] ?? 0;
-      const hitText = `${hits} ${hits === 1 ? 'Treffer' : 'Treffer'}`;
-      return lives === 0 ? `${hitText}, keine Leben mehr` : `${hitText}, ${lives} ${lives === 1 ? 'Leben' : 'Leben'} übrig`;
+      const hitText = `${hits} Treffer`;
+      return lives === 0 ? `${hitText}, keine Leben mehr` : `${hitText}, ${lives} Leben übrig`;
     }
     if (r.eliminated.includes(id)) return `raus als ${r.eliminated.indexOf(id) + 1}.`;
     return 'durchgekommen';

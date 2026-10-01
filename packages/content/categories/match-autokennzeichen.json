@@ -1,0 +1,22 @@
+{
+  "id": "match-autokennzeichen",
+  "title": "Autokennzeichen",
+  "question": "Welches Kennzeichen gehört zu welcher Stadt?",
+  "leftLabel": "Kennzeichen",
+  "rightLabel": "Stadt",
+  "games": ["match"],
+  "source": "Kraftfahrt-Bundesamt",
+  "pairs": [
+    { "left": "HRO", "right": "Rostock" },
+    { "left": "EF", "right": "Erfurt" },
+    { "left": "SN", "right": "Schwerin" },
+    { "left": "MD", "right": "Magdeburg" },
+    { "left": "WI", "right": "Wiesbaden" },
+    { "left": "SB", "right": "Saarbrücken" },
+    { "left": "KI", "right": "Kiel" },
+    { "left": "OL", "right": "Oldenburg" },
+    { "left": "FR", "right": "Freiburg im Breisgau" },
+    { "left": "HD", "right": "Heidelberg" }
+  ],
+  "decoys": ["Mainz", "Potsdam", "Lübeck"]
+}

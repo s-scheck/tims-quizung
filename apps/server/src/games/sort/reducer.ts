@@ -13,6 +13,7 @@ export function sortRound(room: Room): SortRound | null {
 }
 
 export function startSortRound(room: Room, category: Category): Result {
+  if (category.kind !== 'ranked') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
   const turnOrder = buildTurnOrder(room);
   if (turnOrder.length === 0) return fail('invalid_action', 'Ohne Mitspieler geht es nicht los');
 
@@ -27,6 +28,7 @@ export function startSortRound(room: Room, category: Category): Result {
   room.round = {
     ...baseRound(category, turnOrder),
     game: 'sort',
+    category,
     cards,
     startCardId: startCard.id,
     chain: [startCard.id],

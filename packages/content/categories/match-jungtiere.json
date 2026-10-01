@@ -1,0 +1,20 @@
+{
+  "id": "match-jungtiere",
+  "title": "Jungtiere",
+  "question": "Wie heißt das Jungtier?",
+  "leftLabel": "Tier",
+  "rightLabel": "Jungtier",
+  "games": ["match"],
+  "source": "Allgemeinwissen",
+  "pairs": [
+    { "left": "Pferd", "right": "Fohlen" },
+    { "left": "Schwein", "right": "Ferkel" },
+    { "left": "Schaf", "right": "Lamm" },
+    { "left": "Ziege", "right": "Zicklein" },
+    { "left": "Reh", "right": "Kitz" },
+    { "left": "Wildschwein", "right": "Frischling" },
+    { "left": "Hund", "right": "Welpe" },
+    { "left": "Kuh", "right": "Kalb" }
+  ],
+  "decoys": ["Küken", "Joey"]
+}

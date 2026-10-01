@@ -1,0 +1,22 @@
+{
+  "id": "match-fluesse-staedte",
+  "title": "Flüsse und Städte",
+  "question": "Welcher Fluss fließt durch welche Stadt?",
+  "leftLabel": "Fluss",
+  "rightLabel": "Stadt",
+  "games": ["match"],
+  "source": "Allgemeinwissen",
+  "pairs": [
+    { "left": "Seine", "right": "Paris" },
+    { "left": "Themse", "right": "London" },
+    { "left": "Tiber", "right": "Rom" },
+    { "left": "Moldau", "right": "Prag" },
+    { "left": "Spree", "right": "Berlin" },
+    { "left": "Isar", "right": "München" },
+    { "left": "Newa", "right": "Sankt Petersburg" },
+    { "left": "Hudson", "right": "New York" },
+    { "left": "Nil", "right": "Kairo" },
+    { "left": "Tejo", "right": "Lissabon" }
+  ],
+  "decoys": ["Madrid", "Mailand", "Barcelona"]
+}

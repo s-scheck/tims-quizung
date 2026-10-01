@@ -1,0 +1,22 @@
+{
+  "id": "match-hauptstaedte",
+  "title": "Hauptstädte",
+  "question": "Welche Hauptstadt gehört zu welchem Land?",
+  "leftLabel": "Hauptstadt",
+  "rightLabel": "Land",
+  "games": ["match"],
+  "source": "Allgemeinwissen",
+  "pairs": [
+    { "left": "Canberra", "right": "Australien" },
+    { "left": "Ottawa", "right": "Kanada" },
+    { "left": "Ankara", "right": "Türkei" },
+    { "left": "Bern", "right": "Schweiz" },
+    { "left": "Wellington", "right": "Neuseeland" },
+    { "left": "Brasília", "right": "Brasilien" },
+    { "left": "Hanoi", "right": "Vietnam" },
+    { "left": "Lima", "right": "Peru" },
+    { "left": "Nairobi", "right": "Kenia" },
+    { "left": "Ulaanbaatar", "right": "Mongolei" }
+  ],
+  "decoys": ["Argentinien", "Marokko", "Portugal"]
+}

@@ -9,8 +9,8 @@ export type Phase =
   | 'scoreboard'
   | 'finished';
 
-export type GameId = 'sort' | 'topx';
-export const GAME_IDS: readonly GameId[] = ['sort', 'topx'];
+export type GameId = 'sort' | 'topx' | 'match';
+export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match'];
 
 export type SortOrder = 'asc' | 'desc';
 export type TimerSeconds = 0 | 30 | 60;
@@ -87,9 +87,18 @@ export interface PlacementView {
   applyAt: number;
 }
 
+/** Kategorie eines Zuordnen-Spiels: Paare und Köder, ohne Werte. */
+export interface MatchCategoryInfo {
+  id: string;
+  title: string;
+  question: string;
+  leftLabel: string;
+  rightLabel: string;
+  source?: string;
+}
+
 /** Felder, die jede Runde unabhängig vom Spiel hat. */
 export interface BaseRoundView {
-  category: CategoryInfo;
   turnOrder: string[];
   turnNo: number;
   activePlayerId: string | null;
@@ -100,6 +109,7 @@ export interface BaseRoundView {
 
 export interface SortRoundView extends BaseRoundView {
   game: 'sort';
+  category: CategoryInfo;
   cards: CardView[];
   chain: string[];
   pool: string[];
@@ -131,6 +141,7 @@ export interface GuessView {
 
 export interface TopXRoundView extends BaseRoundView {
   game: 'topx';
+  category: CategoryInfo;
   slots: TopXSlotView[];
   lives: Record<string, number>;
   maxLives: number;
@@ -143,7 +154,52 @@ export interface TopXRoundView extends BaseRoundView {
   privileged?: boolean;
 }
 
-export type RoundView = SortRoundView | TopXRoundView;
+export interface MatchCardView {
+  id: string;
+  text: string;
+}
+
+export interface MatchTargetView {
+  id: string;
+  text: string;
+  matchedCardId: string | null;
+  matchedBy?: string;
+  /** Nur in der Host-Sicht oder ab der Auflösung. */
+  solutionCardId?: string | null;
+  /** Nur in der Host-Sicht oder ab der Auflösung: Ziel ohne passende Karte. */
+  decoy?: boolean;
+}
+
+export interface MatchSelection {
+  cardId?: string;
+  targetId?: string;
+}
+
+export interface MatchAttemptView {
+  cardId: string;
+  targetId: string;
+  status: PlacementStatus;
+  by: string;
+  resolveAt: number;
+  applyAt: number;
+}
+
+export interface MatchRoundView extends BaseRoundView {
+  game: 'match';
+  category: MatchCategoryInfo;
+  cards: MatchCardView[];
+  pool: string[];
+  targets: MatchTargetView[];
+  selection: MatchSelection;
+  attempt: MatchAttemptView | null;
+  lives: Record<string, number>;
+  maxLives: number;
+  hits: Record<string, number>;
+  /** Nur in der Sicht des moderierenden Hosts: Lösung und Köder sind sichtbar. */
+  privileged?: boolean;
+}
+
+export type RoundView = SortRoundView | TopXRoundView | MatchRoundView;
 
 export interface RoundResult {
   gameId: GameId;
@@ -164,8 +220,8 @@ export interface RoomView {
   gameId: GameId | null;
   round: RoundView | null;
   rounds: RoundResult[];
-  /** Zuletzt gewählte Leben für Top X. */
-  topxLives: number;
+  /** Zuletzt gewählte Leben, Vorgabe für Top X und Zuordnen. */
+  defaultLives: number;
   /** Nur in `choosing_category` enthalten. */
   categories?: CategorySummary[];
   /** Nur in `choosing_category` enthalten. */

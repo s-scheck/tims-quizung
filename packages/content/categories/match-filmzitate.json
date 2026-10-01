@@ -1,0 +1,22 @@
+{
+  "id": "match-filmzitate",
+  "title": "Filmzitate",
+  "question": "Aus welchem Film stammt welches Zitat?",
+  "leftLabel": "Zitat",
+  "rightLabel": "Film",
+  "games": ["match"],
+  "source": "deutsche Synchronfassungen",
+  "pairs": [
+    { "left": "„Ich bin der König der Welt!“", "right": "Titanic" },
+    { "left": "„Möge die Macht mit dir sein.“", "right": "Star Wars" },
+    { "left": "„Ich mache ihm ein Angebot, das er nicht ablehnen kann.“", "right": "Der Pate" },
+    { "left": "„Hasta la vista, Baby.“", "right": "Terminator 2" },
+    { "left": "„Houston, wir haben ein Problem.“", "right": "Apollo 13" },
+    { "left": "„Das Leben ist wie eine Schachtel Pralinen.“", "right": "Forrest Gump" },
+    { "left": "„Ich sehe tote Menschen.“", "right": "The Sixth Sense" },
+    { "left": "„Warum so ernst?“", "right": "The Dark Knight" },
+    { "left": "„Hier ist Johnny!“", "right": "Shining" },
+    { "left": "„Wir brauchen ein größeres Boot.“", "right": "Der weiße Hai" }
+  ],
+  "decoys": ["Pulp Fiction", "Matrix", "Fight Club"]
+}

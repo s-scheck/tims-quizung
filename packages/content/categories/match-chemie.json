@@ -1,0 +1,22 @@
+{
+  "id": "match-chemie",
+  "title": "Chemische Symbole",
+  "question": "Welches Symbol gehört zu welchem Element?",
+  "leftLabel": "Symbol",
+  "rightLabel": "Element",
+  "games": ["match"],
+  "source": "Periodensystem",
+  "pairs": [
+    { "left": "Na", "right": "Natrium" },
+    { "left": "K", "right": "Kalium" },
+    { "left": "Fe", "right": "Eisen" },
+    { "left": "Au", "right": "Gold" },
+    { "left": "Ag", "right": "Silber" },
+    { "left": "Pb", "right": "Blei" },
+    { "left": "Sn", "right": "Zinn" },
+    { "left": "Hg", "right": "Quecksilber" },
+    { "left": "W", "right": "Wolfram" },
+    { "left": "Cu", "right": "Kupfer" }
+  ],
+  "decoys": ["Zink", "Nickel", "Platin"]
+}

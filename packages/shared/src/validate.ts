@@ -95,6 +95,7 @@ export function isClientMsg(x: unknown): x is ClientMsg {
       return (
         isInt(x.turnNo) &&
         (x.cardId === undefined || isStr(x.cardId, 50)) &&
+        (x.targetId === undefined || isStr(x.targetId, 50)) &&
         (x.gapIndex === undefined || (isInt(x.gapIndex) && x.gapIndex >= 0))
       );
     case 'confirm':

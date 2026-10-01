@@ -34,7 +34,7 @@ export type ClientMsg =
   | { type: 'set_settings'; timerSeconds?: TimerSeconds; hostPlays?: boolean }
   | { type: 'start_game' }
   | { type: 'choose_category'; gameId: GameId; categoryId: string; lives?: number }
-  | ({ type: 'select'; turnNo: number } & Selection)
+  | ({ type: 'select'; turnNo: number; targetId?: string } & Selection)
   | { type: 'confirm'; turnNo: number }
   | { type: 'guess'; turnNo: number; text: string }
   | { type: 'judge'; turnNo: number; correct: boolean; rank?: number }

@@ -107,7 +107,7 @@
   </section>
 </div>
 
-<section class="mt-6 grid gap-4 md:grid-cols-2">
+<section class="mt-6 grid gap-4 md:grid-cols-3">
   <div class="card space-y-2 text-sm text-slate-400">
     <h3 class="font-semibold text-slate-200">Sortieren</h3>
     <p>Alle Karten einer Kategorie liegen offen. Eine zufällige Karte startet die Kette. Wer dran ist, wählt eine Karte und eine Lücke in der Kette und bestätigt.</p>
@@ -117,6 +117,11 @@
     <h3 class="font-semibold text-slate-200">Top X</h3>
     <p>Eine echte Top-Liste liegt verdeckt auf nummerierten Plätzen. Wer dran ist, tippt einen Namen. Ein Treffer deckt die Karte mit Wert auf, ein Fehltipp kostet ein Leben.</p>
     <p>Moderiert der Host, prüft er jeden Tipp und sieht alle Karten. Spielt er mit, entscheidet der Server automatisch.</p>
+  </div>
+  <div class="card space-y-2 text-sm text-slate-400">
+    <h3 class="font-semibold text-slate-200">Zuordnen</h3>
+    <p>Karten müssen zu den richtigen Zielen, etwa Hauptstädte zu Ländern. Es gibt mehr Ziele als Karten, die überzähligen sind Köder.</p>
+    <p>Wer dran ist, wählt Karte und Ziel und bestätigt. Richtig bleibt liegen, falsch fliegt zurück und kostet ein Leben.</p>
   </div>
 </section>
 <p class="mt-4 text-center text-xs text-slate-500">Der Host wählt vor jeder Runde das Spiel und die Kategorie. Punkte vergibt er nach jeder Runde von Hand.</p>

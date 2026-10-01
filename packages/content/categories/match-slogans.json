@@ -1,0 +1,22 @@
+{
+  "id": "match-slogans",
+  "title": "Werbeslogans",
+  "question": "Welcher Slogan gehört zu welcher Marke?",
+  "leftLabel": "Slogan",
+  "rightLabel": "Marke",
+  "games": ["match"],
+  "source": "bekannte Werbekampagnen",
+  "pairs": [
+    { "left": "„Just Do It“", "right": "Nike" },
+    { "left": "„Ich liebe es“", "right": "McDonald's" },
+    { "left": "„Freude am Fahren“", "right": "BMW" },
+    { "left": "„Wohnst du noch oder lebst du schon?“", "right": "IKEA" },
+    { "left": "„Nichts ist unmöglich“", "right": "Toyota" },
+    { "left": "„Quadratisch. Praktisch. Gut.“", "right": "Ritter Sport" },
+    { "left": "„Vorsprung durch Technik“", "right": "Audi" },
+    { "left": "„Weil ich es mir wert bin“", "right": "L'Oréal" },
+    { "left": "„Think different“", "right": "Apple" },
+    { "left": "„Have a break“", "right": "KitKat" }
+  ],
+  "decoys": ["Mercedes-Benz", "Burger King", "Lidl"]
+}

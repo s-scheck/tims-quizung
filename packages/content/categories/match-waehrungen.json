@@ -1,0 +1,22 @@
+{
+  "id": "match-waehrungen",
+  "title": "Währungen",
+  "question": "Welche Währung gehört zu welchem Land?",
+  "leftLabel": "Währung",
+  "rightLabel": "Land",
+  "games": ["match"],
+  "source": "Allgemeinwissen",
+  "pairs": [
+    { "left": "Forint", "right": "Ungarn" },
+    { "left": "Złoty", "right": "Polen" },
+    { "left": "Rand", "right": "Südafrika" },
+    { "left": "Real", "right": "Brasilien" },
+    { "left": "Rupiah", "right": "Indonesien" },
+    { "left": "Won", "right": "Südkorea" },
+    { "left": "Baht", "right": "Thailand" },
+    { "left": "Schekel", "right": "Israel" },
+    { "left": "Lira", "right": "Türkei" },
+    { "left": "Rubel", "right": "Russland" }
+  ],
+  "decoys": ["Vietnam", "Marokko", "Ägypten"]
+}

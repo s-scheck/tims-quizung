@@ -5,6 +5,7 @@ import { FakeScheduler } from '../src/rooms/scheduler.ts';
 import '../src/games/index.ts';
 
 export const CITIES: Category = {
+  kind: 'ranked',
   id: 'cities',
   title: 'Städte',
   question: 'Welche Stadt hat mehr Einwohner?',
@@ -17,6 +18,7 @@ export const CITIES: Category = {
 };
 
 export const TIMES: Category = {
+  kind: 'ranked',
   id: 'times',
   title: 'Zeiten',
   question: 'Wer war schneller?',
@@ -29,6 +31,7 @@ export const TIMES: Category = {
 };
 
 export const TOPX: Category = {
+  kind: 'ranked',
   id: 'players',
   title: 'Top 5 Spieler',
   question: 'Wer ist am wertvollsten?',
@@ -47,7 +50,25 @@ export const TOPX: Category = {
   ],
 };
 
-const ALL = [CITIES, TIMES, TOPX];
+export const PAIRS: Category = {
+  kind: 'pairs',
+  id: 'capitals',
+  title: 'Hauptstädte',
+  question: 'Welche Hauptstadt gehört zu welchem Land?',
+  leftLabel: 'Hauptstadt',
+  rightLabel: 'Land',
+  games: ['match'],
+  source: 'Test',
+  pairs: [
+    { left: 'Paris', right: 'Frankreich' },
+    { left: 'Lima', right: 'Peru' },
+    { left: 'Oslo', right: 'Norwegen' },
+    { left: 'Ankara', right: 'Türkei' },
+  ],
+  decoys: ['Lettland', 'Chile'],
+};
+
+const ALL = [CITIES, TIMES, TOPX, PAIRS];
 
 export const provider: CategoryProvider = {
   list: () => ALL,
@@ -123,6 +144,12 @@ export function makeHarness(names: string[], opts: { timer?: TimerSeconds; seed?
 export function startRound(h: Harness, categoryId = 'cities'): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId }));
+}
+
+/** Startet Spiel und Zuordnen-Runde. */
+export function startMatch(h: Harness, lives?: number): void {
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'match', categoryId: 'capitals', ...(lives !== undefined ? { lives } : {}) }));
 }
 
 /** Startet Spiel und Top-X-Runde. */

@@ -6,7 +6,7 @@ import { sortRound } from './reducer.ts';
 export function sortRoundView(room: Room, revealed: boolean): RoundView | null {
   const r = sortRound(room);
   if (!r) return null;
-  const { items: _items, games: _games, ...category } = r.category;
+  const { items: _items, games: _games, kind: _kind, ...category } = r.category;
   const cards: CardView[] = r.cards.map((c) =>
     revealed ? { id: c.id, name: c.name, value: c.value, ...(c.label !== undefined ? { label: c.label } : {}) } : { id: c.id, name: c.name },
   );

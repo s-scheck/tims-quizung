@@ -11,7 +11,7 @@ export function topxRoundView(room: Room, revealed: boolean, viewerId: string | 
   if (!r) return null;
   const privileged = viewerId !== null && room.isModerator(viewerId);
   const showAll = revealed || privileged;
-  const { items: _items, games: _games, ...category } = r.category;
+  const { items: _items, games: _games, kind: _kind, ...category } = r.category;
 
   const slots: TopXSlotView[] = r.cards.map((c) => {
     const by = r.revealed[c.rank];

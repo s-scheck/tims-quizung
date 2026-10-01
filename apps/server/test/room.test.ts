@@ -105,6 +105,8 @@ describe('Lobby: Verlassen, Host, Kick, Einstellungen', () => {
     expect(h.room.chooseCategory(h.host, 'nope', 'cities')).toMatchObject({ ok: false, code: 'invalid_action' });
     expect(h.act(h.host, { type: 'choose_category', gameId: 'topx', categoryId: 'cities' })).toMatchObject({ ok: false, code: 'unknown_category' });
     expect(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId: 'players' })).toMatchObject({ ok: false, code: 'unknown_category' });
+    expect(h.act(h.host, { type: 'choose_category', gameId: 'match', categoryId: 'cities' })).toMatchObject({ ok: false, code: 'unknown_category' });
+    expect(h.act(h.host, { type: 'choose_category', gameId: 'topx', categoryId: 'capitals' })).toMatchObject({ ok: false, code: 'unknown_category' });
     expect(h.room.phase).toBe('choosing_category');
   });
 });
@@ -127,8 +129,9 @@ describe('View', () => {
       ['cities', false, 10, ['sort']],
       ['times', false, 12, ['sort']],
       ['players', false, 5, ['topx']],
+      ['capitals', false, 4, ['match']],
     ]);
-    expect(view.games?.map((g) => g.id)).toEqual(['sort', 'topx']);
+    expect(view.games?.map((g) => g.id)).toEqual(['sort', 'topx', 'match']);
     h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId: 'times' });
     view = toView(h.room, null);
     expect(view.categories).toBeUndefined();

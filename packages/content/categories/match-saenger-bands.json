@@ -1,0 +1,22 @@
+{
+  "id": "match-saenger-bands",
+  "title": "Sänger und Bands",
+  "question": "Welcher Sänger gehört zu welcher Band?",
+  "leftLabel": "Sänger",
+  "rightLabel": "Band",
+  "games": ["match"],
+  "source": "Allgemeinwissen",
+  "pairs": [
+    { "left": "Freddie Mercury", "right": "Queen" },
+    { "left": "Mick Jagger", "right": "The Rolling Stones" },
+    { "left": "Chris Martin", "right": "Coldplay" },
+    { "left": "Bono", "right": "U2" },
+    { "left": "Dave Grohl", "right": "Foo Fighters" },
+    { "left": "Chester Bennington", "right": "Linkin Park" },
+    { "left": "Till Lindemann", "right": "Rammstein" },
+    { "left": "Campino", "right": "Die Toten Hosen" },
+    { "left": "Anthony Kiedis", "right": "Red Hot Chili Peppers" },
+    { "left": "Liam Gallagher", "right": "Oasis" }
+  ],
+  "decoys": ["Depeche Mode", "Metallica", "Die Ärzte"]
+}

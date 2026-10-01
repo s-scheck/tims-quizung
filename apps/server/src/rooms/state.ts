@@ -1,5 +1,5 @@
-import type { GuessStatus, PlacementStatus, Selection } from '@quiz/shared';
-import type { Category } from '@quiz/content';
+import type { GuessStatus, MatchSelection, PlacementStatus, Selection } from '@quiz/shared';
+import type { Category, PairsCategory, RankedCategory } from '@quiz/content';
 
 export interface Player {
   id: string;
@@ -42,6 +42,7 @@ export interface Placement {
 
 export interface SortRound extends BaseRound {
   game: 'sort';
+  category: RankedCategory;
   cards: SortCard[];
   startCardId: string;
   chain: string[];
@@ -72,6 +73,7 @@ export interface Guess {
 
 export interface TopXRound extends BaseRound {
   game: 'topx';
+  category: RankedCategory;
   cards: TopXCard[];
   /** Rang → Spieler, der die Karte aufgedeckt hat. */
   revealed: Record<number, string>;
@@ -82,4 +84,44 @@ export interface TopXRound extends BaseRound {
   guess: Guess | null;
 }
 
-export type Round = SortRound | TopXRound;
+// ----------------------------------------------------------------- Zuordnen
+
+export interface MatchCard {
+  id: string;
+  text: string;
+}
+
+export interface MatchTarget {
+  id: string;
+  text: string;
+  /** null = Köder ohne passende Karte. */
+  solutionCardId: string | null;
+}
+
+export interface MatchAttempt {
+  cardId: string;
+  targetId: string;
+  /** Position im Pool vor dem Zug, dorthin kehrt die Karte bei Fehler zurück. */
+  poolIndex: number;
+  status: PlacementStatus;
+  by: string;
+  resolveAt: number;
+  applyAt: number;
+}
+
+export interface MatchRound extends BaseRound {
+  game: 'match';
+  category: PairsCategory;
+  cards: MatchCard[];
+  pool: string[];
+  targets: MatchTarget[];
+  /** Ziel-ID → zugeordnete Karte und wer sie gelegt hat. */
+  matched: Record<string, { cardId: string; by: string }>;
+  selection: MatchSelection;
+  attempt: MatchAttempt | null;
+  lives: Record<string, number>;
+  maxLives: number;
+  hits: Record<string, number>;
+}
+
+export type Round = SortRound | TopXRound | MatchRound;

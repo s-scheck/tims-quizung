@@ -1,0 +1,22 @@
+{
+  "id": "match-erfinder",
+  "title": "Erfinder",
+  "question": "Wer hat was erfunden?",
+  "leftLabel": "Erfinder",
+  "rightLabel": "Erfindung",
+  "games": ["match"],
+  "source": "gängige Zuschreibung",
+  "pairs": [
+    { "left": "Johannes Gutenberg", "right": "Buchdruck" },
+    { "left": "Carl Benz", "right": "Automobil" },
+    { "left": "Thomas Edison", "right": "Glühlampe" },
+    { "left": "Alexander Graham Bell", "right": "Telefon" },
+    { "left": "Rudolf Diesel", "right": "Dieselmotor" },
+    { "left": "Wilhelm Conrad Röntgen", "right": "Röntgenstrahlen" },
+    { "left": "Konrad Zuse", "right": "Computer" },
+    { "left": "Alfred Nobel", "right": "Dynamit" },
+    { "left": "Tim Berners-Lee", "right": "World Wide Web" },
+    { "left": "Louis Daguerre", "right": "Fotografie" }
+  ],
+  "decoys": ["Dampfmaschine", "Fernseher", "Penicillin"]
+}
