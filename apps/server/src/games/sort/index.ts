@@ -6,7 +6,7 @@ export const sortGame: GameModule = {
   id: 'sort',
   name: 'Sortieren',
   description: 'Karten reihum in eine Kette einsortieren. Wer falsch legt, ist raus.',
-  hasPrivateView: false,
+  turnBased: true,
   startRound: (room, category) => startSortRound(room, category),
   handle: handleSortMessage,
   onHostChanged: () => {},

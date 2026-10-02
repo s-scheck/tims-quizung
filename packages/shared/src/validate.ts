@@ -1,5 +1,6 @@
 import type { ClientMsg } from './protocol.ts';
 import { GAME_IDS, GUESS_MAX_LENGTH, LIVES_MAX, LIVES_MIN, TIMER_OPTIONS, type GameId, type TimerSeconds } from './types.ts';
+import { isValidLatLng } from './rules/geo.ts';
 
 export const NAME_MIN = 1;
 export const NAME_MAX = 20;
@@ -82,7 +83,18 @@ export function isClientMsg(x: unknown): x is ClientMsg {
     case 'start_game':
       return true;
     case 'choose_category':
-      return isGameId(x.gameId) && isStr(x.categoryId, 100) && (x.lives === undefined || isLives(x.lives));
+      return (
+        isGameId(x.gameId) &&
+        isStr(x.categoryId, 100) &&
+        (x.lives === undefined || isLives(x.lives)) &&
+        (x.targetId === undefined || isStr(x.targetId, 100)) &&
+        (x.borders === undefined || typeof x.borders === 'boolean')
+      );
+    case 'place_pin':
+      return isValidLatLng(x.lat, x.lng);
+    case 'confirm_pin':
+    case 'end_round':
+      return true;
     case 'guess':
       return isInt(x.turnNo) && isStr(x.text, 200);
     case 'judge':

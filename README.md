@@ -1,6 +1,6 @@
 # Tims Quizung
 
-Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Spiele: **Sortieren**, **Top X** und **Zuordnen**. Der Host wählt vor jeder Runde das Spiel und die Kategorie, der Punktestand läuft über alle Runden durch.
+Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Spiele: **Sortieren**, **Top X**, **Zuordnen** und **Karte**. Der Host wählt vor jeder Runde das Spiel und die Kategorie, der Punktestand läuft über alle Runden durch.
 
 ## Spielregeln „Sortieren"
 
@@ -26,6 +26,16 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 - Wer dran ist, wählt eine Karte und ein Ziel und bestätigt. Nach zwei Sekunden bleibt die Karte grün im Zielfeld liegen oder fliegt rot zurück und kostet ein Leben. Ob ein Ziel ein Köder war, bleibt geheim.
 - Der moderierende Host sieht Lösung und Köder, alle anderen nicht.
 - Rundenende, Host-Entscheidung, Zeitlimit und Punkte wie bei den anderen Spielen.
+
+## Spielregeln „Karte"
+
+- Alle Spieler sehen gleichzeitig eine stumme, zoombare Weltkarte (nur Land und Wasser, Ländergrenzen pro Runde zuschaltbar) und setzen einen Pin dort, wo sie das Ziel vermuten. Niemand sieht fremde Pins.
+- Jeder bestätigt seinen Pin, danach ist er fest. Der Host beendet die Runde jederzeit, nur bestätigte Pins zählen.
+- Moderiert der Host, wählt er das Ziel aus der Sammlung und sieht es auf der Karte. Spielt er mit, zieht der Server ein zufälliges, noch nicht gespieltes Ziel.
+- In der Auflösung erscheinen Ziel, alle Pins mit Linien und eine Rangliste nach Luftlinie in Kilometern. Punkte wie gewohnt von Hand.
+- Kein Zeitlimit, keine Leben, keine Zugreihenfolge.
+
+Die Kartendaten stammen von [Natural Earth](https://www.naturalearthdata.com/) (gemeinfrei) und liegen unter `apps/web/public/geo/`. Die Karte selbst rendert [Leaflet](https://leafletjs.com/) ohne Kacheln, es wird kein externer Dienst angesprochen.
 
 ## Entwicklung
 
@@ -104,6 +114,21 @@ Für Zuordnen gibt es Paarlisten statt Werten:
 ```
 
 Regeln: 4 bis 12 Paare, 0 bis 5 Köder, Karten, Ziele und Köder jeweils eindeutig, kein Köder darf ein Ziel sein. Wichtig beim Schreiben: Kein Köder darf fachlich zu einer Karte passen. Dateien beginnen mit `match-`.
+
+Für Karte gibt es Ortslisten mit Koordinaten:
+
+```json
+{
+  "id": "map-beispiel",
+  "title": "Wahrzeichen",
+  "question": "Wo steht das?",
+  "games": ["map"],
+  "bounds": [[34, -12], [66, 35]],
+  "places": [{ "name": "Eiffelturm", "lat": 48.8584, "lng": 2.2945 }]
+}
+```
+
+Regeln: 10 bis 30 Orte, Namen eindeutig, `bounds` optional als Startausschnitt `[[Süd, West], [Nord, Ost]]`. Dateien beginnen mit `map-`.
 
 Für Top X kommt `"games": ["topx"]` dazu (Standard ist `["sort"]`, beides zusammen geht auch). Top-X-Listen müssen echte Top-Listen ohne Gleichstand über die Listengrenze sein, dürfen ab 5 Einträgen kurz sein und Gleichstände enthalten. Pro Eintrag helfen `aliases` beim Abgleich, etwa `["Mbappe", "Mbappé"]`; ein eindeutiger Nachname trifft automatisch. Dateien beginnen mit `topx-`.
 

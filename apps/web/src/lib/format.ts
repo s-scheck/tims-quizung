@@ -43,6 +43,21 @@ export function ranking(view: RoomView): { player: PlayerView; score: number; ra
   });
 }
 
+const kmFormat = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 });
+const kmFine = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+/** Entfernung in Kilometern, unter 10 km mit einer Nachkommastelle. */
+export function formatKm(km: number): string {
+  return `${km < 10 ? kmFine.format(km) : kmFormat.format(km)} km`;
+}
+
+const PLAYER_COLORS = ['#f59e0b', '#38bdf8', '#a78bfa', '#34d399', '#f472b6', '#fb7185', '#facc15', '#60a5fa', '#4ade80', '#e879f9', '#fdba74', '#2dd4bf'];
+
+/** Feste Farbe je Spielerposition, für Pins und Ranglisten. */
+export function playerColor(index: number): string {
+  return PLAYER_COLORS[((index % PLAYER_COLORS.length) + PLAYER_COLORS.length) % PLAYER_COLORS.length]!;
+}
+
 export function joinUrl(code: string): string {
   return `${location.origin}/room/${code}`;
 }

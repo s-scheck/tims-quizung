@@ -33,11 +33,14 @@ export type ClientMsg =
   | { type: 'kick'; playerId: string }
   | { type: 'set_settings'; timerSeconds?: TimerSeconds; hostPlays?: boolean }
   | { type: 'start_game' }
-  | { type: 'choose_category'; gameId: GameId; categoryId: string; lives?: number }
+  | { type: 'choose_category'; gameId: GameId; categoryId: string; lives?: number; targetId?: string; borders?: boolean }
   | ({ type: 'select'; turnNo: number; targetId?: string } & Selection)
   | { type: 'confirm'; turnNo: number }
   | { type: 'guess'; turnNo: number; text: string }
   | { type: 'judge'; turnNo: number; correct: boolean; rank?: number }
+  | { type: 'place_pin'; lat: number; lng: number }
+  | { type: 'confirm_pin' }
+  | { type: 'end_round' }
   | { type: 'skip_turn'; turnNo: number }
   | { type: 'host_decision'; continue: boolean }
   | { type: 'to_scoring' }

@@ -1,4 +1,13 @@
-import { GAME_IDS, type CategoryInfo, type GameId, type MatchCategoryInfo, type SortOrder } from '@quiz/shared';
+import {
+  GAME_IDS,
+  isValidLatLng,
+  type CategoryInfo,
+  type GameId,
+  type LatLngBounds,
+  type MapCategoryInfo,
+  type MatchCategoryInfo,
+  type SortOrder,
+} from '@quiz/shared';
 
 export interface CategoryItem {
   name: string;
@@ -31,7 +40,22 @@ export interface PairsCategory extends MatchCategoryInfo {
   decoys: string[];
 }
 
-export type Category = RankedCategory | PairsCategory;
+export interface Place {
+  /** Aus dem Namen abgeleitet, eindeutig innerhalb der Liste. */
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+}
+
+/** Ortsliste mit Koordinaten, für Karte. */
+export interface PlacesCategory extends MapCategoryInfo {
+  kind: 'places';
+  games: GameId[];
+  places: Place[];
+}
+
+export type Category = RankedCategory | PairsCategory | PlacesCategory;
 
 /** Sortieren braucht 10 Karten und eindeutige Werte, eine Top-Liste darf kürzer sein und Gleichstände haben. */
 export const MIN_ITEMS = 10;
@@ -40,6 +64,8 @@ export const MAX_ITEMS = 20;
 export const MIN_PAIRS = 4;
 export const MAX_PAIRS = 12;
 export const MAX_DECOYS = 5;
+export const MIN_PLACES = 10;
+export const MAX_PLACES = 30;
 
 export class CategoryValidationError extends Error {
   constructor(
@@ -79,7 +105,22 @@ function readGames(raw: Record<string, unknown>, file: string, fallback: GameId[
 
 export function validateCategory(raw: unknown, file: string): Category {
   if (!isRecord(raw)) throw new CategoryValidationError(file, 'kein Objekt');
-  return 'pairs' in raw ? validatePairs(raw, file) : validateRanked(raw, file);
+  if ('pairs' in raw) return validatePairs(raw, file);
+  if ('places' in raw) return validatePlaces(raw, file);
+  return validateRanked(raw, file);
+}
+
+const UMLAUTS: Record<string, string> = { ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' };
+
+/** Dateiname-tauglicher Schlüssel aus einem Ortsnamen. */
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[äöüß]/g, (c) => UMLAUTS[c] ?? c)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 function validateRanked(raw: Record<string, unknown>, file: string): RankedCategory {
@@ -95,6 +136,7 @@ function validateRanked(raw: Record<string, unknown>, file: string): RankedCateg
 
   const games = readGames(raw, file, ['sort']);
   if (games.includes('match')) throw new CategoryValidationError(file, 'Zuordnen braucht eine Paarliste mit "pairs"');
+  if (games.includes('map')) throw new CategoryValidationError(file, 'Karte braucht eine Ortsliste mit "places"');
   const forSort = games.includes('sort');
   const minItems = forSort ? MIN_ITEMS : MIN_ITEMS_TOPX;
 
@@ -198,5 +240,60 @@ function validatePairs(raw: Record<string, unknown>, file: string): PairsCategor
     games,
     pairs,
     decoys,
+  };
+}
+
+function validatePlaces(raw: Record<string, unknown>, file: string): PlacesCategory {
+  const id = readId(raw, file);
+  const games = readGames(raw, file, ['map']);
+  if (!games.includes('map') || games.some((g) => g !== 'map')) {
+    throw new CategoryValidationError(file, 'Ortslisten taugen nur für "map"');
+  }
+
+  let bounds: LatLngBounds | undefined;
+  if (raw.bounds !== undefined) {
+    const b = raw.bounds;
+    const ok =
+      Array.isArray(b) &&
+      b.length === 2 &&
+      b.every((corner) => Array.isArray(corner) && corner.length === 2 && isValidLatLng(corner[0], corner[1]));
+    if (!ok) throw new CategoryValidationError(file, 'bounds muss [[süd, west], [nord, ost]] sein');
+    const [[south, west], [north, east]] = b as LatLngBounds;
+    if (south >= north) throw new CategoryValidationError(file, 'bounds: Süd muss kleiner als Nord sein');
+    bounds = [
+      [south, west],
+      [north, east],
+    ];
+  }
+
+  const placesRaw = raw.places;
+  if (!Array.isArray(placesRaw)) throw new CategoryValidationError(file, 'places fehlt');
+  if (placesRaw.length < MIN_PLACES) throw new CategoryValidationError(file, `mindestens ${MIN_PLACES} Orte nötig, ${placesRaw.length} vorhanden`);
+  if (placesRaw.length > MAX_PLACES) throw new CategoryValidationError(file, `höchstens ${MAX_PLACES} Orte erlaubt`);
+
+  const names = new Set<string>();
+  const ids = new Set<string>();
+  const places: Place[] = placesRaw.map((p, idx) => {
+    if (!isRecord(p)) throw new CategoryValidationError(file, `places[${idx}] ist kein Objekt`);
+    const name = requireString(p, 'name', file).trim();
+    const key = name.toLowerCase();
+    if (names.has(key)) throw new CategoryValidationError(file, `doppelter Ort "${name}"`);
+    names.add(key);
+    if (!isValidLatLng(p.lat, p.lng)) throw new CategoryValidationError(file, `places[${idx}] "${name}": lat/lng ungültig`);
+    let placeId = slugify(name) || `ort-${idx + 1}`;
+    if (ids.has(placeId)) placeId = `${placeId}-${idx + 1}`;
+    ids.add(placeId);
+    return { id: placeId, name, lat: p.lat as number, lng: p.lng as number };
+  });
+
+  return {
+    kind: 'places',
+    id,
+    title: requireString(raw, 'title', file),
+    question: requireString(raw, 'question', file),
+    source: typeof raw.source === 'string' ? raw.source : undefined,
+    ...(bounds ? { bounds } : {}),
+    games,
+    places,
   };
 }

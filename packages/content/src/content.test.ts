@@ -1,10 +1,11 @@
 import { describe, expect, test } from 'bun:test';
-import { CategoryValidationError, loadCategories, MIN_ITEMS, MIN_ITEMS_TOPX, MIN_PAIRS, validateCategory } from './index.ts';
+import { CategoryValidationError, loadCategories, MIN_ITEMS, MIN_ITEMS_TOPX, MIN_PAIRS, MIN_PLACES, slugify, validateCategory } from './index.ts';
 
 describe('Kategorien im Repo', () => {
   const categories = loadCategories();
   const ranked = categories.filter((c) => c.kind === 'ranked');
   const pairs = categories.filter((c) => c.kind === 'pairs');
+  const places = categories.filter((c) => c.kind === 'places');
 
   test('mindestens 15 Ranglisten, alle mit genug Einträgen', () => {
     expect(ranked.length).toBeGreaterThanOrEqual(15);
@@ -46,6 +47,15 @@ describe('Kategorien im Repo', () => {
       const rights = new Set(c.pairs.map((p) => p.right.toLowerCase()));
       for (const d of c.decoys) expect(rights.has(d.toLowerCase())).toBe(false);
       expect(c.games).toEqual(['match']);
+    }
+  });
+
+  test('mindestens 8 Ortslisten mit gültigen Koordinaten', () => {
+    expect(places.length).toBeGreaterThanOrEqual(8);
+    for (const c of places) {
+      expect(c.places.length).toBeGreaterThanOrEqual(MIN_PLACES);
+      expect(new Set(c.places.map((p) => p.id)).size).toBe(c.places.length);
+      expect(c.games).toEqual(['map']);
     }
   });
 
@@ -150,5 +160,45 @@ describe('validateCategory (Paarliste)', () => {
     expect(() => validateCategory({ ...base, games: ['sort'] }, 'f')).toThrow(/match/);
     expect(() => validateCategory({ ...base, games: ['match', 'topx'] }, 'f')).toThrow(/nur für/);
     expect(() => validateCategory({ ...base, pairs: [...base.pairs.slice(0, 3), { left: 'X' }] }, 'f')).toThrow(/right/);
+  });
+});
+
+describe('validateCategory (Ortsliste)', () => {
+  const base = {
+    id: 'map-test',
+    title: 'Städte',
+    question: 'Wo liegt das?',
+    places: [
+      { name: 'Berlin', lat: 52.52, lng: 13.405 },
+      { name: 'Paris', lat: 48.8566, lng: 2.3522 },
+      { name: 'Rom', lat: 41.9028, lng: 12.4964 },
+      { name: 'Madrid', lat: 40.4168, lng: -3.7038 },
+      { name: 'Wien', lat: 48.2082, lng: 16.3738 },
+      { name: 'Prag', lat: 50.0755, lng: 14.4378 },
+      { name: 'Oslo', lat: 59.9139, lng: 10.7522 },
+      { name: 'Athen', lat: 37.9838, lng: 23.7275 },
+      { name: 'Zürich', lat: 47.3769, lng: 8.5417 },
+      { name: 'Köln', lat: 50.9375, lng: 6.9603 },
+    ],
+  };
+
+  test('akzeptiert eine gültige Ortsliste und leitet IDs ab', () => {
+    const c = validateCategory({ ...base, bounds: [[34, -12], [66, 35]] }, 'f');
+    expect(c.kind).toBe('places');
+    if (c.kind !== 'places') return;
+    expect(c.games).toEqual(['map']);
+    expect(c.places.map((p) => p.id)).toContain('zuerich');
+    expect(c.places.map((p) => p.id)).toContain('koeln');
+    expect(c.bounds).toEqual([[34, -12], [66, 35]]);
+    expect(slugify('São Paulo / Brasil!')).toBe('sao-paulo-brasil');
+  });
+
+  test('lehnt Fehler ab', () => {
+    expect(() => validateCategory({ ...base, places: base.places.slice(0, 9) }, 'f')).toThrow(/mindestens 10/);
+    expect(() => validateCategory({ ...base, places: [...base.places.slice(0, 9), { name: 'berlin', lat: 1, lng: 1 }] }, 'f')).toThrow(/doppelter Ort/);
+    expect(() => validateCategory({ ...base, places: [...base.places.slice(0, 9), { name: 'X', lat: 95, lng: 1 }] }, 'f')).toThrow(/lat\/lng/);
+    expect(() => validateCategory({ ...base, bounds: [[70, 0], [10, 5]] }, 'f')).toThrow(/Süd/);
+    expect(() => validateCategory({ ...base, bounds: [1, 2] }, 'f')).toThrow(/bounds/);
+    expect(() => validateCategory({ ...base, games: ['sort'] }, 'f')).toThrow(/map/);
   });
 });

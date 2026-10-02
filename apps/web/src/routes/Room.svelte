@@ -13,6 +13,8 @@
   import TopXReveal from '../components/TopXReveal.svelte';
   import MatchBoard from '../components/MatchBoard.svelte';
   import MatchReveal from '../components/MatchReveal.svelte';
+  import MapBoard from '../components/MapBoard.svelte';
+  import MapReveal from '../components/MapReveal.svelte';
   import Scoring from '../components/Scoring.svelte';
   import Scoreboard from '../components/Scoreboard.svelte';
   import FinalStandings from '../components/FinalStandings.svelte';
@@ -104,6 +106,8 @@
           <TopXBoard {view} round={view.round} />
         {:else if view.round?.game === 'match'}
           <MatchBoard {view} round={view.round} />
+        {:else if view.round?.game === 'map'}
+          <MapBoard {view} round={view.round} />
         {:else if view.round?.game === 'sort'}
           <Board {view} round={view.round} />
         {/if}
@@ -114,6 +118,8 @@
           <TopXReveal {view} round={view.round} />
         {:else if view.round?.game === 'match'}
           <MatchReveal {view} round={view.round} />
+        {:else if view.round?.game === 'map'}
+          <MapReveal {view} round={view.round} />
         {:else if view.round?.game === 'sort'}
           <Reveal {view} round={view.round} />
         {/if}

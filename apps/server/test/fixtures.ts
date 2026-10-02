@@ -68,7 +68,26 @@ export const PAIRS: Category = {
   decoys: ['Lettland', 'Chile'],
 };
 
-const ALL = [CITIES, TIMES, TOPX, PAIRS];
+export const PLACES: Category = {
+  kind: 'places',
+  id: 'landmarks',
+  title: 'Wahrzeichen',
+  question: 'Wo steht das?',
+  games: ['map'],
+  source: 'Test',
+  bounds: [
+    [30, -20],
+    [70, 40],
+  ],
+  places: [
+    { id: 'berlin', name: 'Berlin', lat: 52.52, lng: 13.405 },
+    { id: 'paris', name: 'Paris', lat: 48.8566, lng: 2.3522 },
+    { id: 'rom', name: 'Rom', lat: 41.9028, lng: 12.4964 },
+    { id: 'madrid', name: 'Madrid', lat: 40.4168, lng: -3.7038 },
+  ],
+};
+
+const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES];
 
 export const provider: CategoryProvider = {
   list: () => ALL,
@@ -150,6 +169,12 @@ export function startRound(h: Harness, categoryId = 'cities'): void {
 export function startMatch(h: Harness, lives?: number): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'match', categoryId: 'capitals', ...(lives !== undefined ? { lives } : {}) }));
+}
+
+/** Startet Spiel und Karten-Runde. */
+export function startMap(h: Harness, opts: { targetId?: string; borders?: boolean } = {}): void {
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'map', categoryId: 'landmarks', ...opts }));
 }
 
 /** Startet Spiel und Top-X-Runde. */

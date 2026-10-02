@@ -6,7 +6,7 @@ export const topxGame: GameModule = {
   id: 'topx',
   name: 'Top X',
   description: 'Eine verdeckte Top-Liste erraten. Fehltipps kosten Leben.',
-  hasPrivateView: true,
+  turnBased: true,
   startRound: startTopXRound,
   handle: handleTopXMessage,
   onHostChanged,

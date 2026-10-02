@@ -126,6 +126,12 @@ export function removePlayerFromRound(room: Room, playerId: string): void {
   const successor = nextActivePlayer(round.turnOrder, playerId, [...round.eliminated, playerId]);
   round.turnOrder = round.turnOrder.filter((id) => id !== playerId);
   round.eliminated = round.eliminated.filter((id) => id !== playerId);
+  game.onPlayerRemoved?.(room, playerId);
+
+  if (!game.turnBased) {
+    if (round.turnOrder.length === 0) toReveal(room);
+    return;
+  }
 
   if (room.phase === 'host_decision') {
     if (remainingPlayers(round.turnOrder, round.eliminated).length === 0) toReveal(room);
@@ -171,6 +177,7 @@ function skipTurn(room: Room, playerId: string, turnNo: number): Result {
   const round = room.round;
   const game = room.game;
   if (room.phase !== 'playing' || !round || !game) return fail('invalid_action', 'Gerade wird nicht gespielt');
+  if (!game.turnBased) return fail('invalid_action', 'Dieses Spiel hat keine Züge');
   if (round.turnNo !== turnNo) return fail('invalid_action', 'Zug ist schon vorbei');
   if (game.isBusy(room)) return fail('invalid_action', 'Auflösung läuft noch');
   room.cancelTimer('turn');
@@ -183,7 +190,7 @@ function hostDecision(room: Room, playerId: string, cont: boolean): Result {
   if (!room.isHost(playerId)) return fail('not_host', 'Nur der Host entscheidet');
   const round = room.round;
   const game = room.game;
-  if (room.phase !== 'host_decision' || !round || !game) return fail('invalid_action', 'Keine Entscheidung offen');
+  if (room.phase !== 'host_decision' || !round || !game || !game.turnBased) return fail('invalid_action', 'Keine Entscheidung offen');
   if (!cont) {
     toReveal(room);
     return OK;

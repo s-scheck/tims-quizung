@@ -49,15 +49,14 @@ export class Hub {
     return JSON.stringify(msg);
   }
 
-  /** Öffentliche Sicht an alle, die private Sicht nur an den moderierenden Host, wenn das Spiel eine hat. */
+  /** Jeder Spieler bekommt seine eigene Sicht (eigener Pin, Host-Sicht), Bildschirme die öffentliche. */
   broadcast(room: Room): void {
-    const publicJson = this.stateMessage(room, null);
-    const privateFor =
-      room.game?.hasPrivateView && room.round && room.hostId !== null && room.isModerator(room.hostId) ? room.hostId : null;
-    for (const [playerId, ws] of this.conns.get(room.code) ?? []) {
-      ws.send(playerId === privateFor ? this.stateMessage(room, playerId) : publicJson);
+    for (const [playerId, ws] of this.conns.get(room.code) ?? []) ws.send(this.stateMessage(room, playerId));
+    const screens = this.screens.get(room.code);
+    if (screens && screens.size > 0) {
+      const publicJson = this.stateMessage(room, null);
+      for (const ws of screens) ws.send(publicJson);
     }
-    for (const ws of this.screens.get(room.code) ?? []) ws.send(publicJson);
   }
 
   closeRoomSockets(code: string, closeCode: number = CLOSE_CODES.ROOM_CLOSED, reason = 'Raum geschlossen'): void {

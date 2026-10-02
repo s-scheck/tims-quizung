@@ -9,8 +9,8 @@ export type Phase =
   | 'scoreboard'
   | 'finished';
 
-export type GameId = 'sort' | 'topx' | 'match';
-export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match'];
+export type GameId = 'sort' | 'topx' | 'match' | 'map';
+export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map'];
 
 export type SortOrder = 'asc' | 'desc';
 export type TimerSeconds = 0 | 30 | 60;
@@ -58,6 +58,12 @@ export interface CategoryInfo {
   valueFormat?: 'grouped' | 'plain';
 }
 
+export interface MapTargetSummary {
+  id: string;
+  name: string;
+  played: boolean;
+}
+
 export interface CategorySummary {
   id: string;
   title: string;
@@ -65,6 +71,8 @@ export interface CategorySummary {
   count: number;
   played: boolean;
   games: GameId[];
+  /** Nur bei Ortslisten und nur in der Sicht des Hosts: wählbare Ziele. */
+  targets?: MapTargetSummary[];
 }
 
 export interface GameInfo {
@@ -199,7 +207,44 @@ export interface MatchRoundView extends BaseRoundView {
   privileged?: boolean;
 }
 
-export type RoundView = SortRoundView | TopXRoundView | MatchRoundView;
+/** Süd-West- und Nord-Ost-Ecke: [[south, west], [north, east]]. */
+export type LatLngBounds = [[number, number], [number, number]];
+
+export interface MapCategoryInfo {
+  id: string;
+  title: string;
+  question: string;
+  source?: string;
+  /** Startausschnitt der Karte, Standard ist die Welt. */
+  bounds?: LatLngBounds;
+}
+
+export interface MapPinView {
+  playerId: string;
+  lat: number;
+  lng: number;
+  distanceKm: number;
+}
+
+export interface MapRoundView extends BaseRoundView {
+  game: 'map';
+  category: MapCategoryInfo;
+  targetName: string;
+  /** Zielkoordinaten, nur für den Moderator oder ab der Auflösung. */
+  target?: { lat: number; lng: number };
+  borders: boolean;
+  /** Spieler, die ihren Pin bestätigt haben. */
+  confirmed: string[];
+  /** Nur der eigene Pin des Betrachters. */
+  myPin?: { lat: number; lng: number; confirmed: boolean };
+  /** Ab der Auflösung: alle bestätigten Pins mit Entfernung. */
+  pins?: MapPinView[];
+  /** Ab der Auflösung: Teilnehmer nach Entfernung, ohne Pin hinten mit null. */
+  ranking?: { playerId: string; distanceKm: number | null }[];
+  privileged?: boolean;
+}
+
+export type RoundView = SortRoundView | TopXRoundView | MatchRoundView | MapRoundView;
 
 export interface RoundResult {
   gameId: GameId;
@@ -222,6 +267,8 @@ export interface RoomView {
   rounds: RoundResult[];
   /** Zuletzt gewählte Leben, Vorgabe für Top X und Zuordnen. */
   defaultLives: number;
+  /** Zuletzt gewählte Grenzen-Einstellung für Karte. */
+  mapBorders: boolean;
   /** Nur in `choosing_category` enthalten. */
   categories?: CategorySummary[];
   /** Nur in `choosing_category` enthalten. */

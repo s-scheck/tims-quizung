@@ -1,0 +1,33 @@
+{
+  "id": "map-wahrzeichen",
+  "title": "Wahrzeichen und Weltwunder",
+  "question": "Wo auf der Welt steht das?",
+  "games": ["map"],
+  "source": "gängige Koordinaten",
+  "places": [
+    { "name": "Taj Mahal", "lat": 27.1751, "lng": 78.0421 },
+    { "name": "Machu Picchu", "lat": -13.1631, "lng": -72.5450 },
+    { "name": "Chichén Itzá", "lat": 20.6843, "lng": -88.5678 },
+    { "name": "Petra", "lat": 30.3285, "lng": 35.4444 },
+    { "name": "Angkor Wat", "lat": 13.4125, "lng": 103.8670 },
+    { "name": "Uluru", "lat": -25.3444, "lng": 131.0369 },
+    { "name": "Freiheitsstatue", "lat": 40.6892, "lng": -74.0445 },
+    { "name": "Pyramiden von Gizeh", "lat": 29.9792, "lng": 31.1342 },
+    { "name": "Eiffelturm", "lat": 48.8584, "lng": 2.2945 },
+    { "name": "Kolosseum", "lat": 41.8902, "lng": 12.4922 },
+    { "name": "Chinesische Mauer (Badaling)", "lat": 40.3584, "lng": 116.0138 },
+    { "name": "Christusstatue in Rio", "lat": -22.9519, "lng": -43.2105 },
+    { "name": "Stonehenge", "lat": 51.1789, "lng": -1.8262 },
+    { "name": "Burj Khalifa", "lat": 25.1972, "lng": 55.2744 },
+    { "name": "Sydney Opera House", "lat": -33.8568, "lng": 151.2153 },
+    { "name": "Mount Rushmore", "lat": 43.8791, "lng": -103.4591 },
+    { "name": "Moai der Osterinsel", "lat": -27.1127, "lng": -109.3497 },
+    { "name": "Schloss Neuschwanstein", "lat": 47.5576, "lng": 10.7498 },
+    { "name": "Golden Gate Bridge", "lat": 37.8199, "lng": -122.4783 },
+    { "name": "Akropolis", "lat": 37.9715, "lng": 23.7257 },
+    { "name": "Hagia Sophia", "lat": 41.0086, "lng": 28.9802 },
+    { "name": "Alhambra", "lat": 37.1761, "lng": -3.5881 },
+    { "name": "Kreml", "lat": 55.7520, "lng": 37.6175 },
+    { "name": "Big Ben", "lat": 51.5007, "lng": -0.1246 }
+  ]
+}

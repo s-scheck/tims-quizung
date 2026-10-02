@@ -58,6 +58,10 @@ export class Room {
   lastStartPlayerId: string | null = null;
   /** Zuletzt gewählte Leben, Vorgabe für Top X und Zuordnen. */
   defaultLives: number = LIVES_DEFAULT;
+  /** Zuletzt gewählte Grenzen-Einstellung für Karte. */
+  mapBorders = false;
+  /** Gespielte Ziele je Ortsliste, damit Zufall nichts wiederholt und der Moderator es sieht. */
+  playedPlaces: Record<string, string[]> = {};
   seq = 0;
   lastActivity: number;
   screenCount = 0;
@@ -237,6 +241,7 @@ export class Room {
     this.scores = Object.fromEntries(this.players.map((p) => [p.id, 0]));
     this.rounds = [];
     this.playedCategoryIds = [];
+    this.playedPlaces = {};
     this.lastStartPlayerId = null;
     this.phase = 'choosing_category';
     return OK;
@@ -279,7 +284,11 @@ export class Room {
       case 'start_game':
         return this.startGame(playerId);
       case 'choose_category':
-        return this.chooseCategory(playerId, msg.gameId, msg.categoryId, msg.lives !== undefined ? { lives: msg.lives } : {});
+        return this.chooseCategory(playerId, msg.gameId, msg.categoryId, {
+          ...(msg.lives !== undefined ? { lives: msg.lives } : {}),
+          ...(msg.targetId !== undefined ? { targetId: msg.targetId } : {}),
+          ...(msg.borders !== undefined ? { borders: msg.borders } : {}),
+        });
       case 'back_to_lobby':
         return this.backToLobby(playerId);
       case 'create':

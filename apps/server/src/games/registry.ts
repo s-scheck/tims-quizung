@@ -5,6 +5,8 @@ import type { Result } from '../rooms/result.ts';
 
 export interface StartRoundOptions {
   lives?: number;
+  targetId?: string;
+  borders?: boolean;
 }
 
 /**
@@ -16,13 +18,15 @@ export interface GameModule {
   id: GameId;
   name: string;
   description: string;
-  /** Sieht der moderierende Host mehr als alle anderen? Dann bekommt er eine eigene Sicht. */
-  hasPrivateView: boolean;
+  /** Rundenbasiert mit Zugreihenfolge, Ausscheiden und Host-Entscheidung? Karte ist es nicht. */
+  turnBased: boolean;
   startRound(room: Room, category: Category, opts: StartRoundOptions): Result;
   /** Spielspezifische Nachrichten. Gemeinsame behandelt `games/common.ts` vorher. */
   handle(room: Room, playerId: string, msg: ClientMsg): Result;
   /** Der Host hat gewechselt, der neue Host spielt mit. */
   onHostChanged(room: Room): void;
+  /** Ein Teilnehmer hat den Raum verlassen, seine Spuren in der Runde löschen. */
+  onPlayerRemoved?(room: Room, playerId: string): void;
   roundView(room: Room, revealed: boolean, viewerId: string | null): RoundView | null;
   /** Läuft gerade eine Auflösung (Platzierung, Tipp), die keinen neuen Zug erlaubt? */
   isBusy(room: Room): boolean;

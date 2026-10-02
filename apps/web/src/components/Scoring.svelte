@@ -1,7 +1,7 @@
 <script lang="ts">
   import { SCORE_MAX, SCORE_MIN, type RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
-  import { scoredPlayers } from '../lib/format.ts';
+  import { formatKm, scoredPlayers } from '../lib/format.ts';
 
   let { view }: { view: RoomView } = $props();
 
@@ -23,6 +23,12 @@
   function statusOf(id: string): string {
     const r = round;
     if (!r.turnOrder.includes(id)) return 'nicht dabei';
+    if (r.game === 'map') {
+      const entry = r.ranking?.find((x) => x.playerId === id);
+      if (!entry || entry.distanceKm === null) return 'kein Pin';
+      const rank = (r.ranking ?? []).indexOf(entry) + 1;
+      return `${rank}. Platz, ${formatKm(entry.distanceKm)}`;
+    }
     if (r.game === 'topx' || r.game === 'match') {
       const hits = r.hits[id] ?? 0;
       const lives = r.lives[id] ?? 0;

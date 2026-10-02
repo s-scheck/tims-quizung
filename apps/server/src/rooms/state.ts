@@ -1,5 +1,5 @@
 import type { GuessStatus, MatchSelection, PlacementStatus, Selection } from '@quiz/shared';
-import type { Category, PairsCategory, RankedCategory } from '@quiz/content';
+import type { Category, PairsCategory, PlacesCategory, RankedCategory } from '@quiz/content';
 
 export interface Player {
   id: string;
@@ -124,4 +124,21 @@ export interface MatchRound extends BaseRound {
   hits: Record<string, number>;
 }
 
-export type Round = SortRound | TopXRound | MatchRound;
+// -------------------------------------------------------------------- Karte
+
+export interface MapPin {
+  lat: number;
+  lng: number;
+  confirmed: boolean;
+}
+
+export interface MapRound extends BaseRound {
+  game: 'map';
+  category: PlacesCategory;
+  target: { id: string; name: string; lat: number; lng: number };
+  borders: boolean;
+  /** Spieler-ID → Pin. Nur bestätigte zählen in der Auflösung. */
+  pins: Record<string, MapPin>;
+}
+
+export type Round = SortRound | TopXRound | MatchRound | MapRound;

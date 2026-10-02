@@ -5,3 +5,4 @@ export * from './ids.ts';
 export * from './rules/sort.ts';
 export * from './rules/turns.ts';
 export * from './rules/topx.ts';
+export * from './rules/geo.ts';
