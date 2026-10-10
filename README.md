@@ -31,9 +31,10 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 
 - Alle Spieler sehen gleichzeitig eine stumme, zoombare Weltkarte (nur Land und Wasser, Ländergrenzen pro Runde zuschaltbar) und setzen einen Pin dort, wo sie das Ziel vermuten. Niemand sieht fremde Pins.
 - Jeder bestätigt seinen Pin, danach ist er fest. Der Host beendet die Runde jederzeit, nur bestätigte Pins zählen.
+- Mit Zeitlimit gilt es für die ganze Runde. Läuft es ab, zählen auch gesetzte, aber unbestätigte Pins, und es geht direkt zur Auflösung.
 - Moderiert der Host, wählt er das Ziel aus der Sammlung und sieht es auf der Karte. Spielt er mit, zieht der Server ein zufälliges, noch nicht gespieltes Ziel.
 - In der Auflösung erscheinen Ziel, alle Pins mit Linien und eine Rangliste nach Luftlinie in Kilometern. Punkte wie gewohnt von Hand.
-- Kein Zeitlimit, keine Leben, keine Zugreihenfolge.
+- Keine Leben, keine Zugreihenfolge.
 
 Die Kartendaten stammen von [Natural Earth](https://www.naturalearthdata.com/) (gemeinfrei) und liegen unter `apps/web/public/geo/`. Die Karte selbst rendert [Leaflet](https://leafletjs.com/) ohne Kacheln, es wird kein externer Dienst angesprochen.
 

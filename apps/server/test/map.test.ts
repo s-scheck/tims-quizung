@@ -200,3 +200,42 @@ describe('Karte: Spieler kommen und gehen', () => {
     expect(h.act(late.player.id, { type: 'place_pin', lat: 1, lng: 1 })).toMatchObject({ ok: false, code: 'not_allowed' });
   });
 });
+
+describe('Karte: Zeitlimit', () => {
+  test('gilt für die ganze Runde, bei Ablauf zählen auch unbestätigte Pins', () => {
+    const h = makeHarness(['A', 'B', 'C'], { timer: 30 });
+    startMap(h);
+    const r = kr(h);
+    const [a, b, c] = h.ids as [string, string, string];
+    expect(r.turnDeadline).toBe(h.scheduler.now() + 30_000);
+    expect(viewRound(h, null).turnDeadline).toBe(r.turnDeadline);
+    expectOk(h.act(a, { type: 'place_pin', lat: 52.5, lng: 13.4 }));
+    expectOk(h.act(a, { type: 'confirm_pin' }));
+    expectOk(h.act(b, { type: 'place_pin', lat: 48.8, lng: 2.3 }));
+    const emitsBefore = h.emits.length;
+    h.scheduler.advance(29_999);
+    expect(h.room.phase).toBe('playing');
+    h.scheduler.advance(1);
+    expect(h.room.phase).toBe('reveal');
+    expect(h.emits.length).toBe(emitsBefore + 1);
+    expect(r.turnDeadline).toBeNull();
+    const pub = viewRound(h, null);
+    expect(pub.pins?.map((p) => p.playerId).sort()).toEqual([a, b].sort());
+    expect(pub.ranking?.at(-1)).toEqual({ playerId: c, distanceKm: null });
+  });
+
+  test('Host beendet vorher: Timer ist weg', () => {
+    const h = makeHarness(['A', 'B'], { timer: 30 });
+    startMap(h);
+    expectOk(h.act(h.host, { type: 'end_round' }));
+    expect(h.room.phase).toBe('reveal');
+    expect(h.scheduler.pending).toBe(0);
+  });
+
+  test('ohne Zeitlimit kein Timer', () => {
+    const h = makeHarness(['A', 'B']);
+    startMap(h);
+    expect(kr(h).turnDeadline).toBeNull();
+    expect(h.scheduler.pending).toBe(0);
+  });
+});

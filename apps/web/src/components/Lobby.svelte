@@ -85,7 +85,7 @@
           </button>
         {/each}
       </div>
-      <p class="text-xs text-slate-500">Bei Ablauf scheidet der Spieler aus, als hätte er falsch gelegt.</p>
+      <p class="text-xs text-slate-500">Bei Ablauf scheidet der Spieler aus, als hätte er falsch gelegt. Bei Karte gilt das Limit für die ganze Runde, danach geht es direkt zur Auflösung.</p>
     </div>
   </section>
 

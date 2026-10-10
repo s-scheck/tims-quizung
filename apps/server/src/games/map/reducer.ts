@@ -44,7 +44,32 @@ export function startMapRound(room: Room, category: Category, opts: StartRoundOp
     pins: {},
   };
   room.phase = 'playing';
+  scheduleRoundTimer(room);
   return OK;
+}
+
+/** Bei gesetztem Zeitlimit gilt es für die ganze Runde, alle setzen ja gleichzeitig. */
+function scheduleRoundTimer(room: Room): void {
+  room.cancelTimer('turn');
+  const round = mapRound(room);
+  if (!round) return;
+  const seconds = room.settings.timerSeconds;
+  if (seconds <= 0) {
+    round.turnDeadline = null;
+    return;
+  }
+  round.turnDeadline = room.now + seconds * 1000;
+  room.timers.turn = room.scheduler.schedule(seconds * 1000, () => timerExpired(room));
+}
+
+/** Zeit abgelaufen: gesetzte Pins zählen auch unbestätigt, dann direkt zur Auflösung. */
+function timerExpired(room: Room): void {
+  room.timers.turn = null;
+  const round = mapRound(room);
+  if (room.phase !== 'playing' || !round) return;
+  for (const pin of Object.values(round.pins)) pin.confirmed = true;
+  toReveal(room);
+  room.emit();
 }
 
 export function handleMapMessage(room: Room, playerId: string, msg: ClientMsg): Result {

@@ -19,7 +19,7 @@ export function mapRoundView(room: Room, revealed: boolean, viewerId: string | n
     turnNo: r.turnNo,
     activePlayerId: null,
     eliminated: [],
-    turnDeadline: null,
+    turnDeadline: r.turnDeadline,
     soloMode: false,
     targetName: r.target.name,
     borders: r.borders,

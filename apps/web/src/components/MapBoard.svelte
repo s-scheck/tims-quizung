@@ -3,6 +3,7 @@
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
   import WorldMap from './WorldMap.svelte';
+  import TurnTimer from './TurnTimer.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: MapRoundView; readonly?: boolean } = $props();
 
@@ -40,7 +41,11 @@
     if (readonly) return '';
     if (client.isModerator) return 'Du moderierst. Das Ziel siehst nur du.';
     if (!isParticipant) return 'Du bist ab der nächsten Runde dabei.';
-    if (myPin?.confirmed) return 'Bestätigt. Warte, bis der Host die Runde beendet.';
+    if (myPin?.confirmed) {
+      return round.turnDeadline !== null
+        ? 'Bestätigt. Warte, bis die Zeit abläuft oder der Host die Runde beendet.'
+        : 'Bestätigt. Warte, bis der Host die Runde beendet.';
+    }
     if (!myPin) return 'Tippe auf die Karte, um deinen Pin zu setzen. Zoomen und Verschieben geht mit zwei Fingern.';
     return 'Pin ziehen oder neu antippen, dann bestätigen.';
   });
@@ -53,6 +58,7 @@
       <h2 class="truncate text-2xl font-black sm:text-3xl {readonly ? 'text-5xl' : ''}">{round.targetName}</h2>
     </div>
     <div class="flex items-center gap-2">
+      <TurnTimer deadline={round.turnDeadline} totalSeconds={view.settings.timerSeconds} size={readonly ? 64 : 48} />
       <span class="badge {round.borders ? 'bg-sky-500/20 text-sky-200' : ''}">{round.borders ? 'mit Grenzen' : 'ohne Grenzen'}</span>
       {#if canEnd}
         <button class="{confirmingEnd ? 'btn-danger' : 'btn-secondary'}" onclick={endRound}>
