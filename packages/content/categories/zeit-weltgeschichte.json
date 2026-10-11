@@ -1,0 +1,32 @@
+{
+  "id": "zeit-weltgeschichte",
+  "title": "Weltgeschichte",
+  "question": "Wann war das?",
+  "games": ["timeline"],
+  "source": "gängige Datierung",
+  "events": [
+    { "name": "Bau der Cheops-Pyramide", "from": -2580, "to": -2560 },
+    { "name": "Sagenhafte Gründung Roms", "year": -753 },
+    { "name": "Peloponnesischer Krieg", "from": -431, "to": -404 },
+    { "name": "Ermordung Julius Caesars", "year": -44 },
+    { "name": "Ende des Weströmischen Reiches", "year": 476 },
+    { "name": "Kaiserkrönung Karls des Großen", "year": 800 },
+    { "name": "Schlacht bei Hastings", "year": 1066 },
+    { "name": "Erster Kreuzzug", "from": 1096, "to": 1099 },
+    { "name": "Magna Carta", "year": 1215 },
+    { "name": "Schwarzer Tod in Europa", "from": 1347, "to": 1351 },
+    { "name": "Fall Konstantinopels", "year": 1453 },
+    { "name": "Kolumbus erreicht Amerika", "year": 1492 },
+    { "name": "Amerikanische Unabhängigkeitserklärung", "year": 1776 },
+    { "name": "Französische Revolution", "from": 1789, "to": 1799 },
+    { "name": "Schlacht bei Waterloo", "year": 1815 },
+    { "name": "Amerikanischer Bürgerkrieg", "from": 1861, "to": 1865 },
+    { "name": "Erster Weltkrieg", "from": 1914, "to": 1918 },
+    { "name": "Russische Oktoberrevolution", "year": 1917 },
+    { "name": "Zweiter Weltkrieg", "from": 1939, "to": 1945 },
+    { "name": "Kalter Krieg", "from": 1947, "to": 1991 },
+    { "name": "Erste bemannte Mondlandung", "year": 1969 },
+    { "name": "Nelson Mandela wird Präsident Südafrikas", "year": 1994 },
+    { "name": "Anschläge vom 11. September", "year": 2001 }
+  ]
+}

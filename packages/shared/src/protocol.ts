@@ -39,6 +39,7 @@ export type ClientMsg =
   | { type: 'guess'; turnNo: number; text: string }
   | { type: 'judge'; turnNo: number; correct: boolean; rank?: number }
   | { type: 'place_pin'; lat: number; lng: number }
+  | { type: 'place_year'; year: number }
   | { type: 'confirm_pin' }
   | { type: 'end_round' }
   | { type: 'skip_turn'; turnNo: number }

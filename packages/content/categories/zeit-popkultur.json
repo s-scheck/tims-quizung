@@ -1,0 +1,32 @@
+{
+  "id": "zeit-popkultur",
+  "title": "Popkultur",
+  "question": "Wann war das?",
+  "games": ["timeline"],
+  "source": "gängige Datierung",
+  "events": [
+    { "name": "Uraufführung der Zauberflöte", "year": 1791 },
+    { "name": "Goethes Faust I erscheint", "year": 1808 },
+    { "name": "„The Jazz Singer“ kommt ins Kino", "year": 1927 },
+    { "name": "Steamboat Willie mit Micky Maus", "year": 1928 },
+    { "name": "Erste Oscarverleihung", "year": 1929 },
+    { "name": "Die Beatles", "from": 1960, "to": 1970 },
+    { "name": "Erster James-Bond-Film", "year": 1962 },
+    { "name": "Woodstock-Festival", "year": 1969 },
+    { "name": "Erster Tatort", "year": 1970 },
+    { "name": "ABBA gewinnt den ESC", "year": 1974 },
+    { "name": "Krieg der Sterne kommt ins Kino", "year": 1977 },
+    { "name": "Erste Sendung „Wetten, dass..?“", "year": 1981 },
+    { "name": "Michael Jacksons „Thriller“", "year": 1982 },
+    { "name": "Super Mario Bros.", "year": 1985 },
+    { "name": "Game Boy erscheint", "year": 1989 },
+    { "name": "Erste Folge der Simpsons", "year": 1989 },
+    { "name": "Friends läuft im US-Fernsehen", "from": 1994, "to": 2004 },
+    { "name": "Pokémon Rot und Grün", "year": 1996 },
+    { "name": "Titanic kommt ins Kino", "year": 1997 },
+    { "name": "Harry-Potter-Bücher", "from": 1997, "to": 2007 },
+    { "name": "YouTube wird gegründet", "year": 2005 },
+    { "name": "Lena gewinnt den ESC", "year": 2010 },
+    { "name": "Game of Thrones", "from": 2011, "to": 2019 }
+  ]
+}

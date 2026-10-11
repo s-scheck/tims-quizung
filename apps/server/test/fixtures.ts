@@ -87,7 +87,22 @@ export const PLACES: Category = {
   ],
 };
 
-const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES];
+export const EVENTS: Category = {
+  kind: 'events',
+  id: 'history',
+  title: 'Geschichte',
+  question: 'Wann war das?',
+  games: ['timeline'],
+  source: 'Test',
+  events: [
+    { id: 'caesar', name: 'Ermordung Caesars', from: -44, to: -44 },
+    { id: 'revolution', name: 'Französische Revolution', from: 1789, to: 1799 },
+    { id: 'ww2', name: 'Zweiter Weltkrieg', from: 1939, to: 1945 },
+    { id: 'mond', name: 'Mondlandung', from: 1969, to: 1969 },
+  ],
+};
+
+const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS];
 
 export const provider: CategoryProvider = {
   list: () => ALL,
@@ -175,6 +190,12 @@ export function startMatch(h: Harness, lives?: number): void {
 export function startMap(h: Harness, opts: { targetId?: string; borders?: boolean } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'map', categoryId: 'landmarks', ...opts }));
+}
+
+/** Startet Spiel und Zeitstrahl-Runde. */
+export function startTimeline(h: Harness, opts: { targetId?: string } = {}): void {
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'timeline', categoryId: 'history', ...opts }));
 }
 
 /** Startet Spiel und Top-X-Runde. */

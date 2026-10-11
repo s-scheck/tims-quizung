@@ -1,6 +1,6 @@
 # Tims Quizung
 
-Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Spiele: **Sortieren**, **Top X**, **Zuordnen** und **Karte**. Der Host wählt vor jeder Runde das Spiel und die Kategorie, der Punktestand läuft über alle Runden durch.
+Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Spiele: **Sortieren**, **Top X**, **Zuordnen**, **Karte** und **Zeitstrahl**. Der Host wählt vor jeder Runde das Spiel und die Kategorie, der Punktestand läuft über alle Runden durch.
 
 ## Spielregeln „Sortieren"
 
@@ -35,6 +35,13 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 - Moderiert der Host, wählt er das Ziel aus der Sammlung und sieht es auf der Karte. Spielt er mit, zieht der Server ein zufälliges, noch nicht gespieltes Ziel.
 - In der Auflösung erscheinen Ziel, alle Pins mit Linien und eine Rangliste nach Luftlinie in Kilometern. Punkte wie gewohnt von Hand.
 - Keine Leben, keine Zugreihenfolge.
+
+## Spielregeln „Zeitstrahl"
+
+- Alle sehen gleichzeitig ein Ereignis, etwa „Französische Revolution“, und tippen auf einem Zeitstrahl von 4000 v. Chr. bis 2030 an, wann es war. Zoomen per Pinch, Mausrad oder Tasten, fein einstellen mit ±1/±10 oder per Eingabe, v. Chr. per Umschalter.
+- Jeder bestätigt seinen Tipp, danach ist er fest. Der Host beendet die Runde jederzeit, nur bestätigte Tipps zählen. Mit Zeitlimit gilt es für die ganze Runde, bei Ablauf zählen auch unbestätigte Tipps.
+- Moderiert der Host, wählt er das Ereignis und sieht die Lösung. Spielt er mit, zieht der Server ein zufälliges, noch nicht gespieltes Ereignis.
+- In der Auflösung erscheint das Jahr oder die Spanne (z. B. 1939–1945) als Band mit allen Tipps. Gewertet wird der Abstand in Jahren, innerhalb einer Spanne ist er 0. Ein Jahr 0 gibt es nicht. Punkte wie gewohnt von Hand.
 
 Die Kartendaten stammen von [Natural Earth](https://www.naturalearthdata.com/) (gemeinfrei) und liegen unter `apps/web/public/geo/`. Die Karte selbst rendert [Leaflet](https://leafletjs.com/) ohne Kacheln, es wird kein externer Dienst angesprochen.
 
@@ -130,6 +137,20 @@ Für Karte gibt es Ortslisten mit Koordinaten:
 ```
 
 Regeln: 10 bis 30 Orte, Namen eindeutig, `bounds` optional als Startausschnitt `[[Süd, West], [Nord, Ost]]`. Dateien beginnen mit `map-`.
+
+Für Zeitstrahl gibt es Ereignislisten mit einem Jahr oder einer Spanne:
+
+```json
+{
+  "id": "zeit-beispiel",
+  "title": "Weltgeschichte",
+  "question": "Wann war das?",
+  "games": ["timeline"],
+  "events": [{ "name": "Ermordung Julius Caesars", "year": -44 }, { "name": "Zweiter Weltkrieg", "from": 1939, "to": 1945 }]
+}
+```
+
+Regeln: 10 bis 30 Ereignisse, Namen eindeutig, entweder `year` oder `from` und `to`, ganze Jahre von -4000 bis 2030 ohne 0 (negativ heißt v. Chr.). Dateien beginnen mit `zeit-`.
 
 Für Top X kommt `"games": ["topx"]` dazu (Standard ist `["sort"]`, beides zusammen geht auch). Top-X-Listen müssen echte Top-Listen ohne Gleichstand über die Listengrenze sein, dürfen ab 5 Einträgen kurz sein und Gleichstände enthalten. Pro Eintrag helfen `aliases` beim Abgleich, etwa `["Mbappe", "Mbappé"]`; ein eindeutiger Nachname trifft automatisch. Dateien beginnen mit `topx-`.
 

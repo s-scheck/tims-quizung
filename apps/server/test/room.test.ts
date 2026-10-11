@@ -131,8 +131,9 @@ describe('View', () => {
       ['players', false, 5, ['topx']],
       ['capitals', false, 4, ['match']],
       ['landmarks', false, 4, ['map']],
+      ['history', false, 4, ['timeline']],
     ]);
-    expect(view.games?.map((g) => g.id)).toEqual(['sort', 'topx', 'match', 'map']);
+    expect(view.games?.map((g) => g.id)).toEqual(['sort', 'topx', 'match', 'map', 'timeline']);
     // Zielliste nur in der Host-Sicht.
     expect(view.categories?.find((c) => c.id === 'landmarks')?.targets).toBeUndefined();
     const hostView = toView(h.room, h.host);

@@ -9,8 +9,8 @@ export type Phase =
   | 'scoreboard'
   | 'finished';
 
-export type GameId = 'sort' | 'topx' | 'match' | 'map';
-export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map'];
+export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline';
+export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline'];
 
 export type SortOrder = 'asc' | 'desc';
 export type TimerSeconds = 0 | 30 | 60;
@@ -71,7 +71,7 @@ export interface CategorySummary {
   count: number;
   played: boolean;
   games: GameId[];
-  /** Nur bei Ortslisten und nur in der Sicht des Hosts: wählbare Ziele. */
+  /** Nur bei Orts- und Ereignislisten und nur in der Sicht des Hosts: wählbare Ziele. */
   targets?: MapTargetSummary[];
 }
 
@@ -244,7 +244,44 @@ export interface MapRoundView extends BaseRoundView {
   privileged?: boolean;
 }
 
-export type RoundView = SortRoundView | TopXRoundView | MatchRoundView | MapRoundView;
+/** Kategorie eines Zeitstrahl-Spiels. */
+export interface TimelineCategoryInfo {
+  id: string;
+  title: string;
+  question: string;
+  source?: string;
+}
+
+/** Ein Jahr (`from === to`) oder eine Spanne. Negativ heißt v. Chr. */
+export interface YearSpan {
+  from: number;
+  to: number;
+}
+
+export interface TimelineGuessView {
+  playerId: string;
+  year: number;
+  distanceYears: number;
+}
+
+export interface TimelineRoundView extends BaseRoundView {
+  game: 'timeline';
+  category: TimelineCategoryInfo;
+  eventName: string;
+  /** Lösung, nur für den Moderator oder ab der Auflösung. */
+  target?: YearSpan;
+  /** Spieler, die ihren Tipp bestätigt haben. */
+  confirmed: string[];
+  /** Nur der eigene Tipp des Betrachters. */
+  myGuess?: { year: number; confirmed: boolean };
+  /** Ab der Auflösung: alle bestätigten Tipps mit Abstand. */
+  guesses?: TimelineGuessView[];
+  /** Ab der Auflösung: Teilnehmer nach Abstand, ohne Tipp hinten mit null. */
+  ranking?: { playerId: string; distanceYears: number | null }[];
+  privileged?: boolean;
+}
+
+export type RoundView = SortRoundView | TopXRoundView | MatchRoundView | MapRoundView | TimelineRoundView;
 
 export interface RoundResult {
   gameId: GameId;

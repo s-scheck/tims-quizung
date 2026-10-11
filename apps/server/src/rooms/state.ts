@@ -1,5 +1,5 @@
 import type { GuessStatus, MatchSelection, PlacementStatus, Selection } from '@quiz/shared';
-import type { Category, PairsCategory, PlacesCategory, RankedCategory } from '@quiz/content';
+import type { Category, EventsCategory, PairsCategory, PlacesCategory, RankedCategory, TimelineEvent } from '@quiz/content';
 
 export interface Player {
   id: string;
@@ -141,4 +141,19 @@ export interface MapRound extends BaseRound {
   pins: Record<string, MapPin>;
 }
 
-export type Round = SortRound | TopXRound | MatchRound | MapRound;
+// ---------------------------------------------------------------- Zeitstrahl
+
+export interface TimelineGuess {
+  year: number;
+  confirmed: boolean;
+}
+
+export interface TimelineRound extends BaseRound {
+  game: 'timeline';
+  category: EventsCategory;
+  target: TimelineEvent;
+  /** Spieler-ID → Tipp. Nur bestätigte zählen in der Auflösung. */
+  guesses: Record<string, TimelineGuess>;
+}
+
+export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound;

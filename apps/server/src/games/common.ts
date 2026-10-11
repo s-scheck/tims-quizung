@@ -49,6 +49,58 @@ export function baseRound(category: Category, turnOrder: string[]): BaseRound {
   };
 }
 
+// ------------------------------------------- Ziel und Rundentimer (Karte, Zeitstrahl)
+
+/**
+ * Ziel einer Runde, in der alle gleichzeitig tippen. Der Moderator kennt das Ziel ohnehin und wählt es selbst,
+ * sonst zieht der Server eins, das in dieser Liste noch nicht dran war. Ändert nichts am Raum, siehe `rememberTarget`.
+ */
+export function pickTarget<T extends { id: string }>(
+  room: Room,
+  categoryId: string,
+  targets: readonly T[],
+  targetId: string | undefined,
+): { target: T } | { error: Result } {
+  const played = room.playedTargets[categoryId] ?? [];
+  let target: T;
+  if (room.hostId !== null && room.isModerator(room.hostId)) {
+    if (!targetId) return { error: fail('invalid_action', 'Bitte ein Ziel wählen') };
+    const chosen = targets.find((t) => t.id === targetId);
+    if (!chosen) return { error: fail('unknown_category', 'Ziel unbekannt') };
+    target = chosen;
+  } else {
+    const fresh = targets.filter((t) => !played.includes(t.id));
+    const pool = fresh.length > 0 ? fresh : targets;
+    target = pool[Math.floor(room.random() * pool.length)]!;
+  }
+  return { target };
+}
+
+/** Merkt sich ein Ziel als gespielt, erst wenn die Runde wirklich startet. */
+export function rememberTarget(room: Room, categoryId: string, targetId: string): void {
+  const played = room.playedTargets[categoryId] ?? [];
+  room.playedTargets[categoryId] = [...played.filter((id) => id !== targetId), targetId];
+}
+
+/** Bei gesetztem Zeitlimit gilt es für die ganze Runde, alle tippen ja gleichzeitig. */
+export function scheduleRoundTimer(room: Room, onExpire: () => void): void {
+  room.cancelTimer('turn');
+  const round = room.round;
+  if (!round || room.phase !== 'playing') return;
+  const seconds = room.settings.timerSeconds;
+  if (seconds <= 0) {
+    round.turnDeadline = null;
+    return;
+  }
+  round.turnDeadline = room.now + seconds * 1000;
+  room.timers.turn = room.scheduler.schedule(seconds * 1000, () => {
+    room.timers.turn = null;
+    if (room.phase !== 'playing' || room.round !== round) return;
+    onExpire();
+    room.emit();
+  });
+}
+
 // ------------------------------------------------------------------ Timer
 
 export function scheduleTurnTimer(room: Room): void {

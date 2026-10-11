@@ -1,11 +1,12 @@
 import { describe, expect, test } from 'bun:test';
-import { CategoryValidationError, loadCategories, MIN_ITEMS, MIN_ITEMS_TOPX, MIN_PAIRS, MIN_PLACES, slugify, validateCategory } from './index.ts';
+import { CategoryValidationError, loadCategories, MIN_ITEMS, MIN_ITEMS_TOPX, MIN_PAIRS, MIN_EVENTS, MIN_PLACES, slugify, validateCategory } from './index.ts';
 
 describe('Kategorien im Repo', () => {
   const categories = loadCategories();
   const ranked = categories.filter((c) => c.kind === 'ranked');
   const pairs = categories.filter((c) => c.kind === 'pairs');
   const places = categories.filter((c) => c.kind === 'places');
+  const events = categories.filter((c) => c.kind === 'events');
 
   test('mindestens 15 Ranglisten, alle mit genug Einträgen', () => {
     expect(ranked.length).toBeGreaterThanOrEqual(15);
@@ -56,6 +57,16 @@ describe('Kategorien im Repo', () => {
       expect(c.places.length).toBeGreaterThanOrEqual(MIN_PLACES);
       expect(new Set(c.places.map((p) => p.id)).size).toBe(c.places.length);
       expect(c.games).toEqual(['map']);
+    }
+  });
+
+  test('mindestens 4 Ereignislisten, Spannen sauber geordnet', () => {
+    expect(events.length).toBeGreaterThanOrEqual(4);
+    for (const c of events) {
+      expect(c.events.length).toBeGreaterThanOrEqual(MIN_EVENTS);
+      expect(new Set(c.events.map((e) => e.id)).size).toBe(c.events.length);
+      for (const e of c.events) expect(e.from).toBeLessThanOrEqual(e.to);
+      expect(c.games).toEqual(['timeline']);
     }
   });
 
@@ -200,5 +211,37 @@ describe('validateCategory (Ortsliste)', () => {
     expect(() => validateCategory({ ...base, bounds: [[70, 0], [10, 5]] }, 'f')).toThrow(/Süd/);
     expect(() => validateCategory({ ...base, bounds: [1, 2] }, 'f')).toThrow(/bounds/);
     expect(() => validateCategory({ ...base, games: ['sort'] }, 'f')).toThrow(/map/);
+  });
+});
+
+describe('validateCategory (Ereignisliste)', () => {
+  const names = ['Mondlandung', 'Mauerfall', 'Erster Weltkrieg', 'Caesar', 'Magna Carta', 'Kolumbus', 'Waterloo', 'Luther', 'Varusschlacht', 'Euro'];
+  const base = {
+    id: 'zeit-test',
+    title: 'T',
+    question: 'Wann?',
+    games: ['timeline'],
+    events: names.map((name, i) => (i === 2 ? { name, from: 1914, to: 1918 } : { name, year: 1000 + i })),
+  };
+
+  test('gültige Liste: Jahr wird zur Spanne, IDs aus Namen', () => {
+    const c = validateCategory(base, 'f');
+    expect(c.kind).toBe('events');
+    if (c.kind !== 'events') return;
+    expect(c.events[0]).toEqual({ id: 'mondlandung', name: 'Mondlandung', from: 1000, to: 1000 });
+    expect(c.events[2]).toEqual({ id: 'erster-weltkrieg', name: 'Erster Weltkrieg', from: 1914, to: 1918 });
+  });
+
+  test('ungültige Ereignisse werden abgelehnt', () => {
+    const withLast = (e: object) => ({ ...base, events: [...base.events.slice(0, 9), e] });
+    expect(() => validateCategory({ ...base, events: base.events.slice(0, 9) }, 'f')).toThrow(/mindestens 10/);
+    expect(() => validateCategory(withLast({ name: 'mondlandung', year: 1969 }), 'f')).toThrow(/doppeltes Ereignis/);
+    expect(() => validateCategory(withLast({ name: 'X', year: 0 }), 'f')).toThrow(/nicht 0/);
+    expect(() => validateCategory(withLast({ name: 'X', year: 1969.5 }), 'f')).toThrow(/ganzzahlig/);
+    expect(() => validateCategory(withLast({ name: 'X', from: 1950, to: 1940 }), 'f')).toThrow(/from muss vor to/);
+    expect(() => validateCategory(withLast({ name: 'X', from: 1950, to: 1950 }), 'f')).toThrow(/als year/);
+    expect(() => validateCategory(withLast({ name: 'X', year: 1950, from: 1940, to: 1950 }), 'f')).toThrow(/entweder year/);
+    expect(() => validateCategory(withLast({ name: 'X', from: 1940 }), 'f')).toThrow(/Jahre müssen/);
+    expect(() => validateCategory({ ...base, games: ['map'] }, 'f')).toThrow(/nur für "timeline"/);
   });
 });

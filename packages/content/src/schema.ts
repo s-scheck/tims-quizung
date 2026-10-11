@@ -1,5 +1,6 @@
 import {
   GAME_IDS,
+  isTimelineYear,
   isValidLatLng,
   type CategoryInfo,
   type GameId,
@@ -7,6 +8,7 @@ import {
   type MapCategoryInfo,
   type MatchCategoryInfo,
   type SortOrder,
+  type TimelineCategoryInfo,
 } from '@quiz/shared';
 
 export interface CategoryItem {
@@ -55,7 +57,23 @@ export interface PlacesCategory extends MapCategoryInfo {
   places: Place[];
 }
 
-export type Category = RankedCategory | PairsCategory | PlacesCategory;
+export interface TimelineEvent {
+  /** Aus dem Namen abgeleitet, eindeutig innerhalb der Liste. */
+  id: string;
+  name: string;
+  /** Erstes und letztes Jahr, bei einem einzelnen Jahr gleich. Negativ heißt v. Chr. */
+  from: number;
+  to: number;
+}
+
+/** Ereignisliste mit Jahren oder Spannen, für Zeitstrahl. */
+export interface EventsCategory extends TimelineCategoryInfo {
+  kind: 'events';
+  games: GameId[];
+  events: TimelineEvent[];
+}
+
+export type Category = RankedCategory | PairsCategory | PlacesCategory | EventsCategory;
 
 /** Sortieren braucht 10 Karten und eindeutige Werte, eine Top-Liste darf kürzer sein und Gleichstände haben. */
 export const MIN_ITEMS = 10;
@@ -66,6 +84,8 @@ export const MAX_PAIRS = 12;
 export const MAX_DECOYS = 5;
 export const MIN_PLACES = 10;
 export const MAX_PLACES = 30;
+export const MIN_EVENTS = 10;
+export const MAX_EVENTS = 30;
 
 export class CategoryValidationError extends Error {
   constructor(
@@ -107,6 +127,7 @@ export function validateCategory(raw: unknown, file: string): Category {
   if (!isRecord(raw)) throw new CategoryValidationError(file, 'kein Objekt');
   if ('pairs' in raw) return validatePairs(raw, file);
   if ('places' in raw) return validatePlaces(raw, file);
+  if ('events' in raw) return validateEvents(raw, file);
   return validateRanked(raw, file);
 }
 
@@ -137,6 +158,7 @@ function validateRanked(raw: Record<string, unknown>, file: string): RankedCateg
   const games = readGames(raw, file, ['sort']);
   if (games.includes('match')) throw new CategoryValidationError(file, 'Zuordnen braucht eine Paarliste mit "pairs"');
   if (games.includes('map')) throw new CategoryValidationError(file, 'Karte braucht eine Ortsliste mit "places"');
+  if (games.includes('timeline')) throw new CategoryValidationError(file, 'Zeitstrahl braucht eine Ereignisliste mit "events"');
   const forSort = games.includes('sort');
   const minItems = forSort ? MIN_ITEMS : MIN_ITEMS_TOPX;
 
@@ -295,5 +317,52 @@ function validatePlaces(raw: Record<string, unknown>, file: string): PlacesCateg
     ...(bounds ? { bounds } : {}),
     games,
     places,
+  };
+}
+
+function validateEvents(raw: Record<string, unknown>, file: string): EventsCategory {
+  const id = readId(raw, file);
+  const games = readGames(raw, file, ['timeline']);
+  if (!games.includes('timeline') || games.some((g) => g !== 'timeline')) {
+    throw new CategoryValidationError(file, 'Ereignislisten taugen nur für "timeline"');
+  }
+
+  const eventsRaw = raw.events;
+  if (!Array.isArray(eventsRaw)) throw new CategoryValidationError(file, 'events fehlt');
+  if (eventsRaw.length < MIN_EVENTS) throw new CategoryValidationError(file, `mindestens ${MIN_EVENTS} Ereignisse nötig, ${eventsRaw.length} vorhanden`);
+  if (eventsRaw.length > MAX_EVENTS) throw new CategoryValidationError(file, `höchstens ${MAX_EVENTS} Ereignisse erlaubt`);
+
+  const names = new Set<string>();
+  const ids = new Set<string>();
+  const events: TimelineEvent[] = eventsRaw.map((e, idx) => {
+    if (!isRecord(e)) throw new CategoryValidationError(file, `events[${idx}] ist kein Objekt`);
+    const name = requireString(e, 'name', file).trim();
+    const key = name.toLowerCase();
+    if (names.has(key)) throw new CategoryValidationError(file, `doppeltes Ereignis "${name}"`);
+    names.add(key);
+    const hasYear = e.year !== undefined;
+    const hasSpan = e.from !== undefined || e.to !== undefined;
+    if (hasYear === hasSpan) throw new CategoryValidationError(file, `events[${idx}] "${name}": entweder year oder from und to angeben`);
+    const from = hasYear ? e.year : e.from;
+    const to = hasYear ? e.year : e.to;
+    if (!isTimelineYear(from) || !isTimelineYear(to)) {
+      throw new CategoryValidationError(file, `events[${idx}] "${name}": Jahre müssen ganzzahlig, nicht 0 und auf dem Zeitstrahl sein`);
+    }
+    if (from > to) throw new CategoryValidationError(file, `events[${idx}] "${name}": from muss vor to liegen`);
+    if (hasSpan && from === to) throw new CategoryValidationError(file, `events[${idx}] "${name}": gleiche Jahre bitte als year angeben`);
+    let eventId = slugify(name) || `ereignis-${idx + 1}`;
+    if (ids.has(eventId)) eventId = `${eventId}-${idx + 1}`;
+    ids.add(eventId);
+    return { id: eventId, name, from, to };
+  });
+
+  return {
+    kind: 'events',
+    id,
+    title: requireString(raw, 'title', file),
+    question: requireString(raw, 'question', file),
+    source: typeof raw.source === 'string' ? raw.source : undefined,
+    games,
+    events,
   };
 }

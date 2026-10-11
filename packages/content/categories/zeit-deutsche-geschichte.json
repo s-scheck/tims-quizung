@@ -1,0 +1,31 @@
+{
+  "id": "zeit-deutsche-geschichte",
+  "title": "Deutsche Geschichte",
+  "question": "Wann war das?",
+  "games": ["timeline"],
+  "source": "gängige Datierung",
+  "events": [
+    { "name": "Varusschlacht", "year": 9 },
+    { "name": "Kaiserkrönung Ottos des Großen", "year": 962 },
+    { "name": "Goldene Bulle", "year": 1356 },
+    { "name": "Luthers Thesenanschlag", "year": 1517 },
+    { "name": "Deutscher Bauernkrieg", "from": 1524, "to": 1526 },
+    { "name": "Dreißigjähriger Krieg", "from": 1618, "to": 1648 },
+    { "name": "Ende des Heiligen Römischen Reiches", "year": 1806 },
+    { "name": "Märzrevolution", "from": 1848, "to": 1849 },
+    { "name": "Gründung des Deutschen Kaiserreichs", "year": 1871 },
+    { "name": "Weimarer Republik", "from": 1918, "to": 1933 },
+    { "name": "Höhepunkt der Hyperinflation", "year": 1923 },
+    { "name": "Olympische Spiele in Berlin", "year": 1936 },
+    { "name": "Berliner Luftbrücke", "from": 1948, "to": 1949 },
+    { "name": "Gründung der Bundesrepublik", "year": 1949 },
+    { "name": "Wunder von Bern", "year": 1954 },
+    { "name": "Bau der Berliner Mauer", "year": 1961 },
+    { "name": "Deutscher Herbst", "year": 1977 },
+    { "name": "Fall der Berliner Mauer", "year": 1989 },
+    { "name": "Deutsche Wiedervereinigung", "year": 1990 },
+    { "name": "Euro-Bargeld wird eingeführt", "year": 2002 },
+    { "name": "Angela Merkel ist Bundeskanzlerin", "from": 2005, "to": 2021 },
+    { "name": "Sommermärchen: WM in Deutschland", "year": 2006 }
+  ]
+}

@@ -1,4 +1,4 @@
-import type { CardView, CategoryInfo, PlayerView, RoomView } from '@quiz/shared';
+import type { CardView, CategoryInfo, PlayerView, RoomView, YearSpan } from '@quiz/shared';
 
 const grouped = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
 
@@ -64,4 +64,24 @@ export function joinUrl(code: string): string {
 
 export function screenUrl(code: string): string {
   return `${location.origin}/screen/${code}`;
+}
+
+/** Jahreszahl ohne Tausenderpunkt, vor Christus mit „v. Chr.“, frühe Jahre mit „n. Chr.“. */
+export function formatYear(year: number): string {
+  if (year < 0) return `${-year} v. Chr.`;
+  return year < 1000 ? `${year} n. Chr.` : String(year);
+}
+
+/** Ein Jahr oder eine Spanne, z. B. „1939–1945“ oder „431–404 v. Chr.“. */
+export function formatYearSpan(span: YearSpan): string {
+  if (span.from === span.to) return formatYear(span.from);
+  if (span.to < 0) return `${-span.from}–${-span.to} v. Chr.`;
+  if (span.from > 0 && span.from >= 1000) return `${span.from}–${span.to}`;
+  return `${formatYear(span.from)} – ${formatYear(span.to)}`;
+}
+
+/** Abstand zum Ereignis in Jahren, 0 ist ein Treffer. */
+export function formatYearDistance(years: number): string {
+  if (years === 0) return 'Treffer';
+  return years === 1 ? '1 Jahr' : `${years} Jahre`;
 }

@@ -13,6 +13,7 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'choose_category', gameId: 'match', categoryId: 'x', lives: 2 })).toBe(true);
     expect(isClientMsg({ type: 'choose_category', gameId: 'map', categoryId: 'x', targetId: 'taj-mahal', borders: true })).toBe(true);
     expect(isClientMsg({ type: 'place_pin', lat: 27.17, lng: 78.04 })).toBe(true);
+    expect(isClientMsg({ type: 'place_year', year: -44 })).toBe(true);
     expect(isClientMsg({ type: 'confirm_pin' })).toBe(true);
     expect(isClientMsg({ type: 'end_round' })).toBe(true);
     expect(isClientMsg({ type: 'submit_scores', scores: { a: 1, b: -2 } })).toBe(true);
@@ -39,6 +40,9 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'place_pin', lat: 91, lng: 0 })).toBe(false);
     expect(isClientMsg({ type: 'place_pin', lat: 0, lng: 181 })).toBe(false);
     expect(isClientMsg({ type: 'place_pin', lat: '1', lng: 2 })).toBe(false);
+    expect(isClientMsg({ type: 'place_year', year: 0 })).toBe(false);
+    expect(isClientMsg({ type: 'place_year', year: 1789.5 })).toBe(false);
+    expect(isClientMsg({ type: 'place_year', year: 99999 })).toBe(false);
     expect(isClientMsg({ type: 'choose_category', gameId: 'map', categoryId: 'x', borders: 'ja' })).toBe(false);
     expect(isClientMsg({ type: 'submit_scores', scores: { a: 1.5 } })).toBe(false);
     expect(isClientMsg({ type: 'submit_scores', scores: { a: 5000 } })).toBe(false);

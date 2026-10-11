@@ -1,0 +1,32 @@
+{
+  "id": "zeit-erfindungen",
+  "title": "Erfindungen und Entdeckungen",
+  "question": "Wann war das?",
+  "games": ["timeline"],
+  "source": "gängige Datierung",
+  "events": [
+    { "name": "Papier nach Cai Lun", "year": 105 },
+    { "name": "Buchdruck mit beweglichen Lettern", "year": 1450 },
+    { "name": "Erstes Fernrohr", "year": 1608 },
+    { "name": "Dampfmaschine von James Watt", "year": 1769 },
+    { "name": "Erste Pockenimpfung", "year": 1796 },
+    { "name": "Erste deutsche Eisenbahn", "year": 1835 },
+    { "name": "Daguerreotypie wird vorgestellt", "year": 1839 },
+    { "name": "Dynamit", "year": 1867 },
+    { "name": "Telefon von Bell", "year": 1876 },
+    { "name": "Glühbirne von Edison", "year": 1879 },
+    { "name": "Benz Patent-Motorwagen", "year": 1886 },
+    { "name": "Röntgenstrahlen", "year": 1895 },
+    { "name": "Erster Motorflug der Wright-Brüder", "year": 1903 },
+    { "name": "Penicillin", "year": 1928 },
+    { "name": "Kernspaltung", "year": 1938 },
+    { "name": "Zuse Z3", "year": 1941 },
+    { "name": "Transistor", "year": 1947 },
+    { "name": "DNA-Doppelhelix", "year": 1953 },
+    { "name": "Sputnik im All", "year": 1957 },
+    { "name": "Erste Herztransplantation", "year": 1967 },
+    { "name": "Erste Website geht online", "year": 1991 },
+    { "name": "Erste SMS", "year": 1992 },
+    { "name": "Erstes iPhone", "year": 2007 }
+  ]
+}

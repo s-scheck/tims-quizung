@@ -1,6 +1,7 @@
 import type { ClientMsg } from './protocol.ts';
 import { GAME_IDS, GUESS_MAX_LENGTH, LIVES_MAX, LIVES_MIN, TIMER_OPTIONS, type GameId, type TimerSeconds } from './types.ts';
 import { isValidLatLng } from './rules/geo.ts';
+import { isTimelineYear } from './rules/timeline.ts';
 
 export const NAME_MIN = 1;
 export const NAME_MAX = 20;
@@ -92,6 +93,8 @@ export function isClientMsg(x: unknown): x is ClientMsg {
       );
     case 'place_pin':
       return isValidLatLng(x.lat, x.lng);
+    case 'place_year':
+      return isTimelineYear(x.year);
     case 'confirm_pin':
     case 'end_round':
       return true;

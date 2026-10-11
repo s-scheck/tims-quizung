@@ -33,16 +33,18 @@ describe('Karte: Rundenstart', () => {
     expect(r.turnOrder).toEqual([h.ids[1]!, h.ids[2]!]);
     expect(r.activePlayerId).toBeNull();
     expect(r.turnDeadline).toBeNull();
-    expect(h.room.playedPlaces['landmarks']).toEqual(['rom']);
+    expect(h.room.playedTargets['landmarks']).toEqual(['rom']);
     expect(h.room.timers.turn).toBeNull();
   });
 
-  test('Moderator ohne Ziel oder mit unbekanntem Ziel startet nicht', () => {
+  test('Moderator ohne Ziel oder mit unbekanntem Ziel startet nicht und verändert nichts', () => {
     const h = moderated(['Host', 'B']);
     expectOk(h.act(h.host, { type: 'start_game' }));
     expect(h.act(h.host, { type: 'choose_category', gameId: 'map', categoryId: 'landmarks' })).toMatchObject({ ok: false, code: 'invalid_action' });
     expect(h.act(h.host, { type: 'choose_category', gameId: 'map', categoryId: 'landmarks', targetId: 'atlantis' })).toMatchObject({ ok: false, code: 'unknown_category' });
     expect(h.room.phase).toBe('choosing_category');
+    expect(h.room.lastStartPlayerId).toBeNull();
+    expect(h.room.playedTargets).toEqual({});
   });
 
   test('mitspielender Host bekommt Zufall ohne Wiederholung, Zielwunsch wird ignoriert', () => {
@@ -60,7 +62,7 @@ describe('Karte: Rundenstart', () => {
       seen.add(kr(h).target.id);
     }
     expect(seen.size).toBe(4);
-    expect(h.room.playedPlaces['landmarks']?.length).toBe(4);
+    expect(h.room.playedTargets['landmarks']?.length).toBe(4);
     // Alles gespielt: wieder jedes möglich.
     expectOk(h.act(h.host, { type: 'end_round' }));
     expectOk(h.act(h.host, { type: 'to_scoring' }));

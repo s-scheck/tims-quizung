@@ -30,14 +30,16 @@ export function toView(room: Room, viewerId: string | null): RoomView {
         id: c.id,
         title: c.title,
         question: c.question,
-        count: c.kind === 'pairs' ? c.pairs.length : c.kind === 'places' ? c.places.length : c.items.length,
+        count:
+          c.kind === 'pairs' ? c.pairs.length : c.kind === 'places' ? c.places.length : c.kind === 'events' ? c.events.length : c.items.length,
         played: room.playedCategoryIds.includes(c.id),
         games: [...c.games],
       };
       // Die Zielliste sieht nur der Host, damit Mitspieler nicht vorab wissen, was zur Wahl steht.
-      if (c.kind === 'places' && viewerId !== null && viewerId === room.hostId) {
-        const played = room.playedPlaces[c.id] ?? [];
-        summary.targets = c.places.map((p) => ({ id: p.id, name: p.name, played: played.includes(p.id) }));
+      const targets = c.kind === 'places' ? c.places : c.kind === 'events' ? c.events : null;
+      if (targets && viewerId !== null && viewerId === room.hostId) {
+        const played = room.playedTargets[c.id] ?? [];
+        summary.targets = targets.map((t) => ({ id: t.id, name: t.name, played: played.includes(t.id) }));
       }
       return summary;
     });

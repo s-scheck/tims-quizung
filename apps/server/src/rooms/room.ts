@@ -60,8 +60,8 @@ export class Room {
   defaultLives: number = LIVES_DEFAULT;
   /** Zuletzt gewählte Grenzen-Einstellung für Karte. */
   mapBorders = false;
-  /** Gespielte Ziele je Ortsliste, damit Zufall nichts wiederholt und der Moderator es sieht. */
-  playedPlaces: Record<string, string[]> = {};
+  /** Gespielte Ziele je Orts- oder Ereignisliste, damit Zufall nichts wiederholt und der Moderator es sieht. */
+  playedTargets: Record<string, string[]> = {};
   seq = 0;
   lastActivity: number;
   screenCount = 0;
@@ -241,7 +241,7 @@ export class Room {
     this.scores = Object.fromEntries(this.players.map((p) => [p.id, 0]));
     this.rounds = [];
     this.playedCategoryIds = [];
-    this.playedPlaces = {};
+    this.playedTargets = {};
     this.lastStartPlayerId = null;
     this.phase = 'choosing_category';
     return OK;

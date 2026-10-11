@@ -15,6 +15,8 @@
   import MatchReveal from '../components/MatchReveal.svelte';
   import MapBoard from '../components/MapBoard.svelte';
   import MapReveal from '../components/MapReveal.svelte';
+  import TimelineBoard from '../components/TimelineBoard.svelte';
+  import TimelineReveal from '../components/TimelineReveal.svelte';
   import Scoring from '../components/Scoring.svelte';
   import Scoreboard from '../components/Scoreboard.svelte';
   import FinalStandings from '../components/FinalStandings.svelte';
@@ -108,6 +110,8 @@
           <MatchBoard {view} round={view.round} />
         {:else if view.round?.game === 'map'}
           <MapBoard {view} round={view.round} />
+        {:else if view.round?.game === 'timeline'}
+          <TimelineBoard {view} round={view.round} />
         {:else if view.round?.game === 'sort'}
           <Board {view} round={view.round} />
         {/if}
@@ -120,6 +124,8 @@
           <MatchReveal {view} round={view.round} />
         {:else if view.round?.game === 'map'}
           <MapReveal {view} round={view.round} />
+        {:else if view.round?.game === 'timeline'}
+          <TimelineReveal {view} round={view.round} />
         {:else if view.round?.game === 'sort'}
           <Reveal {view} round={view.round} />
         {/if}

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { SCORE_MAX, SCORE_MIN, type RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
-  import { formatKm, scoredPlayers } from '../lib/format.ts';
+  import { formatKm, formatYearDistance, scoredPlayers } from '../lib/format.ts';
 
   let { view }: { view: RoomView } = $props();
 
@@ -28,6 +28,12 @@
       if (!entry || entry.distanceKm === null) return 'kein Pin';
       const rank = (r.ranking ?? []).indexOf(entry) + 1;
       return `${rank}. Platz, ${formatKm(entry.distanceKm)}`;
+    }
+    if (r.game === 'timeline') {
+      const entry = r.ranking?.find((x) => x.playerId === id);
+      if (!entry || entry.distanceYears === null) return 'kein Tipp';
+      const rank = (r.ranking ?? []).indexOf(entry) + 1;
+      return `${rank}. Platz, ${entry.distanceYears === 0 ? 'Treffer' : `${formatYearDistance(entry.distanceYears)} daneben`}`;
     }
     if (r.game === 'topx' || r.game === 'match') {
       const hits = r.hits[id] ?? 0;

@@ -4,7 +4,7 @@ import type { Room } from '../../rooms/room.ts';
 import type { MapRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
 import type { StartRoundOptions } from '../registry.ts';
-import { baseRound, buildTurnOrder, toReveal } from '../common.ts';
+import { baseRound, buildTurnOrder, pickTarget, rememberTarget, scheduleRoundTimer, toReveal } from '../common.ts';
 
 export function mapRound(room: Room): MapRound | null {
   return room.round?.game === 'map' ? room.round : null;
@@ -12,26 +12,15 @@ export function mapRound(room: Room): MapRound | null {
 
 export function startMapRound(room: Room, category: Category, opts: StartRoundOptions): Result {
   if (category.kind !== 'places') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
+  const picked = pickTarget(room, category.id, category.places, opts.targetId);
+  if ('error' in picked) return picked.error;
   const turnOrder = buildTurnOrder(room);
   if (turnOrder.length === 0) return fail('invalid_action', 'Ohne Mitspieler geht es nicht los');
-
-  const played = room.playedPlaces[category.id] ?? [];
-  let target = category.places[0]!;
-  if (room.hostId !== null && room.isModerator(room.hostId)) {
-    // Der Moderator kennt das Ziel ohnehin, also darf er es aussuchen.
-    if (!opts.targetId) return fail('invalid_action', 'Bitte ein Ziel wählen');
-    const chosen = category.places.find((p) => p.id === opts.targetId);
-    if (!chosen) return fail('unknown_category', 'Ziel unbekannt');
-    target = chosen;
-  } else {
-    const fresh = category.places.filter((p) => !played.includes(p.id));
-    const pool = fresh.length > 0 ? fresh : category.places;
-    target = pool[Math.floor(room.random() * pool.length)]!;
-  }
+  rememberTarget(room, category.id, picked.target.id);
+  const { target } = picked;
 
   const borders = opts.borders ?? room.mapBorders;
   room.mapBorders = borders;
-  room.playedPlaces[category.id] = [...played.filter((id) => id !== target.id), target.id];
 
   room.round = {
     ...baseRound(category, turnOrder),
@@ -44,32 +33,16 @@ export function startMapRound(room: Room, category: Category, opts: StartRoundOp
     pins: {},
   };
   room.phase = 'playing';
-  scheduleRoundTimer(room);
+  scheduleRoundTimer(room, () => timerExpired(room));
   return OK;
-}
-
-/** Bei gesetztem Zeitlimit gilt es für die ganze Runde, alle setzen ja gleichzeitig. */
-function scheduleRoundTimer(room: Room): void {
-  room.cancelTimer('turn');
-  const round = mapRound(room);
-  if (!round) return;
-  const seconds = room.settings.timerSeconds;
-  if (seconds <= 0) {
-    round.turnDeadline = null;
-    return;
-  }
-  round.turnDeadline = room.now + seconds * 1000;
-  room.timers.turn = room.scheduler.schedule(seconds * 1000, () => timerExpired(room));
 }
 
 /** Zeit abgelaufen: gesetzte Pins zählen auch unbestätigt, dann direkt zur Auflösung. */
 function timerExpired(room: Room): void {
-  room.timers.turn = null;
   const round = mapRound(room);
-  if (room.phase !== 'playing' || !round) return;
+  if (!round) return;
   for (const pin of Object.values(round.pins)) pin.confirmed = true;
   toReveal(room);
-  room.emit();
 }
 
 export function handleMapMessage(room: Room, playerId: string, msg: ClientMsg): Result {
