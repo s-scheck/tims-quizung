@@ -1,0 +1,29 @@
+{
+  "id": "risk-bundeslaender-einwohner",
+  "title": "Bundesländer nach Einwohnern",
+  "question": "Nenne ein Bundesland. Je weniger Einwohner, desto mehr Punkte.",
+  "topLabel": "meiste Einwohner",
+  "bottomLabel": "letzter Platz",
+  "unit": "Mio.",
+  "source": "Statistisches Bundesamt, Stand 31.12.2023 (gerundet)",
+  "order": "desc",
+  "games": ["risk"],
+  "items": [
+    { "name": "Nordrhein-Westfalen", "value": 18.19, "aliases": ["NRW"] },
+    { "name": "Bayern", "value": 13.44 },
+    { "name": "Baden-Württemberg", "value": 11.28, "aliases": ["BW", "BaWü"] },
+    { "name": "Niedersachsen", "value": 8.14 },
+    { "name": "Hessen", "value": 6.39 },
+    { "name": "Rheinland-Pfalz", "value": 4.16, "aliases": ["RLP"] },
+    { "name": "Sachsen", "value": 4.09 },
+    { "name": "Berlin", "value": 3.76 },
+    { "name": "Schleswig-Holstein", "value": 2.96, "aliases": ["SH"] },
+    { "name": "Brandenburg", "value": 2.57 },
+    { "name": "Sachsen-Anhalt", "value": 2.19 },
+    { "name": "Thüringen", "value": 2.13 },
+    { "name": "Hamburg", "value": 1.89 },
+    { "name": "Mecklenburg-Vorpommern", "value": 1.63, "aliases": ["MV", "Meck-Pomm"] },
+    { "name": "Saarland", "value": 0.99 },
+    { "name": "Bremen", "value": 0.69 }
+  ]
+}

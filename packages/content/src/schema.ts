@@ -20,7 +20,7 @@ export interface CategoryItem {
   aliases?: string[];
 }
 
-/** Rangliste mit Werten, für Sortieren und Top X. */
+/** Rangliste mit Werten, für Sortieren, Top X und No Risk No Fun. */
 export interface RankedCategory extends CategoryInfo {
   kind: 'ranked';
   /** Für welche Spiele die Liste taugt. Standard: nur Sortieren. */
@@ -79,6 +79,9 @@ export type Category = RankedCategory | PairsCategory | PlacesCategory | EventsC
 export const MIN_ITEMS = 10;
 export const MIN_ITEMS_TOPX = 5;
 export const MAX_ITEMS = 20;
+/** No Risk No Fun braucht lange Listen, damit tiefe Plätze viele Punkte wert sind. */
+export const MIN_ITEMS_RISK = 10;
+export const MAX_ITEMS_RISK = 50;
 export const MIN_PAIRS = 4;
 export const MAX_PAIRS = 12;
 export const MAX_DECOYS = 5;
@@ -160,12 +163,14 @@ function validateRanked(raw: Record<string, unknown>, file: string): RankedCateg
   if (games.includes('map')) throw new CategoryValidationError(file, 'Karte braucht eine Ortsliste mit "places"');
   if (games.includes('timeline')) throw new CategoryValidationError(file, 'Zeitstrahl braucht eine Ereignisliste mit "events"');
   const forSort = games.includes('sort');
-  const minItems = forSort ? MIN_ITEMS : MIN_ITEMS_TOPX;
+  const forTopX = games.includes('topx');
+  const minItems = forSort ? MIN_ITEMS : forTopX ? MIN_ITEMS_TOPX : MIN_ITEMS_RISK;
+  const maxItems = forSort || forTopX ? MAX_ITEMS : MAX_ITEMS_RISK;
 
   const itemsRaw = raw.items;
   if (!Array.isArray(itemsRaw)) throw new CategoryValidationError(file, 'items fehlt');
   if (itemsRaw.length < minItems) throw new CategoryValidationError(file, `mindestens ${minItems} Einträge nötig, ${itemsRaw.length} vorhanden`);
-  if (itemsRaw.length > MAX_ITEMS) throw new CategoryValidationError(file, `höchstens ${MAX_ITEMS} Einträge erlaubt`);
+  if (itemsRaw.length > maxItems) throw new CategoryValidationError(file, `höchstens ${maxItems} Einträge erlaubt`);
 
   const names = new Set<string>();
   const values = new Set<number>();

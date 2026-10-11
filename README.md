@@ -1,6 +1,6 @@
 # Tims Quizung
 
-Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Spiele: **Sortieren**, **Top X**, **Zuordnen**, **Karte** und **Zeitstrahl**. Der Host wählt vor jeder Runde das Spiel und die Kategorie, der Punktestand läuft über alle Runden durch.
+Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Spiele: **Sortieren**, **Top X**, **Zuordnen**, **Karte**, **Zeitstrahl** und **No Risk No Fun**. Der Host wählt vor jeder Runde das Spiel und die Kategorie, der Punktestand läuft über alle Runden durch.
 
 ## Spielregeln „Sortieren"
 
@@ -42,6 +42,14 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 - Jeder bestätigt seinen Tipp, danach ist er fest. Der Host beendet die Runde jederzeit, nur bestätigte Tipps zählen. Mit Zeitlimit gilt es für die ganze Runde, bei Ablauf zählen auch unbestätigte Tipps.
 - Moderiert der Host, wählt er das Ereignis und sieht die Lösung. Spielt er mit, zieht der Server ein zufälliges, noch nicht gespieltes Ereignis.
 - In der Auflösung erscheint das Jahr oder die Spanne (z. B. 1939–1945) als Band mit allen Tipps. Gewertet wird der Abstand in Jahren, innerhalb einer Spanne ist er 0. Ein Jahr 0 gibt es nicht. Punkte wie gewohnt von Hand.
+
+## Spielregeln „No Risk No Fun"
+
+- Eine Top-Liste mit bis zu 50 Plätzen, etwa „Größte Länder nach Fläche“. Pro Durchgang tippt jeder geheim einen Eintrag ein und loggt ihn ein. Sobald alle eingeloggt haben, wird aufgelöst (oder der Host löst vorher auf, oder das Zeitlimit läuft ab).
+- Ein Treffer bringt so viele Punkte wie sein Platz: Platz 1 einen, Platz 50 fünfzig. Vor der Kategorie legt der Host fest, ob ein gleicher Treffer im selben Durchgang beiden die Punkte bringt oder beiden 0, und ob ein Fehltipp oder kein Tipp 0 oder −10 Punkte gibt.
+- Der Server erkennt Namen und Aliasse (z. B. „Vereinigte Staaten“ für USA). In der Auflösung kann der Host jede Zuordnung korrigieren, etwa bei Tippfehlern.
+- Danach entscheidet der Host: noch ein Durchgang (getroffene Plätze sind dann gesperrt) oder Kategorie beenden. Dann sehen alle die ganze Liste. Die Kategorie-Punkte zählen nur innerhalb der Kategorie, die Gesamtwertung trägt der Host wie gewohnt ein.
+- Moderiert der Host, sieht er die ganze Liste schon während des Spiels.
 
 Die Kartendaten stammen von [Natural Earth](https://www.naturalearthdata.com/) (gemeinfrei) und liegen unter `apps/web/public/geo/`. Die Karte selbst rendert [Leaflet](https://leafletjs.com/) ohne Kacheln, es wird kein externer Dienst angesprochen.
 
@@ -151,6 +159,8 @@ Für Zeitstrahl gibt es Ereignislisten mit einem Jahr oder einer Spanne:
 ```
 
 Regeln: 10 bis 30 Ereignisse, Namen eindeutig, entweder `year` oder `from` und `to`, ganze Jahre von -4000 bis 2030 ohne 0 (negativ heißt v. Chr.). Dateien beginnen mit `zeit-`.
+
+Für No Risk No Fun gibt es lange Ranglisten mit `"games": ["risk"]`: 10 bis 50 Einträge in Rangfolge, Platz 1 zuerst, mit Quelle. `aliases` helfen beim Abgleich. Dateien beginnen mit `risk-`.
 
 Für Top X kommt `"games": ["topx"]` dazu (Standard ist `["sort"]`, beides zusammen geht auch). Top-X-Listen müssen echte Top-Listen ohne Gleichstand über die Listengrenze sein, dürfen ab 5 Einträgen kurz sein und Gleichstände enthalten. Pro Eintrag helfen `aliases` beim Abgleich, etwa `["Mbappe", "Mbappé"]`; ein eindeutiger Nachname trifft automatisch. Dateien beginnen mit `topx-`.
 

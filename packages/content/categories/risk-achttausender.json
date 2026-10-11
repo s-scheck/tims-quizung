@@ -1,0 +1,27 @@
+{
+  "id": "risk-achttausender",
+  "title": "Die Achttausender",
+  "question": "Nenne einen der 14 Achttausender. Je niedriger, desto mehr Punkte.",
+  "topLabel": "höchster Gipfel",
+  "bottomLabel": "letzter Platz",
+  "unit": "m",
+  "source": "gängige Höhenangaben",
+  "order": "desc",
+  "games": ["risk"],
+  "items": [
+    { "name": "Mount Everest", "value": 8849, "aliases": ["Everest", "Chomolungma"] },
+    { "name": "K2", "value": 8611 },
+    { "name": "Kangchendzönga", "value": 8586, "aliases": ["Kangchenjunga", "Kanchenjunga"] },
+    { "name": "Lhotse", "value": 8516 },
+    { "name": "Makalu", "value": 8485 },
+    { "name": "Cho Oyu", "value": 8188 },
+    { "name": "Dhaulagiri", "value": 8167 },
+    { "name": "Manaslu", "value": 8163 },
+    { "name": "Nanga Parbat", "value": 8125 },
+    { "name": "Annapurna", "value": 8091 },
+    { "name": "Gasherbrum I", "value": 8080, "aliases": ["Hidden Peak"] },
+    { "name": "Broad Peak", "value": 8051 },
+    { "name": "Gasherbrum II", "value": 8035 },
+    { "name": "Shishapangma", "value": 8027, "aliases": ["Xixabangma"] }
+  ]
+}

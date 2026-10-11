@@ -1,0 +1,29 @@
+{
+  "id": "risk-bundeslaender-flaeche",
+  "title": "Bundesländer nach Fläche",
+  "question": "Nenne ein Bundesland. Je kleiner, desto mehr Punkte.",
+  "topLabel": "größte Fläche",
+  "bottomLabel": "letzter Platz",
+  "unit": "km²",
+  "source": "Statistisches Bundesamt (gerundet)",
+  "order": "desc",
+  "games": ["risk"],
+  "items": [
+    { "name": "Bayern", "value": 70542 },
+    { "name": "Niedersachsen", "value": 47710 },
+    { "name": "Baden-Württemberg", "value": 35748, "aliases": ["BW", "BaWü"] },
+    { "name": "Nordrhein-Westfalen", "value": 34112, "aliases": ["NRW"] },
+    { "name": "Brandenburg", "value": 29654 },
+    { "name": "Mecklenburg-Vorpommern", "value": 23295, "aliases": ["MV", "Meck-Pomm"] },
+    { "name": "Hessen", "value": 21116 },
+    { "name": "Sachsen-Anhalt", "value": 20459 },
+    { "name": "Rheinland-Pfalz", "value": 19858, "aliases": ["RLP"] },
+    { "name": "Sachsen", "value": 18450 },
+    { "name": "Thüringen", "value": 16202 },
+    { "name": "Schleswig-Holstein", "value": 15804, "aliases": ["SH"] },
+    { "name": "Saarland", "value": 2571 },
+    { "name": "Berlin", "value": 891 },
+    { "name": "Hamburg", "value": 755 },
+    { "name": "Bremen", "value": 419 }
+  ]
+}

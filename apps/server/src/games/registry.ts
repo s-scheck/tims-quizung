@@ -1,4 +1,4 @@
-import type { ClientMsg, GameId, RoundView } from '@quiz/shared';
+import type { ClientMsg, GameId, RiskDuplicates, RiskMissPoints, RoundView } from '@quiz/shared';
 import type { Category } from '@quiz/content';
 import type { Room } from '../rooms/room.ts';
 import type { Result } from '../rooms/result.ts';
@@ -7,6 +7,8 @@ export interface StartRoundOptions {
   lives?: number;
   targetId?: string;
   borders?: boolean;
+  duplicates?: RiskDuplicates;
+  missPoints?: RiskMissPoints;
 }
 
 /**

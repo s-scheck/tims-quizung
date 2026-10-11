@@ -22,6 +22,7 @@ export function toView(room: Room, viewerId: string | null): RoomView {
     rounds: room.rounds.map((r) => ({ ...r, scores: { ...r.scores } })),
     defaultLives: room.defaultLives,
     mapBorders: room.mapBorders,
+    riskRules: { ...room.riskRules },
   };
   if (room.phase === 'choosing_category') {
     view.games = listGames().map((g) => ({ id: g.id, name: g.name, description: g.description }));

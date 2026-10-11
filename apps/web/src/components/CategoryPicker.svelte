@@ -1,6 +1,16 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { LIVES_MAX, LIVES_MIN, type CategorySummary, type GameId, type RoomView } from '@quiz/shared';
+  import {
+    LIVES_MAX,
+    LIVES_MIN,
+    RISK_DUPLICATE_OPTIONS,
+    RISK_MISS_OPTIONS,
+    type CategorySummary,
+    type GameId,
+    type RiskDuplicates,
+    type RiskMissPoints,
+    type RoomView,
+  } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
   import Scoreboard from './Scoreboard.svelte';
@@ -13,10 +23,13 @@
   let gameId = $state<GameId>(untrack(() => view.gameId ?? 'sort'));
   let lives = $state(untrack(() => view.defaultLives));
   let borders = $state(untrack(() => view.mapBorders));
+  let duplicates = $state<RiskDuplicates>(untrack(() => view.riskRules.duplicates));
+  let missPoints = $state<RiskMissPoints>(untrack(() => view.riskRules.missPoints));
   /** Bei Karte und Zeitstrahl als Moderator: gewählte Sammlung, deren Ziele gerade zur Wahl stehen. */
   let targetPickFor = $state<string | null>(null);
   const usesLives = $derived(gameId === 'topx' || gameId === 'match');
   const isMap = $derived(gameId === 'map');
+  const isRisk = $derived(gameId === 'risk');
   const hasTargets = $derived(gameId === 'map' || gameId === 'timeline');
   const picksTarget = $derived(hasTargets && client.isModerator);
   const targetCategory = $derived((view.categories ?? []).find((c) => c.id === targetPickFor) ?? null);
@@ -31,6 +44,7 @@
       categoryId,
       ...(usesLives ? { lives } : {}),
       ...(isMap ? { borders } : {}),
+      ...(isRisk ? { duplicates, missPoints } : {}),
       ...(targetId ? { targetId } : {}),
     });
   }
@@ -102,6 +116,44 @@
         </div>
       </div>
     {/if}
+    {#if isRisk}
+      <div class="card space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p class="font-semibold">Gleicher Treffer im selben Durchgang</p>
+            <p class="text-xs text-slate-500">Wenn zwei dasselbe richtige Land nennen.</p>
+          </div>
+          <div class="flex gap-2">
+            {#each RISK_DUPLICATE_OPTIONS as opt (opt)}
+              <button
+                class="rounded-xl border px-3 py-2 text-sm font-semibold transition
+                  {duplicates === opt ? 'border-indigo-500 bg-indigo-500/20 text-white' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+                onclick={() => (duplicates = opt)}
+              >
+                {opt === 'both' ? 'Beide punkten' : 'Beide 0 Punkte'}
+              </button>
+            {/each}
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p class="font-semibold">Daneben oder kein Tipp</p>
+            <p class="text-xs text-slate-500">Für einen Tipp, der nicht in der Liste steht.</p>
+          </div>
+          <div class="flex gap-2">
+            {#each RISK_MISS_OPTIONS as opt (opt)}
+              <button
+                class="rounded-xl border px-3 py-2 text-sm font-semibold transition
+                  {missPoints === opt ? 'border-indigo-500 bg-indigo-500/20 text-white' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+                onclick={() => (missPoints = opt)}
+              >
+                {opt === 0 ? '0 Punkte' : `−${-opt} Punkte`}
+              </button>
+            {/each}
+          </div>
+        </div>
+      </div>
+    {/if}
     {#if hasTargets && !picksTarget}
       <p class="text-xs text-slate-500">Du spielst mit, deshalb zieht der Server ein zufälliges {isMap ? 'Ziel' : 'Ereignis'}, das du nicht vorher siehst.</p>
     {/if}
@@ -141,7 +193,7 @@
               {#if c.played}<span class="badge shrink-0 bg-emerald-500/20 text-emerald-300">gespielt</span>{/if}
             </div>
             <span class="text-sm text-slate-400">{c.question}</span>
-            <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : 'Karten'}</span>
+            <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : 'Karten'}</span>
           </button>
         {/each}
       </div>

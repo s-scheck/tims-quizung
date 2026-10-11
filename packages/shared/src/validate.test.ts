@@ -14,6 +14,11 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'choose_category', gameId: 'map', categoryId: 'x', targetId: 'taj-mahal', borders: true })).toBe(true);
     expect(isClientMsg({ type: 'place_pin', lat: 27.17, lng: 78.04 })).toBe(true);
     expect(isClientMsg({ type: 'place_year', year: -44 })).toBe(true);
+    expect(isClientMsg({ type: 'risk_guess', text: 'Mongolei' })).toBe(true);
+    expect(isClientMsg({ type: 'risk_correct', playerId: 'p1', rank: 9 })).toBe(true);
+    expect(isClientMsg({ type: 'risk_correct', playerId: 'p1', rank: null })).toBe(true);
+    expect(isClientMsg({ type: 'next_pass' })).toBe(true);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'risk', categoryId: 'x', duplicates: 'none', missPoints: -10 })).toBe(true);
     expect(isClientMsg({ type: 'confirm_pin' })).toBe(true);
     expect(isClientMsg({ type: 'end_round' })).toBe(true);
     expect(isClientMsg({ type: 'submit_scores', scores: { a: 1, b: -2 } })).toBe(true);
@@ -41,6 +46,10 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'place_pin', lat: 0, lng: 181 })).toBe(false);
     expect(isClientMsg({ type: 'place_pin', lat: '1', lng: 2 })).toBe(false);
     expect(isClientMsg({ type: 'place_year', year: 0 })).toBe(false);
+    expect(isClientMsg({ type: 'risk_guess', text: 'x'.repeat(61) })).toBe(false);
+    expect(isClientMsg({ type: 'risk_correct', playerId: 'p1', rank: 0 })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'risk', categoryId: 'x', missPoints: -5 })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'risk', categoryId: 'x', duplicates: 'first' })).toBe(false);
     expect(isClientMsg({ type: 'place_year', year: 1789.5 })).toBe(false);
     expect(isClientMsg({ type: 'place_year', year: 99999 })).toBe(false);
     expect(isClientMsg({ type: 'choose_category', gameId: 'map', categoryId: 'x', borders: 'ja' })).toBe(false);

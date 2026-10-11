@@ -2,6 +2,7 @@ import type { ClientMsg } from './protocol.ts';
 import { GAME_IDS, GUESS_MAX_LENGTH, LIVES_MAX, LIVES_MIN, TIMER_OPTIONS, type GameId, type TimerSeconds } from './types.ts';
 import { isValidLatLng } from './rules/geo.ts';
 import { isTimelineYear } from './rules/timeline.ts';
+import { isRiskDuplicates, isRiskMissPoints } from './rules/risk.ts';
 
 export const NAME_MIN = 1;
 export const NAME_MAX = 20;
@@ -89,14 +90,21 @@ export function isClientMsg(x: unknown): x is ClientMsg {
         isStr(x.categoryId, 100) &&
         (x.lives === undefined || isLives(x.lives)) &&
         (x.targetId === undefined || isStr(x.targetId, 100)) &&
-        (x.borders === undefined || typeof x.borders === 'boolean')
+        (x.borders === undefined || typeof x.borders === 'boolean') &&
+        (x.duplicates === undefined || isRiskDuplicates(x.duplicates)) &&
+        (x.missPoints === undefined || isRiskMissPoints(x.missPoints))
       );
     case 'place_pin':
       return isValidLatLng(x.lat, x.lng);
     case 'place_year':
       return isTimelineYear(x.year);
+    case 'risk_guess':
+      return isStr(x.text, GUESS_MAX_LENGTH);
+    case 'risk_correct':
+      return isStr(x.playerId, 100) && (x.rank === null || (isInt(x.rank) && x.rank >= 1));
     case 'confirm_pin':
     case 'end_round':
+    case 'next_pass':
       return true;
     case 'guess':
       return isInt(x.turnNo) && isStr(x.text, 200);

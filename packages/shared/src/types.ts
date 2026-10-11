@@ -1,3 +1,5 @@
+import type { RiskRules } from './rules/risk.ts';
+
 /** Phasen eines Raums. Ein flaches Modell, kein verschachteltes Spiel-Phasenfeld. */
 export type Phase =
   | 'lobby'
@@ -9,8 +11,8 @@ export type Phase =
   | 'scoreboard'
   | 'finished';
 
-export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline';
-export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline'];
+export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk';
+export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk'];
 
 export type SortOrder = 'asc' | 'desc';
 export type TimerSeconds = 0 | 30 | 60;
@@ -281,7 +283,53 @@ export interface TimelineRoundView extends BaseRoundView {
   privileged?: boolean;
 }
 
-export type RoundView = SortRoundView | TopXRoundView | MatchRoundView | MapRoundView | TimelineRoundView;
+/** Ein aufgedeckter Listenplatz bei No Risk No Fun. */
+export interface RiskSlotView {
+  rank: number;
+  name: string;
+  value: number;
+  label?: string;
+  /** Durchgang, in dem der Platz getroffen wurde. Fehlt in der vollen Liste für nicht getroffene Plätze. */
+  passNo?: number;
+  by?: string[];
+}
+
+export interface RiskResultView {
+  playerId: string;
+  /** Eingeloggter Text, null ohne Tipp. */
+  text: string | null;
+  rank: number | null;
+  points: number;
+}
+
+export interface RiskPassView {
+  passNo: number;
+  results: RiskResultView[];
+}
+
+export interface RiskRoundView extends BaseRoundView {
+  game: 'risk';
+  category: CategoryInfo;
+  /** Länge der Liste, also auch die höchste Punktzahl. */
+  size: number;
+  rules: RiskRules;
+  passNo: number;
+  /** Wer im laufenden Durchgang schon eingeloggt hat. */
+  loggedIn: string[];
+  /** Eigener Tipp im laufenden Durchgang. */
+  myGuess?: string;
+  /** In abgeschlossenen Durchgängen getroffene Plätze, nach Platz sortiert. */
+  hitSlots: RiskSlotView[];
+  /** Abgeschlossene Durchgänge, der neueste zuletzt. */
+  passes: RiskPassView[];
+  /** Punkte innerhalb der Kategorie über alle abgeschlossenen Durchgänge. */
+  totals: Record<string, number>;
+  /** Die ganze Liste: für den Moderator immer, für alle nach Ende der Kategorie. */
+  solution?: RiskSlotView[];
+  privileged?: boolean;
+}
+
+export type RoundView = SortRoundView | TopXRoundView | MatchRoundView | MapRoundView | TimelineRoundView | RiskRoundView;
 
 export interface RoundResult {
   gameId: GameId;
@@ -306,6 +354,8 @@ export interface RoomView {
   defaultLives: number;
   /** Zuletzt gewählte Grenzen-Einstellung für Karte. */
   mapBorders: boolean;
+  /** Zuletzt gewählte Regeln für No Risk No Fun. */
+  riskRules: RiskRules;
   /** Nur in `choosing_category` enthalten. */
   categories?: CategorySummary[];
   /** Nur in `choosing_category` enthalten. */

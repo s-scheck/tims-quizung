@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { CategoryValidationError, loadCategories, MIN_ITEMS, MIN_ITEMS_TOPX, MIN_PAIRS, MIN_EVENTS, MIN_PLACES, slugify, validateCategory } from './index.ts';
+import { CategoryValidationError, loadCategories, MIN_ITEMS, MIN_ITEMS_TOPX, MIN_PAIRS, MAX_ITEMS_RISK, MIN_EVENTS, MIN_ITEMS_RISK, MIN_PLACES, slugify, validateCategory } from './index.ts';
 
 describe('Kategorien im Repo', () => {
   const categories = loadCategories();
@@ -57,6 +57,18 @@ describe('Kategorien im Repo', () => {
       expect(c.places.length).toBeGreaterThanOrEqual(MIN_PLACES);
       expect(new Set(c.places.map((p) => p.id)).size).toBe(c.places.length);
       expect(c.games).toEqual(['map']);
+    }
+  });
+
+  test('No-Risk-Listen: 10 bis 50 Einträge, in Rangfolge sortiert, mit Quelle', () => {
+    const risk = ranked.filter((c) => c.games.includes('risk'));
+    expect(risk.length).toBeGreaterThanOrEqual(10);
+    for (const c of risk) {
+      expect(c.items.length).toBeGreaterThanOrEqual(MIN_ITEMS_RISK);
+      expect(c.items.length).toBeLessThanOrEqual(MAX_ITEMS_RISK);
+      expect(c.source).toBeTruthy();
+      const values = c.items.map((i) => i.value);
+      expect(values).toEqual([...values].sort((a, b) => (c.order === 'desc' ? b - a : a - b)));
     }
   });
 
@@ -211,6 +223,19 @@ describe('validateCategory (Ortsliste)', () => {
     expect(() => validateCategory({ ...base, bounds: [[70, 0], [10, 5]] }, 'f')).toThrow(/Süd/);
     expect(() => validateCategory({ ...base, bounds: [1, 2] }, 'f')).toThrow(/bounds/);
     expect(() => validateCategory({ ...base, games: ['sort'] }, 'f')).toThrow(/map/);
+  });
+});
+
+describe('validateCategory (No-Risk-Liste)', () => {
+  const items = (n: number) => Array.from({ length: n }, (_, i) => ({ name: `Land ${i + 1}`, value: 1000 - i }));
+  const base = { id: 'risk-test', title: 'T', question: 'Q?', topLabel: 'oben', bottomLabel: 'unten', order: 'desc', games: ['risk'] };
+
+  test('10 bis 50 Einträge, mit Sortieren zusammen nur bis 20', () => {
+    expect(validateCategory({ ...base, items: items(50) }, 'f').kind).toBe('ranked');
+    expect(validateCategory({ ...base, items: items(10) }, 'f').kind).toBe('ranked');
+    expect(() => validateCategory({ ...base, items: items(9) }, 'f')).toThrow(/mindestens 10/);
+    expect(() => validateCategory({ ...base, items: items(51) }, 'f')).toThrow(/höchstens 50/);
+    expect(() => validateCategory({ ...base, games: ['risk', 'sort'], items: items(30) }, 'f')).toThrow(/höchstens 20/);
   });
 });
 

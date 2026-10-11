@@ -1,0 +1,33 @@
+{
+  "id": "risk-inseln",
+  "title": "Größte Inseln der Welt",
+  "question": "Nenne eine der 20 größten Inseln. Je tiefer der Platz, desto mehr Punkte.",
+  "topLabel": "größte Fläche",
+  "bottomLabel": "letzter Platz",
+  "unit": "km²",
+  "source": "gängige Flächenangaben, ohne Kontinente",
+  "order": "desc",
+  "games": ["risk"],
+  "items": [
+    { "name": "Grönland", "value": 2130800 },
+    { "name": "Neuguinea", "value": 785753, "aliases": ["Neu-Guinea", "Papua"] },
+    { "name": "Borneo", "value": 748168 },
+    { "name": "Madagaskar", "value": 587041 },
+    { "name": "Baffininsel", "value": 507451, "aliases": ["Baffin Island", "Baffin"] },
+    { "name": "Sumatra", "value": 473481 },
+    { "name": "Honshu", "value": 227960, "aliases": ["Honshū"] },
+    { "name": "Victoria-Insel", "value": 217291, "aliases": ["Victoria Island"] },
+    { "name": "Großbritannien", "value": 209331, "aliases": ["Britannien", "England"] },
+    { "name": "Ellesmere-Insel", "value": 196236, "aliases": ["Ellesmere"] },
+    { "name": "Sulawesi", "value": 180681, "aliases": ["Celebes"] },
+    { "name": "Südinsel", "value": 145836, "aliases": ["Südinsel Neuseeland"] },
+    { "name": "Java", "value": 138794 },
+    { "name": "Nordinsel", "value": 111583, "aliases": ["Nordinsel Neuseeland"] },
+    { "name": "Luzon", "value": 109965 },
+    { "name": "Neufundland", "value": 108860, "aliases": ["Newfoundland"] },
+    { "name": "Kuba", "value": 104556 },
+    { "name": "Island", "value": 101826 },
+    { "name": "Mindanao", "value": 97530 },
+    { "name": "Irland", "value": 84421 }
+  ]
+}

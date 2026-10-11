@@ -9,6 +9,7 @@ import {
   type GameId,
   type Phase,
   type RoomSettings,
+  type RiskRules,
   type RoundResult,
 } from '@quiz/shared';
 import type { Category } from '@quiz/content';
@@ -60,6 +61,8 @@ export class Room {
   defaultLives: number = LIVES_DEFAULT;
   /** Zuletzt gewählte Grenzen-Einstellung für Karte. */
   mapBorders = false;
+  /** Zuletzt gewählte Regeln für No Risk No Fun. */
+  riskRules: RiskRules = { duplicates: 'both', missPoints: 0 };
   /** Gespielte Ziele je Orts- oder Ereignisliste, damit Zufall nichts wiederholt und der Moderator es sieht. */
   playedTargets: Record<string, string[]> = {};
   seq = 0;
@@ -288,6 +291,8 @@ export class Room {
           ...(msg.lives !== undefined ? { lives: msg.lives } : {}),
           ...(msg.targetId !== undefined ? { targetId: msg.targetId } : {}),
           ...(msg.borders !== undefined ? { borders: msg.borders } : {}),
+          ...(msg.duplicates !== undefined ? { duplicates: msg.duplicates } : {}),
+          ...(msg.missPoints !== undefined ? { missPoints: msg.missPoints } : {}),
         });
       case 'back_to_lobby':
         return this.backToLobby(playerId);

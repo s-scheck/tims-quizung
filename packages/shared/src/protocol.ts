@@ -1,4 +1,5 @@
 import type { GameId, Role, RoomView, Selection, TimerSeconds } from './types.ts';
+import type { RiskDuplicates, RiskMissPoints } from './rules/risk.ts';
 
 export const PROTOCOL_VERSION = 2;
 
@@ -33,7 +34,16 @@ export type ClientMsg =
   | { type: 'kick'; playerId: string }
   | { type: 'set_settings'; timerSeconds?: TimerSeconds; hostPlays?: boolean }
   | { type: 'start_game' }
-  | { type: 'choose_category'; gameId: GameId; categoryId: string; lives?: number; targetId?: string; borders?: boolean }
+  | {
+      type: 'choose_category';
+      gameId: GameId;
+      categoryId: string;
+      lives?: number;
+      targetId?: string;
+      borders?: boolean;
+      duplicates?: RiskDuplicates;
+      missPoints?: RiskMissPoints;
+    }
   | ({ type: 'select'; turnNo: number; targetId?: string } & Selection)
   | { type: 'confirm'; turnNo: number }
   | { type: 'guess'; turnNo: number; text: string }
@@ -42,6 +52,9 @@ export type ClientMsg =
   | { type: 'place_year'; year: number }
   | { type: 'confirm_pin' }
   | { type: 'end_round' }
+  | { type: 'risk_guess'; text: string }
+  | { type: 'risk_correct'; playerId: string; rank: number | null }
+  | { type: 'next_pass' }
   | { type: 'skip_turn'; turnNo: number }
   | { type: 'host_decision'; continue: boolean }
   | { type: 'to_scoring' }

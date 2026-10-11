@@ -1,0 +1,28 @@
+{
+  "id": "risk-seen",
+  "title": "Größte Seen der Welt",
+  "question": "Nenne einen der 15 größten Seen. Je tiefer der Platz, desto mehr Punkte.",
+  "topLabel": "größte Fläche",
+  "bottomLabel": "letzter Platz",
+  "unit": "km²",
+  "source": "gängige Flächenangaben",
+  "order": "desc",
+  "games": ["risk"],
+  "items": [
+    { "name": "Kaspisches Meer", "value": 371000, "aliases": ["Kaspisee"] },
+    { "name": "Oberer See", "value": 82100, "aliases": ["Lake Superior"] },
+    { "name": "Victoriasee", "value": 68870, "aliases": ["Viktoriasee", "Lake Victoria"] },
+    { "name": "Huronsee", "value": 59600, "aliases": ["Lake Huron"] },
+    { "name": "Michigansee", "value": 58000, "aliases": ["Lake Michigan"] },
+    { "name": "Tanganjikasee", "value": 32600, "aliases": ["Tanganyikasee"] },
+    { "name": "Baikalsee", "value": 31500, "aliases": ["Baikal"] },
+    { "name": "Großer Bärensee", "value": 31000 },
+    { "name": "Malawisee", "value": 29500, "aliases": ["Njassasee"] },
+    { "name": "Großer Sklavensee", "value": 27200 },
+    { "name": "Eriesee", "value": 25700, "aliases": ["Lake Erie"] },
+    { "name": "Winnipegsee", "value": 24514 },
+    { "name": "Ontariosee", "value": 18960, "aliases": ["Lake Ontario"] },
+    { "name": "Ladogasee", "value": 17700, "aliases": ["Ladoga"] },
+    { "name": "Balchaschsee", "value": 16400, "aliases": ["Balchasch"] }
+  ]
+}

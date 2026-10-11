@@ -102,7 +102,28 @@ export const EVENTS: Category = {
   ],
 };
 
-const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS];
+const COUNTRY_NAMES = ['Russland', 'Kanada', 'USA', 'China', 'Brasilien', 'Australien', 'Indien', 'Argentinien', 'Kasachstan', 'Algerien',
+  'DR Kongo', 'Saudi-Arabien', 'Mexiko', 'Indonesien', 'Sudan', 'Libyen', 'Iran', 'Mongolei', 'Peru', 'Tschad'];
+
+export const COUNTRIES: Category = {
+  kind: 'ranked',
+  id: 'countries',
+  title: 'Länder nach Fläche',
+  question: 'Nenne ein Land',
+  topLabel: 'größte Fläche',
+  bottomLabel: 'Platz 20',
+  unit: 'km²',
+  order: 'desc',
+  games: ['risk'],
+  source: 'Test',
+  items: COUNTRY_NAMES.map((name, i) => ({
+    name,
+    value: 2000 - i * 10,
+    ...(name === 'USA' ? { aliases: ['Vereinigte Staaten'] } : {}),
+  })),
+};
+
+const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES];
 
 export const provider: CategoryProvider = {
   list: () => ALL,
@@ -196,6 +217,12 @@ export function startMap(h: Harness, opts: { targetId?: string; borders?: boolea
 export function startTimeline(h: Harness, opts: { targetId?: string } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'timeline', categoryId: 'history', ...opts }));
+}
+
+/** Startet Spiel und No-Risk-Runde. */
+export function startRisk(h: Harness, opts: { duplicates?: 'both' | 'none'; missPoints?: 0 | -10 } = {}): void {
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'risk', categoryId: 'countries', ...opts }));
 }
 
 /** Startet Spiel und Top-X-Runde. */

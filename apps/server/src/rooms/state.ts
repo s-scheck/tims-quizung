@@ -1,4 +1,4 @@
-import type { GuessStatus, MatchSelection, PlacementStatus, Selection } from '@quiz/shared';
+import type { GuessStatus, MatchSelection, PlacementStatus, RiskRules, Selection } from '@quiz/shared';
 import type { Category, EventsCategory, PairsCategory, PlacesCategory, RankedCategory, TimelineEvent } from '@quiz/content';
 
 export interface Player {
@@ -156,4 +156,25 @@ export interface TimelineRound extends BaseRound {
   guesses: Record<string, TimelineGuess>;
 }
 
-export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound;
+// ---------------------------------------------------------- No Risk No Fun
+
+export interface RiskGuess {
+  text: string;
+  /** Getroffener Platz oder null. Vom Server vorgeschlagen, vom Host korrigierbar. */
+  rank: number | null;
+}
+
+export interface RiskPass {
+  /** Spieler-ID → eingeloggter Tipp. Wer fehlt, hat keinen Tipp abgegeben. */
+  guesses: Record<string, RiskGuess>;
+}
+
+export interface RiskRound extends BaseRound {
+  game: 'risk';
+  category: RankedCategory;
+  rules: RiskRules;
+  /** Alle Durchgänge, der laufende zuletzt. */
+  passes: RiskPass[];
+}
+
+export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound;
