@@ -1,0 +1,27 @@
+{
+  "id": "scharfes-scoville",
+  "title": "Scharfes nach Scoville",
+  "question": "Was ist schärfer?",
+  "topLabel": "am schärfsten",
+  "bottomLabel": "am mildesten",
+  "unit": "SHU",
+  "order": "desc",
+  "source": "Höchstwerte gängiger Scoville-Angaben (gerundet)",
+  "items": [
+    { "name": "Reines Capsaicin", "value": 16000000 },
+    { "name": "Pfefferspray", "value": 5300000 },
+    { "name": "Pepper X", "value": 2690000 },
+    { "name": "Carolina Reaper", "value": 2200000 },
+    { "name": "Trinidad Moruga Scorpion", "value": 2000000 },
+    { "name": "Bhut Jolokia (Ghost Pepper)", "value": 1000000 },
+    { "name": "Habanero", "value": 350000 },
+    { "name": "Thai-Chili", "value": 100000 },
+    { "name": "Cayennepfeffer", "value": 50000 },
+    { "name": "Jalapeño", "value": 8000 },
+    { "name": "Tabasco-Sauce", "value": 5000 },
+    { "name": "Sriracha", "value": 2200 },
+    { "name": "Poblano", "value": 1500 },
+    { "name": "Peperoni (mild)", "value": 500 },
+    { "name": "Gemüsepaprika", "value": 0 }
+  ]
+}

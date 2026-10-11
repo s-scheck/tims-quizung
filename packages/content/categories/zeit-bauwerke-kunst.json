@@ -1,0 +1,29 @@
+{
+  "id": "zeit-bauwerke-kunst",
+  "title": "Bauwerke und Kunst",
+  "question": "Wann war das?",
+  "games": ["timeline"],
+  "source": "gängige Datierung",
+  "events": [
+    { "name": "Bau des Kolosseums", "from": 72, "to": 80 },
+    { "name": "Bau der Hagia Sophia", "from": 532, "to": 537 },
+    { "name": "Bau des Kölner Doms", "from": 1248, "to": 1880 },
+    { "name": "Leonardo malt die Mona Lisa", "from": 1503, "to": 1519 },
+    { "name": "Michelangelos David", "from": 1501, "to": 1504 },
+    { "name": "Deckenfresko der Sixtinischen Kapelle", "from": 1508, "to": 1512 },
+    { "name": "Bau des Taj Mahal", "from": 1632, "to": 1648 },
+    { "name": "Bau des Brandenburger Tors", "from": 1788, "to": 1791 },
+    { "name": "Bau von Schloss Neuschwanstein", "from": 1869, "to": 1886 },
+    { "name": "Einweihung der Freiheitsstatue", "year": 1886 },
+    { "name": "Eröffnung des Eiffelturms", "year": 1889 },
+    { "name": "Van Goghs „Sternennacht“", "year": 1889 },
+    { "name": "Munchs „Der Schrei“", "year": 1893 },
+    { "name": "Picassos „Guernica“", "year": 1937 },
+    { "name": "Eröffnung der Golden Gate Bridge", "year": 1937 },
+    { "name": "Bau des Empire State Building", "from": 1930, "to": 1931 },
+    { "name": "Eröffnung der Sydney Opera House", "year": 1973 },
+    { "name": "Fertigstellung des Burj Khalifa", "year": 2010 },
+    { "name": "Eröffnung der Elbphilharmonie", "year": 2017 },
+    { "name": "Eröffnung des BER", "year": 2020 }
+  ]
+}

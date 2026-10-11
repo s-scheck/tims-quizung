@@ -1,0 +1,26 @@
+{
+  "id": "zeit-musik",
+  "title": "Musikgeschichte",
+  "question": "Wann war das?",
+  "games": ["timeline"],
+  "source": "gängige Datierung",
+  "events": [
+    { "name": "Bachs Brandenburgische Konzerte gewidmet", "year": 1721 },
+    { "name": "Uraufführung von Beethovens 9. Sinfonie", "year": 1824 },
+    { "name": "Edison erfindet den Phonographen", "year": 1877 },
+    { "name": "Berliner patentiert das Grammophon", "year": 1887 },
+    { "name": "Elvis veröffentlicht „Heartbreak Hotel“", "year": 1956 },
+    { "name": "Die Rolling Stones gründen sich", "year": 1962 },
+    { "name": "Erste Musikkassette", "year": 1963 },
+    { "name": "Queens „Bohemian Rhapsody“", "year": 1975 },
+    { "name": "Sony Walkman kommt auf den Markt", "year": 1979 },
+    { "name": "MTV geht auf Sendung", "year": 1981 },
+    { "name": "Erste CD im Handel", "year": 1982 },
+    { "name": "Live Aid", "year": 1985 },
+    { "name": "Nirvanas „Nevermind“", "year": 1991 },
+    { "name": "Erste Love Parade in Berlin", "year": 1989 },
+    { "name": "Erster iPod", "year": 2001 },
+    { "name": "Spotify startet", "year": 2008 },
+    { "name": "Psys „Gangnam Style“", "year": 2012 }
+  ]
+}

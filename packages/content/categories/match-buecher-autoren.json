@@ -1,0 +1,23 @@
+{
+  "id": "match-buecher-autoren",
+  "title": "Bücher und Autoren",
+  "question": "Wer hat welches Buch geschrieben?",
+  "leftLabel": "Buch",
+  "rightLabel": "Autor",
+  "games": ["match"],
+  "source": "Allgemeinwissen",
+  "pairs": [
+    { "left": "Der Process", "right": "Franz Kafka" },
+    { "left": "1984", "right": "George Orwell" },
+    { "left": "Der kleine Prinz", "right": "Antoine de Saint-Exupéry" },
+    { "left": "Faust", "right": "Johann Wolfgang von Goethe" },
+    { "left": "Harry Potter", "right": "J. K. Rowling" },
+    { "left": "Der Herr der Ringe", "right": "J. R. R. Tolkien" },
+    { "left": "Die Blechtrommel", "right": "Günter Grass" },
+    { "left": "Krieg und Frieden", "right": "Leo Tolstoi" },
+    { "left": "Der Steppenwolf", "right": "Hermann Hesse" },
+    { "left": "Im Westen nichts Neues", "right": "Erich Maria Remarque" },
+    { "left": "Das Parfum", "right": "Patrick Süskind" }
+  ],
+  "decoys": ["Thomas Mann", "Ernest Hemingway", "Jane Austen"]
+}

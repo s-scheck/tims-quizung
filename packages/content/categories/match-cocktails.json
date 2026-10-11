@@ -1,0 +1,20 @@
+{
+  "id": "match-cocktails",
+  "title": "Cocktails",
+  "question": "Welche Spirituose ist die Basis welches Cocktails?",
+  "leftLabel": "Cocktail",
+  "rightLabel": "Spirituose",
+  "games": ["match"],
+  "source": "klassische Rezepte (IBA)",
+  "pairs": [
+    { "left": "Mojito", "right": "Rum" },
+    { "left": "Caipirinha", "right": "Cachaça" },
+    { "left": "Margarita", "right": "Tequila" },
+    { "left": "Moscow Mule", "right": "Wodka" },
+    { "left": "Negroni", "right": "Gin" },
+    { "left": "Old Fashioned", "right": "Bourbon-Whiskey" },
+    { "left": "Pisco Sour", "right": "Pisco" },
+    { "left": "Sidecar", "right": "Cognac" }
+  ],
+  "decoys": ["Korn", "Absinth", "Grappa", "Ouzo"]
+}

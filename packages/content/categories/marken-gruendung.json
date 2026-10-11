@@ -1,0 +1,33 @@
+{
+  "id": "marken-gruendung",
+  "title": "Marken nach Gründungsjahr",
+  "question": "Welche Marke ist älter?",
+  "topLabel": "älteste Marke",
+  "bottomLabel": "jüngste Marke",
+  "unit": "",
+  "order": "asc",
+  "valueFormat": "plain",
+  "source": "Gründungsjahr des Unternehmens bzw. Markteinführung der Marke (Nivea)",
+  "items": [
+    { "name": "Nokia", "value": 1865 },
+    { "name": "Coca-Cola", "value": 1886 },
+    { "name": "Nintendo", "value": 1889 },
+    { "name": "Dr. Oetker", "value": 1891 },
+    { "name": "Nivea", "value": 1911 },
+    { "name": "BMW", "value": 1916 },
+    { "name": "Haribo", "value": 1920 },
+    { "name": "Porsche", "value": 1931 },
+    { "name": "Lego", "value": 1932 },
+    { "name": "Volkswagen", "value": 1937 },
+    { "name": "Samsung", "value": 1938 },
+    { "name": "Ikea", "value": 1943 },
+    { "name": "Ferrero", "value": 1946 },
+    { "name": "Puma", "value": 1948 },
+    { "name": "Adidas", "value": 1949 },
+    { "name": "Microsoft", "value": 1975 },
+    { "name": "Apple", "value": 1976 },
+    { "name": "Amazon", "value": 1994 },
+    { "name": "Google", "value": 1998 },
+    { "name": "Tesla", "value": 2003 }
+  ]
+}

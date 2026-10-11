@@ -1,0 +1,30 @@
+{
+  "id": "zeit-internet-tech",
+  "title": "Internet und Tech",
+  "question": "Wann war das?",
+  "games": ["timeline"],
+  "source": "gängige Datierung",
+  "events": [
+    { "name": "Erste E-Mail", "year": 1971 },
+    { "name": "Gründung von Apple", "year": 1976 },
+    { "name": "Gründung von Microsoft", "year": 1975 },
+    { "name": "Erster IBM-PC", "year": 1981 },
+    { "name": "Erster Apple Macintosh", "year": 1984 },
+    { "name": "Erste Windows-Version", "year": 1985 },
+    { "name": "Gründung von Amazon", "year": 1994 },
+    { "name": "Gründung von eBay", "year": 1995 },
+    { "name": "Gründung von Google", "year": 1998 },
+    { "name": "Wikipedia geht online", "year": 2001 },
+    { "name": "Facebook wird gegründet", "year": 2004 },
+    { "name": "Erster Tweet", "year": 2006 },
+    { "name": "Bitcoin startet", "year": 2009 },
+    { "name": "WhatsApp kommt auf den Markt", "year": 2009 },
+    { "name": "Instagram startet", "year": 2010 },
+    { "name": "Erstes iPad", "year": 2010 },
+    { "name": "Netflix startet in Deutschland", "year": 2014 },
+    { "name": "TikTok startet international", "year": 2017 },
+    { "name": "ChatGPT erscheint", "year": 2022 },
+    { "name": "Napster", "from": 1999, "to": 2001 },
+    { "name": "Nokia 3310 erscheint", "year": 2000 }
+  ]
+}

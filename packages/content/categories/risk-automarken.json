@@ -1,0 +1,33 @@
+{
+  "id": "risk-automarken",
+  "title": "Automarken in Deutschland",
+  "question": "Nenne eine der 20 meistzugelassenen Automarken in Deutschland. Je tiefer der Platz, desto mehr Punkte.",
+  "topLabel": "meiste Neuzulassungen",
+  "bottomLabel": "letzter Platz",
+  "unit": "Pkw",
+  "order": "desc",
+  "games": ["risk"],
+  "source": "Kraftfahrt-Bundesamt, Pkw-Neuzulassungen 2024 (gerundet)",
+  "items": [
+    { "name": "Volkswagen", "value": 559000, "aliases": ["VW"] },
+    { "name": "Mercedes-Benz", "value": 251000, "aliases": ["Mercedes", "Benz"] },
+    { "name": "BMW", "value": 233000 },
+    { "name": "Skoda", "value": 223000, "aliases": ["Škoda"] },
+    { "name": "Audi", "value": 197000 },
+    { "name": "Seat", "value": 162000, "aliases": ["Cupra"] },
+    { "name": "Opel", "value": 145000 },
+    { "name": "Ford", "value": 124000 },
+    { "name": "Hyundai", "value": 118000 },
+    { "name": "Toyota", "value": 101000 },
+    { "name": "Kia", "value": 85000 },
+    { "name": "Renault", "value": 82000 },
+    { "name": "Dacia", "value": 59000 },
+    { "name": "Peugeot", "value": 58000 },
+    { "name": "Fiat", "value": 52000 },
+    { "name": "Mazda", "value": 47000 },
+    { "name": "Tesla", "value": 37000 },
+    { "name": "Volvo", "value": 36000 },
+    { "name": "Citroën", "value": 34000, "aliases": ["Citroen"] },
+    { "name": "Porsche", "value": 32000 }
+  ]
+}

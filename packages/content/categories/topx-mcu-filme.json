@@ -1,0 +1,22 @@
+{
+  "id": "topx-mcu-filme",
+  "title": "Top 9 erfolgreichste Marvel-Filme",
+  "question": "Welche MCU-Filme haben weltweit am meisten eingespielt?",
+  "topLabel": "höchstes Einspielergebnis",
+  "bottomLabel": "niedrigstes Einspielergebnis",
+  "unit": "Mrd. $",
+  "order": "desc",
+  "games": ["topx"],
+  "source": "Box Office Mojo, weltweites Einspielergebnis ohne Inflationsbereinigung, Stand 2025",
+  "items": [
+    { "name": "Avengers: Endgame", "value": 2.8, "aliases": ["Endgame"] },
+    { "name": "Avengers: Infinity War", "value": 2.05, "aliases": ["Infinity War"] },
+    { "name": "Spider-Man: No Way Home", "value": 1.92, "aliases": ["No Way Home"] },
+    { "name": "Marvel's The Avengers", "value": 1.52, "aliases": ["The Avengers", "Avengers", "Avengers 1"] },
+    { "name": "Avengers: Age of Ultron", "value": 1.41, "aliases": ["Age of Ultron", "Ultron"] },
+    { "name": "Black Panther", "value": 1.35 },
+    { "name": "Deadpool & Wolverine", "value": 1.34, "aliases": ["Deadpool und Wolverine", "Deadpool 3", "Deadpool", "Wolverine"] },
+    { "name": "Iron Man 3", "value": 1.22 },
+    { "name": "The First Avenger: Civil War", "value": 1.16, "aliases": ["Civil War", "Captain America: Civil War", "Captain America 3"] }
+  ]
+}

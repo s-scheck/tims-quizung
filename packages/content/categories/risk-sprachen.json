@@ -1,0 +1,33 @@
+{
+  "id": "risk-sprachen",
+  "title": "Meistgesprochene Sprachen",
+  "question": "Nenne eine der 20 meistgesprochenen Sprachen der Welt. Je tiefer der Platz, desto mehr Punkte.",
+  "topLabel": "meiste Sprecher",
+  "bottomLabel": "letzter Platz",
+  "unit": "Mio.",
+  "order": "desc",
+  "games": ["risk"],
+  "source": "Ethnologue, Erst- und Zweitsprecher, ohne arabische Dialekte, Stand 2024 (gerundet)",
+  "items": [
+    { "name": "Englisch", "value": 1515 },
+    { "name": "Mandarin", "value": 1140, "aliases": ["Chinesisch", "Hochchinesisch"] },
+    { "name": "Hindi", "value": 609 },
+    { "name": "Spanisch", "value": 560 },
+    { "name": "Arabisch", "value": 332, "aliases": ["Hocharabisch"] },
+    { "name": "Französisch", "value": 312 },
+    { "name": "Bengalisch", "value": 278, "aliases": ["Bengali", "Bangla"] },
+    { "name": "Portugiesisch", "value": 264 },
+    { "name": "Russisch", "value": 255 },
+    { "name": "Urdu", "value": 238 },
+    { "name": "Indonesisch", "value": 199, "aliases": ["Bahasa Indonesia"] },
+    { "name": "Deutsch", "value": 134 },
+    { "name": "Japanisch", "value": 123 },
+    { "name": "Nigerianisches Pidgin", "value": 121, "aliases": ["Pidgin"] },
+    { "name": "Marathi", "value": 99 },
+    { "name": "Telugu", "value": 96 },
+    { "name": "Türkisch", "value": 90 },
+    { "name": "Tamil", "value": 87 },
+    { "name": "Kantonesisch", "value": 86.5, "aliases": ["Yue"] },
+    { "name": "Vietnamesisch", "value": 86 }
+  ]
+}

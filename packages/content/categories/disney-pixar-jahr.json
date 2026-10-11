@@ -1,0 +1,33 @@
+{
+  "id": "disney-pixar-jahr",
+  "title": "Disney- und Pixar-Filme nach Jahr",
+  "question": "Welcher Film kam früher ins Kino?",
+  "topLabel": "ältester Film",
+  "bottomLabel": "neuester Film",
+  "unit": "",
+  "order": "asc",
+  "valueFormat": "plain",
+  "source": "Jahr der US-Erstaufführung",
+  "items": [
+    { "name": "Schneewittchen und die sieben Zwerge", "value": 1937 },
+    { "name": "Pinocchio", "value": 1940 },
+    { "name": "Bambi", "value": 1942 },
+    { "name": "Cinderella", "value": 1950 },
+    { "name": "Peter Pan", "value": 1953 },
+    { "name": "Susi und Strolch", "value": 1955 },
+    { "name": "Das Dschungelbuch", "value": 1967 },
+    { "name": "Arielle, die Meerjungfrau", "value": 1989 },
+    { "name": "Die Schöne und das Biest", "value": 1991 },
+    { "name": "Aladdin", "value": 1992 },
+    { "name": "Der König der Löwen", "value": 1994 },
+    { "name": "Toy Story", "value": 1995 },
+    { "name": "Findet Nemo", "value": 2003 },
+    { "name": "Cars", "value": 2006 },
+    { "name": "Oben", "value": 2009 },
+    { "name": "Rapunzel – Neu verföhnt", "value": 2010 },
+    { "name": "Die Eiskönigin – Völlig unverfroren", "value": 2013 },
+    { "name": "Vaiana", "value": 2016 },
+    { "name": "Coco", "value": 2017 },
+    { "name": "Encanto", "value": 2021 }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "map-bruecken",
+  "title": "Berühmte Brücken",
+  "question": "Wo steht diese Brücke?",
+  "games": ["map"],
+  "source": "gängige Koordinaten",
+  "places": [
+    { "name": "Tower Bridge", "lat": 51.5055, "lng": -0.0754 },
+    { "name": "Rialtobrücke", "lat": 45.4380, "lng": 12.3359 },
+    { "name": "Karlsbrücke", "lat": 50.0865, "lng": 14.4114 },
+    { "name": "Øresundbrücke", "lat": 55.5752, "lng": 12.8250 },
+    { "name": "Sydney Harbour Bridge", "lat": -33.8523, "lng": 151.2108 },
+    { "name": "Ponte Vecchio", "lat": 43.7680, "lng": 11.2531 },
+    { "name": "Brooklyn Bridge", "lat": 40.7061, "lng": -73.9969 },
+    { "name": "Köhlbrandbrücke", "lat": 53.5211, "lng": 9.9290 },
+    { "name": "Viadukt von Millau", "lat": 44.0775, "lng": 3.0225 },
+    { "name": "Kettenbrücke Budapest", "lat": 47.4990, "lng": 19.0435 },
+    { "name": "Ponte 25 de Abril", "lat": 38.6894, "lng": -9.1773 },
+    { "name": "Seufzerbrücke", "lat": 45.4340, "lng": 12.3409 },
+    { "name": "Hohenzollernbrücke", "lat": 50.9413, "lng": 6.9655 },
+    { "name": "Akashi-Kaikyō-Brücke", "lat": 34.6167, "lng": 135.0214 },
+    { "name": "Brücke von Mostar (Stari Most)", "lat": 43.3373, "lng": 17.8150 },
+    { "name": "Pont du Gard", "lat": 43.9475, "lng": 4.5350 },
+    { "name": "Bosporus-Brücke", "lat": 41.0451, "lng": 29.0340 },
+    { "name": "Göltzschtalbrücke", "lat": 50.6236, "lng": 12.2453 },
+    { "name": "Forth Bridge", "lat": 56.0005, "lng": -3.3884 },
+    { "name": "Hongkong-Zhuhai-Macau-Brücke", "lat": 22.2850, "lng": 113.7500 }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "map-freizeitparks",
+  "title": "Freizeitparks",
+  "question": "Wo liegt dieser Freizeitpark?",
+  "games": ["map"],
+  "source": "gängige Koordinaten",
+  "places": [
+    { "name": "Europa-Park", "lat": 48.2660, "lng": 7.7220 },
+    { "name": "Phantasialand", "lat": 50.7990, "lng": 6.8790 },
+    { "name": "Heide Park", "lat": 53.0247, "lng": 9.8770 },
+    { "name": "Movie Park Germany", "lat": 51.6211, "lng": 6.9733 },
+    { "name": "Hansa-Park", "lat": 54.0758, "lng": 10.7811 },
+    { "name": "Efteling", "lat": 51.6500, "lng": 5.0497 },
+    { "name": "Tivoli", "lat": 55.6737, "lng": 12.5681 },
+    { "name": "Gardaland", "lat": 45.4547, "lng": 10.7136 },
+    { "name": "PortAventura", "lat": 41.0873, "lng": 1.1572 },
+    { "name": "Walt Disney World", "lat": 28.3852, "lng": -81.5639 },
+    { "name": "Disneyland Anaheim", "lat": 33.8121, "lng": -117.9190 },
+    { "name": "Tokyo Disneyland", "lat": 35.6329, "lng": 139.8804 },
+    { "name": "Legoland Billund", "lat": 55.7353, "lng": 9.1266 },
+    { "name": "Prater", "lat": 48.2166, "lng": 16.3960 },
+    { "name": "Liseberg", "lat": 57.6953, "lng": 11.9925 },
+    { "name": "Alton Towers", "lat": 52.9874, "lng": -1.8866 },
+    { "name": "Parc Astérix", "lat": 49.1341, "lng": 2.5711 },
+    { "name": "Cedar Point", "lat": 41.4822, "lng": -82.6835 },
+    { "name": "Ferrari World", "lat": 24.4837, "lng": 54.6071 },
+    { "name": "Shanghai Disneyland", "lat": 31.1440, "lng": 121.6570 }
+  ]
+}

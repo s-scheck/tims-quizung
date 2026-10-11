@@ -1,0 +1,31 @@
+{
+  "id": "map-historische-orte",
+  "title": "Historische Orte",
+  "question": "Wo ist das passiert oder wo liegt das?",
+  "games": ["map"],
+  "source": "gängige Koordinaten",
+  "places": [
+    { "name": "Pompeji", "lat": 40.7484, "lng": 14.4848 },
+    { "name": "Troja", "lat": 39.9575, "lng": 26.2389 },
+    { "name": "Waterloo", "lat": 50.6800, "lng": 4.4121 },
+    { "name": "Hiroshima", "lat": 34.3955, "lng": 132.4536 },
+    { "name": "Tschernobyl", "lat": 51.3890, "lng": 30.0989 },
+    { "name": "Omaha Beach", "lat": 49.3694, "lng": -0.8731 },
+    { "name": "Teotihuacán", "lat": 19.6925, "lng": -98.8438 },
+    { "name": "Olympia (Antike)", "lat": 37.6383, "lng": 21.6300 },
+    { "name": "Karthago", "lat": 36.8528, "lng": 10.3233 },
+    { "name": "Auschwitz", "lat": 50.0270, "lng": 19.2030 },
+    { "name": "Pearl Harbor", "lat": 21.3649, "lng": -157.9500 },
+    { "name": "Gettysburg", "lat": 39.8309, "lng": -77.2311 },
+    { "name": "Verdun", "lat": 49.1598, "lng": 5.3844 },
+    { "name": "Stalingrad (Wolgograd)", "lat": 48.7080, "lng": 44.5133 },
+    { "name": "Hastings", "lat": 50.9116, "lng": 0.4872 },
+    { "name": "Babylon", "lat": 32.5364, "lng": 44.4209 },
+    { "name": "Knossos", "lat": 35.2980, "lng": 25.1631 },
+    { "name": "Wittenberg", "lat": 51.8661, "lng": 12.6493 },
+    { "name": "Fukushima Daiichi", "lat": 37.4211, "lng": 141.0328 },
+    { "name": "Herculaneum", "lat": 40.8060, "lng": 14.3476 },
+    { "name": "Varusschlacht (Kalkriese)", "lat": 52.4086, "lng": 8.1294 },
+    { "name": "Jamestown", "lat": 37.2117, "lng": -76.7778 }
+  ]
+}

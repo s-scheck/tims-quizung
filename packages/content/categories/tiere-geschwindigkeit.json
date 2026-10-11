@@ -1,0 +1,27 @@
+{
+  "id": "tiere-geschwindigkeit",
+  "title": "Tiere nach Geschwindigkeit",
+  "question": "Welches Tier ist schneller?",
+  "topLabel": "schnellstes Tier",
+  "bottomLabel": "langsamstes Tier",
+  "unit": "km/h",
+  "order": "desc",
+  "source": "gängige Höchstwerte (gerundet), Wanderfalke im Sturzflug",
+  "items": [
+    { "name": "Wanderfalke (Sturzflug)", "value": 390 },
+    { "name": "Gepard", "value": 112 },
+    { "name": "Gabelbock", "value": 88 },
+    { "name": "Löwe", "value": 80 },
+    { "name": "Windhund", "value": 72 },
+    { "name": "Strauß", "value": 70 },
+    { "name": "Zebra", "value": 65 },
+    { "name": "Giraffe", "value": 60 },
+    { "name": "Grizzlybär", "value": 56 },
+    { "name": "Hauskatze", "value": 48 },
+    { "name": "Mensch (Usain Bolt)", "value": 44.7 },
+    { "name": "Afrikanischer Elefant", "value": 40 },
+    { "name": "Huhn", "value": 14 },
+    { "name": "Faultier", "value": 0.24 },
+    { "name": "Weinbergschnecke", "value": 0.05 }
+  ]
+}
