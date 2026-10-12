@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { CategoryValidationError, validateCategory, type Category } from './schema.ts';
 
 export * from './schema.ts';
+export * from './store.ts';
 
 export const CATEGORIES_DIR = join(import.meta.dir, '..', 'categories');
 

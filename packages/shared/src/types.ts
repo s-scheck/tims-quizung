@@ -361,3 +361,29 @@ export interface RoomView {
   /** Nur in `choosing_category` enthalten. */
   games?: GameInfo[];
 }
+
+// ----------------------------------------------------------------- Editor
+
+/** Herkunft einer Kategorie aus Sicht des Editors. */
+export type EditorStatus = 'builtin' | 'modified' | 'custom' | 'hidden';
+
+export interface EditorEntry {
+  id: string;
+  title: string;
+  kind: 'ranked' | 'pairs' | 'places' | 'events';
+  games: GameId[];
+  count: number;
+  status: EditorStatus;
+  /** Gespeichert, aber noch nicht spielbar. `error` sagt, was fehlt. */
+  draft: boolean;
+  error?: string;
+}
+
+export interface EditorDocument {
+  entry: EditorEntry;
+  /** Rohdaten wie in der JSON-Datei. Bei ausgeblendeten Listen das Original. */
+  raw: Record<string, unknown>;
+  /** Nur bei mitgelieferten Listen: das unveränderte Original. */
+  original?: Record<string, unknown>;
+}
+

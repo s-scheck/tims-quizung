@@ -6,4 +6,7 @@ services:
       - "3000:3000"
     environment:
       ROOM_TTL_MINUTES: "120"
+    volumes:
+      # Eigene und geänderte Kategorien aus dem Editor
+      - ./data:/data
     restart: unless-stopped

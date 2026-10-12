@@ -98,6 +98,9 @@
     </div>
   </section>
 
-  <p class="text-center text-xs text-slate-500">Für den Fernseher: <span class="font-mono">/screen/CODE</span> öffnen.</p>
+  <div class="flex flex-col items-center gap-2">
+    <button class="btn-ghost text-sm" onclick={() => router.navigate('/editor')}>Kategorien bearbeiten</button>
+    <p class="text-center text-xs text-slate-500">Für den Fernseher: <span class="font-mono">/screen/CODE</span> öffnen.</p>
+  </div>
 </main>
 <Toast />

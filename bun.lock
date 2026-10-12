@@ -22,6 +22,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@fontsource-variable/nunito": "^5.3.0",
+        "@quiz/content": "workspace:*",
         "@quiz/shared": "workspace:*",
         "leaflet": "^1.9.4",
       },

@@ -20,6 +20,14 @@ class Toasts {
     this.show(text, 'error', 4500);
   }
 
+  success(text: string): void {
+    this.show(text, 'success');
+  }
+
+  info(text: string): void {
+    this.show(text, 'info', 5000);
+  }
+
   dismiss(id: number): void {
     this.items = this.items.filter((t) => t.id !== id);
   }

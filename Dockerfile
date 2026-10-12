@@ -17,7 +17,8 @@ FROM oven/bun:1.4-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=3000 \
-    ROOM_TTL_MINUTES=120
+    ROOM_TTL_MINUTES=120 \
+    DATA_DIR=/data
 
 COPY package.json bun.lock ./
 COPY apps/web/package.json apps/web/
@@ -31,6 +32,10 @@ COPY packages/shared/src packages/shared/src
 COPY packages/content/src packages/content/src
 COPY packages/content/categories packages/content/categories
 COPY --from=build /app/apps/web/dist apps/web/dist
+
+# Datenordner des Kategorien-Editors, als Volume einhängen, damit Änderungen Neubauten überstehen.
+RUN mkdir -p /data && chown bun:bun /data
+VOLUME /data
 
 USER bun
 EXPOSE 3000

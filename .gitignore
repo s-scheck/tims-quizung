@@ -4,3 +4,6 @@ dist/
 *.log
 .env
 .env.*
+
+# Daten aus dem Kategorien-Editor
+data/

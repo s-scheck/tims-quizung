@@ -10,6 +10,7 @@ export default defineConfig({
     proxy: {
       '/ws': { target: 'ws://localhost:3000', ws: true, changeOrigin: true },
       '/health': { target: 'http://localhost:3000', changeOrigin: true },
+      '/api': { target: 'http://localhost:3000', changeOrigin: true },
     },
   },
   build: {

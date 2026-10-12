@@ -164,6 +164,12 @@ Für No Risk No Fun gibt es lange Ranglisten mit `"games": ["risk"]`: 10 bis 50 
 
 Für Top X kommt `"games": ["topx"]` dazu (Standard ist `["sort"]`, beides zusammen geht auch). Top-X-Listen müssen echte Top-Listen ohne Gleichstand über die Listengrenze sein, dürfen ab 5 Einträgen kurz sein und Gleichstände enthalten. Pro Eintrag helfen `aliases` beim Abgleich, etwa `["Mbappe", "Mbappé"]`; ein eindeutiger Nachname trifft automatisch. Dateien beginnen mit `topx-`.
 
+## Kategorien-Editor
+
+Unter `/editor` (Link auf der Startseite) lassen sich alle Listen im Browser bearbeiten: eigene anlegen, mitgelieferte ändern, ausblenden oder auf das Original zurücksetzen. Einträge stehen in einer Tabelle; Zeilen aus Excel, Numbers oder Google Sheets lassen sich direkt einfügen, Zahlen wie `1.450,9` und Jahre wie `44 v. Chr.` werden erkannt. Bei Karte setzt ein Klick auf die Weltkarte die Koordinaten der gewählten Zeile. Der Editor prüft live mit denselben Regeln wie der Server. Unfertige Listen werden als Entwurf gespeichert und erscheinen erst in der Spielauswahl, wenn alle Regeln erfüllt sind. Änderungen gelten ab der nächsten Runde.
+
+Gespeichert wird im Datenordner `DATA_DIR` (Standard: `data/` im Repo, in Docker `/data`, per `compose.yaml` als `./data` eingehängt). Dort liegt je Liste eine JSON-Datei im selben Format wie unter `packages/content/categories/`; sie überlagert die mitgelieferte Liste gleicher id. Ausgeblendete Listen stehen dort als `{ "id": …, "deleted": true }`. Der Ordner ist nicht in git. Der Editor hat keinen Zugangsschutz: Wer die Adresse kennt, kann bearbeiten.
+
 ## Weitere Spiele
 
 Ein Spiel ist ein `GameModule` (`apps/server/src/games/registry.ts`) mit `startRound`, `handle`, `roundView` und einigen Hooks. Timer, Host-Entscheidung, Auflösung, Punkte und Rundenwechsel liefert `games/common.ts` für alle Spiele. Der Raum kümmert sich um Spieler, Host, Scores und Lobby. Client-seitig schaltet `routes/Room.svelte` nach `view.phase` und `view.round.game`. Module werden in `games/index.ts` registriert.

@@ -1,6 +1,7 @@
 import { serve, type Server } from 'bun';
-import { getCategories, getCategory } from '@quiz/content';
+import { CATEGORIES_DIR, CategoryStore } from '@quiz/content';
 import './games/index.ts';
+import { editorRoutes } from './http/editor.ts';
 import { createStaticHandler } from './http/static.ts';
 import { RoomRegistry } from './rooms/registry.ts';
 import type { CategoryProvider } from './rooms/room.ts';
@@ -16,6 +17,10 @@ export interface ServerOptions {
   sweepIntervalMs?: number;
   scheduler?: Scheduler;
   categories?: CategoryProvider;
+  /** Kategorien mit Editor. Ohne Angabe: mitgelieferte Listen, überlagert vom Datenordner `dataDir`. */
+  store?: CategoryStore;
+  /** Datenordner für den Editor. Ohne ihn ist der Editor schreibgeschützt. */
+  dataDir?: string | null;
   random?: () => number;
 }
 
@@ -29,7 +34,8 @@ export interface QuizServer {
 
 export function createServer(opts: ServerOptions): QuizServer {
   const scheduler = opts.scheduler ?? new RealScheduler();
-  const categories: CategoryProvider = opts.categories ?? { list: getCategories, get: getCategory };
+  const store = opts.store ?? new CategoryStore(CATEGORIES_DIR, opts.dataDir ?? null);
+  const categories: CategoryProvider = opts.categories ?? { list: () => store.list(), get: (id) => store.get(id) };
   const serveStatic = createStaticHandler(opts.distDir);
 
   // Hub und Registry verweisen aufeinander, deshalb die späte Zuweisung.
@@ -47,6 +53,7 @@ export function createServer(opts: ServerOptions): QuizServer {
     port: opts.port ?? 3000,
     hostname: opts.hostname,
     routes: {
+      ...editorRoutes(store),
       '/health': () => Response.json({ ok: true, rooms: registry.size, uptime: Math.round(process.uptime()) }),
       '/ws': (req: Request, srv: Server<WsData>) => {
         const upgraded = srv.upgrade(req, {

@@ -198,6 +198,17 @@ function validateRanked(raw: Record<string, unknown>, file: string): RankedCateg
     return item;
   });
 
+  // Bei Top X und No Risk ist die Reihenfolge der Platz, also muss sie zu den Werten passen.
+  if (forTopX || games.includes('risk')) {
+    for (let i = 1; i < items.length; i++) {
+      const prev = items[i - 1]!.value;
+      const cur = items[i]!.value;
+      if (order === 'desc' ? cur > prev : cur < prev) {
+        throw new CategoryValidationError(file, `items[${i}] "${items[i]!.name}": für Top X und No Risk müssen die Einträge nach Wert sortiert sein, Platz 1 zuerst`);
+      }
+    }
+  }
+
   return {
     kind: 'ranked',
     id,
