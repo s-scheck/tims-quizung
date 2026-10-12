@@ -134,7 +134,7 @@
   const placed = $derived.by(() => {
     const all = [
       ...markers.map((m) => ({ ...m, mine: false })),
-      ...(guess !== null ? [{ id: '__guess', year: guess, label: formatYear(guess), color: '#818cf8', mine: true }] : []),
+      ...(guess !== null ? [{ id: '__guess', year: guess, label: formatYear(guess), color: 'var(--color-indigo-500)', mine: true }] : []),
     ]
       .map((m) => ({ ...m, x: toX(yearToAxis(m.year)), w: m.label.length * (large ? 9 : 7.5) + 18 }))
       .sort((a, b) => a.x - b.x);
@@ -289,7 +289,7 @@
     <div class="pointer-events-none absolute w-0.5" style="left:{m.x - 1}px; top:{top + 12}px; height:{axisY - top - 12}px; background:{m.color}"></div>
     <div class="pointer-events-none absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-slate-950" style="left:{m.x}px; top:{axisY + 1}px; background:{m.color}"></div>
     <span
-      class="pointer-events-none absolute -translate-x-1/2 whitespace-nowrap rounded-md px-1.5 py-0.5 font-bold text-slate-950 shadow {large ? 'text-base' : 'text-xs'} {m.mine ? 'ring-2 ring-white/70' : ''}"
+      class="pointer-events-none absolute -translate-x-1/2 whitespace-nowrap rounded-md px-1.5 py-0.5 font-extrabold text-ink shadow {large ? 'text-base' : 'text-xs'} {m.mine ? 'ring-2 ring-white/70' : ''}"
       style="left:{m.x}px; top:{top}px; background:{m.color}">{m.label}</span
     >
   {/each}

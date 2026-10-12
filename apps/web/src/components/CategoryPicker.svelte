@@ -107,7 +107,7 @@
           {#each [false, true] as withBorders (withBorders)}
             <button
               class="rounded-xl border px-3 py-2 text-sm font-semibold transition
-                {borders === withBorders ? 'border-indigo-500 bg-indigo-500/20 text-white' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+                {borders === withBorders ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
               onclick={() => (borders = withBorders)}
             >
               {withBorders ? 'Mit Grenzen' : 'Ohne Grenzen'}
@@ -127,7 +127,7 @@
             {#each RISK_DUPLICATE_OPTIONS as opt (opt)}
               <button
                 class="rounded-xl border px-3 py-2 text-sm font-semibold transition
-                  {duplicates === opt ? 'border-indigo-500 bg-indigo-500/20 text-white' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+                  {duplicates === opt ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
                 onclick={() => (duplicates = opt)}
               >
                 {opt === 'both' ? 'Beide punkten' : 'Beide 0 Punkte'}
@@ -144,7 +144,7 @@
             {#each RISK_MISS_OPTIONS as opt (opt)}
               <button
                 class="rounded-xl border px-3 py-2 text-sm font-semibold transition
-                  {missPoints === opt ? 'border-indigo-500 bg-indigo-500/20 text-white' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+                  {missPoints === opt ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
                 onclick={() => (missPoints = opt)}
               >
                 {opt === 0 ? '0 Punkte' : `−${-opt} Punkte`}

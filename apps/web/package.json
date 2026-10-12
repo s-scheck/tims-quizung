@@ -10,6 +10,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
+    "@fontsource-variable/nunito": "^5.3.0",
     "@quiz/shared": "workspace:*",
     "leaflet": "^1.9.4"
   },

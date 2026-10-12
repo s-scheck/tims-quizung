@@ -5,6 +5,7 @@
   import { client } from '../lib/client.svelte.ts';
   import { formatValue, playerName } from '../lib/format.ts';
   import TurnTimer from './TurnTimer.svelte';
+  import Burst from './Burst.svelte';
   import HostDecision from './HostDecision.svelte';
   import LivesList from './LivesList.svelte';
 
@@ -106,7 +107,7 @@
         <p class="font-bold">Tipp von {playerName(view, guess.by)}: „{guess.text}“</p>
         <p class="text-sm text-slate-300">
           {#if guess.matchRank !== null}
-            Vorschlag: <span class="font-semibold text-white">{round.slots.find((s) => s.rank === guess.matchRank)?.name}</span> (Platz {guess.matchRank})
+            Vorschlag: <span class="font-semibold text-slate-50">{round.slots.find((s) => s.rank === guess.matchRank)?.name}</span> (Platz {guess.matchRank})
           {:else}
             Kein Treffer gefunden. Falls doch richtig, Karte unten wählen.
           {/if}
@@ -136,11 +137,12 @@
         {#each round.slots as slot (slot.rank)}
           {@const justHit = guess?.status === 'correct' && guess.matchRank === slot.rank}
           <li
-            class="flex items-center gap-3 rounded-lg border px-3 py-2 transition
+            class="relative flex items-center gap-3 rounded-xl border-2 px-3 py-2 transition
               {slot.revealed ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-slate-800 bg-slate-900/60'}
               {justHit ? 'animate-flash border-emerald-400' : ''}
               {readonly ? 'text-xl py-3' : ''}"
           >
+            {#if justHit}<Burst />{/if}
             <span class="w-7 shrink-0 text-right font-mono text-sm text-slate-500">{slot.rank}.</span>
             {#if slot.revealed}
               <span class="min-w-0 flex-1 truncate font-semibold" in:fly={{ x: -8, duration: 300 }}>{slot.name}</span>

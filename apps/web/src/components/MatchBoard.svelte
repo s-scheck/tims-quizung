@@ -187,7 +187,7 @@
     <div class="mx-auto flex max-w-5xl items-center gap-3">
       <div class="min-w-0 flex-1 truncate text-sm text-slate-300">
         {#if selection.cardId}
-          <span class="font-semibold text-white">{cardsById.get(selection.cardId)?.text}</span>
+          <span class="font-semibold text-slate-50">{cardsById.get(selection.cardId)?.text}</span>
           {#if selection.targetId}
             <span class="text-slate-400"> → {round.targets.find((t) => t.id === selection.targetId)?.text}</span>
           {/if}

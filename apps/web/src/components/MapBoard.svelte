@@ -100,7 +100,7 @@
     <div class="mx-auto flex max-w-5xl items-center gap-3">
       <div class="min-w-0 flex-1 text-sm text-slate-300">
         {#if myPin}
-          Pin bei <span class="font-mono text-white">{myPin.lat.toFixed(2)}°, {myPin.lng.toFixed(2)}°</span>
+          Pin bei <span class="font-mono text-slate-50">{myPin.lat.toFixed(2)}°, {myPin.lng.toFixed(2)}°</span>
         {:else}
           <span class="text-slate-500">Noch kein Pin gesetzt</span>
         {/if}

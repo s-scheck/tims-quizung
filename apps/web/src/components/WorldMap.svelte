@@ -89,10 +89,10 @@
     loadGeo()
       .then(({ land, borders: borderData }) => {
         if (!map) return;
-        L.geoJSON(land, { style: { fillColor: '#334155', fillOpacity: 1, color: '#475569', weight: 0.6 }, interactive: false })
+        L.geoJSON(land, { style: { className: 'map-land' }, interactive: false })
           .addTo(map)
           .bringToBack();
-        borderLayer = L.geoJSON(borderData, { style: { color: '#94a3b8', weight: 0.8, opacity: 0.7, dashArray: '3 4' }, interactive: false });
+        borderLayer = L.geoJSON(borderData, { style: { className: 'map-borders' }, interactive: false });
         ready = true;
       })
       .catch(() => {
@@ -128,7 +128,7 @@
       return;
     }
     if (!pinMarker) {
-      pinMarker = L.marker([p.lat, p.lng], { icon: pinIcon('#f59e0b', '●'), draggable, zIndexOffset: 1000 }).addTo(map);
+      pinMarker = L.marker([p.lat, p.lng], { icon: pinIcon('#58cc02', '●'), draggable, zIndexOffset: 1000 }).addTo(map);
       pinMarker.on('dragend', () => {
         if (pinMarker) emitPick(pinMarker.getLatLng());
       });
@@ -169,7 +169,7 @@
 </script>
 
 <div class="relative {className}">
-  <div bind:this={el} class="h-full w-full rounded-2xl" style="background:#0f172a"></div>
+  <div bind:this={el} class="map-water h-full w-full rounded-2xl"></div>
   {#if !ready && !failed}
     <div class="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-slate-400">Karte wird geladen…</div>
   {:else if failed}

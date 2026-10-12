@@ -39,7 +39,7 @@
     </div>
     <div class="flex items-center gap-3 text-slate-300">
       <span class="text-sm text-slate-500">Mitspielen:</span>
-      <span class="font-mono text-2xl font-black tracking-[0.25em] text-white">{code}</span>
+      <span class="font-mono text-2xl font-black tracking-[0.25em] text-slate-50">{code}</span>
       <span class="hidden text-sm text-slate-500 lg:inline">{joinUrl(code).replace(/^https?:\/\//, '')}</span>
     </div>
   </header>

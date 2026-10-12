@@ -1,42 +1,232 @@
 @import "tailwindcss";
+@import "@fontsource-variable/nunito";
 
+/*
+ * Farbsystem: Die vertrauten Tailwind-Namen tragen eigene Paletten.
+ * slate ist der Grundton (Weiß/Schwarz), indigo die Leitfarbe (Grün), emerald steht für richtig,
+ * rose für falsch, amber für Warten und Warnungen, sky für Blau.
+ * Hell ist Standard. Für Hell sind die Stufen gespiegelt: 950 ist die Fläche, 50 der kräftigste Text,
+ * so funktionieren dieselben Klassen in beiden Modi. 500 und 600 bleiben als Füllfarben gleich.
+ */
 @theme {
-  --animate-flash: flash 700ms ease-out;
-  --animate-shake: shake 500ms ease-in-out;
-  --animate-pop: pop 250ms ease-out;
+  --font-sans: "Nunito Variable", ui-rounded, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Nunito Variable", ui-rounded, system-ui, sans-serif;
+
+  /* Feste Farben, unabhängig vom Modus */
+  --color-ink: #1f1f1f;
+  --color-brand-edge: #46a302;
+  --color-danger-edge: #d33131;
+
+  --animate-flash: quiz-hop 450ms ease-out, quiz-flash 700ms ease-out;
+  --animate-shake: quiz-shake 500ms ease-in-out;
+  --animate-pop: quiz-pop 250ms ease-out;
+
+  --color-slate-50: #111111;
+  --color-slate-100: #1f1f1f;
+  --color-slate-200: #333333;
+  --color-slate-300: #4b4b4b;
+  --color-slate-400: #6b6b6b;
+  --color-slate-500: #8f8f8f;
+  --color-slate-600: #afafaf;
+  --color-slate-700: #d4d4d4;
+  --color-slate-800: #e5e5e5;
+  --color-slate-900: #f7f7f7;
+  --color-slate-950: #ffffff;
+  --color-indigo-50: #163303;
+  --color-indigo-100: #2a5b0b;
+  --color-indigo-200: #33730a;
+  --color-indigo-300: #3e8f02;
+  --color-indigo-400: #4cad02;
+  --color-indigo-500: #58cc02;
+  --color-indigo-600: #4cad02;
+  --color-indigo-700: #95e04c;
+  --color-indigo-800: #bcef8c;
+  --color-indigo-900: #ddf7c4;
+  --color-indigo-950: #f1fce6;
+  --color-emerald-50: #163303;
+  --color-emerald-100: #2a5b0b;
+  --color-emerald-200: #33730a;
+  --color-emerald-300: #3e8f02;
+  --color-emerald-400: #4cad02;
+  --color-emerald-500: #58cc02;
+  --color-emerald-600: #4cad02;
+  --color-emerald-700: #95e04c;
+  --color-emerald-800: #bcef8c;
+  --color-emerald-900: #ddf7c4;
+  --color-emerald-950: #f1fce6;
+  --color-rose-50: #470909;
+  --color-rose-100: #821c1c;
+  --color-rose-200: #9f1d1d;
+  --color-rose-300: #c41f1f;
+  --color-rose-400: #ea2b2b;
+  --color-rose-500: #ff4b4b;
+  --color-rose-600: #ea2b2b;
+  --color-rose-700: #ff9a9a;
+  --color-rose-800: #ffc1c1;
+  --color-rose-900: #ffdfdf;
+  --color-rose-950: #fff0f0;
+  --color-amber-50: #3d2200;
+  --color-amber-100: #6e3f00;
+  --color-amber-200: #8f5200;
+  --color-amber-300: #b86a00;
+  --color-amber-400: #e08500;
+  --color-amber-500: #ff9600;
+  --color-amber-600: #e08500;
+  --color-amber-700: #ffc14d;
+  --color-amber-800: #ffd88a;
+  --color-amber-900: #ffebc2;
+  --color-amber-950: #fff7e8;
+  --color-sky-50: #072a3b;
+  --color-sky-100: #0e4a66;
+  --color-sky-200: #115e83;
+  --color-sky-300: #1478a8;
+  --color-sky-400: #1899d6;
+  --color-sky-500: #1cb0f6;
+  --color-sky-600: #1899d6;
+  --color-sky-700: #67cefa;
+  --color-sky-800: #9ee0fc;
+  --color-sky-900: #cdeffe;
+  --color-sky-950: #eaf8ff;
 }
 
-@keyframes flash {
-  0% { box-shadow: 0 0 0 0 rgb(74 222 128 / 0.9); }
-  100% { box-shadow: 0 0 0 18px rgb(74 222 128 / 0); }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-slate-50: #ffffff;
+    --color-slate-100: #f2f2f2;
+    --color-slate-200: #e0e0e0;
+    --color-slate-300: #c4c4c4;
+    --color-slate-400: #a3a3a3;
+    --color-slate-500: #7d7d7d;
+    --color-slate-600: #5c5c5c;
+    --color-slate-700: #3a3a3a;
+    --color-slate-800: #2b2b2b;
+    --color-slate-900: #141414;
+    --color-slate-950: #000000;
+    --color-indigo-50: #f1fce6;
+    --color-indigo-100: #ddf7c4;
+    --color-indigo-200: #bcef8c;
+    --color-indigo-300: #95e04c;
+    --color-indigo-400: #78d41f;
+    --color-indigo-500: #58cc02;
+    --color-indigo-600: #4cad02;
+    --color-indigo-700: #3e8f02;
+    --color-indigo-800: #33730a;
+    --color-indigo-900: #2a5b0b;
+    --color-indigo-950: #163303;
+    --color-emerald-50: #f1fce6;
+    --color-emerald-100: #ddf7c4;
+    --color-emerald-200: #bcef8c;
+    --color-emerald-300: #95e04c;
+    --color-emerald-400: #78d41f;
+    --color-emerald-500: #58cc02;
+    --color-emerald-600: #4cad02;
+    --color-emerald-700: #3e8f02;
+    --color-emerald-800: #33730a;
+    --color-emerald-900: #2a5b0b;
+    --color-emerald-950: #163303;
+    --color-rose-50: #fff0f0;
+    --color-rose-100: #ffdfdf;
+    --color-rose-200: #ffc1c1;
+    --color-rose-300: #ff9a9a;
+    --color-rose-400: #ff7070;
+    --color-rose-500: #ff4b4b;
+    --color-rose-600: #ea2b2b;
+    --color-rose-700: #c41f1f;
+    --color-rose-800: #9f1d1d;
+    --color-rose-900: #821c1c;
+    --color-rose-950: #470909;
+    --color-amber-50: #fff7e8;
+    --color-amber-100: #ffebc2;
+    --color-amber-200: #ffd88a;
+    --color-amber-300: #ffc14d;
+    --color-amber-400: #ffab1f;
+    --color-amber-500: #ff9600;
+    --color-amber-600: #e08500;
+    --color-amber-700: #b86a00;
+    --color-amber-800: #8f5200;
+    --color-amber-900: #6e3f00;
+    --color-amber-950: #3d2200;
+    --color-sky-50: #eaf8ff;
+    --color-sky-100: #cdeffe;
+    --color-sky-200: #9ee0fc;
+    --color-sky-300: #67cefa;
+    --color-sky-400: #3abef8;
+    --color-sky-500: #1cb0f6;
+    --color-sky-600: #1899d6;
+    --color-sky-700: #1478a8;
+    --color-sky-800: #115e83;
+    --color-sky-900: #0e4a66;
+    --color-sky-950: #072a3b;
+  }
 }
 
-@keyframes shake {
+@keyframes quiz-flash {
+  0% { box-shadow: 0 0 0 0 rgb(88 204 2 / 0.7); }
+  100% { box-shadow: 0 0 0 18px rgb(88 204 2 / 0); }
+}
+
+@keyframes quiz-hop {
+  0% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(-8px) scale(1.04); }
+  70% { transform: translateY(1px) scale(0.99); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes quiz-shake {
   0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
+  20% { transform: translateX(-7px) rotate(-1deg); }
+  40% { transform: translateX(7px) rotate(1deg); }
   60% { transform: translateX(-4px); }
   80% { transform: translateX(4px); }
 }
 
-@keyframes pop {
-  0% { transform: scale(0.96); }
+@keyframes quiz-pop {
+  0% { transform: scale(0.94); }
+  60% { transform: scale(1.03); }
   100% { transform: scale(1); }
 }
 
+/* Farbpunkte, die bei einem Treffer aus der Mitte fliegen (siehe Burst.svelte) */
+@keyframes quiz-burst {
+  0% { transform: translate(-50%, -50%) rotate(var(--a)) translateY(0) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) rotate(var(--a)) translateY(var(--d)) scale(0.3); opacity: 0; }
+}
+
+:root {
+  color-scheme: light dark;
+  /* Stumme Weltkarte */
+  --map-water: #d7f0fd;
+  --map-land: #ffffff;
+  --map-coast: #9fb3bf;
+  --map-border: #9fb3bf;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --map-water: #0c1419;
+    --map-land: #2b2b2b;
+    --map-coast: #4a4a4a;
+    --map-border: #6b6b6b;
+  }
+}
+
 html {
-  color-scheme: dark;
   -webkit-tap-highlight-color: transparent;
 }
 
 body {
   margin: 0;
   min-height: 100dvh;
-  background: #020617;
-  color: #f1f5f9;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--color-slate-950);
+  color: var(--color-slate-100);
+  font-family: var(--font-sans);
+  font-weight: 500;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.font-mono {
+  font-variant-numeric: tabular-nums;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -47,52 +237,108 @@ body {
 }
 
 @layer components {
+  /* Duolingo-Buttons: farbige Unterkante, beim Drücken sinkt der Button ein. */
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    @apply rounded-2xl px-5 py-3 font-extrabold uppercase tracking-wide transition-[transform,box-shadow,background-color,filter] duration-100 select-none disabled:cursor-not-allowed;
+  }
   .btn-primary {
-    @apply rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white transition hover:bg-indigo-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-indigo-600;
+    @apply bg-indigo-500 text-white hover:brightness-105;
+    box-shadow: 0 4px 0 var(--color-brand-edge);
   }
   .btn-secondary {
-    @apply rounded-xl bg-slate-700 px-4 py-3 font-semibold text-white transition hover:bg-slate-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40;
-  }
-  .btn-ghost {
-    @apply rounded-xl px-3 py-2 text-slate-300 transition hover:bg-slate-800 hover:text-white;
+    @apply border-2 border-slate-800 bg-slate-950 text-slate-300 hover:bg-slate-900;
+    box-shadow: 0 4px 0 var(--color-slate-800);
   }
   .btn-danger {
-    @apply rounded-xl bg-rose-600 px-4 py-3 font-semibold text-white transition hover:bg-rose-500 active:scale-[0.98];
+    @apply bg-rose-500 text-white hover:brightness-105;
+    box-shadow: 0 4px 0 var(--color-danger-edge);
+  }
+  .btn-primary:active:not(:disabled),
+  .btn-secondary:active:not(:disabled),
+  .btn-danger:active:not(:disabled) {
+    transform: translateY(4px);
+    box-shadow: none;
+  }
+  .btn-primary:disabled,
+  .btn-danger:disabled {
+    @apply bg-slate-800 text-slate-600;
+    box-shadow: 0 4px 0 var(--color-slate-700);
+    filter: none;
+  }
+  .btn-secondary:disabled {
+    @apply text-slate-600;
+  }
+  .btn-ghost {
+    @apply rounded-xl px-3 py-2 font-bold text-slate-400 transition hover:bg-slate-900 hover:text-slate-200;
   }
   .input {
-    @apply w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-white placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none;
+    @apply w-full rounded-2xl border-2 border-slate-800 bg-slate-900 px-4 py-3 text-base font-semibold text-slate-100 transition placeholder:text-slate-500 focus:border-indigo-500 focus:bg-slate-950 focus:outline-none;
   }
   .card {
-    @apply rounded-2xl border border-slate-800 bg-slate-900/60 p-4;
+    @apply rounded-2xl border-2 border-slate-800 bg-slate-950 p-4;
+  }
+  /* Anklickbare Karten (Spiel- und Kategoriewahl) bekommen dieselbe Unterkante wie die Buttons. */
+  button.card {
+    @apply border-b-4 transition-[transform,border-color,background-color] duration-100 hover:bg-slate-900;
+  }
+  button.card:active:not(:disabled) {
+    @apply translate-y-0.5 border-b-2;
   }
   .badge {
-    @apply rounded-full bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-300;
+    @apply rounded-full bg-slate-900 px-2 py-0.5 text-xs font-bold text-slate-400;
   }
 }
 
 /* Stumme Weltkarte (Leaflet) */
+/* Leaflets eigenes Stylesheet lädt nach diesem, deshalb die höhere Spezifität. */
+.map-water .leaflet-container,
+.map-water.leaflet-container,
 .leaflet-container {
-  background: #0f172a;
+  background: var(--map-water) !important;
   font-family: inherit;
   outline: none;
 }
+.map-water {
+  background: var(--map-water);
+}
+.leaflet-container path.map-land {
+  fill: var(--map-land);
+  fill-opacity: 1;
+  stroke: var(--map-coast);
+  stroke-width: 0.6;
+}
+.leaflet-container path.map-borders {
+  fill: none;
+  stroke: var(--map-border);
+  stroke-width: 0.8;
+  stroke-opacity: 0.8;
+  stroke-dasharray: 3 4;
+}
+.leaflet-bar {
+  border: 2px solid var(--color-slate-800) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
 .leaflet-bar a {
-  background: #1e293b;
-  color: #e2e8f0;
-  border-color: #334155;
+  background: var(--color-slate-950);
+  color: var(--color-slate-200);
+  border-color: var(--color-slate-800);
+  font-weight: 800;
 }
 .leaflet-bar a:hover {
-  background: #334155;
-  color: #fff;
+  background: var(--color-slate-900);
+  color: var(--color-slate-50);
 }
 .quiz-pin .pin {
   width: 28px;
   height: 28px;
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
-  background: var(--c, #f59e0b);
-  border: 2px solid #0f172a;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.55);
+  background: var(--c, #ff9600);
+  border: 2px solid #ffffff;
+  box-shadow: 0 3px 0 rgb(0 0 0 / 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -100,20 +346,20 @@ body {
 .quiz-pin .pin span {
   transform: rotate(45deg);
   font-size: 11px;
-  font-weight: 800;
-  color: #0f172a;
+  font-weight: 900;
+  color: var(--color-ink);
   line-height: 1;
 }
 .quiz-target .target {
   width: 24px;
   height: 24px;
   border-radius: 9999px;
-  background: #ef4444;
+  background: #ff4b4b;
   border: 3px solid #fff;
-  box-shadow: 0 0 0 4px rgb(239 68 68 / 0.35);
+  box-shadow: 0 0 0 4px rgb(255 75 75 / 0.35);
   animation: quiz-ping 1.6s ease-out infinite;
 }
 @keyframes quiz-ping {
-  0% { box-shadow: 0 0 0 0 rgb(239 68 68 / 0.6); }
-  100% { box-shadow: 0 0 0 16px rgb(239 68 68 / 0); }
+  0% { box-shadow: 0 0 0 0 rgb(255 75 75 / 0.6); }
+  100% { box-shadow: 0 0 0 16px rgb(255 75 75 / 0); }
 }

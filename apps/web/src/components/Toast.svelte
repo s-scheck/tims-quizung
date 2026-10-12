@@ -8,7 +8,7 @@
     <button
       type="button"
       class="pointer-events-auto max-w-sm rounded-xl px-4 py-2 text-sm font-medium shadow-lg
-        {t.kind === 'error' ? 'bg-rose-600 text-white' : t.kind === 'success' ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-white'}"
+        {t.kind === 'error' ? 'bg-rose-600 text-white' : t.kind === 'success' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-950'}"
       transition:fly={{ y: 20, duration: 200 }}
       onclick={() => toasts.dismiss(t.id)}
     >

@@ -52,7 +52,7 @@
         {#each [true, false] as plays (plays)}
           <button
             class="flex-1 rounded-xl border px-3 py-2 text-sm font-semibold transition
-              {view.settings.hostPlays === plays ? 'border-indigo-500 bg-indigo-500/20 text-white' : 'border-slate-700 text-slate-400'}
+              {view.settings.hostPlays === plays ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300' : 'border-slate-700 text-slate-400'}
               {client.isHost ? 'hover:border-slate-500' : 'cursor-default'}"
             disabled={!client.isHost}
             onclick={() => setHostPlays(plays)}
@@ -76,7 +76,7 @@
         {#each TIMER_OPTIONS as s (s)}
           <button
             class="flex-1 rounded-xl border px-3 py-2 text-sm font-semibold transition
-              {view.settings.timerSeconds === s ? 'border-indigo-500 bg-indigo-500/20 text-white' : 'border-slate-700 text-slate-400'}
+              {view.settings.timerSeconds === s ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300' : 'border-slate-700 text-slate-400'}
               {client.isHost ? 'hover:border-slate-500' : 'cursor-default'}"
             disabled={!client.isHost}
             onclick={() => setTimer(s)}
