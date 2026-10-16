@@ -107,7 +107,7 @@
   </section>
 </div>
 
-<section class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+<section class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
   <div class="card space-y-2 text-sm text-slate-400">
     <h3 class="font-semibold text-slate-200">Sortieren</h3>
     <p>Alle Karten einer Kategorie liegen offen. Eine zufällige Karte startet die Kette. Wer dran ist, wählt eine Karte und eine Lücke in der Kette und bestätigt.</p>
@@ -127,6 +127,11 @@
     <h3 class="font-semibold text-slate-200">Karte</h3>
     <p>Alle setzen gleichzeitig einen Pin auf einer stummen Weltkarte, etwa für den Taj Mahal. Niemand sieht fremde Pins.</p>
     <p>Der Host beendet die Runde, dann erscheinen alle Pins mit Luftlinien-Entfernung zum Ziel.</p>
+  </div>
+  <div class="card space-y-2 text-sm text-slate-400">
+    <h3 class="font-semibold text-slate-200">Bluff</h3>
+    <p>Alle sehen eine echte Aufgabe, etwa einen Filmtitel, und erfinden eine Subline, die echt wirkt. Dann wird über alle Texte plus die Wahrheit abgestimmt.</p>
+    <p>Jede Stimme auf deinen Text bringt einen Punkt, die Wahrheit zu erkennen zwei.</p>
   </div>
 </section>
 <p class="mt-4 text-center text-xs text-slate-500">Der Host wählt vor jeder Runde das Spiel und die Kategorie. Punkte vergibt er nach jeder Runde von Hand.</p>

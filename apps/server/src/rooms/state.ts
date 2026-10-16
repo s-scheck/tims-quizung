@@ -1,5 +1,5 @@
-import type { GuessStatus, MatchSelection, PlacementStatus, RiskRules, Selection } from '@quiz/shared';
-import type { Category, EventsCategory, PairsCategory, PlacesCategory, RankedCategory, TimelineEvent } from '@quiz/content';
+import type { BluffStage, GuessStatus, MatchSelection, PlacementStatus, RiskRules, Selection } from '@quiz/shared';
+import type { Category, EventsCategory, PairsCategory, PlacesCategory, PromptsCategory, RankedCategory, TimelineEvent } from '@quiz/content';
 
 export interface Player {
   id: string;
@@ -177,4 +177,25 @@ export interface RiskRound extends BaseRound {
   passes: RiskPass[];
 }
 
-export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound;
+// -------------------------------------------------------------------- Bluff
+
+export interface BluffEntry {
+  /** Opake ID, verrät nichts über den Autor. */
+  id: string;
+  /** null = die echte Antwort. */
+  authorId: string | null;
+}
+
+export interface BluffRound extends BaseRound {
+  game: 'bluff';
+  category: PromptsCategory;
+  prompt: { id: string; name: string; answer: string };
+  stage: BluffStage;
+  texts: Record<string, string>;
+  /** Spieler-ID → Eintrags-ID. */
+  votes: Record<string, string>;
+  /** Gemischte Einträge, entstehen beim Wechsel zur Abstimmung. */
+  entries: BluffEntry[];
+}
+
+export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound;

@@ -30,6 +30,7 @@
       return `${rank}. Platz, ${formatKm(entry.distanceKm)}`;
     }
     if (r.game === 'risk') return `${r.totals[id] ?? 0} Kategorie-Punkte`;
+    if (r.game === 'bluff') return `${r.points?.[id] ?? 0} Spielpunkte`;
     if (r.game === 'timeline') {
       const entry = r.ranking?.find((x) => x.playerId === id);
       if (!entry || entry.distanceYears === null) return 'kein Tipp';

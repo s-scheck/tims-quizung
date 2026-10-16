@@ -52,6 +52,9 @@ export type ClientMsg =
   | { type: 'place_year'; year: number }
   | { type: 'confirm_pin' }
   | { type: 'end_round' }
+  | { type: 'submit_text'; text: string }
+  | { type: 'vote'; entryId: string }
+  | { type: 'advance' }
   | { type: 'risk_guess'; text: string }
   | { type: 'risk_correct'; playerId: string; rank: number | null }
   | { type: 'next_pass' }

@@ -11,8 +11,10 @@ export type Phase =
   | 'scoreboard'
   | 'finished';
 
-export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk';
-export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk'];
+export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff';
+export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff'];
+/** Längste erlaubte Antwort bei Bluff, nach Trimmen. */
+export const BLUFF_TEXT_MAX = 140;
 
 export type SortOrder = 'asc' | 'desc';
 export type TimerSeconds = 0 | 30 | 60;
@@ -73,7 +75,7 @@ export interface CategorySummary {
   count: number;
   played: boolean;
   games: GameId[];
-  /** Nur bei Orts- und Ereignislisten und nur in der Sicht des Hosts: wählbare Ziele. */
+  /** Nur bei Orts-, Ereignis- und Aufgabenlisten und nur in der Sicht des Hosts: wählbare Ziele. */
   targets?: MapTargetSummary[];
 }
 
@@ -329,7 +331,54 @@ export interface RiskRoundView extends BaseRoundView {
   privileged?: boolean;
 }
 
-export type RoundView = SortRoundView | TopXRoundView | MatchRoundView | MapRoundView | TimelineRoundView | RiskRoundView;
+/** Kategorie eines Bluff-Spiels: Aufgaben mit echter Antwort. */
+export interface BluffCategoryInfo {
+  id: string;
+  title: string;
+  question: string;
+  /** Bezeichnung der Aufgabe, z. B. „Film“. */
+  promptLabel: string;
+  /** Bezeichnung der Antwort, z. B. „Subline“. */
+  answerLabel: string;
+  /** Schreibanweisung für die Spieler. */
+  instruction: string;
+  source?: string;
+}
+
+export type BluffStage = 'writing' | 'voting' | 'votes_shown';
+
+export interface BluffEntryView {
+  id: string;
+  text: string;
+  /** Eigener Text des Betrachters. */
+  mine?: boolean;
+  /** Spieler, die auf diesen Eintrag gestimmt haben (ab Stimmenanzeige). */
+  votes?: string[];
+  /** Autor, null für die Wahrheit (nur Moderator oder Auflösung). */
+  authorId?: string | null;
+  isTruth?: boolean;
+  /** Punkte, die dieser Eintrag seinem Autor bringt (Moderator oder Auflösung). */
+  points?: number;
+}
+
+export interface BluffRoundView extends BaseRoundView {
+  game: 'bluff';
+  category: BluffCategoryInfo;
+  prompt: string;
+  stage: BluffStage;
+  submitted: string[];
+  voted: string[];
+  myText?: string;
+  myVote?: string | null;
+  entries?: BluffEntryView[];
+  /** Echte Antwort, nur Moderator oder Auflösung. */
+  truth?: string;
+  /** Rundenpunkte je Teilnehmer, nur Moderator oder Auflösung. */
+  points?: Record<string, number>;
+  privileged?: boolean;
+}
+
+export type RoundView = SortRoundView | TopXRoundView | MatchRoundView | MapRoundView | TimelineRoundView | RiskRoundView | BluffRoundView;
 
 export interface RoundResult {
   gameId: GameId;
@@ -370,7 +419,7 @@ export type EditorStatus = 'builtin' | 'modified' | 'custom' | 'hidden';
 export interface EditorEntry {
   id: string;
   title: string;
-  kind: 'ranked' | 'pairs' | 'places' | 'events';
+  kind: 'ranked' | 'pairs' | 'places' | 'events' | 'prompts';
   games: GameId[];
   count: number;
   status: EditorStatus;

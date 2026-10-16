@@ -105,7 +105,12 @@ export function isClientMsg(x: unknown): x is ClientMsg {
     case 'confirm_pin':
     case 'end_round':
     case 'next_pass':
+    case 'advance':
       return true;
+    case 'submit_text':
+      return isStr(x.text, 400);
+    case 'vote':
+      return isStr(x.entryId, 20);
     case 'guess':
       return isInt(x.turnNo) && isStr(x.text, 200);
     case 'judge':

@@ -1,6 +1,6 @@
 # Tims Quizung
 
-Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Spiele: **Sortieren**, **Top X**, **Zuordnen**, **Karte**, **Zeitstrahl** und **No Risk No Fun**. Der Host wählt vor jeder Runde das Spiel und die Kategorie, der Punktestand läuft über alle Runden durch.
+Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Spiele: **Sortieren**, **Top X**, **Zuordnen**, **Karte**, **Zeitstrahl**, **No Risk No Fun** und **Bluff**. Der Host wählt vor jeder Runde das Spiel und die Kategorie, der Punktestand läuft über alle Runden durch.
 
 ## Spielregeln „Sortieren"
 
@@ -50,6 +50,13 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 - Der Server erkennt Namen und Aliasse (z. B. „Vereinigte Staaten“ für USA). In der Auflösung kann der Host jede Zuordnung korrigieren, etwa bei Tippfehlern.
 - Danach entscheidet der Host: noch ein Durchgang (getroffene Plätze sind dann gesperrt) oder Kategorie beenden. Dann sehen alle die ganze Liste. Die Kategorie-Punkte zählen nur innerhalb der Kategorie, die Gesamtwertung trägt der Host wie gewohnt ein.
 - Moderiert der Host, sieht er die ganze Liste schon während des Spiels.
+
+## Spielregeln „Bluff"
+
+- Alle sehen eine echte Aufgabe, etwa einen Filmtitel, und schreiben gleichzeitig eine Antwort, die echt wirken soll, zum Beispiel die Subline des Plakats.
+- Der Host schaltet zur Abstimmung: Alle Texte plus die echte Antwort stehen gemischt zur Wahl, der eigene Text ist gesperrt. Dann zeigt der Host die Stimmen, dann die Auflösung mit Autoren und Wahrheit.
+- Spielpunkte: 1 je Stimme auf den eigenen Text, 2 für die eigene Stimme auf die Wahrheit. Sie stehen bei der Punkteeingabe als Vorlage, die Endpunkte trägt der Host ein.
+- Moderiert der Host, wählt er die Aufgabe und sieht Wahrheit, Texte und Stimmen live. Spielt er mit, zieht der Server eine zufällige Aufgabe und er schreibt und stimmt wie alle.
 
 Die Kartendaten stammen von [Natural Earth](https://www.naturalearthdata.com/) (gemeinfrei) und liegen unter `apps/web/public/geo/`. Die Karte selbst rendert [Leaflet](https://leafletjs.com/) ohne Kacheln, es wird kein externer Dienst angesprochen.
 
@@ -161,6 +168,23 @@ Für Zeitstrahl gibt es Ereignislisten mit einem Jahr oder einer Spanne:
 Regeln: 10 bis 30 Ereignisse, Namen eindeutig, entweder `year` oder `from` und `to`, ganze Jahre von -4000 bis 2030 ohne 0 (negativ heißt v. Chr.). Dateien beginnen mit `zeit-`.
 
 Für No Risk No Fun gibt es lange Ranglisten mit `"games": ["risk"]`: 10 bis 50 Einträge in Rangfolge, Platz 1 zuerst, mit Quelle. `aliases` helfen beim Abgleich. Dateien beginnen mit `risk-`.
+
+Für Bluff gibt es Aufgabenlisten mit echten Antworten:
+
+```json
+{
+  "id": "bluff-beispiel",
+  "title": "Film-Sublines",
+  "question": "Wie lautet die echte Subline?",
+  "promptLabel": "Film",
+  "answerLabel": "Subline",
+  "instruction": "Schreib eine Subline, wie sie auf dem Plakat stehen könnte.",
+  "games": ["bluff"],
+  "prompts": [{ "name": "Alien (1979)", "answer": "Im Weltraum hört dich niemand schreien." }]
+}
+```
+
+Regeln: 8 bis 30 Aufgaben, Namen eindeutig, Antwort nicht leer. Dateien beginnen mit `bluff-`. Die mitgelieferten Sublines sind nach Kinoplakaten und Verleihtexten notiert, bitte vor dem ersten Abend einmal gegenlesen.
 
 Für Top X kommt `"games": ["topx"]` dazu (Standard ist `["sort"]`, beides zusammen geht auch). Top-X-Listen müssen echte Top-Listen ohne Gleichstand über die Listengrenze sein, dürfen ab 5 Einträgen kurz sein und Gleichstände enthalten. Pro Eintrag helfen `aliases` beim Abgleich, etwa `["Mbappe", "Mbappé"]`; ein eindeutiger Nachname trifft automatisch. Dateien beginnen mit `topx-`.
 

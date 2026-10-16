@@ -147,8 +147,8 @@ describe('WebSocket-Ablauf', () => {
     tim2.send({ type: 'start_game' });
     const started = await tim2.nextOfType('state');
     expect(started.room.phase).toBe('choosing_category');
-    expect(started.room.categories?.length).toBe(7);
-    expect(started.room.games?.length).toBe(6);
+    expect(started.room.categories?.length).toBe(8);
+    expect(started.room.games?.length).toBe(7);
 
     // Kick schließt Annas Socket mit 4001.
     tim2.send({ type: 'kick', playerId: annaWelcome.playerId! });

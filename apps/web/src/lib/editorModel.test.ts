@@ -1,19 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  cellIssues,
-  draftFromRaw,
-  draftToRaw,
-  makeId,
-  newDraft,
-  parseLatLng,
-  parseNumber,
-  parsePasted,
-  parseYear,
-  rowsFromCells,
-  COLUMNS,
-  sortRowsByValue,
-  validate,
-} from './editorModel.ts';
+import { COLUMNS, cellIssues, draftFromRaw, draftToRaw, makeId, newDraft, parseLatLng, parseNumber, parsePasted, parseYear, rowsFromCells, sortRowsByValue, validate } from './editorModel.ts';
 
 describe('Editor: Zahlen lesen', () => {
   test('Zahlen wie aus Excel', () => {
@@ -114,3 +100,30 @@ describe('Editor: Liste hin und zurück', () => {
     expect(makeId('', 'sort', new Set())).toBe('liste');
   });
 });
+
+describe('Editor: Aufgabenliste (Bluff)', () => {
+  test('hin und zurück, Prüfung wie auf dem Server', () => {
+    const raw = {
+      id: 'bluff-test',
+      title: 'Sublines',
+      question: 'Wie lautet die echte Subline?',
+      promptLabel: 'Film',
+      answerLabel: 'Subline',
+      instruction: 'Schreib eine Subline.',
+      games: ['bluff'],
+      prompts: Array.from({ length: 8 }, (_, i) => ({ name: `Film ${i + 1}`, answer: `Subline ${i + 1}` })),
+    };
+    const draft = draftFromRaw(raw);
+    expect(draft.kind).toBe('prompts');
+    expect(draft.rows[0]).toEqual({ name: 'Film 1', answer: 'Subline 1' });
+    expect(draft.meta.instruction).toBe('Schreib eine Subline.');
+    const back = draftToRaw(draft, 'bluff-test');
+    expect(back.games).toEqual(['bluff']);
+    expect(back.prompts).toEqual(raw.prompts);
+    expect(validate(back, 'bluff-test')).toBeNull();
+    draft.rows[0]!.answer = '';
+    expect(validate(draftToRaw(draft, 'bluff-test'), 'bluff-test')).toMatch(/answer/);
+    expect(makeId('Film-Sublines', 'bluff', new Set())).toBe('bluff-film-sublines');
+  });
+});
+

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { CategoryValidationError, loadCategories, MIN_ITEMS, MIN_ITEMS_TOPX, MIN_PAIRS, MAX_ITEMS_RISK, MIN_EVENTS, MIN_ITEMS_RISK, MIN_PLACES, slugify, validateCategory } from './index.ts';
+import { CategoryValidationError, loadCategories, MIN_ITEMS, MIN_ITEMS_TOPX, MIN_PAIRS, MAX_ITEMS_RISK, MIN_EVENTS, MIN_ITEMS_RISK, MIN_PLACES, slugify, validateCategory, MIN_PROMPTS } from './index.ts';
 
 describe('Kategorien im Repo', () => {
   const categories = loadCategories();
@@ -79,6 +79,17 @@ describe('Kategorien im Repo', () => {
       expect(new Set(c.events.map((e) => e.id)).size).toBe(c.events.length);
       for (const e of c.events) expect(e.from).toBeLessThanOrEqual(e.to);
       expect(c.games).toEqual(['timeline']);
+    }
+  });
+
+  test('mindestens 4 Aufgabenlisten für Bluff mit Antworten', () => {
+    const prompts = categories.filter((c) => c.kind === 'prompts');
+    expect(prompts.length).toBeGreaterThanOrEqual(4);
+    for (const c of prompts) {
+      expect(c.prompts.length).toBeGreaterThanOrEqual(MIN_PROMPTS);
+      expect(new Set(c.prompts.map((p) => p.id)).size).toBe(c.prompts.length);
+      for (const p of c.prompts) expect(p.answer.length).toBeGreaterThan(0);
+      expect(c.games).toEqual(['bluff']);
     }
   });
 
@@ -270,3 +281,33 @@ describe('validateCategory (Ereignisliste)', () => {
     expect(() => validateCategory({ ...base, games: ['map'] }, 'f')).toThrow(/nur für "timeline"/);
   });
 });
+
+describe('validateCategory (Aufgabenliste)', () => {
+  const base = {
+    id: 'bluff-test',
+    title: 'Sublines',
+    question: 'Wie lautet die echte Subline?',
+    promptLabel: 'Film',
+    answerLabel: 'Subline',
+    instruction: 'Schreib eine Subline.',
+    prompts: Array.from({ length: 8 }, (_, i) => ({ name: `Film ${i + 1} (200${i})`, answer: `Subline ${i + 1}` })),
+  };
+
+  test('akzeptiert eine gültige Aufgabenliste und leitet IDs ab', () => {
+    const c = validateCategory(base, 'f');
+    expect(c.kind).toBe('prompts');
+    if (c.kind !== 'prompts') return;
+    expect(c.games).toEqual(['bluff']);
+    expect(c.prompts[0]?.id).toBe('film-1-2000');
+  });
+
+  test('lehnt Fehler ab', () => {
+    expect(() => validateCategory({ ...base, prompts: base.prompts.slice(0, 7) }, 'f')).toThrow(/mindestens 8/);
+    expect(() => validateCategory({ ...base, prompts: [...base.prompts.slice(0, 7), { name: 'film 1 (2000)', answer: 'x' }] }, 'f')).toThrow(/doppelte Aufgabe/);
+    expect(() => validateCategory({ ...base, prompts: [...base.prompts.slice(0, 7), { name: 'Neu', answer: '  ' }] }, 'f')).toThrow(/answer/);
+    expect(() => validateCategory({ ...base, instruction: '' }, 'f')).toThrow(/instruction/);
+    expect(() => validateCategory({ ...base, games: ['map'] }, 'f')).toThrow(/bluff/);
+    expect(() => validateCategory({ id: 'x', title: 'T', question: 'Q', topLabel: 'a', bottomLabel: 'b', order: 'desc', games: ['bluff'], items: [] }, 'f')).toThrow(/prompts/);
+  });
+});
+

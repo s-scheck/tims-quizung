@@ -19,6 +19,8 @@
   import TimelineReveal from '../components/TimelineReveal.svelte';
   import RiskBoard from '../components/RiskBoard.svelte';
   import RiskReveal from '../components/RiskReveal.svelte';
+  import BluffBoard from '../components/BluffBoard.svelte';
+  import BluffReveal from '../components/BluffReveal.svelte';
   import Scoring from '../components/Scoring.svelte';
   import Scoreboard from '../components/Scoreboard.svelte';
   import FinalStandings from '../components/FinalStandings.svelte';
@@ -116,6 +118,8 @@
           <TimelineBoard {view} round={view.round} />
         {:else if view.round?.game === 'risk'}
           <RiskBoard {view} round={view.round} />
+        {:else if view.round?.game === 'bluff'}
+          <BluffBoard {view} round={view.round} />
         {:else if view.round?.game === 'sort'}
           <Board {view} round={view.round} />
         {/if}
@@ -132,6 +136,8 @@
           <TimelineReveal {view} round={view.round} />
         {:else if view.round?.game === 'risk'}
           <RiskReveal {view} round={view.round} />
+        {:else if view.round?.game === 'bluff'}
+          <BluffReveal {view} round={view.round} />
         {:else if view.round?.game === 'sort'}
           <Reveal {view} round={view.round} />
         {/if}

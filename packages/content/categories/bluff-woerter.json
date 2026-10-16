@@ -1,0 +1,33 @@
+{
+  "id": "bluff-woerter",
+  "title": "Seltene Wörter",
+  "question": "Was bedeutet das Wort wirklich?",
+  "promptLabel": "Wort",
+  "answerLabel": "Bedeutung",
+  "instruction": "Erfinde eine Bedeutung, die wie aus dem Wörterbuch klingt.",
+  "games": ["bluff"],
+  "source": "Duden, sinngemäß verkürzt",
+  "prompts": [
+    { "name": "Fisimatenten", "answer": "Ausflüchte oder unnötige Umstände, die nur Zeit kosten." },
+    { "name": "Kinkerlitzchen", "answer": "Unbedeutende Kleinigkeiten, wertloser Kram." },
+    { "name": "Plempe", "answer": "Dünnes, fades oder abgestandenes Getränk." },
+    { "name": "Kokolores", "answer": "Unsinn, übertriebenes Getue." },
+    { "name": "Schlawiner", "answer": "Gerissener, aber liebenswerter Schlingel." },
+    { "name": "Posemuckel", "answer": "Abgelegener, unbedeutender Ort." },
+    { "name": "Firlefanz", "answer": "Überflüssiger Zierrat, albernes Zeug." },
+    { "name": "Hagestolz", "answer": "Eingefleischter, älterer Junggeselle." },
+    { "name": "Techtelmechtel", "answer": "Heimliche, meist kurze Liebesaffäre." },
+    { "name": "Quisquilien", "answer": "Belanglose Kleinigkeiten, Nichtigkeiten." },
+    { "name": "Blümerant", "answer": "Flau, unwohl, leicht schwindelig." },
+    { "name": "Gedöns", "answer": "Unnötiges Aufheben oder überflüssiger Kram." },
+    { "name": "Kladderadatsch", "answer": "Lautes Durcheinander, Zusammenbruch oder Skandal." },
+    { "name": "Sperenzchen", "answer": "Unnötige Umstände, Schwierigkeiten oder Ausflüchte." },
+    { "name": "Hanebüchen", "answer": "Unglaublich, unerhört, derb." },
+    { "name": "Pennäler", "answer": "Schüler einer höheren Schule." },
+    { "name": "Flitzpiepe", "answer": "Alberner, unzuverlässiger Mensch." },
+    { "name": "Krakeelen", "answer": "Laut und streitlustig schreien." },
+    { "name": "Unkenruf", "answer": "Pessimistische Vorhersage, die Unheil ankündigt." },
+    { "name": "Grüßaugust", "answer": "Jemand mit rein repräsentativer Rolle ohne Einfluss." },
+    { "name": "Honoratioren", "answer": "Angesehene Bürger eines Ortes." }
+  ]
+}

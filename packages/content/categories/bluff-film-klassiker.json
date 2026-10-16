@@ -1,0 +1,31 @@
+{
+  "id": "bluff-film-klassiker",
+  "title": "Film-Sublines: Klassiker",
+  "question": "Wie lautet die echte Subline?",
+  "promptLabel": "Film",
+  "answerLabel": "Subline",
+  "instruction": "Schreib eine Subline, wie sie auf dem deutschen Kinoplakat stehen könnte.",
+  "games": ["bluff"],
+  "source": "nach deutschem Kinoplakat bzw. Verleihtext, teils gekürzt",
+  "prompts": [
+    { "name": "Psycho (1960)", "answer": "Bitte verraten Sie nicht das Ende – es ist das einzige, das wir haben." },
+    { "name": "Alien (1979)", "answer": "Im Weltraum hört dich niemand schreien." },
+    { "name": "E.T. – Der Außerirdische (1982)", "answer": "Er ist 3 Millionen Lichtjahre von zu Hause entfernt." },
+    { "name": "Jurassic Park (1993)", "answer": "Ein Abenteuer, 65 Millionen Jahre in der Entstehung." },
+    { "name": "Forrest Gump (1994)", "answer": "Die Welt wird nie mehr dieselbe sein, wenn Sie sie einmal mit den Augen von Forrest Gump gesehen haben." },
+    { "name": "Die Verurteilten (1994)", "answer": "Angst kann dich gefangen halten. Hoffnung kann dich befreien." },
+    { "name": "Braveheart (1995)", "answer": "Jeder Mann stirbt. Aber nicht jeder lebt wirklich." },
+    { "name": "Sieben (1995)", "answer": "Sieben Todsünden. Sieben Wege zu sterben." },
+    { "name": "Apollo 13 (1995)", "answer": "Houston, wir haben ein Problem." },
+    { "name": "Independence Day (1996)", "answer": "Wir haben immer geglaubt, wir wären nicht allein. Am 4. Juli werden wir uns wünschen, wir wären es." },
+    { "name": "Mission: Impossible (1996)", "answer": "Erwarte das Unmögliche." },
+    { "name": "Men in Black (1997)", "answer": "Sie schützen die Erde vor dem Abschaum des Universums." },
+    { "name": "Titanic (1997)", "answer": "Nichts auf Erden kann sie trennen." },
+    { "name": "Der Soldat James Ryan (1998)", "answer": "Die Mission ist ein Mann." },
+    { "name": "Matrix (1999)", "answer": "Was ist die Matrix?" },
+    { "name": "Fight Club (1999)", "answer": "Unfug. Chaos. Seife." },
+    { "name": "American Beauty (1999)", "answer": "… sieh genauer hin." },
+    { "name": "Star Wars: Episode I – Die dunkle Bedrohung (1999)", "answer": "Jede Saga hat einen Anfang." },
+    { "name": "Gladiator (2000)", "answer": "Ein Held wird zum Sklaven. Ein Sklave wird zum Gladiator. Ein Gladiator fordert ein Imperium heraus." }
+  ]
+}

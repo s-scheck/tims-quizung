@@ -1,0 +1,31 @@
+{
+  "id": "bluff-film-modern",
+  "title": "Film-Sublines: ab 2001",
+  "question": "Wie lautet die echte Subline?",
+  "promptLabel": "Film",
+  "answerLabel": "Subline",
+  "instruction": "Schreib eine Subline, wie sie auf dem deutschen Kinoplakat stehen könnte.",
+  "games": ["bluff"],
+  "source": "nach deutschem Kinoplakat bzw. Verleihtext, teils gekürzt",
+  "prompts": [
+    { "name": "Harry Potter und der Stein der Weisen (2001)", "answer": "Lass den Zauber beginnen." },
+    { "name": "Der Herr der Ringe: Die Gefährten (2001)", "answer": "Ein Ring, sie zu knechten." },
+    { "name": "Die fabelhafte Welt der Amélie (2001)", "answer": "Sie wird Ihr Leben verändern." },
+    { "name": "Findet Nemo (2003)", "answer": "Im Meer gibt es 3,7 Billionen Fische. Sie suchen einen." },
+    { "name": "Good Bye, Lenin! (2003)", "answer": "Die DDR lebt weiter – auf 79 qm!" },
+    { "name": "Kill Bill – Volume 1 (2003)", "answer": "Rache ist ein Gericht, das am besten kalt serviert wird." },
+    { "name": "Der Herr der Ringe: Die Rückkehr des Königs (2003)", "answer": "Es gibt keinen Triumph ohne Verlust. Keinen Sieg ohne Leid. Keine Freiheit ohne Opfer." },
+    { "name": "Ratatouille (2007)", "answer": "Jeder kann kochen." },
+    { "name": "The Dark Knight (2008)", "answer": "Warum so ernst?" },
+    { "name": "Inception (2010)", "answer": "Dein Verstand ist der Tatort." },
+    { "name": "Gravity (2013)", "answer": "Lass nicht los." },
+    { "name": "Interstellar (2014)", "answer": "Die Menschheit wurde auf der Erde geboren. Sie war nie dazu bestimmt, hier zu sterben." },
+    { "name": "Der Marsianer (2015)", "answer": "Holt ihn nach Hause." },
+    { "name": "Deadpool (2016)", "answer": "Mit großer Kraft kommt große Verantwortungslosigkeit." },
+    { "name": "Avengers: Infinity War (2018)", "answer": "Ein ganzes Universum. Nur einmal im Leben." },
+    { "name": "Avengers: Endgame (2019)", "answer": "Was auch immer nötig ist." },
+    { "name": "Joker (2019)", "answer": "Setz ein fröhliches Gesicht auf." },
+    { "name": "Barbie (2023)", "answer": "Sie ist alles. Er ist nur Ken." },
+    { "name": "Oppenheimer (2023)", "answer": "Die Welt verändert sich für immer." }
+  ]
+}

@@ -287,13 +287,14 @@
       <div class="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 class="text-lg font-black">
-            {draft.kind === 'pairs' ? 'Paare' : draft.kind === 'places' ? 'Orte' : draft.kind === 'events' ? 'Ereignisse' : 'Einträge'}
+            {draft.kind === 'pairs' ? 'Paare' : draft.kind === 'places' ? 'Orte' : draft.kind === 'events' ? 'Ereignisse' : draft.kind === 'prompts' ? 'Aufgaben' : 'Einträge'}
             <span class="text-slate-500">{filledRows}</span>
           </h2>
           <p class="text-xs text-slate-500">
             {#if draft.kind === 'places'}Zeile anklicken, dann auf die Karte tippen. Koordinaten aus Google Maps ("48.8584, 2.2945") lassen sich direkt einfügen.
             {:else if draft.kind === 'events'}Ein Jahr oder eine Spanne. Vor Christus als negative Zahl oder "44 v. Chr.".
             {:else if draft.kind === 'pairs'}Jede Karte gehört zu genau einem Ziel. Ziele müssen eindeutig sein.
+            {:else if draft.kind === 'prompts'}Jede Aufgabe mit ihrer echten Antwort. Die Spieler erfinden später eigene Antworten dazu, also muss die echte wirklich stimmen.
             {:else if needsSorting}Die Reihenfolge ist der Platz: Platz 1 zuerst. Zahlen wie "17.098.246" oder "1.450,9" gehen.
             {:else}Reihenfolge egal, Werte müssen eindeutig sein. Zahlen wie "17.098.246" oder "1.450,9" gehen.{/if}
           </p>
@@ -320,7 +321,7 @@
           </div>
         </div>
       {:else}
-        <EditTable columns={COLUMNS[draft.kind]} bind:rows={draft.rows} {issues} bind:selected noun={draft.kind === 'pairs' ? 'Paar' : draft.kind === 'events' ? 'Ereignis' : 'Eintrag'} />
+        <EditTable columns={COLUMNS[draft.kind]} bind:rows={draft.rows} {issues} bind:selected noun={draft.kind === 'pairs' ? 'Paar' : draft.kind === 'events' ? 'Ereignis' : draft.kind === 'prompts' ? 'Aufgabe' : 'Eintrag'} />
       {/if}
     </section>
 

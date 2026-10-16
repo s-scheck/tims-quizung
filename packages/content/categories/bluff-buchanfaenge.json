@@ -1,0 +1,32 @@
+{
+  "id": "bluff-buchanfaenge",
+  "title": "Erste Sätze von Büchern",
+  "question": "Wie beginnt das Buch wirklich?",
+  "promptLabel": "Buch",
+  "answerLabel": "Erster Satz",
+  "instruction": "Schreib den ersten Satz des Buches so, dass alle ihn für echt halten.",
+  "games": ["bluff"],
+  "source": "gängige deutsche Übersetzungen, Schreibweise vereinheitlicht",
+  "prompts": [
+    { "name": "„Der Prozess“ – Franz Kafka (1925)", "answer": "Jemand musste Josef K. verleumdet haben, denn ohne dass er etwas Böses getan hätte, wurde er eines Morgens verhaftet." },
+    { "name": "„Die Verwandlung“ – Franz Kafka (1915)", "answer": "Als Gregor Samsa eines Morgens aus unruhigen Träumen erwachte, fand er sich in seinem Bett zu einem ungeheueren Ungeziefer verwandelt." },
+    { "name": "„Anna Karenina“ – Lew Tolstoi (1878)", "answer": "Alle glücklichen Familien gleichen einander, jede unglückliche Familie ist auf ihre eigene Weise unglücklich." },
+    { "name": "„Stolz und Vorurteil“ – Jane Austen (1813)", "answer": "Es ist eine allgemein anerkannte Wahrheit, dass ein Junggeselle im Besitz eines schönen Vermögens nichts dringender braucht als eine Frau." },
+    { "name": "„1984“ – George Orwell (1949)", "answer": "Es war ein klarer, kalter Apriltag, und die Uhren schlugen dreizehn." },
+    { "name": "„Moby-Dick“ – Herman Melville (1851)", "answer": "Nennt mich Ismael." },
+    { "name": "„Der Fremde“ – Albert Camus (1942)", "answer": "Heute ist Mama gestorben. Oder vielleicht gestern, ich weiß es nicht." },
+    { "name": "„Harry Potter und der Stein der Weisen“ – J. K. Rowling (1997)", "answer": "Mr. und Mrs. Dursley im Ligusterweg Nummer 4 waren stolz darauf, ganz und gar normal zu sein, sehr stolz sogar." },
+    { "name": "„Der Hobbit“ – J. R. R. Tolkien (1937)", "answer": "In einer Höhle in der Erde, da lebte ein Hobbit." },
+    { "name": "„Lolita“ – Vladimir Nabokov (1955)", "answer": "Lolita, Licht meines Lebens, Feuer meiner Lenden." },
+    { "name": "„Hundert Jahre Einsamkeit“ – Gabriel García Márquez (1967)", "answer": "Viele Jahre später sollte der Oberst Aureliano Buendía sich vor dem Erschießungskommando an jenen fernen Nachmittag erinnern, an dem sein Vater ihn mitnahm, um das Eis kennenzulernen." },
+    { "name": "„Die Blechtrommel“ – Günter Grass (1959)", "answer": "Zugegeben: ich bin Insasse einer Heil- und Pflegeanstalt, mein Pfleger beobachtet mich, lässt mich kaum aus dem Auge." },
+    { "name": "„Buddenbrooks“ – Thomas Mann (1901)", "answer": "»Was ist das. – Was – ist das …«" },
+    { "name": "„Der Zauberberg“ – Thomas Mann (1924)", "answer": "Ein einfacher junger Mensch reiste im Hochsommer von Hamburg, seiner Vaterstadt, nach Davos-Platz im Graubündischen." },
+    { "name": "„Tschick“ – Wolfgang Herrndorf (2010)", "answer": "Als Erstes ist da der Geruch von Blut und Kaffee." },
+    { "name": "„Der Vorleser“ – Bernhard Schlink (1995)", "answer": "Als ich fünfzehn war, hatte ich Gelbsucht." },
+    { "name": "„Das Parfum“ – Patrick Süskind (1985)", "answer": "Im achtzehnten Jahrhundert lebte in Frankreich ein Mann, der zu den genialsten und abscheulichsten Gestalten dieser an genialen und abscheulichen Gestalten nicht armen Epoche gehörte." },
+    { "name": "„Der kleine Prinz“ – Antoine de Saint-Exupéry (1943)", "answer": "Als ich sechs Jahre alt war, sah ich einmal in einem Buch über den Urwald, das »Erlebte Geschichten« hieß, ein prächtiges Bild." },
+    { "name": "„Die Pest“ – Albert Camus (1947)", "answer": "Die merkwürdigen Ereignisse, die den Gegenstand dieser Chronik bilden, haben sich 194. in Oran zugetragen." },
+    { "name": "„Der Herr der Ringe“ – J. R. R. Tolkien (1954)", "answer": "Als Herr Bilbo Beutlin von Beutelsend ankündigte, dass er demnächst zur Feier seines einundelfzigsten Geburtstags ein besonders prächtiges Fest geben wolle, war des Geredes und der Aufregung in Hobbingen kein Ende." }
+  ]
+}

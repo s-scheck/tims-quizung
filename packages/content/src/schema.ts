@@ -2,6 +2,7 @@ import {
   GAME_IDS,
   isTimelineYear,
   isValidLatLng,
+  type BluffCategoryInfo,
   type CategoryInfo,
   type GameId,
   type LatLngBounds,
@@ -73,7 +74,23 @@ export interface EventsCategory extends TimelineCategoryInfo {
   events: TimelineEvent[];
 }
 
-export type Category = RankedCategory | PairsCategory | PlacesCategory | EventsCategory;
+export interface Prompt {
+  /** Aus dem Namen abgeleitet, eindeutig innerhalb der Liste. */
+  id: string;
+  /** Die Aufgabe, z. B. Filmtitel mit Jahr. */
+  name: string;
+  /** Die echte Antwort, z. B. die Subline. */
+  answer: string;
+}
+
+/** Aufgabenliste mit echten Antworten, für Bluff. */
+export interface PromptsCategory extends BluffCategoryInfo {
+  kind: 'prompts';
+  games: GameId[];
+  prompts: Prompt[];
+}
+
+export type Category = RankedCategory | PairsCategory | PlacesCategory | EventsCategory | PromptsCategory;
 
 /** Sortieren braucht 10 Karten und eindeutige Werte, eine Top-Liste darf kürzer sein und Gleichstände haben. */
 export const MIN_ITEMS = 10;
@@ -89,6 +106,8 @@ export const MIN_PLACES = 10;
 export const MAX_PLACES = 30;
 export const MIN_EVENTS = 10;
 export const MAX_EVENTS = 30;
+export const MIN_PROMPTS = 8;
+export const MAX_PROMPTS = 30;
 
 export class CategoryValidationError extends Error {
   constructor(
@@ -131,6 +150,7 @@ export function validateCategory(raw: unknown, file: string): Category {
   if ('pairs' in raw) return validatePairs(raw, file);
   if ('places' in raw) return validatePlaces(raw, file);
   if ('events' in raw) return validateEvents(raw, file);
+  if ('prompts' in raw) return validatePrompts(raw, file);
   return validateRanked(raw, file);
 }
 
@@ -162,6 +182,7 @@ function validateRanked(raw: Record<string, unknown>, file: string): RankedCateg
   if (games.includes('match')) throw new CategoryValidationError(file, 'Zuordnen braucht eine Paarliste mit "pairs"');
   if (games.includes('map')) throw new CategoryValidationError(file, 'Karte braucht eine Ortsliste mit "places"');
   if (games.includes('timeline')) throw new CategoryValidationError(file, 'Zeitstrahl braucht eine Ereignisliste mit "events"');
+  if (games.includes('bluff')) throw new CategoryValidationError(file, 'Bluff braucht eine Aufgabenliste mit "prompts"');
   const forSort = games.includes('sort');
   const forTopX = games.includes('topx');
   const minItems = forSort ? MIN_ITEMS : forTopX ? MIN_ITEMS_TOPX : MIN_ITEMS_RISK;
@@ -380,5 +401,46 @@ function validateEvents(raw: Record<string, unknown>, file: string): EventsCateg
     source: typeof raw.source === 'string' ? raw.source : undefined,
     games,
     events,
+  };
+}
+
+function validatePrompts(raw: Record<string, unknown>, file: string): PromptsCategory {
+  const id = readId(raw, file);
+  const games = readGames(raw, file, ['bluff']);
+  if (!games.includes('bluff') || games.some((g) => g !== 'bluff')) {
+    throw new CategoryValidationError(file, 'Aufgabenlisten taugen nur für "bluff"');
+  }
+
+  const promptsRaw = raw.prompts;
+  if (!Array.isArray(promptsRaw)) throw new CategoryValidationError(file, 'prompts fehlt');
+  if (promptsRaw.length < MIN_PROMPTS) throw new CategoryValidationError(file, `mindestens ${MIN_PROMPTS} Aufgaben nötig, ${promptsRaw.length} vorhanden`);
+  if (promptsRaw.length > MAX_PROMPTS) throw new CategoryValidationError(file, `höchstens ${MAX_PROMPTS} Aufgaben erlaubt`);
+
+  const names = new Set<string>();
+  const ids = new Set<string>();
+  const prompts: Prompt[] = promptsRaw.map((p, idx) => {
+    if (!isRecord(p)) throw new CategoryValidationError(file, `prompts[${idx}] ist kein Objekt`);
+    const name = requireString(p, 'name', file).trim();
+    const answer = requireString(p, 'answer', file).trim();
+    const key = name.toLowerCase();
+    if (names.has(key)) throw new CategoryValidationError(file, `doppelte Aufgabe "${name}"`);
+    names.add(key);
+    let promptId = slugify(name) || `aufgabe-${idx + 1}`;
+    if (ids.has(promptId)) promptId = `${promptId}-${idx + 1}`;
+    ids.add(promptId);
+    return { id: promptId, name, answer };
+  });
+
+  return {
+    kind: 'prompts',
+    id,
+    title: requireString(raw, 'title', file),
+    question: requireString(raw, 'question', file),
+    promptLabel: requireString(raw, 'promptLabel', file),
+    answerLabel: requireString(raw, 'answerLabel', file),
+    instruction: requireString(raw, 'instruction', file),
+    source: typeof raw.source === 'string' ? raw.source : undefined,
+    games,
+    prompts,
   };
 }

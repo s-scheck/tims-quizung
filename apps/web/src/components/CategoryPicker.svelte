@@ -30,7 +30,8 @@
   const usesLives = $derived(gameId === 'topx' || gameId === 'match');
   const isMap = $derived(gameId === 'map');
   const isRisk = $derived(gameId === 'risk');
-  const hasTargets = $derived(gameId === 'map' || gameId === 'timeline');
+  const hasTargets = $derived(gameId === 'map' || gameId === 'timeline' || gameId === 'bluff');
+  const targetNoun = $derived(gameId === 'map' ? 'Ziel' : gameId === 'timeline' ? 'Ereignis' : 'Aufgabe');
   const picksTarget = $derived(hasTargets && client.isModerator);
   const targetCategory = $derived((view.categories ?? []).find((c) => c.id === targetPickFor) ?? null);
 
@@ -155,7 +156,7 @@
       </div>
     {/if}
     {#if hasTargets && !picksTarget}
-      <p class="text-xs text-slate-500">Du spielst mit, deshalb zieht der Server ein zufälliges {isMap ? 'Ziel' : 'Ereignis'}, das du nicht vorher siehst.</p>
+      <p class="text-xs text-slate-500">Du spielst mit, deshalb zieht der Server {targetNoun === 'Aufgabe' ? 'eine zufällige Aufgabe' : `ein zufälliges ${targetNoun}`}, {targetNoun === 'Aufgabe' ? 'die' : 'das'} du nicht vorher siehst.</p>
     {/if}
 
     {#if targetCategory && picksTarget}
@@ -163,7 +164,7 @@
         <div class="flex items-center justify-between gap-3">
           <div>
             <p class="text-sm text-slate-400">{targetCategory.title}</p>
-            <h3 class="text-lg font-bold">{isMap ? 'Ziel' : 'Ereignis'} wählen</h3>
+            <h3 class="text-lg font-bold">{targetNoun} wählen</h3>
           </div>
           <button class="btn-ghost text-sm" onclick={() => (targetPickFor = null)}>Zurück</button>
         </div>
@@ -193,7 +194,7 @@
               {#if c.played}<span class="badge shrink-0 bg-emerald-500/20 text-emerald-300">gespielt</span>{/if}
             </div>
             <span class="text-sm text-slate-400">{c.question}</span>
-            <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : 'Karten'}</span>
+            <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : c.games.includes('bluff') ? 'Aufgaben' : 'Karten'}</span>
           </button>
         {/each}
       </div>

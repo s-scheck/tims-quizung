@@ -94,3 +94,19 @@ describe('Raumcodes', () => {
     expect(isValidRoomCode('ABCDE')).toBe(false);
   });
 });
+
+describe('Bluff-Nachrichten', () => {
+  test('gültig', () => {
+    expect(isClientMsg({ type: 'submit_text', text: 'Im Weltraum hört dich niemand schreien.' })).toBe(true);
+    expect(isClientMsg({ type: 'vote', entryId: 'e3' })).toBe(true);
+    expect(isClientMsg({ type: 'advance' })).toBe(true);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'bluff', categoryId: 'x', targetId: 'alien-1979' })).toBe(true);
+  });
+  test('ungültig', () => {
+    expect(isClientMsg({ type: 'submit_text', text: 5 })).toBe(false);
+    expect(isClientMsg({ type: 'submit_text', text: 'x'.repeat(401) })).toBe(false);
+    expect(isClientMsg({ type: 'vote', entryId: 'x'.repeat(21) })).toBe(false);
+    expect(isClientMsg({ type: 'vote' })).toBe(false);
+  });
+});
+

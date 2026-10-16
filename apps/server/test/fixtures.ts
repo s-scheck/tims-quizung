@@ -123,7 +123,25 @@ export const COUNTRIES: Category = {
   })),
 };
 
-const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES];
+export const PROMPTS: Category = {
+  kind: 'prompts',
+  id: 'taglines',
+  title: 'Sublines',
+  question: 'Wie lautet die echte Subline?',
+  promptLabel: 'Film',
+  answerLabel: 'Subline',
+  instruction: 'Schreib eine Subline.',
+  games: ['bluff'],
+  source: 'Test',
+  prompts: [
+    { id: 'alien', name: 'Alien (1979)', answer: 'Im Weltraum hört dich niemand schreien.' },
+    { id: 'titanic', name: 'Titanic (1997)', answer: 'Nichts auf Erden kann sie trennen.' },
+    { id: 'matrix', name: 'Matrix (1999)', answer: 'Was ist die Matrix?' },
+    { id: 'inception', name: 'Inception (2010)', answer: 'Dein Verstand ist der Tatort.' },
+  ],
+};
+
+const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES, PROMPTS];
 
 export const provider: CategoryProvider = {
   list: () => ALL,
@@ -223,6 +241,12 @@ export function startTimeline(h: Harness, opts: { targetId?: string } = {}): voi
 export function startRisk(h: Harness, opts: { duplicates?: 'both' | 'none'; missPoints?: 0 | -10 } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'risk', categoryId: 'countries', ...opts }));
+}
+
+/** Startet Spiel und Bluff-Runde. */
+export function startBluff(h: Harness, opts: { targetId?: string } = {}): void {
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'bluff', categoryId: 'taglines', ...opts }));
 }
 
 /** Startet Spiel und Top-X-Runde. */

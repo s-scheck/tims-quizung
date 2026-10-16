@@ -1,7 +1,7 @@
 import { slugify, validateCategory, CategoryValidationError } from '@quiz/content/schema';
 import type { GameId } from '@quiz/shared';
 
-export type Kind = 'ranked' | 'pairs' | 'places' | 'events';
+export type Kind = 'ranked' | 'pairs' | 'places' | 'events' | 'prompts';
 export type Raw = Record<string, unknown>;
 
 /** Spiele in der Reihenfolge der Spielauswahl, mit der Art Liste, die sie brauchen. */
@@ -12,6 +12,7 @@ export const EDITOR_GAMES: { id: GameId; name: string; kind: Kind; hint: string 
   { id: 'map', name: 'Karte', kind: 'places', hint: '10 bis 30 Orte mit Koordinaten.' },
   { id: 'timeline', name: 'Zeitstrahl', kind: 'events', hint: '10 bis 30 Ereignisse mit Jahr oder Spanne, negativ heißt v. Chr.' },
   { id: 'risk', name: 'No Risk No Fun', kind: 'ranked', hint: '10 bis 50 Einträge, Platz 1 zuerst. Platz 1 sollte bekannt, die hinteren Plätze Nischenwissen sein.' },
+  { id: 'bluff', name: 'Bluff', kind: 'prompts', hint: '8 bis 30 Aufgaben mit der echten Antwort, etwa Film und Subline. Die Antwort muss stimmen, sie ist die Wahrheit im Spiel.' },
 ];
 
 export const GAME_NAMES: Record<string, string> = Object.fromEntries(EDITOR_GAMES.map((g) => [g.id, g.name]));
@@ -50,6 +51,10 @@ export const COLUMNS: Record<Kind, Column[]> = {
     { key: 'name', label: 'Ereignis', type: 'text', placeholder: 'z. B. Französische Revolution', width: 'min-w-52' },
     { key: 'from', label: 'Jahr bzw. von', type: 'year', placeholder: '1789', width: 'w-32' },
     { key: 'to', label: 'bis', type: 'year', optional: true, placeholder: 'optional', width: 'w-32' },
+  ],
+  prompts: [
+    { key: 'name', label: 'Aufgabe', type: 'text', placeholder: 'z. B. Alien (1979)', width: 'min-w-52' },
+    { key: 'answer', label: 'Echte Antwort', type: 'text', placeholder: 'z. B. Im Weltraum hört dich niemand schreien.', width: 'min-w-72' },
   ],
 };
 
@@ -92,6 +97,14 @@ export const FIELDS: Record<Kind, Field[]> = {
     { key: 'title', label: 'Titel', type: 'text', placeholder: 'Weltgeschichte' },
     { key: 'question', label: 'Frage', type: 'text', placeholder: 'Wann war das?' },
     { key: 'source', label: 'Quelle', type: 'text', optional: true, placeholder: 'gängige Datierung' },
+  ],
+  prompts: [
+    { key: 'title', label: 'Titel', type: 'text', placeholder: 'Film-Sublines' },
+    { key: 'question', label: 'Frage', type: 'text', placeholder: 'Wie lautet die echte Subline?' },
+    { key: 'promptLabel', label: 'Bezeichnung der Aufgabe', type: 'text', placeholder: 'Film' },
+    { key: 'answerLabel', label: 'Bezeichnung der Antwort', type: 'text', placeholder: 'Subline' },
+    { key: 'instruction', label: 'Anweisung an die Spieler', type: 'text', placeholder: 'Schreib eine Subline, wie sie auf dem Plakat stehen könnte.' },
+    { key: 'source', label: 'Quelle', type: 'text', optional: true, placeholder: 'nach Kinoplakat' },
   ],
 };
 
@@ -149,6 +162,7 @@ export function kindOfRaw(raw: Raw): Kind {
   if ('pairs' in raw) return 'pairs';
   if ('places' in raw) return 'places';
   if ('events' in raw) return 'events';
+  if ('prompts' in raw) return 'prompts';
   return 'ranked';
 }
 
@@ -188,6 +202,9 @@ export function draftFromRaw(raw: Raw): Draft {
           : { name: str(e.name), from: formatNumber(e.from), to: formatNumber(e.to) },
       );
       break;
+    case 'prompts':
+      rows = arr(raw.prompts).map((p) => ({ name: str(p.name), answer: str(p.answer) }));
+      break;
   }
   const decoys = kind === 'pairs' && Array.isArray(raw.decoys) ? raw.decoys.map((d) => ({ text: str(d) })) : [];
   return { kind, meta, games, rows, decoys };
@@ -202,6 +219,7 @@ export function newDraft(game: GameId): Draft {
   }
   if (kind === 'events') meta.question = 'Wann war das?';
   if (kind === 'places') meta.question = 'Wo liegt das?';
+  if (kind === 'prompts') meta.question = 'Wie lautet die echte Antwort?';
   const rows = Array.from({ length: 3 }, () => emptyRow(COLUMNS[kind]));
   return { kind, meta, games: kind === 'ranked' ? [game] : [], rows, decoys: kind === 'pairs' ? [emptyRow(DECOY_COLUMNS)] : [] };
 }
@@ -260,6 +278,10 @@ export function draftToRaw(draft: Draft, id: string, base: Raw = {}): Raw {
         return fromValue === toValue ? { name, year: fromValue } : { name, from: fromValue, to: toValue };
       });
       break;
+    case 'prompts':
+      raw.games = ['bluff'];
+      raw.prompts = rows.map((r) => ({ name: (r.name ?? '').trim(), answer: (r.answer ?? '').trim() }));
+      break;
   }
   return raw;
 }
@@ -279,7 +301,7 @@ export function validate(raw: Raw, id: string): string | null {
 
 export function humanize(msg: string): string {
   return msg
-    .replace(/\b(?:items|pairs|places|events)\[(\d+)\]/g, (_, n) => `Zeile ${Number(n) + 1}`)
+    .replace(/\b(?:items|pairs|places|events|prompts)\[(\d+)\]/g, (_, n) => `Zeile ${Number(n) + 1}`)
     .replace(/\bvalue ist keine Zahl/, 'Wert ist keine Zahl')
     .replace(/\blat\/lng ungültig/, 'Koordinaten ungültig');
 }
@@ -346,7 +368,7 @@ export function rowsFromCells(cells: string[][], columns: Column[]): Row[] {
 
 // -------------------------------------------------------------------- ids
 
-const PREFIX: Partial<Record<GameId, string>> = { topx: 'topx-', risk: 'risk-', match: 'match-', map: 'map-', timeline: 'zeit-' };
+const PREFIX: Partial<Record<GameId, string>> = { topx: 'topx-', risk: 'risk-', match: 'match-', map: 'map-', timeline: 'zeit-', bluff: 'bluff-' };
 
 /** Neue id aus dem Titel, mit dem üblichen Präfix des Spiels, eindeutig gegenüber `taken`. */
 export function makeId(title: string, game: GameId, taken: Set<string>): string {

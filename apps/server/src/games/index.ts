@@ -5,6 +5,7 @@ import { matchGame } from './match/index.ts';
 import { mapGame } from './map/index.ts';
 import { timelineGame } from './timeline/index.ts';
 import { riskGame } from './risk/index.ts';
+import { bluffGame } from './bluff/index.ts';
 
 registerGame(sortGame);
 registerGame(topxGame);
@@ -12,5 +13,6 @@ registerGame(matchGame);
 registerGame(mapGame);
 registerGame(timelineGame);
 registerGame(riskGame);
+registerGame(bluffGame);
 
-export { sortGame, topxGame, matchGame, mapGame, timelineGame, riskGame };
+export { sortGame, topxGame, matchGame, mapGame, timelineGame, riskGame, bluffGame };
