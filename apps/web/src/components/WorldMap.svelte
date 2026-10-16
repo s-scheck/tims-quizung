@@ -169,7 +169,7 @@
 </script>
 
 <div class="relative {className}">
-  <div bind:this={el} class="map-water h-full w-full rounded-2xl"></div>
+  <div bind:this={el} class="map-water absolute inset-0 rounded-2xl"></div>
   {#if !ready && !failed}
     <div class="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-slate-400">Karte wird geladen…</div>
   {:else if failed}
