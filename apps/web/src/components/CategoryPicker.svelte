@@ -3,6 +3,10 @@
   import {
     LIVES_MAX,
     LIVES_MIN,
+    MORSE_SUGGESTIONS,
+    MORSE_WORD_MAX,
+    normalizeMorseText,
+    toMorse,
     RISK_DUPLICATE_OPTIONS,
     RISK_MISS_OPTIONS,
     type CategorySummary,
@@ -34,6 +38,23 @@
   const targetNoun = $derived(gameId === 'map' ? 'Ziel' : gameId === 'timeline' ? 'Ereignis' : 'Aufgabe');
   const picksTarget = $derived(hasTargets && client.isModerator);
   const targetCategory = $derived((view.categories ?? []).find((c) => c.id === targetPickFor) ?? null);
+  const isMorse = $derived(gameId === 'morse');
+  let morseWord = $state('');
+  const morseNormalized = $derived(normalizeMorseText(morseWord));
+  const morseOk = $derived(morseNormalized.length > 0 && morseNormalized.length <= MORSE_WORD_MAX);
+
+  function suggestMorse() {
+    const pick = MORSE_SUGGESTIONS[Math.floor(Math.random() * MORSE_SUGGESTIONS.length)] ?? 'SOS';
+    morseWord = pick
+      .split(' ')
+      .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  function startMorse() {
+    if (!morseOk) return;
+    client.send({ type: 'choose_category', gameId: 'morse', categoryId: 'morse', word: morseWord });
+  }
 
   const categories = $derived((view.categories ?? []).filter((c) => c.games.includes(gameId)));
   const currentGame = $derived(games.find((g) => g.id === gameId));
@@ -159,7 +180,32 @@
       <p class="text-xs text-slate-500">Du spielst mit, deshalb zieht der Server {targetNoun === 'Aufgabe' ? 'eine zufällige Aufgabe' : `ein zufälliges ${targetNoun}`}, {targetNoun === 'Aufgabe' ? 'die' : 'das'} du nicht vorher siehst.</p>
     {/if}
 
-    {#if targetCategory && picksTarget}
+    {#if isMorse}
+      <div class="card space-y-3">
+        <div>
+          <p class="font-semibold">Wort zum Morsen</p>
+          <p class="text-xs text-slate-500">Nur du siehst es. Bei Morse moderierst du immer, auch wenn du sonst mitspielst. Ton und Licht laufen auf deinem Gerät.</p>
+        </div>
+        <input
+          class="input"
+          type="text"
+          maxlength="40"
+          autocomplete="off"
+          placeholder="z. B. Hallo Welt"
+          bind:value={morseWord}
+          onkeydown={(e) => e.key === 'Enter' && startMorse()}
+        />
+        <p class="text-xs text-slate-500">
+          Gemorst wird: <span class="font-mono text-slate-200">{morseNormalized || '–'}</span>
+          {#if morseNormalized}<span class="ml-2 font-mono tracking-widest text-amber-200">{toMorse(morseWord).replace(/\./g, '·').replace(/-/g, '−')}</span>{/if}
+          {#if morseNormalized.length > MORSE_WORD_MAX}<span class="text-rose-300"> · zu lang, höchstens {MORSE_WORD_MAX} Zeichen</span>{/if}
+        </p>
+        <div class="flex gap-2">
+          <button class="btn-secondary" onclick={suggestMorse}>Vorschlag</button>
+          <button class="btn-primary flex-1" disabled={!morseOk} onclick={startMorse}>Runde starten</button>
+        </div>
+      </div>
+    {:else if targetCategory && picksTarget}
       <div class="space-y-3">
         <div class="flex items-center justify-between gap-3">
           <div>

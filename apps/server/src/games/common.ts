@@ -37,7 +37,7 @@ function pickStartPlayer(allIds: string[], eligible: string[], last: string | nu
   return eligible[0] ?? null;
 }
 
-export function baseRound(category: Category, turnOrder: string[]): BaseRound {
+export function baseRound(category: BaseRound['category'], turnOrder: string[]): BaseRound {
   return {
     category,
     turnOrder,

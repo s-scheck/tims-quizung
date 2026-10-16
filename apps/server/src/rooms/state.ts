@@ -9,9 +9,16 @@ export interface Player {
   connected: boolean;
 }
 
+/** Ersatz für Spiele ohne Kategorie aus der Liste, damit Auflösung und Punkte einheitlich bleiben. */
+export interface PseudoCategory {
+  kind: 'none';
+  id: string;
+  title: string;
+}
+
 /** Felder, die jede Runde unabhängig vom Spiel hat. `games/common.ts` arbeitet nur damit. */
 export interface BaseRound {
-  category: Category;
+  category: Category | PseudoCategory;
   turnOrder: string[];
   turnNo: number;
   activePlayerId: string | null;
@@ -198,4 +205,30 @@ export interface BluffRound extends BaseRound {
   entries: BluffEntry[];
 }
 
-export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound;
+// -------------------------------------------------------------------- Morse
+
+export interface MorseAttempt {
+  text: string;
+  at: number;
+  correct: boolean;
+}
+
+export interface MorseRound extends BaseRound {
+  game: 'morse';
+  category: PseudoCategory;
+  /** Normalisiertes Wort, z. B. „HALLO WELT“. */
+  word: string;
+  code: string;
+  startedAt: number;
+  attempts: Record<string, MorseAttempt[]>;
+  /** Spieler-ID → Zeitpunkt der Lösung. */
+  solved: Record<string, number>;
+  plays: number;
+  /** Laufende bzw. letzte Wiedergabe, nach der alle Geräte blinken. */
+  playback: { id: number; startAt: number; unitMs: number } | null;
+  lightShown: boolean;
+  codeShown: boolean;
+  tableShown: boolean;
+}
+
+export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound;

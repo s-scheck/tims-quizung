@@ -27,8 +27,8 @@ function matchable(round: RiskRound): MatchableCard[] {
   return round.category.items.map((item, i) => ({ rank: i + 1, name: item.name, ...(item.aliases ? { aliases: item.aliases } : {}) }));
 }
 
-export function startRiskRound(room: Room, category: Category, opts: StartRoundOptions): Result {
-  if (category.kind !== 'ranked') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
+export function startRiskRound(room: Room, category: Category | null, opts: StartRoundOptions): Result {
+  if (!category || category.kind !== 'ranked') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
   const turnOrder = buildTurnOrder(room);
   if (turnOrder.length === 0) return fail('invalid_action', 'Ohne Mitspieler geht es nicht los');
   const rules = {

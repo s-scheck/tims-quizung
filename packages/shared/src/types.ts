@@ -1,4 +1,5 @@
 import type { RiskRules } from './rules/risk.ts';
+import type { MorseBeep } from './rules/morse.ts';
 
 /** Phasen eines Raums. Ein flaches Modell, kein verschachteltes Spiel-Phasenfeld. */
 export type Phase =
@@ -11,8 +12,17 @@ export type Phase =
   | 'scoreboard'
   | 'finished';
 
-export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff';
-export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff'];
+export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse';
+export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse'];
+/** Längstes Morse-Wort nach Normalisierung, Leerzeichen eingerechnet. */
+export const MORSE_WORD_MAX = 30;
+/** Dauer einer Morse-Einheit (Punkt) in Millisekunden je Tempostufe. */
+export const MORSE_SPEEDS = { slow: 150, medium: 100, fast: 70 } as const;
+export type MorseSpeed = keyof typeof MORSE_SPEEDS;
+/** Spielpunkte für die ersten Löser. */
+export const MORSE_POINTS: readonly number[] = [3, 2, 1];
+/** Vorlauf zwischen Play-Klick und Start, damit alle Geräte den Start noch vor Beginn kennen. */
+export const MORSE_PLAY_LEAD_MS = 600;
 /** Längste erlaubte Antwort bei Bluff, nach Trimmen. */
 export const BLUFF_TEXT_MAX = 140;
 
@@ -378,7 +388,63 @@ export interface BluffRoundView extends BaseRoundView {
   privileged?: boolean;
 }
 
-export type RoundView = SortRoundView | TopXRoundView | MatchRoundView | MapRoundView | TimelineRoundView | RiskRoundView | BluffRoundView;
+export interface MorseAttemptView {
+  text: string;
+  at: number;
+  correct: boolean;
+}
+
+export interface MorseSolvedView {
+  playerId: string;
+  at: number;
+  rank: number;
+}
+
+/** Eine laufende oder letzte Wiedergabe: alle Geräte blinken danach, nur der Host spielt den Ton. */
+export interface MorsePlaybackView {
+  id: number;
+  /** Serverzeit des Starts. */
+  startAt: number;
+  unitMs: number;
+  beeps: MorseBeep[];
+}
+
+export interface MorseRoundView extends BaseRoundView {
+  game: 'morse';
+  /** Ersatz-Kategorie, damit Auflösung und Punkteeingabe einheitlich bleiben. */
+  category: { id: string; title: string; question: string };
+  startedAt: number;
+  /** Blinkt das Licht bei allen mit? Der Host schaltet es zu. */
+  lightShown: boolean;
+  playback: MorsePlaybackView | null;
+  /** Buchstaben je Wort, damit Spieler die Struktur sehen. */
+  lengths: number[];
+  /** Das Wort, nur Host oder Auflösung. */
+  word?: string;
+  /** Punkte und Striche, bei freigegebenem Code, für den Host oder ab Auflösung. */
+  code?: string;
+  codeShown: boolean;
+  tableShown: boolean;
+  plays: number;
+  solved: MorseSolvedView[];
+  /** Eigene Versuche des Betrachters. */
+  myAttempts?: MorseAttemptView[];
+  /** Alle Versuche, nur Host oder Auflösung. */
+  attempts?: Record<string, MorseAttemptView[]>;
+  /** Spielpunkte 3/2/1, nur Host oder Auflösung. */
+  points?: Record<string, number>;
+  privileged?: boolean;
+}
+
+export type RoundView =
+  | SortRoundView
+  | TopXRoundView
+  | MatchRoundView
+  | MapRoundView
+  | TimelineRoundView
+  | RiskRoundView
+  | BluffRoundView
+  | MorseRoundView;
 
 export interface RoundResult {
   gameId: GameId;

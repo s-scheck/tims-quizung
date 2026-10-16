@@ -7,6 +7,7 @@ export const timelineGame: GameModule = {
   name: 'Zeitstrahl',
   description: 'Alle tippen gleichzeitig auf dem Zeitstrahl, wann ein Ereignis war. Wer liegt am nächsten dran?',
   turnBased: false,
+  needsCategory: true,
   startRound: startTimelineRound,
   handle: handleTimelineMessage,
   onHostChanged: () => {},

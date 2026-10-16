@@ -10,8 +10,8 @@ export function timelineRound(room: Room): TimelineRound | null {
   return room.round?.game === 'timeline' ? room.round : null;
 }
 
-export function startTimelineRound(room: Room, category: Category, opts: StartRoundOptions): Result {
-  if (category.kind !== 'events') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
+export function startTimelineRound(room: Room, category: Category | null, opts: StartRoundOptions): Result {
+  if (!category || category.kind !== 'events') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
   const picked = pickTarget(room, category.id, category.events, opts.targetId);
   if ('error' in picked) return picked.error;
   const turnOrder = buildTurnOrder(room);

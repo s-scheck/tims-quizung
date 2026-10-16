@@ -7,6 +7,7 @@ export const matchGame: GameModule = {
   name: 'Zuordnen',
   description: 'Karten den richtigen Zielen zuordnen. Einige Ziele sind Köder, Fehler kosten Leben.',
   turnBased: true,
+  needsCategory: true,
   startRound: startMatchRound,
   handle: handleMatchMessage,
   onHostChanged: () => {},

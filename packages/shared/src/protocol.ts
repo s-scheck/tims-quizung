@@ -1,4 +1,4 @@
-import type { GameId, Role, RoomView, Selection, TimerSeconds } from './types.ts';
+import type { GameId, MorseSpeed, Role, RoomView, Selection, TimerSeconds } from './types.ts';
 import type { RiskDuplicates, RiskMissPoints } from './rules/risk.ts';
 
 export const PROTOCOL_VERSION = 2;
@@ -43,6 +43,7 @@ export type ClientMsg =
       borders?: boolean;
       duplicates?: RiskDuplicates;
       missPoints?: RiskMissPoints;
+      word?: string;
     }
   | ({ type: 'select'; turnNo: number; targetId?: string } & Selection)
   | { type: 'confirm'; turnNo: number }
@@ -52,6 +53,13 @@ export type ClientMsg =
   | { type: 'place_year'; year: number }
   | { type: 'confirm_pin' }
   | { type: 'end_round' }
+  | { type: 'morse_guess'; text: string }
+  | { type: 'morse_accept'; playerId: string; index: number }
+  | { type: 'morse_play'; speed: MorseSpeed }
+  | { type: 'morse_stop' }
+  | { type: 'morse_show_light'; shown: boolean }
+  | { type: 'morse_show_code'; shown: boolean }
+  | { type: 'morse_show_table'; shown: boolean }
   | { type: 'submit_text'; text: string }
   | { type: 'vote'; entryId: string }
   | { type: 'advance' }

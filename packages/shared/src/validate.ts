@@ -1,5 +1,5 @@
 import type { ClientMsg } from './protocol.ts';
-import { GAME_IDS, GUESS_MAX_LENGTH, LIVES_MAX, LIVES_MIN, TIMER_OPTIONS, type GameId, type TimerSeconds } from './types.ts';
+import { GAME_IDS, GUESS_MAX_LENGTH, LIVES_MAX, LIVES_MIN, MORSE_SPEEDS, TIMER_OPTIONS, type GameId, type MorseSpeed, type TimerSeconds } from './types.ts';
 import { isValidLatLng } from './rules/geo.ts';
 import { isTimelineYear } from './rules/timeline.ts';
 import { isRiskDuplicates, isRiskMissPoints } from './rules/risk.ts';
@@ -28,6 +28,10 @@ export function isTimerSeconds(value: unknown): value is TimerSeconds {
 
 export function isGameId(value: unknown): value is GameId {
   return typeof value === 'string' && (GAME_IDS as readonly string[]).includes(value);
+}
+
+export function isMorseSpeed(value: unknown): value is MorseSpeed {
+  return typeof value === 'string' && value in MORSE_SPEEDS;
 }
 
 export function isLives(value: unknown): value is number {
@@ -92,8 +96,21 @@ export function isClientMsg(x: unknown): x is ClientMsg {
         (x.targetId === undefined || isStr(x.targetId, 100)) &&
         (x.borders === undefined || typeof x.borders === 'boolean') &&
         (x.duplicates === undefined || isRiskDuplicates(x.duplicates)) &&
-        (x.missPoints === undefined || isRiskMissPoints(x.missPoints))
+        (x.missPoints === undefined || isRiskMissPoints(x.missPoints)) &&
+        (x.word === undefined || isStr(x.word, 200))
       );
+    case 'morse_guess':
+      return isStr(x.text, 200);
+    case 'morse_accept':
+      return isStr(x.playerId, 100) && isInt(x.index) && x.index >= 0;
+    case 'morse_show_light':
+    case 'morse_show_code':
+    case 'morse_show_table':
+      return typeof x.shown === 'boolean';
+    case 'morse_play':
+      return isMorseSpeed(x.speed);
+    case 'morse_stop':
+      return true;
     case 'place_pin':
       return isValidLatLng(x.lat, x.lng);
     case 'place_year':

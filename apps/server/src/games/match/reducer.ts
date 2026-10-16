@@ -13,8 +13,8 @@ export function matchRound(room: Room): MatchRound | null {
   return room.round?.game === 'match' ? room.round : null;
 }
 
-export function startMatchRound(room: Room, category: Category, opts: StartRoundOptions): Result {
-  if (category.kind !== 'pairs') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
+export function startMatchRound(room: Room, category: Category | null, opts: StartRoundOptions): Result {
+  if (!category || category.kind !== 'pairs') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
   const turnOrder = buildTurnOrder(room);
   if (turnOrder.length === 0) return fail('invalid_action', 'Ohne Mitspieler geht es nicht los');
   const lives = opts.lives ?? room.defaultLives;

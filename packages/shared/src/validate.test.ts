@@ -110,3 +110,24 @@ describe('Bluff-Nachrichten', () => {
   });
 });
 
+describe('Morse-Nachrichten', () => {
+  test('gültig', () => {
+    expect(isClientMsg({ type: 'choose_category', gameId: 'morse', categoryId: 'morse', word: 'Hallo Welt' })).toBe(true);
+    expect(isClientMsg({ type: 'morse_guess', text: 'hallo' })).toBe(true);
+    expect(isClientMsg({ type: 'morse_accept', playerId: 'p1', index: 0 })).toBe(true);
+    expect(isClientMsg({ type: 'morse_play', speed: 'slow' })).toBe(true);
+    expect(isClientMsg({ type: 'morse_stop' })).toBe(true);
+    expect(isClientMsg({ type: 'morse_show_light', shown: true })).toBe(true);
+    expect(isClientMsg({ type: 'morse_show_code', shown: true })).toBe(true);
+    expect(isClientMsg({ type: 'morse_show_table', shown: false })).toBe(true);
+  });
+  test('ungültig', () => {
+    expect(isClientMsg({ type: 'morse_guess' })).toBe(false);
+    expect(isClientMsg({ type: 'morse_accept', playerId: 'p1', index: -1 })).toBe(false);
+    expect(isClientMsg({ type: 'morse_show_code', shown: 'ja' })).toBe(false);
+    expect(isClientMsg({ type: 'morse_play', speed: 'turbo' })).toBe(false);
+    expect(isClientMsg({ type: 'morse_play' })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'morse', categoryId: 'morse', word: 7 })).toBe(false);
+  });
+});
+

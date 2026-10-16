@@ -1,6 +1,6 @@
 # Tims Quizung
 
-Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Spiele: **Sortieren**, **Top X**, **Zuordnen**, **Karte**, **Zeitstrahl**, **No Risk No Fun** und **Bluff**. Der Host wählt vor jeder Runde das Spiel und die Kategorie, der Punktestand läuft über alle Runden durch.
+Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Spiele: **Sortieren**, **Top X**, **Zuordnen**, **Karte**, **Zeitstrahl**, **No Risk No Fun**, **Bluff** und **Morse**. Der Host wählt vor jeder Runde das Spiel und die Kategorie, der Punktestand läuft über alle Runden durch.
 
 ## Spielregeln „Sortieren"
 
@@ -57,6 +57,14 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 - Der Host schaltet zur Abstimmung: Alle Texte plus die echte Antwort stehen gemischt zur Wahl, der eigene Text ist gesperrt. Dann zeigt der Host die Stimmen, dann die Auflösung mit Autoren und Wahrheit.
 - Spielpunkte: 1 je Stimme auf den eigenen Text, 2 für die eigene Stimme auf die Wahrheit. Sie stehen bei der Punkteeingabe als Vorlage, die Endpunkte trägt der Host ein.
 - Moderiert der Host, wählt er die Aufgabe und sieht Wahrheit, Texte und Stimmen live. Spielt er mit, zieht der Server eine zufällige Aufgabe und er schreibt und stimmt wie alle.
+
+## Spielregeln „Morse"
+
+- Der Host tippt ein Wort (Buchstaben, Ziffern, Leerzeichen, Umlaute werden zu AE, OE, UE) oder nimmt einen Vorschlag. Er moderiert bei Morse immer, auch wenn er sonst mitspielt.
+- Der Ton kommt nur aus dem Host-Gerät: „Ton abspielen“ in drei Tempostufen, beliebig oft. Das Licht blinkt synchron auf allen Geräten und dem TV, sobald der Host es zuschaltet; der Server verteilt dafür den Startzeitpunkt. Der Browser verlangt für den Ton einen Klick, deshalb startet er erst mit dem Play-Button.
+- „Code zeigen“ blendet die Punkte und Striche bei allen ein, „Tabelle“ die Morsetabelle, beides wieder ausblendbar.
+- Die Mitspieler raten unbegrenzt oft, der Server prüft exakt ohne Groß-/Kleinschreibung und Leerzeichen. Der Host sieht alle Versuche live und kann einen Fehlversuch nachträglich als richtig zählen.
+- Die ersten drei Löser bekommen 3, 2 und 1 Spielpunkte als Vorlage, die Zeit läuft ab Rundenstart. Nur der Host beendet die Runde.
 
 Die Kartendaten stammen von [Natural Earth](https://www.naturalearthdata.com/) (gemeinfrei) und liegen unter `apps/web/public/geo/`. Die Karte selbst rendert [Leaflet](https://leafletjs.com/) ohne Kacheln, es wird kein externer Dienst angesprochen.
 

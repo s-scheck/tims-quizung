@@ -10,8 +10,8 @@ export function mapRound(room: Room): MapRound | null {
   return room.round?.game === 'map' ? room.round : null;
 }
 
-export function startMapRound(room: Room, category: Category, opts: StartRoundOptions): Result {
-  if (category.kind !== 'places') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
+export function startMapRound(room: Room, category: Category | null, opts: StartRoundOptions): Result {
+  if (!category || category.kind !== 'places') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
   const picked = pickTarget(room, category.id, category.places, opts.targetId);
   if ('error' in picked) return picked.error;
   const turnOrder = buildTurnOrder(room);

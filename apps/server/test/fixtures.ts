@@ -249,6 +249,12 @@ export function startBluff(h: Harness, opts: { targetId?: string } = {}): void {
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'bluff', categoryId: 'taglines', ...opts }));
 }
 
+/** Startet Spiel und Morse-Runde mit dem gegebenen Wort. */
+export function startMorse(h: Harness, word = 'Hallo Welt'): void {
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'morse', categoryId: 'morse', word }));
+}
+
 /** Startet Spiel und Top-X-Runde. */
 export function startTopX(h: Harness, lives?: number): void {
   expectOk(h.act(h.host, { type: 'start_game' }));

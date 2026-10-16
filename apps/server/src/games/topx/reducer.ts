@@ -20,8 +20,8 @@ export function hostJudges(room: Room): boolean {
   return room.hostId !== null && room.isModerator(room.hostId);
 }
 
-export function startTopXRound(room: Room, category: Category, opts: StartRoundOptions): Result {
-  if (category.kind !== 'ranked') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
+export function startTopXRound(room: Room, category: Category | null, opts: StartRoundOptions): Result {
+  if (!category || category.kind !== 'ranked') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
   const turnOrder = buildTurnOrder(room);
   if (turnOrder.length === 0) return fail('invalid_action', 'Ohne Mitspieler geht es nicht los');
   const lives = opts.lives ?? room.defaultLives;

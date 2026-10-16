@@ -133,5 +133,10 @@
     <p>Alle sehen eine echte Aufgabe, etwa einen Filmtitel, und erfinden eine Subline, die echt wirkt. Dann wird über alle Texte plus die Wahrheit abgestimmt.</p>
     <p>Jede Stimme auf deinen Text bringt einen Punkt, die Wahrheit zu erkennen zwei.</p>
   </div>
+  <div class="card space-y-2 text-sm text-slate-400">
+    <h3 class="font-semibold text-slate-200">Morse</h3>
+    <p>Der Host tippt ein Wort und morst es an seinem Gerät mit Ton und Licht. Alle raten, so oft sie wollen.</p>
+    <p>Die drei Schnellsten bekommen 3, 2 und 1 Punkt. Auf Wunsch gibt der Host den Code oder die Morsetabelle frei.</p>
+  </div>
 </section>
 <p class="mt-4 text-center text-xs text-slate-500">Der Host wählt vor jeder Runde das Spiel und die Kategorie. Punkte vergibt er nach jeder Runde von Hand.</p>

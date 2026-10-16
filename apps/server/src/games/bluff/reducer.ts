@@ -13,8 +13,8 @@ export function bluffRound(room: Room): BluffRound | null {
   return room.round?.game === 'bluff' ? room.round : null;
 }
 
-export function startBluffRound(room: Room, category: Category, opts: StartRoundOptions): Result {
-  if (category.kind !== 'prompts') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
+export function startBluffRound(room: Room, category: Category | null, opts: StartRoundOptions): Result {
+  if (!category || category.kind !== 'prompts') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
   const picked = pickTarget(room, category.id, category.prompts, opts.targetId);
   if ('error' in picked) return picked.error;
   const turnOrder = buildTurnOrder(room);

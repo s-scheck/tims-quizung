@@ -256,6 +256,11 @@ export class Room {
     if (this.phase !== 'choosing_category') return fail('invalid_action', 'Gerade keine Kategoriewahl');
     const game = getGame(gameId);
     if (!game) return fail('invalid_action', `Unbekanntes Spiel „${gameId}“`);
+    if (!game.needsCategory) {
+      this.touch();
+      this.gameId = game.id;
+      return game.startRound(this, null, opts);
+    }
     const category = this.categories.get(categoryId);
     if (!category) return fail('unknown_category', 'Kategorie unbekannt');
     if (!category.games.includes(game.id)) return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
@@ -293,6 +298,7 @@ export class Room {
           ...(msg.borders !== undefined ? { borders: msg.borders } : {}),
           ...(msg.duplicates !== undefined ? { duplicates: msg.duplicates } : {}),
           ...(msg.missPoints !== undefined ? { missPoints: msg.missPoints } : {}),
+          ...(msg.word !== undefined ? { word: msg.word } : {}),
         });
       case 'back_to_lobby':
         return this.backToLobby(playerId);

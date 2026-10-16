@@ -9,6 +9,8 @@ export interface StartRoundOptions {
   borders?: boolean;
   duplicates?: RiskDuplicates;
   missPoints?: RiskMissPoints;
+  /** Morse: das vom Host getippte Wort. */
+  word?: string;
 }
 
 /**
@@ -22,7 +24,9 @@ export interface GameModule {
   description: string;
   /** Rundenbasiert mit Zugreihenfolge, Ausscheiden und Host-Entscheidung? Karte ist es nicht. */
   turnBased: boolean;
-  startRound(room: Room, category: Category, opts: StartRoundOptions): Result;
+  /** Braucht eine Kategorie aus der Liste? Morse bekommt sein Wort vom Host. */
+  needsCategory: boolean;
+  startRound(room: Room, category: Category | null, opts: StartRoundOptions): Result;
   /** Spielspezifische Nachrichten. Gemeinsame behandelt `games/common.ts` vorher. */
   handle(room: Room, playerId: string, msg: ClientMsg): Result;
   /** Der Host hat gewechselt, der neue Host spielt mit. */
