@@ -65,7 +65,7 @@
         {#each ranking as row, i (row.id)}
           <li class="flex items-center gap-3 py-2 {readonly ? 'text-xl' : ''} {row.id === client.myId ? 'text-indigo-200' : ''}">
             <span class="w-6 text-right font-mono text-slate-500">{i + 1}.</span>
-            <span class="min-w-0 flex-1 truncate font-semibold">{playerName(view, row.id)}</span>
+            <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, row.id)}</span>
             <span class="font-mono text-lg font-black">{row.points}</span>
           </li>
         {/each}

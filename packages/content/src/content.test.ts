@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { CategoryValidationError, loadCategories, MIN_ITEMS, MIN_ITEMS_TOPX, MIN_PAIRS, MAX_ITEMS_RISK, MIN_EVENTS, MIN_ITEMS_RISK, MIN_PLACES, slugify, validateCategory, MIN_PROMPTS } from './index.ts';
+import { CategoryValidationError, loadCategories, MIN_ENTRIES, slugify, validateCategory } from './index.ts';
 
 describe('Kategorien im Repo', () => {
   const categories = loadCategories();
@@ -11,7 +11,7 @@ describe('Kategorien im Repo', () => {
   test('mindestens 15 Ranglisten, alle mit genug Einträgen', () => {
     expect(ranked.length).toBeGreaterThanOrEqual(15);
     for (const c of ranked) {
-      expect(c.items.length).toBeGreaterThanOrEqual(c.games.includes('sort') ? MIN_ITEMS : MIN_ITEMS_TOPX);
+      expect(c.items.length).toBeGreaterThanOrEqual(MIN_ENTRIES);
     }
   });
 
@@ -43,7 +43,7 @@ describe('Kategorien im Repo', () => {
   test('mindestens 10 Paarlisten mit Ködern, Köder nie unter den Zielen', () => {
     expect(pairs.length).toBeGreaterThanOrEqual(10);
     for (const c of pairs) {
-      expect(c.pairs.length).toBeGreaterThanOrEqual(MIN_PAIRS);
+      expect(c.pairs.length).toBeGreaterThanOrEqual(MIN_ENTRIES);
       expect(c.decoys.length).toBeGreaterThanOrEqual(1);
       const rights = new Set(c.pairs.map((p) => p.right.toLowerCase()));
       for (const d of c.decoys) expect(rights.has(d.toLowerCase())).toBe(false);
@@ -54,18 +54,17 @@ describe('Kategorien im Repo', () => {
   test('mindestens 8 Ortslisten mit gültigen Koordinaten', () => {
     expect(places.length).toBeGreaterThanOrEqual(8);
     for (const c of places) {
-      expect(c.places.length).toBeGreaterThanOrEqual(MIN_PLACES);
+      expect(c.places.length).toBeGreaterThanOrEqual(MIN_ENTRIES);
       expect(new Set(c.places.map((p) => p.id)).size).toBe(c.places.length);
       expect(c.games).toEqual(['map']);
     }
   });
 
-  test('No-Risk-Listen: 10 bis 50 Einträge, in Rangfolge sortiert, mit Quelle', () => {
+  test('No-Risk-Listen: in Rangfolge sortiert, mit Quelle', () => {
     const risk = ranked.filter((c) => c.games.includes('risk'));
     expect(risk.length).toBeGreaterThanOrEqual(10);
     for (const c of risk) {
-      expect(c.items.length).toBeGreaterThanOrEqual(MIN_ITEMS_RISK);
-      expect(c.items.length).toBeLessThanOrEqual(MAX_ITEMS_RISK);
+      expect(c.items.length).toBeGreaterThanOrEqual(MIN_ENTRIES);
       expect(c.source).toBeTruthy();
       const values = c.items.map((i) => i.value);
       expect(values).toEqual([...values].sort((a, b) => (c.order === 'desc' ? b - a : a - b)));
@@ -75,7 +74,7 @@ describe('Kategorien im Repo', () => {
   test('mindestens 4 Ereignislisten, Spannen sauber geordnet', () => {
     expect(events.length).toBeGreaterThanOrEqual(4);
     for (const c of events) {
-      expect(c.events.length).toBeGreaterThanOrEqual(MIN_EVENTS);
+      expect(c.events.length).toBeGreaterThanOrEqual(MIN_ENTRIES);
       expect(new Set(c.events.map((e) => e.id)).size).toBe(c.events.length);
       for (const e of c.events) expect(e.from).toBeLessThanOrEqual(e.to);
       expect(c.games).toEqual(['timeline']);
@@ -86,7 +85,7 @@ describe('Kategorien im Repo', () => {
     const prompts = categories.filter((c) => c.kind === 'prompts');
     expect(prompts.length).toBeGreaterThanOrEqual(4);
     for (const c of prompts) {
-      expect(c.prompts.length).toBeGreaterThanOrEqual(MIN_PROMPTS);
+      expect(c.prompts.length).toBeGreaterThanOrEqual(MIN_ENTRIES);
       expect(new Set(c.prompts.map((p) => p.id)).size).toBe(c.prompts.length);
       for (const p of c.prompts) expect(p.answer.length).toBeGreaterThan(0);
       expect(c.games).toEqual(['bluff']);
@@ -124,7 +123,7 @@ describe('validateCategory (Rangliste)', () => {
     expect(c.games).toEqual(['sort']);
   });
 
-  test('Top-X-Listen: games, aliases, kürzer, Gleichstand erlaubt', () => {
+  test('Top-X-Listen: games, aliases, Gleichstand erlaubt', () => {
     const topx = {
       ...base,
       games: ['topx'],
@@ -140,16 +139,19 @@ describe('validateCategory (Rangliste)', () => {
     expect(c.games).toEqual(['topx']);
     if (c.kind !== 'ranked') throw new Error();
     expect(c.items[0]?.aliases).toEqual(['Aa']);
-    expect(() => validateCategory({ ...topx, items: topx.items.slice(0, 4) }, 'f')).toThrow(/mindestens 5/);
+    expect(validateCategory({ ...topx, items: topx.items.slice(0, 2) }, 'f').kind).toBe('ranked');
+    expect(() => validateCategory({ ...topx, items: topx.items.slice(0, 1) }, 'f')).toThrow(/mindestens 2/);
     expect(() => validateCategory({ ...topx, games: ['chess'] }, 'f')).toThrow(/games/);
     expect(() => validateCategory({ ...topx, games: [] }, 'f')).toThrow(/games/);
     expect(() => validateCategory({ ...topx, games: ['match'] }, 'f')).toThrow(/pairs/);
     expect(() => validateCategory({ ...topx, items: [{ ...topx.items[0], aliases: 'x' }, ...topx.items.slice(1)] }, 'f')).toThrow(/aliases/);
-    expect(() => validateCategory({ ...topx, games: ['sort', 'topx'] }, 'f')).toThrow(/mindestens 10/);
+    expect(() => validateCategory({ ...topx, games: ['sort', 'topx'] }, 'f')).toThrow(/doppelter Wert/);
   });
 
   test('lehnt zu wenige Einträge, doppelte Namen, doppelte Werte und falsche Reihenfolge ab', () => {
-    expect(() => validateCategory({ ...base, items: base.items.slice(0, 9) }, 'f')).toThrow(CategoryValidationError);
+    expect(validateCategory({ ...base, items: base.items.slice(0, 2) }, 'f').kind).toBe('ranked');
+    expect(() => validateCategory({ ...base, items: base.items.slice(0, 1) }, 'f')).toThrow(/mindestens 2/);
+    expect(validateCategory({ ...base, items: Array.from({ length: 60 }, (_, i) => ({ name: `N${i}`, value: i })) }, 'f').kind).toBe('ranked');
     expect(() => validateCategory({ ...base, items: [...base.items.slice(0, 9), { name: 'n0', value: 99 }] }, 'f')).toThrow(/doppelter Name/);
     expect(() => validateCategory({ ...base, items: [...base.items.slice(0, 9), { name: 'X', value: 0 }] }, 'f')).toThrow(/doppelter Wert/);
     expect(() => validateCategory({ ...base, order: 'up' }, 'f')).toThrow(/order/);
@@ -185,12 +187,13 @@ describe('validateCategory (Paarliste)', () => {
   });
 
   test('lehnt Fehler in Paaren und Ködern ab', () => {
-    expect(() => validateCategory({ ...base, pairs: base.pairs.slice(0, 3) }, 'f')).toThrow(/mindestens 4/);
+    expect(validateCategory({ ...base, pairs: base.pairs.slice(0, 2) }, 'f').kind).toBe('pairs');
+    expect(() => validateCategory({ ...base, pairs: base.pairs.slice(0, 1) }, 'f')).toThrow(/mindestens 2/);
     expect(() => validateCategory({ ...base, pairs: [...base.pairs, { left: 'paris', right: 'Spanien' }] }, 'f')).toThrow(/doppelte Karte/);
     expect(() => validateCategory({ ...base, pairs: [...base.pairs, { left: 'Madrid', right: 'peru' }] }, 'f')).toThrow(/doppeltes Ziel/);
     expect(() => validateCategory({ ...base, decoys: ['Peru'] }, 'f')).toThrow(/zugleich ein Ziel/);
     expect(() => validateCategory({ ...base, decoys: ['A', 'a'] }, 'f')).toThrow(/doppelter Köder/);
-    expect(() => validateCategory({ ...base, decoys: ['1', '2', '3', '4', '5', '6'] }, 'f')).toThrow(/höchstens 5/);
+    expect(validateCategory({ ...base, decoys: ['1', '2', '3', '4', '5', '6', '7', '8'] }, 'f')).toMatchObject({ decoys: ['1', '2', '3', '4', '5', '6', '7', '8'] });
     expect(() => validateCategory({ ...base, games: ['sort'] }, 'f')).toThrow(/match/);
     expect(() => validateCategory({ ...base, games: ['match', 'topx'] }, 'f')).toThrow(/nur für/);
     expect(() => validateCategory({ ...base, pairs: [...base.pairs.slice(0, 3), { left: 'X' }] }, 'f')).toThrow(/right/);
@@ -228,7 +231,8 @@ describe('validateCategory (Ortsliste)', () => {
   });
 
   test('lehnt Fehler ab', () => {
-    expect(() => validateCategory({ ...base, places: base.places.slice(0, 9) }, 'f')).toThrow(/mindestens 10/);
+    expect(validateCategory({ ...base, places: base.places.slice(0, 2) }, 'f').kind).toBe('places');
+    expect(() => validateCategory({ ...base, places: base.places.slice(0, 1) }, 'f')).toThrow(/mindestens 2/);
     expect(() => validateCategory({ ...base, places: [...base.places.slice(0, 9), { name: 'berlin', lat: 1, lng: 1 }] }, 'f')).toThrow(/doppelter Ort/);
     expect(() => validateCategory({ ...base, places: [...base.places.slice(0, 9), { name: 'X', lat: 95, lng: 1 }] }, 'f')).toThrow(/lat\/lng/);
     expect(() => validateCategory({ ...base, bounds: [[70, 0], [10, 5]] }, 'f')).toThrow(/Süd/);
@@ -241,12 +245,11 @@ describe('validateCategory (No-Risk-Liste)', () => {
   const items = (n: number) => Array.from({ length: n }, (_, i) => ({ name: `Land ${i + 1}`, value: 1000 - i }));
   const base = { id: 'risk-test', title: 'T', question: 'Q?', topLabel: 'oben', bottomLabel: 'unten', order: 'desc', games: ['risk'] };
 
-  test('10 bis 50 Einträge, mit Sortieren zusammen nur bis 20', () => {
-    expect(validateCategory({ ...base, items: items(50) }, 'f').kind).toBe('ranked');
-    expect(validateCategory({ ...base, items: items(10) }, 'f').kind).toBe('ranked');
-    expect(() => validateCategory({ ...base, items: items(9) }, 'f')).toThrow(/mindestens 10/);
-    expect(() => validateCategory({ ...base, items: items(51) }, 'f')).toThrow(/höchstens 50/);
-    expect(() => validateCategory({ ...base, games: ['risk', 'sort'], items: items(30) }, 'f')).toThrow(/höchstens 20/);
+  test('beliebig lange Listen ab zwei Einträgen, auch zusammen mit Sortieren', () => {
+    expect(validateCategory({ ...base, items: items(80) }, 'f').kind).toBe('ranked');
+    expect(validateCategory({ ...base, items: items(2) }, 'f').kind).toBe('ranked');
+    expect(() => validateCategory({ ...base, items: items(1) }, 'f')).toThrow(/mindestens 2/);
+    expect(validateCategory({ ...base, games: ['risk', 'sort'], items: items(30) }, 'f').kind).toBe('ranked');
   });
 });
 
@@ -270,7 +273,8 @@ describe('validateCategory (Ereignisliste)', () => {
 
   test('ungültige Ereignisse werden abgelehnt', () => {
     const withLast = (e: object) => ({ ...base, events: [...base.events.slice(0, 9), e] });
-    expect(() => validateCategory({ ...base, events: base.events.slice(0, 9) }, 'f')).toThrow(/mindestens 10/);
+    expect(validateCategory({ ...base, events: base.events.slice(0, 2) }, 'f').kind).toBe('events');
+    expect(() => validateCategory({ ...base, events: base.events.slice(0, 1) }, 'f')).toThrow(/mindestens 2/);
     expect(() => validateCategory(withLast({ name: 'mondlandung', year: 1969 }), 'f')).toThrow(/doppeltes Ereignis/);
     expect(() => validateCategory(withLast({ name: 'X', year: 0 }), 'f')).toThrow(/nicht 0/);
     expect(() => validateCategory(withLast({ name: 'X', year: 1969.5 }), 'f')).toThrow(/ganzzahlig/);
@@ -302,7 +306,8 @@ describe('validateCategory (Aufgabenliste)', () => {
   });
 
   test('lehnt Fehler ab', () => {
-    expect(() => validateCategory({ ...base, prompts: base.prompts.slice(0, 7) }, 'f')).toThrow(/mindestens 8/);
+    expect(validateCategory({ ...base, prompts: base.prompts.slice(0, 2) }, 'f').kind).toBe('prompts');
+    expect(() => validateCategory({ ...base, prompts: base.prompts.slice(0, 1) }, 'f')).toThrow(/mindestens 2/);
     expect(() => validateCategory({ ...base, prompts: [...base.prompts.slice(0, 7), { name: 'film 1 (2000)', answer: 'x' }] }, 'f')).toThrow(/doppelte Aufgabe/);
     expect(() => validateCategory({ ...base, prompts: [...base.prompts.slice(0, 7), { name: 'Neu', answer: '  ' }] }, 'f')).toThrow(/answer/);
     expect(() => validateCategory({ ...base, instruction: '' }, 'f')).toThrow(/instruction/);

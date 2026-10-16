@@ -73,6 +73,9 @@
     if (!client.inRound) return 'Du bist ab der nächsten Runde dabei.';
     return '';
   });
+
+  /** Höhe der festen Leiste unten, damit der Inhalt darüber nie verdeckt wird. */
+  let barHeight = $state(0);
 </script>
 
 <div class="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
@@ -145,13 +148,13 @@
             {#if justHit}<Burst />{/if}
             <span class="w-7 shrink-0 text-right font-mono text-sm text-slate-500">{slot.rank}.</span>
             {#if slot.revealed}
-              <span class="min-w-0 flex-1 truncate font-semibold" in:fly={{ x: -8, duration: 300 }}>{slot.name}</span>
+              <span class="min-w-0 flex-1 break-words font-semibold" in:fly={{ x: -8, duration: 300 }}>{slot.name}</span>
               <span class="shrink-0 font-mono text-sm text-slate-200">{valueText(slot)}</span>
               {#if slot.revealedBy && !readonly}
                 <span class="hidden shrink-0 text-xs text-slate-500 sm:inline">{playerName(view, slot.revealedBy)}</span>
               {/if}
             {:else if round.privileged && slot.name}
-              <span class="min-w-0 flex-1 truncate text-slate-400" title="nur du siehst das">{slot.name}</span>
+              <span class="min-w-0 flex-1 break-words text-slate-400" title="nur du siehst das">{slot.name}</span>
               <span class="shrink-0 font-mono text-xs text-slate-500">{valueText(slot)}</span>
               <span class="shrink-0 text-xs text-amber-300/80">🔒</span>
             {:else}
@@ -194,7 +197,8 @@
 </div>
 
 {#if canGuess}
-  <div class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-800 bg-slate-950/95 px-4 py-3 backdrop-blur" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px))">
+  <div aria-hidden="true" style="height:{barHeight}px"></div>
+  <div bind:clientHeight={barHeight} class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-800 bg-slate-950/95 px-4 py-3 backdrop-blur" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px))">
     <form class="mx-auto flex max-w-5xl items-center gap-3" onsubmit={(e) => { e.preventDefault(); submitGuess(); }}>
       <input
         class="input flex-1"

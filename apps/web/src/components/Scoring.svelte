@@ -72,7 +72,7 @@
       {@const eliminated = round.eliminated.includes(p.id)}
       <label class="flex items-center gap-3">
         <span class="min-w-0 flex-1">
-          <span class="block truncate font-semibold">{p.name}</span>
+          <span class="block break-words font-semibold">{p.name}</span>
           <span class="block text-xs {eliminated ? 'text-rose-300' : round.turnOrder.includes(p.id) ? 'text-emerald-300' : 'text-slate-500'}">{statusOf(p.id)}</span>
         </span>
         <span class="text-xs text-slate-500">bisher {view.scores[p.id] ?? 0}</span>

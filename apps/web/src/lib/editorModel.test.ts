@@ -80,8 +80,8 @@ describe('Editor: Liste hin und zurück', () => {
     expect(validate(draftToRaw(draft, 'map-orte'), 'map-orte')).toBeNull();
     draft.rows[3]!.lat = '95';
     expect(validate(draftToRaw(draft, 'map-orte'), 'map-orte')).toBe('Zeile 4 "Ort 3": Koordinaten ungültig');
-    draft.rows = draft.rows.slice(0, 4);
-    expect(validate(draftToRaw(draft, 'map-orte'), 'map-orte')).toMatch(/mindestens 10/);
+    draft.rows = draft.rows.slice(0, 1);
+    expect(validate(draftToRaw(draft, 'map-orte'), 'map-orte')).toMatch(/mindestens 2/);
   });
 
   test('Zellen-Hinweise: fehlt, keine Zahl, doppelt', () => {

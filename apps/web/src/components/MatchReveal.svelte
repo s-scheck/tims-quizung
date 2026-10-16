@@ -28,7 +28,7 @@
             {readonly ? 'text-xl' : ''}"
           in:fly={{ y: 8, delay: i * 50, duration: 250 }}
         >
-          <span class="min-w-0 flex-1 truncate font-semibold">{target.text}</span>
+          <span class="min-w-0 flex-1 break-words font-semibold">{target.text}</span>
           {#if target.decoy}
             <span class="badge bg-amber-500/20 text-amber-300">Köder</span>
           {:else}

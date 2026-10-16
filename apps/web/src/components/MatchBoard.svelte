@@ -5,6 +5,7 @@
   import type { MatchRoundView, MatchTargetView, PlacementStatus, RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
+  import { draggable, type DragPoint, type DragStart } from '../lib/drag.ts';
   import Card from './Card.svelte';
   import TurnTimer from './TurnTimer.svelte';
   import HostDecision from './HostDecision.svelte';
@@ -24,16 +25,83 @@
   );
   const matchedCount = $derived(round.targets.filter((t) => t.matchedCardId !== null).length);
 
+  /** Vorschau: Sind Karte und Ziel gewählt, liegt die Karte schon im Zielfeld. Nach dem Bestätigen bleibt sie dort. */
+  const previewCardId = $derived(
+    !attempt && selection.cardId !== undefined && selection.targetId !== undefined && round.pool.includes(selection.cardId)
+      ? selection.cardId
+      : null,
+  );
+  const poolIds = $derived(round.pool.filter((id) => id !== previewCardId));
+
   const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const [send, receive] = crossfade({ duration: reduced ? 0 : 450, easing: cubicOut });
+  /** Nach einem Drop landet die Karte sofort, ohne noch einmal aus dem Pool zu fliegen. */
+  let instant = false;
+  const [send, receive] = crossfade({ duration: () => (reduced || instant ? 0 : 450), easing: cubicOut });
   const flipOpts = { duration: reduced ? 0 : 300 };
 
-  /** Welche Karte liegt (fest oder gerade im Versuch) in diesem Zielfeld? */
-  function cardIn(target: MatchTargetView): { id: string; status: PlacementStatus | null } | null {
-    if (target.matchedCardId) return { id: target.matchedCardId, status: null };
-    if (attempt && attempt.targetId === target.id) return { id: attempt.cardId, status: attempt.status };
+  /** Welche Karte liegt (fest, im Versuch oder als Vorschau) in diesem Zielfeld? */
+  function cardIn(target: MatchTargetView): { id: string; status: PlacementStatus | null; preview: boolean } | null {
+    if (target.matchedCardId) return { id: target.matchedCardId, status: null, preview: false };
+    if (attempt && attempt.targetId === target.id) return { id: attempt.cardId, status: attempt.status, preview: false };
+    if (previewCardId !== null && selection.targetId === target.id) return { id: previewCardId, status: null, preview: true };
     return null;
   }
+
+  function isFree(target: MatchTargetView): boolean {
+    return !target.matchedCardId && !(attempt && attempt.targetId === target.id);
+  }
+
+  // ------------------------------------------------------------ Ziehen
+
+  interface Drag {
+    cardId: string;
+    x: number;
+    y: number;
+    dx: number;
+    dy: number;
+    w: number;
+  }
+  let drag = $state<Drag | null>(null);
+  let dropTarget = $state<string | null>(null);
+
+  type Drop = { kind: 'target'; id: string } | { kind: 'pool' } | null;
+
+  function dropFromHit(hit: HTMLElement | null): Drop {
+    const drop = hit?.dataset.drop ?? '';
+    if (drop.startsWith('target:')) return { kind: 'target', id: drop.slice(7) };
+    if (drop === 'pool') return { kind: 'pool' };
+    return null;
+  }
+
+  function onDragStart(s: DragStart) {
+    drag = { cardId: s.id, x: s.x, y: s.y, dx: s.x - s.rect.left, dy: s.y - s.rect.top, w: s.rect.width };
+  }
+
+  function onDragMove(p: DragPoint, hit: HTMLElement | null) {
+    if (drag) {
+      drag.x = p.x;
+      drag.y = p.y;
+    }
+    const drop = dropFromHit(hit);
+    dropTarget = drop?.kind === 'target' ? drop.id : null;
+  }
+
+  function onDragEnd(_p: DragPoint, hit: HTMLElement | null) {
+    const cardId = drag?.cardId;
+    const drop = dropFromHit(hit);
+    drag = null;
+    dropTarget = null;
+    if (!canAct || !cardId || !drop) return;
+    instant = true;
+    setTimeout(() => (instant = false), 400);
+    if (drop.kind === 'target') {
+      client.send({ type: 'select', turnNo: round.turnNo, cardId, targetId: drop.id });
+    } else if (cardId === previewCardId) {
+      client.send({ type: 'select', turnNo: round.turnNo, cardId: undefined, targetId: selection.targetId });
+    }
+  }
+
+  // ------------------------------------------------------------ Tippen
 
   function pickCard(cardId: string) {
     if (!canAct) return;
@@ -52,6 +120,8 @@
     client.send({ type: 'confirm', turnNo: round.turnNo });
   }
 
+  let barHeight = $state(0);
+
   const statusText = $derived.by(() => {
     if (view.phase === 'host_decision') return null;
     if (attempt) {
@@ -67,9 +137,9 @@
   const hint = $derived.by(() => {
     if (view.phase !== 'playing' || attempt || readonly) return '';
     if (client.isActive) {
-      if (!selection.cardId) return `Wähle eine Karte (${round.category.leftLabel}).`;
-      if (!selection.targetId) return `Wähle jetzt das passende Ziel (${round.category.rightLabel}).`;
-      return 'Passt? Dann bestätigen.';
+      if (!selection.cardId) return `Zieh eine Karte (${round.category.leftLabel}) auf ein Ziel oder tippe sie an.`;
+      if (!selection.targetId) return `Zieh sie auf das passende Ziel (${round.category.rightLabel}) oder tippe es an.`;
+      return 'Passt? Dann bestätigen. Zum Verschieben einfach noch einmal ziehen.';
     }
     if (client.isEliminated) return 'Keine Leben mehr. Schau zu, wie es weitergeht.';
     if (client.isModerator) return 'Du moderierst diese Runde und siehst die Lösung.';
@@ -113,18 +183,35 @@
       <ol class="space-y-1.5">
         {#each round.targets as target (target.id)}
           {@const inSlot = cardIn(target)}
-          {@const selected = selection.targetId === target.id}
-          <li class="flex items-center gap-3 rounded-lg border px-3 py-2
-            {target.matchedCardId ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-slate-800 bg-slate-900/60'}
-            {readonly ? 'text-xl' : ''}">
-            <span class="min-w-0 flex-1 truncate font-semibold">
+          {@const free = isFree(target)}
+          {@const selected = selection.targetId === target.id && canAct}
+          {@const hovered = dropTarget === target.id}
+          <li
+            class="flex items-center gap-3 rounded-lg border px-3 py-2 transition
+              {target.matchedCardId ? 'border-emerald-500/40 bg-emerald-500/10' : hovered ? 'border-indigo-400 bg-indigo-500/15 ring-2 ring-indigo-400/60' : 'border-slate-800 bg-slate-900/60'}
+              {readonly ? 'text-xl' : ''}"
+            data-drop={free && canAct ? `target:${target.id}` : undefined}
+          >
+            <span class="min-w-0 flex-1 break-words font-semibold">
               {target.text}
               {#if round.privileged && target.decoy}<span class="badge ml-1 bg-amber-500/20 text-amber-300">Köder</span>{/if}
             </span>
             <div class="w-[46%] shrink-0 sm:w-[40%]">
               {#if inSlot}
-                <div in:receive|global={{ key: inSlot.id }} out:send|global={{ key: inSlot.id }}>
-                  <Card name={cardsById.get(inSlot.id)?.text ?? '?'} status={inSlot.status} disabled large={readonly} />
+                <div
+                  class="transition-opacity {drag?.cardId === inSlot.id ? 'opacity-30' : ''}"
+                  in:receive|global={{ key: inSlot.id }}
+                  out:send|global={{ key: inSlot.id }}
+                  use:draggable={{ id: inSlot.id, enabled: canAct && inSlot.preview, onStart: onDragStart, onMove: onDragMove, onEnd: onDragEnd }}
+                >
+                  <Card
+                    name={cardsById.get(inSlot.id)?.text ?? '?'}
+                    status={inSlot.status}
+                    selected={inSlot.preview}
+                    disabled={!inSlot.preview}
+                    large={readonly}
+                    onclick={inSlot.preview ? () => pickCard(inSlot.id) : undefined}
+                  />
                 </div>
                 {#if target.matchedBy && !readonly}
                   <p class="mt-0.5 text-right text-[10px] text-slate-500">{playerName(view, target.matchedBy)}</p>
@@ -132,17 +219,19 @@
               {:else}
                 <button
                   type="button"
-                  class="flex h-10 w-full items-center justify-center rounded-xl border border-dashed text-xs transition
-                    {selected ? 'border-indigo-400 bg-indigo-500/25 text-indigo-100 ring-2 ring-indigo-400/60' : 'border-slate-700 text-slate-500'}
+                  class="flex min-h-10 w-full items-center justify-center rounded-xl border border-dashed px-2 py-1 text-xs transition
+                    {selected || hovered ? 'border-indigo-400 bg-indigo-500/25 text-indigo-100 ring-2 ring-indigo-400/60' : 'border-slate-700 text-slate-500'}
                     {canAct ? 'hover:border-indigo-400 hover:text-indigo-200' : 'cursor-default'}
-                    {readonly ? 'h-14 text-base' : ''}"
+                    {readonly ? 'min-h-14 text-base' : ''}"
                   disabled={!canAct}
                   onclick={() => pickTarget(target.id)}
                 >
-                  {#if selected}
+                  {#if hovered}
+                    hier ablegen
+                  {:else if selected}
                     hier ablegen
                   {:else if round.privileged && target.solutionCardId}
-                    <span class="truncate px-2 text-slate-400">{cardsById.get(target.solutionCardId)?.text} 🔒</span>
+                    <span class="break-words text-slate-400">{cardsById.get(target.solutionCardId)?.text} 🔒</span>
                   {:else if round.privileged && target.decoy}
                     <span class="text-amber-300/70">passt zu nichts</span>
                   {:else}
@@ -161,17 +250,26 @@
   </section>
 
   <aside class="space-y-4">
-    <div class="card">
+    <div class="card" data-drop="pool">
       <div class="mb-3 flex items-baseline justify-between">
         <h3 class="font-bold">{round.category.leftLabel}</h3>
         <span class="text-xs text-slate-500">{round.pool.length} übrig</span>
       </div>
       <div class="grid gap-2 {readonly ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-2'}">
-        {#each round.pool as cardId (cardId)}
-          <div animate:flip={flipOpts} in:receive|global={{ key: cardId }} out:send|global={{ key: cardId }}>
+        {#each poolIds as cardId (cardId)}
+          <div
+            class="transition-opacity {drag?.cardId === cardId ? 'opacity-30' : ''}"
+            animate:flip={flipOpts}
+            in:receive|global={{ key: cardId }}
+            out:send|global={{ key: cardId }}
+            use:draggable={{ id: cardId, enabled: canAct, onStart: onDragStart, onMove: onDragMove, onEnd: onDragEnd }}
+          >
             <Card name={cardsById.get(cardId)?.text ?? '?'} selected={selection.cardId === cardId} disabled={!canAct} large={readonly} onclick={() => pickCard(cardId)} />
           </div>
         {/each}
+        {#if poolIds.length === 0}
+          <p class="col-span-full py-3 text-center text-sm text-slate-500">Alle Karten sind verteilt.</p>
+        {/if}
       </div>
     </div>
 
@@ -182,10 +280,24 @@
   </aside>
 </div>
 
+{#if drag}
+  <div
+    class="pointer-events-none fixed z-50"
+    style="left:{drag.x - drag.dx}px; top:{drag.y - drag.dy}px; width:{drag.w}px; transform: rotate(-2deg) scale(1.04)"
+  >
+    <Card name={cardsById.get(drag.cardId)?.text ?? '?'} selected ghost />
+  </div>
+{/if}
+
 {#if canAct}
-  <div class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-800 bg-slate-950/95 px-4 py-3 backdrop-blur" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px))">
+  <div aria-hidden="true" style="height:{barHeight}px"></div>
+  <div
+    bind:clientHeight={barHeight}
+    class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-800 bg-slate-950/95 px-4 py-3 backdrop-blur"
+    style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px))"
+  >
     <div class="mx-auto flex max-w-5xl items-center gap-3">
-      <div class="min-w-0 flex-1 truncate text-sm text-slate-300">
+      <div class="min-w-0 flex-1 break-words text-sm text-slate-300">
         {#if selection.cardId}
           <span class="font-semibold text-slate-50">{cardsById.get(selection.cardId)?.text}</span>
           {#if selection.targetId}
@@ -195,7 +307,7 @@
           <span class="text-slate-500">Noch keine Karte gewählt</span>
         {/if}
       </div>
-      <button class="btn-primary" disabled={!selectionComplete} onclick={confirm}>Bestätigen</button>
+      <button class="btn-primary shrink-0" disabled={!selectionComplete} onclick={confirm}>Bestätigen</button>
     </div>
   </div>
 {/if}

@@ -21,7 +21,7 @@
       {@const delta = lastRound?.scores[row.player.id]}
       <li class="flex items-center gap-3 px-4 py-3 {readonly && !compact ? 'text-2xl' : ''} {row.player.id === client.myId ? 'bg-indigo-500/10' : ''}">
         <span class="w-6 text-right font-mono text-slate-500">{row.rank}.</span>
-        <span class="min-w-0 flex-1 truncate font-semibold">{row.player.name}</span>
+        <span class="min-w-0 flex-1 break-words font-semibold">{row.player.name}</span>
         {#if delta !== undefined && view.phase === 'scoreboard'}
           <span class="font-mono text-sm {delta > 0 ? 'text-emerald-300' : delta < 0 ? 'text-rose-300' : 'text-slate-500'}">{delta > 0 ? '+' : ''}{delta}</span>
         {/if}

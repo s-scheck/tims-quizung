@@ -51,17 +51,21 @@
   });
 </script>
 
-<div class="flex flex-col gap-4">
-  <header class="flex flex-wrap items-end justify-between gap-3">
-    <div class="min-w-0">
+<!--
+  Die Karte füllt den Platz zwischen Kopf und Bestätigen-Zeile, statt unter einer festen Leiste zu verschwinden:
+  Auf dem Handy nimmt die Karte alle Fingerbewegungen, die Seite ließe sich darüber nicht wegscrollen.
+-->
+<div class="flex flex-1 flex-col gap-3">
+  <header class="flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
+    <div class="min-w-0 flex-1">
       <p class="text-sm text-slate-400">{round.category.title} · {round.category.question}</p>
-      <h2 class="truncate text-2xl font-black sm:text-3xl {readonly ? 'text-5xl' : ''}">{round.targetName}</h2>
+      <h2 class="break-words text-2xl font-black sm:text-3xl {readonly ? 'text-5xl' : ''}">{round.targetName}</h2>
     </div>
     <div class="flex items-center gap-2">
       <TurnTimer deadline={round.turnDeadline} totalSeconds={view.settings.timerSeconds} size={readonly ? 64 : 48} />
       <span class="badge {round.borders ? 'bg-sky-500/20 text-sky-200' : ''}">{round.borders ? 'mit Grenzen' : 'ohne Grenzen'}</span>
       {#if canEnd}
-        <button class="{confirmingEnd ? 'btn-danger' : 'btn-secondary'}" onclick={endRound}>
+        <button class="{confirmingEnd ? 'btn-danger' : 'btn-secondary'} px-3 py-2 text-sm" onclick={endRound}>
           {confirmingEnd ? `Wirklich beenden? ${round.confirmed.length} von ${participants.length} fertig` : 'Runde beenden'}
         </button>
       {/if}
@@ -78,10 +82,10 @@
     {/each}
   </div>
 
-  {#if hint}<p class="text-sm text-slate-400">{hint}</p>{/if}
+  {#if hint && !canPlace}<p class="text-sm text-slate-400">{hint}</p>{/if}
 
   <WorldMap
-    class="h-[58dvh] min-h-[320px] overflow-hidden rounded-2xl border border-slate-800 {readonly ? 'h-[70dvh]' : ''}"
+    class="overflow-hidden rounded-2xl border border-slate-800 {readonly ? 'h-[70dvh]' : 'min-h-[240px] flex-1'}"
     borders={round.borders}
     bounds={round.category.bounds}
     interactive={canPlace}
@@ -93,19 +97,19 @@
   {#if round.privileged}
     <p class="text-xs text-amber-300/80">Das rote Ziel siehst nur du als Moderator. Pins der Spieler erscheinen erst in der Auflösung.</p>
   {/if}
-</div>
 
-{#if isParticipant && !myPin?.confirmed && view.phase === 'playing'}
-  <div class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-800 bg-slate-950/95 px-4 py-3 backdrop-blur" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px))">
-    <div class="mx-auto flex max-w-5xl items-center gap-3">
+  {#if canPlace}
+    <div class="card flex items-center gap-3 py-3">
       <div class="min-w-0 flex-1 text-sm text-slate-300">
         {#if myPin}
-          Pin bei <span class="font-mono text-slate-50">{myPin.lat.toFixed(2)}°, {myPin.lng.toFixed(2)}°</span>
+          <p>Pin bei <span class="font-mono text-slate-50">{myPin.lat.toFixed(2)}°, {myPin.lng.toFixed(2)}°</span></p>
+          <p class="text-xs text-slate-500">Pin ziehen oder neu antippen, dann bestätigen.</p>
         {:else}
-          <span class="text-slate-500">Noch kein Pin gesetzt</span>
+          <p class="text-slate-500">Noch kein Pin gesetzt</p>
+          <p class="text-xs text-slate-500">Tippe auf die Karte. Zoomen und Verschieben geht mit zwei Fingern.</p>
         {/if}
       </div>
-      <button class="btn-primary" disabled={!myPin} onclick={confirmPin}>Pin bestätigen</button>
+      <button class="btn-primary shrink-0" disabled={!myPin} onclick={confirmPin}>Pin bestätigen</button>
     </div>
-  </div>
-{/if}
+  {/if}
+</div>

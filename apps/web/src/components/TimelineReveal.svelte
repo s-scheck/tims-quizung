@@ -38,7 +38,7 @@
         <li class="flex items-center gap-3 px-4 py-3 {readonly ? 'text-xl' : ''} {row.playerId === client.myId ? 'bg-indigo-500/10' : ''}">
           <span class="w-6 text-right font-mono text-slate-500">{row.distanceYears === null ? '–' : `${i + 1}.`}</span>
           <span class="h-3 w-3 shrink-0 rounded-full" style="background:{playerColor(idx)}"></span>
-          <span class="min-w-0 flex-1 truncate">
+          <span class="min-w-0 flex-1 break-words">
             <span class="font-semibold">{playerName(view, row.playerId)}</span>
             {#if year !== undefined}<span class="ml-1 text-sm text-slate-400">{formatYear(year)}</span>{/if}
           </span>

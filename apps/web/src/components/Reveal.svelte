@@ -30,7 +30,7 @@
           in:fly={{ y: 8, delay: i * 60, duration: 250 }}
         >
           <span class="w-6 shrink-0 text-right font-mono text-sm text-slate-500">{row.rank}</span>
-          <span class="min-w-0 flex-1 truncate font-semibold {row.placed ? '' : 'font-normal'}">{row.card.name}</span>
+          <span class="min-w-0 flex-1 break-words font-semibold {row.placed ? '' : 'font-normal'}">{row.card.name}</span>
           {#if row.isStart}<span class="badge">Start</span>{:else if row.placed}<span class="text-emerald-400">✓</span>{:else}<span class="text-xs">nicht gelegt</span>{/if}
           <span class="shrink-0 font-mono text-sm {row.placed ? 'text-slate-200' : ''}">{formatValue(row.card, round.category)}</span>
         </li>

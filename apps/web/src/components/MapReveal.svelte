@@ -42,7 +42,7 @@
         <li class="flex items-center gap-3 px-4 py-3 {readonly ? 'text-xl' : ''} {row.playerId === client.myId ? 'bg-indigo-500/10' : ''}">
           <span class="w-6 text-right font-mono text-slate-500">{row.distanceKm === null ? '–' : `${i + 1}.`}</span>
           <span class="h-3 w-3 shrink-0 rounded-full" style="background:{playerColor(idx)}"></span>
-          <span class="min-w-0 flex-1 truncate font-semibold">{playerName(view, row.playerId)}</span>
+          <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, row.playerId)}</span>
           <span class="font-mono {row.distanceKm === null ? 'text-sm text-slate-500' : 'text-lg font-bold'}">{row.distanceKm === null ? 'kein Pin' : formatKm(row.distanceKm)}</span>
         </li>
       {/each}

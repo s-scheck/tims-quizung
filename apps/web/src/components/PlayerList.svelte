@@ -26,7 +26,7 @@
         {large ? 'text-2xl' : ''}"
     >
       <span class="h-2.5 w-2.5 shrink-0 rounded-full {p.connected ? 'bg-emerald-400' : 'bg-slate-600'}" title={p.connected ? 'verbunden' : 'getrennt'}></span>
-      <span class="flex-1 truncate font-semibold {eliminated ? 'line-through' : ''}">
+      <span class="flex-1 break-words font-semibold {eliminated ? 'line-through' : ''}">
         {p.name}
         {#if p.id === client.myId}<span class="text-xs font-normal text-slate-500"> (du)</span>{/if}
       </span>

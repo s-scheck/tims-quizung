@@ -80,6 +80,9 @@
     if (!myGuess) return 'Tippe auf den Zeitstrahl, um dein Jahr zu setzen. Zoomen geht mit zwei Fingern, mit dem Mausrad oder mit + und −.';
     return 'Neu antippen oder unten fein einstellen, dann bestätigen.';
   });
+
+  /** Höhe der festen Leiste unten, damit der Inhalt darüber nie verdeckt wird. */
+  let barHeight = $state(0);
 </script>
 
 <div class="flex flex-col gap-4">
@@ -118,7 +121,8 @@
 </div>
 
 {#if canPlace}
-  <div class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-800 bg-slate-950/95 px-4 py-3 backdrop-blur" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px))">
+  <div aria-hidden="true" style="height:{barHeight}px"></div>
+  <div bind:clientHeight={barHeight} class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-800 bg-slate-950/95 px-4 py-3 backdrop-blur" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px))">
     <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-1">
         <button class="btn-secondary px-2.5 py-2 text-sm" disabled={!myGuess} onclick={() => shift(-10)} aria-label="10 Jahre früher">−10</button>

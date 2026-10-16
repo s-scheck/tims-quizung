@@ -220,7 +220,7 @@
               class="flex items-center justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 text-left text-sm font-semibold transition hover:border-indigo-500/60 hover:bg-slate-800/60 {t.played ? 'opacity-60' : ''}"
               onclick={() => choose(targetCategory.id, t.id)}
             >
-              <span class="truncate">{t.name}</span>
+              <span class="break-words">{t.name}</span>
               {#if t.played}<span class="badge shrink-0 bg-emerald-500/20 text-emerald-300">gespielt</span>{/if}
             </button>
           {/each}

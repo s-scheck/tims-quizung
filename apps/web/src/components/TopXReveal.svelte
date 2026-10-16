@@ -29,7 +29,7 @@
           in:fly={{ y: 8, delay: i * 60, duration: 250 }}
         >
           <span class="w-6 shrink-0 text-right font-mono text-sm text-slate-500">{slot.rank}</span>
-          <span class="min-w-0 flex-1 truncate font-semibold {slot.revealed ? '' : 'font-normal'}">{slot.name}</span>
+          <span class="min-w-0 flex-1 break-words font-semibold {slot.revealed ? '' : 'font-normal'}">{slot.name}</span>
           {#if slot.revealed}
             <span class="hidden text-xs text-slate-400 sm:inline">{playerName(view, slot.revealedBy)}</span>
             <span class="text-emerald-400">✓</span>
@@ -51,7 +51,7 @@
         {#each players as p (p.id)}
           {@const lives = round.lives[p.id] ?? 0}
           <li class="flex items-center gap-3 {readonly ? 'text-xl' : ''}">
-            <span class="min-w-0 flex-1 truncate font-semibold {lives === 0 ? 'text-slate-500 line-through' : ''}">{p.name}</span>
+            <span class="min-w-0 flex-1 break-words font-semibold {lives === 0 ? 'text-slate-500 line-through' : ''}">{p.name}</span>
             <span class="text-sm text-slate-300">{round.hits[p.id] ?? 0} Treffer</span>
             <span class="font-mono text-rose-400">{'♥'.repeat(lives)}<span class="text-slate-700">{'♥'.repeat(Math.max(0, round.maxLives - lives))}</span></span>
           </li>

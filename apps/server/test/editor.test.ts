@@ -41,7 +41,7 @@ describe('Editor-Schnittstelle', () => {
   });
 
   test('speichern: Entwurf, dann spielbar und sofort in neuen Räumen wählbar', async () => {
-    const draft = await (await put('zeit-neu', timeline('zeit-neu', 4))).json();
+    const draft = await (await put('zeit-neu', timeline('zeit-neu', 1))).json();
     expect(draft.entry).toMatchObject({ status: 'custom', draft: true });
     expect(app.registry.create()!.categories.list().map((c) => c.id)).not.toContain('zeit-neu');
 

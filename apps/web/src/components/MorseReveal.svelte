@@ -24,7 +24,7 @@
       {#each round.solved as s, i (s.playerId)}
         <li class="flex items-center gap-3 px-4 py-3 {readonly ? 'text-xl' : ''}" in:fly={{ y: 8, delay: i * 80, duration: 250 }}>
           <span class="w-8 text-center text-xl">{s.rank === 1 ? '🥇' : s.rank === 2 ? '🥈' : s.rank === 3 ? '🥉' : `${s.rank}.`}</span>
-          <span class="min-w-0 flex-1 truncate font-semibold">{playerName(view, s.playerId)}</span>
+          <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, s.playerId)}</span>
           <span class="font-mono text-sm text-slate-400">{seconds(s.at)} s</span>
           <span class="w-10 text-right font-mono text-lg font-black {(MORSE_POINTS[s.rank - 1] ?? 0) > 0 ? 'text-amber-300' : 'text-slate-600'}">+{MORSE_POINTS[s.rank - 1] ?? 0}</span>
         </li>
@@ -32,7 +32,7 @@
       {#each unsolved as id (id)}
         <li class="flex items-center gap-3 px-4 py-3 text-slate-500 {readonly ? 'text-xl' : ''}">
           <span class="w-8 text-center">–</span>
-          <span class="min-w-0 flex-1 truncate">{playerName(view, id)}</span>
+          <span class="min-w-0 flex-1 break-words">{playerName(view, id)}</span>
           <span class="text-sm">nicht gelöst</span>
           <span class="w-10 text-right font-mono text-lg font-black text-slate-600">+0</span>
         </li>

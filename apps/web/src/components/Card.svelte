@@ -10,6 +10,7 @@
     isStart = false,
     disabled = false,
     large = false,
+    ghost = false,
     onclick,
   }: {
     name: string;
@@ -19,6 +20,8 @@
     isStart?: boolean;
     disabled?: boolean;
     large?: boolean;
+    /** Geisterbild unter dem Finger beim Ziehen. */
+    ghost?: boolean;
     onclick?: () => void;
   } = $props();
 
@@ -40,14 +43,15 @@
 
 <button
   type="button"
-  class="relative w-full rounded-2xl border-2 border-b-4 px-3 py-2 text-left font-bold leading-tight transition
+  class="relative w-full rounded-2xl border-2 border-b-4 px-3 py-2 text-left font-bold leading-tight transition select-none [-webkit-touch-callout:none]
     {statusClass}
     {large ? 'text-xl px-4 py-3' : 'text-sm sm:text-base'}
-    {disabled ? 'cursor-default' : 'hover:bg-slate-900 active:translate-y-0.5 active:border-b-2'}"
+    {ghost ? 'shadow-2xl shadow-black/40' : ''}
+    {disabled || ghost ? 'cursor-default' : 'cursor-grab hover:bg-slate-900 active:translate-y-0.5 active:border-b-2'}"
   {disabled}
   {onclick}
 >
-  <span class="block truncate">{name}</span>
+  <span class="block break-words [hyphens:auto]" lang="de">{name}</span>
   {#if sub}<span class="block text-xs font-medium text-slate-400">{sub}</span>{/if}
   {#if status === 'correct'}<Burst />{/if}
   {#if isStart}

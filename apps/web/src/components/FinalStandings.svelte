@@ -22,7 +22,7 @@
     {#each rows as row, i (row.player.id)}
       <li class="flex items-center gap-3 px-4 py-3 {readonly ? 'text-2xl' : ''}" in:fly={{ y: 10, delay: i * 120, duration: 300 }}>
         <span class="w-8 text-center text-xl">{row.rank <= 3 ? medals[row.rank - 1] : `${row.rank}.`}</span>
-        <span class="min-w-0 flex-1 truncate font-semibold">{row.player.name}</span>
+        <span class="min-w-0 flex-1 break-words font-semibold">{row.player.name}</span>
         <span class="font-mono text-2xl font-black">{row.score}</span>
       </li>
     {/each}

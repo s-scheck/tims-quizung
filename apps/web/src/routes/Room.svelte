@@ -104,7 +104,7 @@
   <div class="flex min-h-dvh flex-col">
     <Header {view} onLeave={() => { client.leave(); router.navigate('/'); }} />
     <ConnectionBanner />
-    <main class="mx-auto w-full max-w-5xl flex-1 px-4 pb-28 pt-4">
+    <main class="mx-auto w-full max-w-5xl flex-1 px-4 pb-8 pt-4 {view.round?.game === 'map' && (view.phase === 'playing' || view.phase === 'host_decision') ? 'flex flex-col' : ''}">
       {#if view.phase === 'lobby'}
         <Lobby {view} />
       {:else if view.phase === 'choosing_category'}

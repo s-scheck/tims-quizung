@@ -31,9 +31,9 @@ describe('CategoryStore', () => {
 
   test('eigene Liste: unfertig ist Entwurf, fertig spielbar, Löschen entfernt die Datei', () => {
     const store = new CategoryStore(builtinDir, dataDir);
-    const draft = store.save('map-b', mapList('map-b', 6));
-    expect(draft).toMatchObject({ status: 'custom', draft: true, count: 6 });
-    expect(draft.error).toMatch(/mindestens 10/);
+    const draft = store.save('map-b', mapList('map-b', 1));
+    expect(draft).toMatchObject({ status: 'custom', draft: true, count: 1 });
+    expect(draft.error).toMatch(/mindestens 2/);
     expect(store.get('map-b')).toBeUndefined();
 
     expect(store.save('map-b', mapList('map-b', 12))).toMatchObject({ status: 'custom', draft: false });
@@ -50,7 +50,7 @@ describe('CategoryStore', () => {
     expect(store.save('map-a', { ...mapList('map-a', 11), title: 'Neu' }).status).toBe('modified');
     expect(store.get('map-a')?.title).toBe('Neu');
 
-    store.save('map-a', { ...mapList('map-a', 3), title: 'Kaputt' });
+    store.save('map-a', { ...mapList('map-a', 1), title: 'Kaputt' });
     expect(store.get('map-a')?.title).toBe('Liste map-a');
     expect(store.document('map-a')?.raw.title).toBe('Kaputt');
     expect(store.document('map-a')?.original?.title).toBe('Liste map-a');

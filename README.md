@@ -5,7 +5,7 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 ## Spielregeln „Sortieren"
 
 - Alle Karten einer Kategorie liegen offen, nur die Werte sind versteckt. Eine zufällige Karte startet die Kette.
-- Wer dran ist, wählt eine Karte und eine Lücke in der Kette und bestätigt. Die Karte gleitet sofort an ihren Platz, nach zwei Sekunden Spannung wird sie grün oder fliegt zurück.
+- Wer dran ist, zieht eine Karte in eine Lücke der Kette (Maus, oder am Handy kurz halten und ziehen) oder tippt Karte und Lücke nacheinander an. Die Karte liegt dann als Vorschau in der Kette und lässt sich noch verschieben, mit „Bestätigen“ wird gelegt. Nach zwei Sekunden Spannung wird sie grün oder fliegt zurück.
 - Richtig heißt: Die Karte passt zwischen ihre Nachbarn. Falsch heißt: raus für diese Runde.
 - Bleibt nur ein Spieler übrig, entscheidet der Host, ob die Runde endet oder der Letzte allein weiterlegt.
 - Am Rundenende werden alle Werte aufgedeckt, der Host trägt Punkte pro Spieler ein. Danach nächste Runde oder Spiel beenden.
@@ -23,7 +23,7 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 ## Spielregeln „Zuordnen"
 
 - Eine Kategorie gibt Karten (z. B. Hauptstädte) und mehr Ziele (z. B. Länder) vor. Die überzähligen Ziele sind Köder ohne passende Karte. Vor der Runde legt der Host die Leben fest.
-- Wer dran ist, wählt eine Karte und ein Ziel und bestätigt. Nach zwei Sekunden bleibt die Karte grün im Zielfeld liegen oder fliegt rot zurück und kostet ein Leben. Ob ein Ziel ein Köder war, bleibt geheim.
+- Wer dran ist, zieht eine Karte auf ein Ziel oder tippt Karte und Ziel nacheinander an, dann bestätigen. Nach zwei Sekunden bleibt die Karte grün im Zielfeld liegen oder fliegt rot zurück und kostet ein Leben. Ob ein Ziel ein Köder war, bleibt geheim.
 - Der moderierende Host sieht Lösung und Köder, alle anderen nicht.
 - Rundenende, Host-Entscheidung, Zeitlimit und Punkte wie bei den anderen Spielen.
 
@@ -127,7 +127,7 @@ Eine Datei `packages/content/categories/<id>.json` anlegen:
 }
 ```
 
-Regeln: 10 bis 20 Einträge, Namen und Werte eindeutig, `order` `desc` (größter Wert oben) oder `asc` (kleinster oben). `valueFormat: "plain"` unterdrückt Tausenderpunkte, etwa bei Jahreszahlen. Ein optionales `label` pro Eintrag überschreibt die Anzeige des Werts. `bun test` prüft alle Dateien.
+Regeln: mindestens 2 Einträge, nach oben offen (alle Karten kommen ins Spiel), Namen und Werte eindeutig, `order` `desc` (größter Wert oben) oder `asc` (kleinster oben). `valueFormat: "plain"` unterdrückt Tausenderpunkte, etwa bei Jahreszahlen. Ein optionales `label` pro Eintrag überschreibt die Anzeige des Werts. Die Listenlänge bestimmt die Rundenlänge: Es gibt keine Obergrenze, jede Liste braucht nur mindestens 2 Einträge. `bun test` prüft alle Dateien.
 
 Für Zuordnen gibt es Paarlisten statt Werten:
 
@@ -144,7 +144,7 @@ Für Zuordnen gibt es Paarlisten statt Werten:
 }
 ```
 
-Regeln: 4 bis 12 Paare, 0 bis 5 Köder, Karten, Ziele und Köder jeweils eindeutig, kein Köder darf ein Ziel sein. Wichtig beim Schreiben: Kein Köder darf fachlich zu einer Karte passen. Dateien beginnen mit `match-`.
+Regeln: mindestens 2 Paare, beliebig viele Köder, Karten, Ziele und Köder jeweils eindeutig, kein Köder darf ein Ziel sein. Wichtig beim Schreiben: Kein Köder darf fachlich zu einer Karte passen. Dateien beginnen mit `match-`.
 
 Für Karte gibt es Ortslisten mit Koordinaten:
 
@@ -159,7 +159,7 @@ Für Karte gibt es Ortslisten mit Koordinaten:
 }
 ```
 
-Regeln: 10 bis 30 Orte, Namen eindeutig, `bounds` optional als Startausschnitt `[[Süd, West], [Nord, Ost]]`. Dateien beginnen mit `map-`.
+Regeln: mindestens 2 Orte, nach oben offen, Namen eindeutig, `bounds` optional als Startausschnitt `[[Süd, West], [Nord, Ost]]`. Dateien beginnen mit `map-`.
 
 Für Zeitstrahl gibt es Ereignislisten mit einem Jahr oder einer Spanne:
 
@@ -173,9 +173,9 @@ Für Zeitstrahl gibt es Ereignislisten mit einem Jahr oder einer Spanne:
 }
 ```
 
-Regeln: 10 bis 30 Ereignisse, Namen eindeutig, entweder `year` oder `from` und `to`, ganze Jahre von -4000 bis 2030 ohne 0 (negativ heißt v. Chr.). Dateien beginnen mit `zeit-`.
+Regeln: mindestens 2 Ereignisse, nach oben offen, Namen eindeutig, entweder `year` oder `from` und `to`, ganze Jahre von -4000 bis 2030 ohne 0 (negativ heißt v. Chr.). Dateien beginnen mit `zeit-`.
 
-Für No Risk No Fun gibt es lange Ranglisten mit `"games": ["risk"]`: 10 bis 50 Einträge in Rangfolge, Platz 1 zuerst, mit Quelle. `aliases` helfen beim Abgleich. Dateien beginnen mit `risk-`.
+Für No Risk No Fun gibt es lange Ranglisten mit `"games": ["risk"]`: beliebig viele Einträge in Rangfolge, Platz 1 zuerst, mit Quelle. Je länger die Liste, desto mehr Punkte sind hinten zu holen. `aliases` helfen beim Abgleich. Dateien beginnen mit `risk-`.
 
 Für Bluff gibt es Aufgabenlisten mit echten Antworten:
 
@@ -192,9 +192,9 @@ Für Bluff gibt es Aufgabenlisten mit echten Antworten:
 }
 ```
 
-Regeln: 8 bis 30 Aufgaben, Namen eindeutig, Antwort nicht leer. Dateien beginnen mit `bluff-`. Die mitgelieferten Sublines sind nach Kinoplakaten und Verleihtexten notiert, bitte vor dem ersten Abend einmal gegenlesen.
+Regeln: mindestens 2 Aufgaben, nach oben offen, Namen eindeutig, Antwort nicht leer. Dateien beginnen mit `bluff-`. Die mitgelieferten Sublines sind nach Kinoplakaten und Verleihtexten notiert, bitte vor dem ersten Abend einmal gegenlesen.
 
-Für Top X kommt `"games": ["topx"]` dazu (Standard ist `["sort"]`, beides zusammen geht auch). Top-X-Listen müssen echte Top-Listen ohne Gleichstand über die Listengrenze sein, dürfen ab 5 Einträgen kurz sein und Gleichstände enthalten. Pro Eintrag helfen `aliases` beim Abgleich, etwa `["Mbappe", "Mbappé"]`; ein eindeutiger Nachname trifft automatisch. Dateien beginnen mit `topx-`.
+Für Top X kommt `"games": ["topx"]` dazu (Standard ist `["sort"]`, beides zusammen geht auch). Top-X-Listen müssen echte Top-Listen ohne Gleichstand über die Listengrenze sein, dürfen kurz sein und Gleichstände enthalten. Pro Eintrag helfen `aliases` beim Abgleich, etwa `["Mbappe", "Mbappé"]`; ein eindeutiger Nachname trifft automatisch. Dateien beginnen mit `topx-`.
 
 ## Kategorien-Editor
 

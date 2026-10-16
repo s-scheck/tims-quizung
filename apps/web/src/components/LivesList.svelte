@@ -16,7 +16,7 @@
         {out ? 'opacity-50' : ''} {readonly ? 'text-xl' : ''}"
     >
       <span class="h-2.5 w-2.5 shrink-0 rounded-full {p.connected ? 'bg-emerald-400' : 'bg-slate-600'}"></span>
-      <span class="min-w-0 flex-1 truncate font-semibold {out ? 'line-through' : ''}">
+      <span class="min-w-0 flex-1 break-words font-semibold {out ? 'line-through' : ''}">
         {p.name}{#if p.id === client.myId}<span class="text-xs font-normal text-slate-500"> (du)</span>{/if}
       </span>
       <span class="shrink-0 text-xs text-slate-400">{round.hits[p.id] ?? 0} ✓</span>

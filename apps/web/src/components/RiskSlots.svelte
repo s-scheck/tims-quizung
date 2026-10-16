@@ -14,9 +14,9 @@
     {@const hit = slot.passNo !== undefined}
     <li class="flex items-center gap-3 rounded-lg px-3 py-1.5 {hit ? 'bg-emerald-500/10' : 'bg-slate-900/40 text-slate-400'} {large ? 'text-xl' : ''}">
       <span class="w-7 shrink-0 text-right font-mono text-sm text-slate-500">{slot.rank}</span>
-      <span class="min-w-0 flex-1 truncate {hit ? 'font-semibold' : ''}">{slot.name}</span>
+      <span class="min-w-0 flex-1 break-words {hit ? 'font-semibold' : ''}">{slot.name}</span>
       {#if hit}
-        <span class="hidden truncate text-xs text-slate-400 sm:inline">{(slot.by ?? []).map((id) => playerName(view, id)).join(', ')}</span>
+        <span class="hidden break-words text-xs text-slate-400 sm:inline">{(slot.by ?? []).map((id) => playerName(view, id)).join(', ')}</span>
       {/if}
       <span class="shrink-0 font-mono text-xs text-slate-400">{valueText(slot)}</span>
     </li>

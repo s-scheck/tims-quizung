@@ -92,22 +92,8 @@ export interface PromptsCategory extends BluffCategoryInfo {
 
 export type Category = RankedCategory | PairsCategory | PlacesCategory | EventsCategory | PromptsCategory;
 
-/** Sortieren braucht 10 Karten und eindeutige Werte, eine Top-Liste darf kürzer sein und Gleichstände haben. */
-export const MIN_ITEMS = 10;
-export const MIN_ITEMS_TOPX = 5;
-export const MAX_ITEMS = 20;
-/** No Risk No Fun braucht lange Listen, damit tiefe Plätze viele Punkte wert sind. */
-export const MIN_ITEMS_RISK = 10;
-export const MAX_ITEMS_RISK = 50;
-export const MIN_PAIRS = 4;
-export const MAX_PAIRS = 12;
-export const MAX_DECOYS = 5;
-export const MIN_PLACES = 10;
-export const MAX_PLACES = 30;
-export const MIN_EVENTS = 10;
-export const MAX_EVENTS = 30;
-export const MIN_PROMPTS = 8;
-export const MAX_PROMPTS = 30;
+/** Jede Liste braucht mindestens zwei Einträge. Nach oben gibt es keine Grenze, die Daten bestimmen die Rundenlänge. */
+export const MIN_ENTRIES = 2;
 
 export class CategoryValidationError extends Error {
   constructor(
@@ -185,13 +171,10 @@ function validateRanked(raw: Record<string, unknown>, file: string): RankedCateg
   if (games.includes('bluff')) throw new CategoryValidationError(file, 'Bluff braucht eine Aufgabenliste mit "prompts"');
   const forSort = games.includes('sort');
   const forTopX = games.includes('topx');
-  const minItems = forSort ? MIN_ITEMS : forTopX ? MIN_ITEMS_TOPX : MIN_ITEMS_RISK;
-  const maxItems = forSort || forTopX ? MAX_ITEMS : MAX_ITEMS_RISK;
 
   const itemsRaw = raw.items;
   if (!Array.isArray(itemsRaw)) throw new CategoryValidationError(file, 'items fehlt');
-  if (itemsRaw.length < minItems) throw new CategoryValidationError(file, `mindestens ${minItems} Einträge nötig, ${itemsRaw.length} vorhanden`);
-  if (itemsRaw.length > maxItems) throw new CategoryValidationError(file, `höchstens ${maxItems} Einträge erlaubt`);
+  if (itemsRaw.length < MIN_ENTRIES) throw new CategoryValidationError(file, `mindestens ${MIN_ENTRIES} Einträge nötig, ${itemsRaw.length} vorhanden`);
 
   const names = new Set<string>();
   const values = new Set<number>();
@@ -254,8 +237,7 @@ function validatePairs(raw: Record<string, unknown>, file: string): PairsCategor
 
   const pairsRaw = raw.pairs;
   if (!Array.isArray(pairsRaw)) throw new CategoryValidationError(file, 'pairs fehlt');
-  if (pairsRaw.length < MIN_PAIRS) throw new CategoryValidationError(file, `mindestens ${MIN_PAIRS} Paare nötig, ${pairsRaw.length} vorhanden`);
-  if (pairsRaw.length > MAX_PAIRS) throw new CategoryValidationError(file, `höchstens ${MAX_PAIRS} Paare erlaubt`);
+  if (pairsRaw.length < MIN_ENTRIES) throw new CategoryValidationError(file, `mindestens ${MIN_ENTRIES} Paare nötig, ${pairsRaw.length} vorhanden`);
 
   const lefts = new Set<string>();
   const rights = new Set<string>();
@@ -276,7 +258,6 @@ function validatePairs(raw: Record<string, unknown>, file: string): PairsCategor
   if (!Array.isArray(decoysRaw) || !decoysRaw.every((d) => typeof d === 'string' && d.trim().length > 0)) {
     throw new CategoryValidationError(file, 'decoys muss eine Liste von Strings sein');
   }
-  if (decoysRaw.length > MAX_DECOYS) throw new CategoryValidationError(file, `höchstens ${MAX_DECOYS} Köder erlaubt`);
   const decoys: string[] = [];
   const seenDecoys = new Set<string>();
   for (const d of decoysRaw as string[]) {
@@ -327,8 +308,7 @@ function validatePlaces(raw: Record<string, unknown>, file: string): PlacesCateg
 
   const placesRaw = raw.places;
   if (!Array.isArray(placesRaw)) throw new CategoryValidationError(file, 'places fehlt');
-  if (placesRaw.length < MIN_PLACES) throw new CategoryValidationError(file, `mindestens ${MIN_PLACES} Orte nötig, ${placesRaw.length} vorhanden`);
-  if (placesRaw.length > MAX_PLACES) throw new CategoryValidationError(file, `höchstens ${MAX_PLACES} Orte erlaubt`);
+  if (placesRaw.length < MIN_ENTRIES) throw new CategoryValidationError(file, `mindestens ${MIN_ENTRIES} Orte nötig, ${placesRaw.length} vorhanden`);
 
   const names = new Set<string>();
   const ids = new Set<string>();
@@ -366,8 +346,7 @@ function validateEvents(raw: Record<string, unknown>, file: string): EventsCateg
 
   const eventsRaw = raw.events;
   if (!Array.isArray(eventsRaw)) throw new CategoryValidationError(file, 'events fehlt');
-  if (eventsRaw.length < MIN_EVENTS) throw new CategoryValidationError(file, `mindestens ${MIN_EVENTS} Ereignisse nötig, ${eventsRaw.length} vorhanden`);
-  if (eventsRaw.length > MAX_EVENTS) throw new CategoryValidationError(file, `höchstens ${MAX_EVENTS} Ereignisse erlaubt`);
+  if (eventsRaw.length < MIN_ENTRIES) throw new CategoryValidationError(file, `mindestens ${MIN_ENTRIES} Ereignisse nötig, ${eventsRaw.length} vorhanden`);
 
   const names = new Set<string>();
   const ids = new Set<string>();
@@ -413,8 +392,7 @@ function validatePrompts(raw: Record<string, unknown>, file: string): PromptsCat
 
   const promptsRaw = raw.prompts;
   if (!Array.isArray(promptsRaw)) throw new CategoryValidationError(file, 'prompts fehlt');
-  if (promptsRaw.length < MIN_PROMPTS) throw new CategoryValidationError(file, `mindestens ${MIN_PROMPTS} Aufgaben nötig, ${promptsRaw.length} vorhanden`);
-  if (promptsRaw.length > MAX_PROMPTS) throw new CategoryValidationError(file, `höchstens ${MAX_PROMPTS} Aufgaben erlaubt`);
+  if (promptsRaw.length < MIN_ENTRIES) throw new CategoryValidationError(file, `mindestens ${MIN_ENTRIES} Aufgaben nötig, ${promptsRaw.length} vorhanden`);
 
   const names = new Set<string>();
   const ids = new Set<string>();

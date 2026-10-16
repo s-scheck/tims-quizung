@@ -16,7 +16,7 @@
   <ul class="space-y-1">
     {#each rows as row (row.id)}
       <li class="flex items-center gap-3 {large ? 'text-xl' : ''} {row.id === client.myId ? 'text-indigo-200' : ''}">
-        <span class="min-w-0 flex-1 truncate font-semibold">{playerName(view, row.id)}</span>
+        <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, row.id)}</span>
         <span class="font-mono font-bold {row.total < 0 ? 'text-rose-300' : ''}">{row.total}</span>
       </li>
     {/each}

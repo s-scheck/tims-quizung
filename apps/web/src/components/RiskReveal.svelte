@@ -40,8 +40,8 @@
         <ul class="divide-y divide-slate-800">
           {#each latest.results as res (res.playerId)}
             <li class="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 {readonly ? 'text-xl' : ''} {res.playerId === client.myId ? 'text-indigo-100' : ''}">
-              <span class="w-16 shrink-0 truncate font-semibold sm:w-28">{playerName(view, res.playerId)}</span>
-              <span class="min-w-0 flex-1 truncate {res.text === null ? 'italic text-slate-500' : ''}">{res.text ?? 'kein Tipp'}</span>
+              <span class="w-16 shrink-0 break-words font-semibold sm:w-28">{playerName(view, res.playerId)}</span>
+              <span class="min-w-0 flex-1 break-words {res.text === null ? 'italic text-slate-500' : ''}">{res.text ?? 'kein Tipp'}</span>
               {#if canCorrect && res.text !== null}
                 <select
                   class="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-sm"
@@ -88,8 +88,8 @@
           <ul class="text-sm">
             {#each pass.results as res (res.playerId)}
               <li class="flex gap-3 py-0.5">
-                <span class="w-16 truncate font-semibold sm:w-28">{playerName(view, res.playerId)}</span>
-                <span class="min-w-0 flex-1 truncate text-slate-400">{res.text ?? 'kein Tipp'}{res.rank !== null ? ` · Platz ${res.rank}` : ''}</span>
+                <span class="w-16 break-words font-semibold sm:w-28">{playerName(view, res.playerId)}</span>
+                <span class="min-w-0 flex-1 break-words text-slate-400">{res.text ?? 'kein Tipp'}{res.rank !== null ? ` · Platz ${res.rank}` : ''}</span>
                 <span class="font-mono">{res.points}</span>
               </li>
             {/each}

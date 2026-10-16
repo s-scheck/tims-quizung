@@ -6,13 +6,13 @@ export type Raw = Record<string, unknown>;
 
 /** Spiele in der Reihenfolge der Spielauswahl, mit der Art Liste, die sie brauchen. */
 export const EDITOR_GAMES: { id: GameId; name: string; kind: Kind; hint: string }[] = [
-  { id: 'sort', name: 'Sortieren', kind: 'ranked', hint: '10 bis 20 Einträge mit eindeutigen Werten.' },
-  { id: 'topx', name: 'Top X', kind: 'ranked', hint: '5 bis 20 Einträge, Platz 1 zuerst, mit Quelle. Aliasse helfen beim Erkennen der Tipps.' },
-  { id: 'match', name: 'Zuordnen', kind: 'pairs', hint: '4 bis 12 Paare und bis zu 5 Köder, die zu keiner Karte passen.' },
-  { id: 'map', name: 'Karte', kind: 'places', hint: '10 bis 30 Orte mit Koordinaten.' },
-  { id: 'timeline', name: 'Zeitstrahl', kind: 'events', hint: '10 bis 30 Ereignisse mit Jahr oder Spanne, negativ heißt v. Chr.' },
-  { id: 'risk', name: 'No Risk No Fun', kind: 'ranked', hint: '10 bis 50 Einträge, Platz 1 zuerst. Platz 1 sollte bekannt, die hinteren Plätze Nischenwissen sein.' },
-  { id: 'bluff', name: 'Bluff', kind: 'prompts', hint: '8 bis 30 Aufgaben mit der echten Antwort, etwa Film und Subline. Die Antwort muss stimmen, sie ist die Wahrheit im Spiel.' },
+  { id: 'sort', name: 'Sortieren', kind: 'ranked', hint: 'Beliebig viele Einträge mit eindeutigen Werten, mindestens zwei. Jede Karte kommt ins Spiel.' },
+  { id: 'topx', name: 'Top X', kind: 'ranked', hint: 'Beliebig viele Einträge, Platz 1 zuerst, mit Quelle. Aliasse helfen beim Erkennen der Tipps.' },
+  { id: 'match', name: 'Zuordnen', kind: 'pairs', hint: 'Beliebig viele Paare und Köder, die zu keiner Karte passen. Alle kommen ins Spiel.' },
+  { id: 'map', name: 'Karte', kind: 'places', hint: 'Beliebig viele Orte mit Koordinaten, pro Runde wird einer gespielt.' },
+  { id: 'timeline', name: 'Zeitstrahl', kind: 'events', hint: 'Beliebig viele Ereignisse mit Jahr oder Spanne, negativ heißt v. Chr. Pro Runde wird eines gespielt.' },
+  { id: 'risk', name: 'No Risk No Fun', kind: 'ranked', hint: 'Beliebig viele Einträge, Platz 1 zuerst. Je länger die Liste, desto mehr Punkte gibt es hinten. Platz 1 sollte bekannt, die hinteren Plätze Nischenwissen sein.' },
+  { id: 'bluff', name: 'Bluff', kind: 'prompts', hint: 'Beliebig viele Aufgaben mit der echten Antwort, etwa Film und Subline. Die Antwort muss stimmen, sie ist die Wahrheit im Spiel.' },
 ];
 
 export const GAME_NAMES: Record<string, string> = Object.fromEntries(EDITOR_GAMES.map((g) => [g.id, g.name]));
