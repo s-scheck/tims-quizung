@@ -1,0 +1,32 @@
+{
+  "id": "bluff-alte-berufe",
+  "title": "Alte Berufe",
+  "question": "Was hat man in diesem Beruf wirklich gemacht?",
+  "promptLabel": "Beruf",
+  "answerLabel": "Tätigkeit",
+  "instruction": "Beschreib die Arbeit so, als stünde sie in einem alten Lexikon.",
+  "source": "gängige Berufsbeschreibungen, verkürzt",
+  "games": ["bluff"],
+  "prompts": [
+    { "name": "Abdecker", "answer": "Beseitigte Tierkadaver und verwertete Haut, Knochen und Fett." },
+    { "name": "Reepschläger", "answer": "Stellte Seile und Schiffstaue her." },
+    { "name": "Bader", "answer": "Betrieb eine Badestube, schnitt Haare und behandelte kleine Wunden." },
+    { "name": "Köhler", "answer": "Stellte im Meiler Holzkohle her." },
+    { "name": "Kärrner", "answer": "Transportierte Waren mit einem Karren." },
+    { "name": "Büttner", "answer": "Baute hölzerne Fässer und Bottiche." },
+    { "name": "Kürschner", "answer": "Verarbeitete Tierfelle zu Pelzkleidung." },
+    { "name": "Stellmacher", "answer": "Baute Wagen und Räder aus Holz." },
+    { "name": "Seifensieder", "answer": "Kochte aus Fett und Lauge Seife und Kerzen." },
+    { "name": "Flößer", "answer": "Beförderte Baumstämme als Floß über Flüsse." },
+    { "name": "Rosstäuscher", "answer": "Pferdehändler, der für seine Tricks berüchtigt war." },
+    { "name": "Zeidler", "answer": "Sammelte Honig von wilden Bienen in hohlen Waldbäumen." },
+    { "name": "Säumer", "answer": "Transportierte Waren mit Packtieren über Gebirgspässe." },
+    { "name": "Posamentierer", "answer": "Fertigte Borten, Quasten und Kordeln als Zierbesatz." },
+    { "name": "Pechsieder", "answer": "Gewann Pech aus Baumharz." },
+    { "name": "Abtrittanbieter", "answer": "Bot gegen Geld einen Eimer und einen Umhang als mobile Toilette an." },
+    { "name": "Kaltschmied", "answer": "Bearbeitete Kupfer und flickte Kessel, ohne das Metall zu glühen." },
+    { "name": "Beutler", "answer": "Nähte Beutel, Taschen und Handschuhe aus Leder." },
+    { "name": "Gerber", "answer": "Machte aus Tierhäuten haltbares Leder." },
+    { "name": "Schröter", "answer": "Lud und transportierte schwere Fässer, etwa Bier oder Wein." }
+  ]
+}

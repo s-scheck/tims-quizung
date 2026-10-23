@@ -1,0 +1,32 @@
+{
+  "id": "bluff-dialekt",
+  "title": "Dialektwörter",
+  "question": "Was bedeutet das Wort im Dialekt wirklich?",
+  "promptLabel": "Wort",
+  "answerLabel": "Bedeutung",
+  "instruction": "Erfinde eine Bedeutung, die nach echtem Dialekt klingt.",
+  "source": "gängige Dialektwörterbücher, verkürzt",
+  "games": ["bluff"],
+  "prompts": [
+    { "name": "Fisternöllche (kölsch)", "answer": "Heimliche Liebschaft." },
+    { "name": "Pittermännchen (kölsch)", "answer": "Kleines Fass mit zehn Litern Kölsch." },
+    { "name": "Muggaseggele (schwäbisch)", "answer": "Winzige Menge; wörtlich das Geschlechtsteil einer Fliege." },
+    { "name": "Zwiderwurzn (bairisch)", "answer": "Mürrischer, ständig schlecht gelaunter Mensch." },
+    { "name": "Gschaftlhuber (bairisch)", "answer": "Wichtigtuer, der sich überall einmischt." },
+    { "name": "Feudel (norddeutsch)", "answer": "Wisch- oder Putzlappen." },
+    { "name": "Klönschnack (norddeutsch)", "answer": "Gemütliche Plauderei." },
+    { "name": "Bemme (sächsisch)", "answer": "Belegte Brotscheibe." },
+    { "name": "Haderlump (bairisch)", "answer": "Taugenichts, Lump." },
+    { "name": "Gspusi (bairisch)", "answer": "Liebschaft oder Geliebte." },
+    { "name": "Bruddler (schwäbisch)", "answer": "Jemand, der ständig vor sich hin nörgelt." },
+    { "name": "Gsälz (schwäbisch)", "answer": "Marmelade." },
+    { "name": "Schäufele (fränkisch)", "answer": "Braten aus der Schweineschulter mit Knochen und Kruste." },
+    { "name": "Häs (alemannisch)", "answer": "Kostüm für die schwäbisch-alemannische Fastnacht." },
+    { "name": "Grattler (bairisch)", "answer": "Ungehobelter, ärmlicher Mensch." },
+    { "name": "Fleischpflanzerl (bairisch)", "answer": "Frikadelle." },
+    { "name": "Gnatzig (norddeutsch)", "answer": "Mürrisch, schlecht gelaunt." },
+    { "name": "Kaventsmann (norddeutsch)", "answer": "Prachtexemplar; auch eine besonders hohe Welle." },
+    { "name": "Muckefuck", "answer": "Ersatzkaffee aus Getreide oder Zichorie." },
+    { "name": "Gebabbel (hessisch)", "answer": "Geschwätz, Gerede." }
+  ]
+}

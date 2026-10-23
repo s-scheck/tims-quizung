@@ -1,0 +1,32 @@
+{
+  "id": "bluff-phobien",
+  "title": "Phobien",
+  "question": "Wovor hat man bei dieser Phobie wirklich Angst?",
+  "promptLabel": "Phobie",
+  "answerLabel": "Bedeutung",
+  "instruction": "Erfinde eine Angst, die zum Fachbegriff passen könnte.",
+  "source": "gängige Bezeichnungen, teils scherzhaft gebildet",
+  "games": ["bluff"],
+  "prompts": [
+    { "name": "Triskaidekaphobie", "answer": "Angst vor der Zahl 13." },
+    { "name": "Hippopotomonstrosesquippedaliophobie", "answer": "Angst vor langen Wörtern." },
+    { "name": "Nomophobie", "answer": "Angst, ohne Handy oder Empfang zu sein." },
+    { "name": "Ergophobie", "answer": "Angst vor der Arbeit." },
+    { "name": "Ombrophobie", "answer": "Angst vor Regen." },
+    { "name": "Koumpounophobie", "answer": "Angst vor Knöpfen." },
+    { "name": "Arachibutyrophobie", "answer": "Angst, dass Erdnussbutter am Gaumen kleben bleibt." },
+    { "name": "Turophobie", "answer": "Angst vor Käse." },
+    { "name": "Xanthophobie", "answer": "Angst vor der Farbe Gelb." },
+    { "name": "Pogonophobie", "answer": "Angst vor Bärten." },
+    { "name": "Somniphobie", "answer": "Angst vor dem Einschlafen." },
+    { "name": "Phobophobie", "answer": "Angst vor der Angst." },
+    { "name": "Ablutophobie", "answer": "Angst vor dem Waschen oder Baden." },
+    { "name": "Omphalophobie", "answer": "Angst vor Bauchnabeln." },
+    { "name": "Trypophobie", "answer": "Ekel und Angst vor Mustern aus kleinen Löchern." },
+    { "name": "Coulrophobie", "answer": "Angst vor Clowns." },
+    { "name": "Anatidaephobie", "answer": "Angst, von einer Ente beobachtet zu werden." },
+    { "name": "Ailurophobie", "answer": "Angst vor Katzen." },
+    { "name": "Nephophobie", "answer": "Angst vor Wolken." },
+    { "name": "Hexakosioihexekontahexaphobie", "answer": "Angst vor der Zahl 666." }
+  ]
+}

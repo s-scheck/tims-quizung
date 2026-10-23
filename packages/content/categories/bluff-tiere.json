@@ -1,0 +1,32 @@
+{
+  "id": "bluff-tiere",
+  "title": "Kuriose Tiere",
+  "question": "Was für ein Tier ist das wirklich?",
+  "promptLabel": "Tier",
+  "answerLabel": "Beschreibung",
+  "instruction": "Beschreib das Tier so, wie es in einem Tierlexikon stehen könnte.",
+  "source": "gängige Tierlexika, verkürzt",
+  "games": ["bluff"],
+  "prompts": [
+    { "name": "Fingertier", "answer": "Nachtaktiver Lemur aus Madagaskar, der mit einem extrem langen Mittelfinger Larven aus dem Holz zieht." },
+    { "name": "Pfeifhase", "answer": "Kleiner, rundohriger Verwandter der Hasen aus Gebirgen, der mit Pfiffen warnt." },
+    { "name": "Kakapo", "answer": "Flugunfähiger, nachtaktiver Papagei aus Neuseeland." },
+    { "name": "Fossa", "answer": "Katzenähnliches Raubtier aus Madagaskar, das Lemuren jagt." },
+    { "name": "Kinkajou", "answer": "Kleiner Baumbewohner aus Mittel- und Südamerika mit Greifschwanz, auch Wickelbär genannt." },
+    { "name": "Babirusa", "answer": "Wildschwein aus Indonesien, dessen obere Eckzähne durch die Schnauze nach oben wachsen." },
+    { "name": "Wobbegong", "answer": "Flacher Teppichhai mit gemustertem Körper und Hautlappen am Maul." },
+    { "name": "Dikdik", "answer": "Zwergantilope aus Ostafrika, kaum größer als ein Hase." },
+    { "name": "Numbat", "answer": "Gestreifter Ameisenbeutler aus Australien, der täglich Tausende Termiten frisst." },
+    { "name": "Takahe", "answer": "Flugunfähige, blau-grüne Ralle aus Neuseeland, die lange als ausgestorben galt." },
+    { "name": "Gerenuk", "answer": "Langhalsige Antilope aus Ostafrika, die auf den Hinterbeinen stehend Blätter frisst." },
+    { "name": "Okapi", "answer": "Waldbewohner aus dem Kongo mit Zebrastreifen an den Beinen, ein Verwandter der Giraffe." },
+    { "name": "Quokka", "answer": "Kleines Känguru aus Westaustralien, bekannt für seinen scheinbar lächelnden Gesichtsausdruck." },
+    { "name": "Saiga", "answer": "Steppenantilope mit einer rüsselartig aufgeblähten Nase." },
+    { "name": "Dugong", "answer": "Pflanzenfressende Seekuh aus dem Indischen Ozean und Pazifik." },
+    { "name": "Axolotl", "answer": "Mexikanischer Schwanzlurch, der zeitlebens im Larvenstadium bleibt und Körperteile nachwachsen lässt." },
+    { "name": "Bärtierchen", "answer": "Winziges achtbeiniges Tier, das Austrocknung, Kälte und sogar das Weltall übersteht." },
+    { "name": "Schuppentier", "answer": "Säugetier mit Hornschuppen, das sich bei Gefahr zu einer Kugel einrollt." },
+    { "name": "Ameisenigel", "answer": "Stacheliges, eierlegendes Säugetier aus Australien und Neuguinea." },
+    { "name": "Wüstenspringmaus", "answer": "Kleines Nagetier mit langen Hinterbeinen, das wie ein Känguru springt." }
+  ]
+}

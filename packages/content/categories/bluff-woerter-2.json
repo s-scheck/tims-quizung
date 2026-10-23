@@ -1,0 +1,32 @@
+{
+  "id": "bluff-woerter-2",
+  "title": "Seltene Wörter 2",
+  "question": "Was bedeutet das Wort wirklich?",
+  "promptLabel": "Wort",
+  "answerLabel": "Bedeutung",
+  "instruction": "Erfinde eine Bedeutung, die wie aus dem Wörterbuch klingt.",
+  "source": "Duden, sinngemäß verkürzt",
+  "games": ["bluff"],
+  "prompts": [
+    { "name": "Bramarbasieren", "answer": "Prahlen, großsprecherisch aufschneiden." },
+    { "name": "Kujonieren", "answer": "Jemanden schikanieren und herablassend behandeln." },
+    { "name": "Tingeltangel", "answer": "Billiges Varieté oder anspruchslose Unterhaltung." },
+    { "name": "Pomadig", "answer": "Träge, gemächlich, betont langsam." },
+    { "name": "Fidibus", "answer": "Gefalteter Papierstreifen zum Anzünden von Pfeife oder Ofen." },
+    { "name": "Kanaille", "answer": "Schurke, gemeiner Mensch; früher auch abwertend für den Pöbel." },
+    { "name": "Schabracke", "answer": "Verzierte Satteldecke; abwertend auch für etwas Altes und Abgenutztes." },
+    { "name": "Stiesel", "answer": "Unhöflicher, ungehobelter Mensch." },
+    { "name": "Kalfaktor", "answer": "Gefangener, der im Gefängnis Hilfsdienste übernimmt; allgemein ein Handlanger." },
+    { "name": "Pfründe", "answer": "Einkommen aus einem Amt, das wenig Arbeit macht." },
+    { "name": "Sottise", "answer": "Dumme oder freche Bemerkung." },
+    { "name": "Lamäng", "answer": "„Aus der Lamäng“: aus dem Stegreif, lässig aus dem Handgelenk." },
+    { "name": "Schwadronieren", "answer": "Wortreich und angeberisch daherreden." },
+    { "name": "Bohei", "answer": "Großes Aufheben, übertriebenes Getue." },
+    { "name": "Fex", "answer": "Begeisterter Liebhaber einer Sache, etwa ein Bergfex." },
+    { "name": "Mores", "answer": "Sitten und Anstand, etwa in „jemanden Mores lehren“." },
+    { "name": "Bagage", "answer": "Gesindel, Pack; veraltet auch für Gepäck." },
+    { "name": "Zinnober", "answer": "Unsinn, wertloses Zeug; eigentlich ein roter Farbstoff." },
+    { "name": "Fatzke", "answer": "Eingebildeter, geckenhafter Mensch." },
+    { "name": "Larifari", "answer": "Oberflächliches Geschwätz, Unsinn." }
+  ]
+}
