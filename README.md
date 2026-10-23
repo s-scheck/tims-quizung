@@ -11,6 +11,8 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 - Am Rundenende werden alle Werte aufgedeckt, der Host trägt Punkte pro Spieler ein. Danach nächste Runde oder Spiel beenden.
 - Optionales Zeitlimit pro Zug (30 s / 60 s), bei Ablauf scheidet der Spieler aus.
 - Der Host entscheidet in der Lobby, ob er mitspielt oder nur moderiert. Ein moderierender Host wählt Kategorien und vergibt Punkte, steht aber nicht in der Wertung.
+- Der Host kann eine laufende Kategorie jederzeit beenden („Kategorie beenden“, zweimal tippen): Alle Werte werden aufgedeckt, nicht gelegte Karten bleiben markiert, Punkte wie gewohnt. Gilt auch für Top X und Zuordnen.
+- Wer kurz in eine andere App wechselt, bleibt im Spiel: Alle Mitspieler stehen bei jedem Rundenstart in der Zugreihenfolge, verbunden oder nicht. Beim Zurückkehren prüft die App die Verbindung sofort und verbindet bei Bedarf neu.
 
 ## Spielregeln „Top X"
 

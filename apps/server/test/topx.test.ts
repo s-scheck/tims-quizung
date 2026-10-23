@@ -329,3 +329,23 @@ describe('Spielwahl pro Runde', () => {
     expect(h.act(a, { type: 'guess', turnNo: 1, text: 'x' })).toMatchObject({ ok: false });
   });
 });
+
+describe('Top X: Kategorie vorzeitig beenden', () => {
+  test('Host beendet mitten im Zug, Tipp wird verworfen, Auflösung und Punkte wie gewohnt', () => {
+    const h = makeHarness(['A', 'B']);
+    startTopX(h);
+    const active = tr(h).activePlayerId!;
+    expect(h.act(h.ids[1]!, { type: 'end_round' })).toMatchObject({ ok: false, code: 'not_host' });
+    expectOk(h.act(active, { type: 'guess', turnNo: tr(h).turnNo, text: 'Niemand' }));
+    expectOk(h.act(h.host, { type: 'end_round' }));
+    expect(h.room.phase).toBe('reveal');
+    expect(tr(h).guess).toBeNull();
+    expect(tr(h).activePlayerId).toBeNull();
+    expect(h.room.timers.turn).toBeNull();
+    expect(h.room.timers.placement).toBeNull();
+    expect(h.act(h.host, { type: 'end_round' })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expectOk(h.act(h.host, { type: 'to_scoring' }));
+    expectOk(h.act(h.host, { type: 'submit_scores', scores: {} }));
+    expect(h.room.phase).toBe('scoreboard');
+  });
+});

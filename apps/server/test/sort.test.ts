@@ -81,11 +81,14 @@ describe('Rundenstart', () => {
     expect(h.room.phase).toBe('choosing_category');
   });
 
-  test('getrennte Spieler sind in dieser Runde nicht dabei', () => {
+  test('getrennte Spieler bleiben in der Zugreihenfolge, auch als Startspieler', () => {
     const h = makeHarness(['A', 'B', 'C']);
     h.room.setConnected(h.ids[1]!, false);
     startRound(h);
-    expect(sr(h).turnOrder).toEqual([h.ids[0]!, h.ids[2]!]);
+    expect(sr(h).turnOrder).toEqual(h.ids);
+    finishRound(h);
+    expectOk(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId: 'times' }));
+    expect(sr(h).turnOrder[0]).toBe(h.ids[1]!);
   });
 
   test('Startspieler rotiert von Runde zu Runde', () => {
@@ -402,5 +405,38 @@ describe('Spieler kommen und gehen', () => {
     expectOk(h.room.leave(h.ids[2]!));
     expect(sr(h).activePlayerId).toBe(h.ids[0]!);
     expect(h.room.phase).toBe('playing');
+  });
+});
+
+describe('Sortieren: Kategorie vorzeitig beenden', () => {
+  test('nur der Host, auch während einer laufenden Platzierung, danach Punkte wie gewohnt', () => {
+    const h = makeHarness(['A', 'B', 'C']);
+    startRound(h);
+    expect(h.act(h.ids[1]!, { type: 'end_round' })).toMatchObject({ ok: false, code: 'not_host' });
+    place(h, true);
+    expect(sr(h).placement?.status).toBe('pending');
+    const poolBefore = [...sr(h).pool];
+    expectOk(h.act(h.host, { type: 'end_round' }));
+    expect(h.room.phase).toBe('reveal');
+    expect(sr(h).placement).toBeNull();
+    expect(sr(h).activePlayerId).toBeNull();
+    expect(h.room.timers.placement).toBeNull();
+    expect(h.room.timers.turn).toBeNull();
+    expect(sr(h).pool).toEqual(poolBefore);
+    expect(h.act(h.host, { type: 'end_round' })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expectOk(h.act(h.host, { type: 'to_scoring' }));
+    expectOk(h.act(h.host, { type: 'submit_scores', scores: { [h.ids[1]!]: 2 } }));
+    expect(h.room.phase).toBe('scoreboard');
+    expect(h.room.scores[h.ids[1]!]).toBe(2);
+  });
+
+  test('geht auch aus der Host-Entscheidung heraus', () => {
+    const h = makeHarness(['A', 'B']);
+    startRound(h);
+    place(h, false);
+    resolve(h);
+    expect(h.room.phase).toBe('host_decision');
+    expectOk(h.act(h.host, { type: 'end_round' }));
+    expect(h.room.phase).toBe('reveal');
   });
 });

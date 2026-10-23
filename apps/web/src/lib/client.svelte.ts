@@ -10,6 +10,9 @@ import {
 import { clearSession, saveSession } from './session.ts';
 import { toasts } from './toast.svelte.ts';
 
+/** So lange darf der Server nach dem Zurückkehren in die App auf einen Ping schweigen. */
+const PROBE_TIMEOUT_MS = 4000;
+
 export type Status = 'idle' | 'connecting' | 'open' | 'reconnecting' | 'closed';
 
 export interface Me {
@@ -50,13 +53,55 @@ export class Client {
   private heartbeat: ReturnType<typeof setInterval> | null = null;
   private closedByUser = false;
 
+  /** Läuft eine Verbindungsprüfung nach dem Zurückkehren in die App? */
+  private probeTimer: ReturnType<typeof setTimeout> | null = null;
+
   constructor() {
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') this.kickReconnect();
+        if (document.visibilityState === 'visible') this.onReturn();
       });
-      window.addEventListener('online', () => this.kickReconnect());
+      window.addEventListener('pageshow', () => this.onReturn());
+      window.addEventListener('online', () => this.onReturn());
     }
+  }
+
+  /**
+   * Zurück in der App (andere App, gesperrter Bildschirm, Tab-Wechsel): Ein scheinbar offener Socket kann längst tot sein,
+   * deshalb sofort anpingen und ohne Antwort neu verbinden. Läuft schon ein Wiederverbinden, nicht länger warten.
+   */
+  private onReturn(): void {
+    if (this.status === 'reconnecting') {
+      this.retries = 0;
+      this.kickReconnect();
+      return;
+    }
+    if (this.status !== 'open' || !this.ws || this.probeTimer) return;
+    const ws = this.ws;
+    if (ws.readyState !== WebSocket.OPEN) {
+      this.forceReconnect();
+      return;
+    }
+    ws.send(JSON.stringify({ type: 'ping' } satisfies ClientMsg));
+    this.probeTimer = setTimeout(() => {
+      this.probeTimer = null;
+      if (this.ws === ws) this.forceReconnect();
+    }, PROBE_TIMEOUT_MS);
+  }
+
+  /** Toten Socket verwerfen und sofort neu verbinden, Sitzung und Absicht bleiben. */
+  private forceReconnect(): void {
+    if (!this.intent) return;
+    const ws = this.ws;
+    this.ws = null;
+    this.clearTimers();
+    try {
+      ws?.close(4000, 'stale');
+    } catch {
+      /* schon zu */
+    }
+    this.retries = 0;
+    this.open();
   }
 
   // ------------------------------------------------------------- Ableitungen
@@ -270,6 +315,10 @@ export class Client {
       }
       case 'pong':
         this.serverOffset = msg.serverNow - Date.now();
+        if (this.probeTimer) {
+          clearTimeout(this.probeTimer);
+          this.probeTimer = null;
+        }
         return;
     }
   }
@@ -299,8 +348,10 @@ export class Client {
   private clearTimers(): void {
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     if (this.heartbeat) clearInterval(this.heartbeat);
+    if (this.probeTimer) clearTimeout(this.probeTimer);
     this.reconnectTimer = null;
     this.heartbeat = null;
+    this.probeTimer = null;
   }
 }
 

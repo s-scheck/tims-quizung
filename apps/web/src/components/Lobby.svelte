@@ -138,6 +138,11 @@
     <p>Der Host tippt ein Wort und morst es an seinem Gerät mit Ton und Licht. Alle raten, so oft sie wollen.</p>
     <p>Die drei Schnellsten bekommen 3, 2 und 1 Punkt. Auf Wunsch gibt der Host den Code oder die Morsetabelle frei.</p>
   </div>
+  <div class="card space-y-2 text-sm text-slate-400">
+    <h3 class="font-semibold text-slate-200">Dabeibleiben und Beenden</h3>
+    <p>Wer kurz in eine andere App wechselt, bleibt im Spiel und in der Zugreihenfolge. Ist er am Zug, läuft der Timer oder der Host überspringt den Zug.</p>
+    <p>Bei Sortieren, Top X und Zuordnen kann der Host eine Kategorie jederzeit beenden: Alle Werte werden aufgedeckt, Punkte gibt es wie gewohnt.</p>
+  </div>
   <div class="card space-y-2 border-amber-500/40 text-sm text-slate-400">
     <h3 class="font-semibold text-amber-300">Show-Auflösung</h3>
     <p>Moderiert der Host, kann er bei Karte, Zeitstrahl, No Risk No Fun und Bluff vor der Runde „Show“ wählen: In der Auflösung sehen alle erst nur die Namen.</p>

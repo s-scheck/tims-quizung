@@ -10,6 +10,7 @@
   import Card from './Card.svelte';
   import TurnTimer from './TurnTimer.svelte';
   import HostDecision from './HostDecision.svelte';
+  import EndCategoryButton from './EndCategoryButton.svelte';
   import LivesList from './LivesList.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: MatchRoundView; readonly?: boolean } = $props();
@@ -185,6 +186,7 @@
       {#if canSkip}
         <button class="btn-ghost text-xs" onclick={() => client.send({ type: 'skip_turn', turnNo: round.turnNo })}>Zug überspringen</button>
       {/if}
+      <EndCategoryButton {view} {readonly} />
     </div>
 
     {#if view.phase === 'host_decision'}

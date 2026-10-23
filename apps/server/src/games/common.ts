@@ -15,16 +15,16 @@ import { fail, OK, type Result } from '../rooms/result.ts';
 
 // ------------------------------------------------------------ Rundenstart
 
-/** Zugreihenfolge für eine neue Runde: verbundene Mitspieler ohne moderierenden Host, Startspieler rotiert. */
+/**
+ * Zugreihenfolge für eine neue Runde: alle Mitspieler ohne moderierenden Host, Startspieler rotiert.
+ * Auch wer gerade nicht verbunden ist (andere App offen), bleibt dabei; den Zug überspringt bei Bedarf der Timer oder der Host.
+ */
 export function buildTurnOrder(room: Room): string[] {
-  const playing = room.playingPlayers();
-  const allIds = playing.map((p) => p.id);
-  const connectedIds = playing.filter((p) => p.connected).map((p) => p.id);
-  const eligible = connectedIds.length > 0 ? connectedIds : allIds;
-  if (eligible.length === 0) return [];
-  const startPlayerId = pickStartPlayer(allIds, eligible, room.lastStartPlayerId);
+  const allIds = room.playingPlayers().map((p) => p.id);
+  if (allIds.length === 0) return [];
+  const startPlayerId = pickStartPlayer(allIds, allIds, room.lastStartPlayerId);
   room.lastStartPlayerId = startPlayerId;
-  return rotateTo(eligible, startPlayerId);
+  return rotateTo(allIds, startPlayerId);
 }
 
 /** Startspieler rotiert über alle Mitspieler; ist der Kandidat nicht spielbereit, rückt der nächste nach. */
@@ -215,6 +215,9 @@ export function handleCommon(room: Room, playerId: string, msg: ClientMsg): Resu
       return hostDecision(room, playerId, msg.continue);
     case 'to_scoring':
       return toScoring(room, playerId);
+    case 'end_round':
+      // Die gleichzeitigen Spiele beenden ihre Runde selbst, hier nur das vorzeitige Ende der rundenbasierten.
+      return room.game?.turnBased ? endRoundEarly(room, playerId) : undefined;
     case 'reveal_player':
       return revealPlayer(room, playerId, msg.playerId);
     case 'reveal_solution':
@@ -266,6 +269,15 @@ function hostDecision(room: Room, playerId: string, cont: boolean): Result {
   round.turnNo++;
   game.clearTurn(room);
   scheduleTurnTimer(room);
+  return OK;
+}
+
+/** Der Host beendet eine rundenbasierte Kategorie vorzeitig: Auflösung mit allen Werten, Punkte wie gewohnt. */
+function endRoundEarly(room: Room, playerId: string): Result {
+  if (!room.isHost(playerId)) return fail('not_host', 'Nur der Host beendet die Kategorie');
+  if (room.phase !== 'playing' && room.phase !== 'host_decision') return fail('invalid_action', 'Gerade läuft keine Runde');
+  if (!room.round) return fail('invalid_action', 'Gerade läuft keine Runde');
+  toReveal(room);
   return OK;
 }
 

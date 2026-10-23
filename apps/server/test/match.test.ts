@@ -223,3 +223,27 @@ describe('Zuordnen: Züge', () => {
     expect([h.ids[1]!, h.ids[2]!]).toContain(r.activePlayerId!);
   });
 });
+
+describe('Zuordnen: Kategorie vorzeitig beenden', () => {
+  test('Host beendet während eines laufenden Versuchs, Versuch wird verworfen, Pool bleibt', () => {
+    const h = makeHarness(['A', 'B']);
+    startMatch(h);
+    const r = mr(h);
+    const active = r.activePlayerId!;
+    const cardId = r.pool[0]!;
+    const targetId = r.targets[0]!.id;
+    expectOk(h.act(active, { type: 'select', turnNo: r.turnNo, cardId, targetId }));
+    expectOk(h.act(active, { type: 'confirm', turnNo: r.turnNo }));
+    expect(mr(h).attempt?.status).toBe('pending');
+    expect(h.act(h.ids[1]!, { type: 'end_round' })).toMatchObject({ ok: false, code: 'not_host' });
+    expectOk(h.act(h.host, { type: 'end_round' }));
+    expect(h.room.phase).toBe('reveal');
+    expect(mr(h).attempt).toBeNull();
+    expect(mr(h).selection).toEqual({});
+    expect(h.room.timers.placement).toBeNull();
+    expect(mr(h).matched[targetId]).toBeUndefined();
+    expectOk(h.act(h.host, { type: 'to_scoring' }));
+    expectOk(h.act(h.host, { type: 'submit_scores', scores: {} }));
+    expect(h.room.phase).toBe('scoreboard');
+  });
+});
