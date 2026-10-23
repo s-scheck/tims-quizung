@@ -1,4 +1,4 @@
-import type { GameId, MorseSpeed, Role, RoomView, Selection, TimerSeconds } from './types.ts';
+import type { GameId, MorseSpeed, RevealMode, Role, RoomView, Selection, TimerSeconds } from './types.ts';
 import type { RiskDuplicates, RiskMissPoints } from './rules/risk.ts';
 
 export const PROTOCOL_VERSION = 2;
@@ -44,6 +44,8 @@ export type ClientMsg =
       duplicates?: RiskDuplicates;
       missPoints?: RiskMissPoints;
       word?: string;
+      /** Auflösung alles auf einmal oder als Show, nur bei Karte, Zeitstrahl, No Risk No Fun und Bluff mit moderierendem Host. */
+      reveal?: RevealMode;
     }
   | ({ type: 'select'; turnNo: number; targetId?: string } & Selection)
   | { type: 'confirm'; turnNo: number }
@@ -69,6 +71,10 @@ export type ClientMsg =
   | { type: 'skip_turn'; turnNo: number }
   | { type: 'host_decision'; continue: boolean }
   | { type: 'to_scoring' }
+  /** Show-Auflösung: Host deckt einen Spieler (einen Schritt weiter), die Lösung oder alles auf. */
+  | { type: 'reveal_player'; playerId: string }
+  | { type: 'reveal_solution' }
+  | { type: 'reveal_all' }
   | { type: 'submit_scores'; scores: Record<string, number> }
   | { type: 'next_round' }
   | { type: 'end_game' }

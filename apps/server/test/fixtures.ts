@@ -1,5 +1,5 @@
 import type { Category } from '@quiz/content';
-import type { ClientMsg, TimerSeconds } from '@quiz/shared';
+import type { ClientMsg, TimerSeconds, RevealMode } from '@quiz/shared';
 import { Room, type CategoryProvider } from '../src/rooms/room.ts';
 import { FakeScheduler } from '../src/rooms/scheduler.ts';
 import '../src/games/index.ts';
@@ -226,25 +226,25 @@ export function startMatch(h: Harness, lives?: number): void {
 }
 
 /** Startet Spiel und Karten-Runde. */
-export function startMap(h: Harness, opts: { targetId?: string; borders?: boolean } = {}): void {
+export function startMap(h: Harness, opts: { targetId?: string; borders?: boolean; reveal?: RevealMode } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'map', categoryId: 'landmarks', ...opts }));
 }
 
 /** Startet Spiel und Zeitstrahl-Runde. */
-export function startTimeline(h: Harness, opts: { targetId?: string } = {}): void {
+export function startTimeline(h: Harness, opts: { targetId?: string; reveal?: RevealMode } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'timeline', categoryId: 'history', ...opts }));
 }
 
 /** Startet Spiel und No-Risk-Runde. */
-export function startRisk(h: Harness, opts: { duplicates?: 'both' | 'none'; missPoints?: 0 | -10 } = {}): void {
+export function startRisk(h: Harness, opts: { duplicates?: 'both' | 'none'; missPoints?: 0 | -10; reveal?: RevealMode } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'risk', categoryId: 'countries', ...opts }));
 }
 
 /** Startet Spiel und Bluff-Runde. */
-export function startBluff(h: Harness, opts: { targetId?: string } = {}): void {
+export function startBluff(h: Harness, opts: { targetId?: string; reveal?: RevealMode } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'bluff', categoryId: 'taglines', ...opts }));
 }

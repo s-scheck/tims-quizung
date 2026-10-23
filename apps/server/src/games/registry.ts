@@ -1,4 +1,4 @@
-import type { ClientMsg, GameId, RiskDuplicates, RiskMissPoints, RoundView } from '@quiz/shared';
+import type { ClientMsg, GameId, RiskDuplicates, RiskMissPoints, RoundView, RevealMode } from '@quiz/shared';
 import type { Category } from '@quiz/content';
 import type { Room } from '../rooms/room.ts';
 import type { Result } from '../rooms/result.ts';
@@ -11,6 +11,8 @@ export interface StartRoundOptions {
   missPoints?: RiskMissPoints;
   /** Morse: das vom Host getippte Wort. */
   word?: string;
+  /** Auflösung alles auf einmal oder als Show. */
+  reveal?: RevealMode;
 }
 
 /**
@@ -26,6 +28,11 @@ export interface GameModule {
   turnBased: boolean;
   /** Braucht eine Kategorie aus der Liste? Morse bekommt sein Wort vom Host. */
   needsCategory: boolean;
+  /**
+   * Show-Auflösung: Der Moderator deckt jeden Spieler in `steps` Schritten auf.
+   * `solutionRequired`: Die Lösung muss aufgedeckt sein, bevor es zu den Punkten geht. Fehlt das Feld, gibt es keine Show.
+   */
+  showReveal?: { steps: number; solutionRequired: boolean };
   startRound(room: Room, category: Category | null, opts: StartRoundOptions): Result;
   /** Spielspezifische Nachrichten. Gemeinsame behandelt `games/common.ts` vorher. */
   handle(room: Room, playerId: string, msg: ClientMsg): Result;

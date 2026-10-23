@@ -8,6 +8,7 @@ export const bluffGame: GameModule = {
   description: 'Alle erfinden eine glaubwürdige Antwort, dann wird abgestimmt. Täuschen bringt Punkte, die Wahrheit erkennen auch.',
   turnBased: false,
   needsCategory: true,
+  showReveal: { steps: 1, solutionRequired: true },
   startRound: startBluffRound,
   handle: handleBluffMessage,
   onHostChanged: () => {},

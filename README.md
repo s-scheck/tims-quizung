@@ -68,6 +68,15 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 
 Die Kartendaten stammen von [Natural Earth](https://www.naturalearthdata.com/) (gemeinfrei) und liegen unter `apps/web/public/geo/`. Die Karte selbst rendert [Leaflet](https://leafletjs.com/) ohne Kacheln, es wird kein externer Dienst angesprochen.
 
+## Show-Auflösung
+
+Bei Karte, Zeitstrahl, No Risk No Fun und Bluff wählt ein moderierender Host vor jeder Runde im Kategorie-Picker zwischen „Automatisch“ (Auflösung wie gewohnt, alles auf einmal) und „Show“. Die letzte Wahl bleibt im Raum vorausgewählt. Spielt der Host mit, gibt es nur „Automatisch“.
+
+- Im Show-Modus sehen Spieler und TV-Screen in der Auflösung nur die Namen. Auch das eigene Ergebnis bleibt verdeckt.
+- Der Moderator sieht auf seinem Gerät alles vorab und deckt per Antippen auf: bei Karte und Zeitstrahl je Spieler den Pin bzw. das Jahr (die Karte fliegt dorthin, der Zeitstrahl zoomt, danach wieder Gesamtansicht), bei Bluff je Text oder Name den Autor mit Punkten, bei No Risk No Fun in zwei Schritten erst den Tipp, dann Platz und Punkte.
+- Die Lösung (Ziel, Jahr, Wahrheit) hat einen eigenen Knopf. Bei No Risk No Fun deckt „Liste aufdecken“ die ganze Liste auf und beendet damit die Kategorie.
+- „Alle aufdecken“ zeigt den Rest. Platznummern erscheinen erst, wenn alles aufgedeckt ist. „Punkte eintragen“ (und bei No Risk No Fun „Noch ein Durchgang“) geht erst danach. Aufgedeckt bleibt aufgedeckt.
+
 ## Entwicklung
 
 Voraussetzung: [Bun](https://bun.sh) ≥ 1.4.

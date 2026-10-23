@@ -1,6 +1,7 @@
 import { scoreRiskPass, type RiskPassView, type RiskRoundView, type RiskSlotView, type RoundView } from '@quiz/shared';
 import type { Room } from '../../rooms/room.ts';
 import { riskRound } from './reducer.ts';
+import { revealView } from '../common.ts';
 
 /**
  * Sicht auf die Runde. Tipps des laufenden Durchgangs bleiben geheim, nur wer eingeloggt hat ist sichtbar.
@@ -20,13 +21,20 @@ export function riskRoundView(room: Room, revealed: boolean, viewerId: string | 
     return { rank, name: item.name, value: item.value, ...(item.label !== undefined ? { label: item.label } : {}) };
   };
 
+  // Show-Auflösung: Im Durchgang, der gerade aufgelöst wird, sehen Spieler nur, was der Moderator schon aufgedeckt hat
+  // (Schritt 1 den Tipp, Schritt 2 Platz und Punkte). Frühere Durchgänge sind komplett sichtbar.
+  const show = r.reveal;
+  const hiding = !!show && !privileged && room.phase === 'reveal';
   const totals: Record<string, number> = Object.fromEntries(r.turnOrder.map((id) => [id, 0]));
   const hits = new Map<number, RiskSlotView>();
   const passes: RiskPassView[] = finished.map((pass, i) => {
     const passNo = i + 1;
+    const current = hiding && i === finished.length - 1;
+    const stepOf = (id: string) => (current ? (show!.players[id] ?? 0) : 2);
     const ranks = Object.fromEntries(r.turnOrder.map((id) => [id, pass.guesses[id]?.rank ?? null]));
     const points = scoreRiskPass(r.turnOrder, ranks, r.rules);
     for (const id of r.turnOrder) {
+      if (stepOf(id) < 2) continue;
       totals[id] = (totals[id] ?? 0) + points[id]!;
       const rank = ranks[id];
       if (rank == null) continue;
@@ -36,7 +44,15 @@ export function riskRoundView(room: Room, revealed: boolean, viewerId: string | 
     }
     return {
       passNo,
-      results: r.turnOrder.map((id) => ({ playerId: id, text: pass.guesses[id]?.text ?? null, rank: ranks[id] ?? null, points: points[id]! })),
+      results: r.turnOrder.map((id) => {
+        const step = stepOf(id);
+        return {
+          playerId: id,
+          text: step >= 1 ? (pass.guesses[id]?.text ?? null) : null,
+          rank: step >= 2 ? (ranks[id] ?? null) : null,
+          points: step >= 2 ? points[id]! : 0,
+        };
+      }),
     };
   });
 
@@ -61,8 +77,10 @@ export function riskRoundView(room: Room, revealed: boolean, viewerId: string | 
   const mine = viewerId !== null && playing ? current.guesses[viewerId] : undefined;
   if (mine) view.myGuess = mine.text;
   if (privileged) view.privileged = true;
-  if (privileged || (revealed && room.phase !== 'reveal')) {
+  if (privileged || (revealed && room.phase !== 'reveal') || show?.solution) {
     view.solution = items.map((_, i) => hits.get(i + 1) ?? slot(i + 1));
   }
+  const rv = revealView(room);
+  if (rv) view.reveal = rv;
   return view;
 }

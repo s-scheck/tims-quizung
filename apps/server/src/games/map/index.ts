@@ -8,6 +8,7 @@ export const mapGame: GameModule = {
   description: 'Alle setzen gleichzeitig einen Pin auf der stummen Weltkarte. Wer liegt am nächsten dran?',
   turnBased: false,
   needsCategory: true,
+  showReveal: { steps: 1, solutionRequired: true },
   startRound: startMapRound,
   handle: handleMapMessage,
   onHostChanged: () => {},

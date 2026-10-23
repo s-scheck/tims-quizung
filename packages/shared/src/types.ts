@@ -14,6 +14,11 @@ export type Phase =
 
 export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse';
 export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse'];
+/** Auflösung: alles auf einmal („auto“) oder vom Moderator Stück für Stück aufgedeckt („show“). */
+export type RevealMode = 'auto' | 'show';
+export const REVEAL_MODES: readonly RevealMode[] = ['auto', 'show'];
+/** Spiele, deren Auflösung der Moderator als Show aufdecken kann. */
+export const SHOW_GAMES: readonly GameId[] = ['map', 'timeline', 'risk', 'bluff'];
 /** Längstes Morse-Wort nach Normalisierung, Leerzeichen eingerechnet. */
 export const MORSE_WORD_MAX = 30;
 /** Dauer einer Morse-Einheit (Punkt) in Millisekunden je Tempostufe. */
@@ -120,6 +125,17 @@ export interface MatchCategoryInfo {
 }
 
 /** Felder, die jede Runde unabhängig vom Spiel hat. */
+/** Stand der Show-Auflösung, nur wenn die Runde mit „show“ gestartet wurde. */
+export interface ShowRevealView {
+  /** Aufgedeckte Spieler mit Schritt: 1 bei Karte, Zeitstrahl und Bluff; bei No Risk No Fun 1 (Tipp) oder 2 (Platz und Punkte). */
+  players: Record<string, number>;
+  /** Wie viele Schritte ein Spieler hat. */
+  steps: number;
+  solution: boolean;
+  /** Alles aufgedeckt, der Host darf zu den Punkten. */
+  complete: boolean;
+}
+
 export interface BaseRoundView {
   turnOrder: string[];
   turnNo: number;
@@ -127,6 +143,7 @@ export interface BaseRoundView {
   eliminated: string[];
   turnDeadline: number | null;
   soloMode: boolean;
+  reveal?: ShowRevealView;
 }
 
 export interface SortRoundView extends BaseRoundView {
@@ -471,6 +488,8 @@ export interface RoomView {
   mapBorders: boolean;
   /** Zuletzt gewählte Regeln für No Risk No Fun. */
   riskRules: RiskRules;
+  /** Zuletzt gewählte Art der Auflösung. */
+  revealMode: RevealMode;
   /** Nur in `choosing_category` enthalten. */
   categories?: CategorySummary[];
   /** Nur in `choosing_category` enthalten. */

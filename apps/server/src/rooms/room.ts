@@ -9,6 +9,7 @@ import {
   type GameId,
   type Phase,
   type RoomSettings,
+  type RevealMode,
   type RiskRules,
   type RoundResult,
 } from '@quiz/shared';
@@ -63,6 +64,8 @@ export class Room {
   mapBorders = false;
   /** Zuletzt gewählte Regeln für No Risk No Fun. */
   riskRules: RiskRules = { duplicates: 'both', missPoints: 0 };
+  /** Zuletzt gewählte Art der Auflösung, Vorgabe für den Picker. */
+  revealMode: RevealMode = 'auto';
   /** Gespielte Ziele je Orts- oder Ereignisliste, damit Zufall nichts wiederholt und der Moderator es sieht. */
   playedTargets: Record<string, string[]> = {};
   seq = 0;
@@ -256,18 +259,23 @@ export class Room {
     if (this.phase !== 'choosing_category') return fail('invalid_action', 'Gerade keine Kategoriewahl');
     const game = getGame(gameId);
     if (!game) return fail('invalid_action', `Unbekanntes Spiel „${gameId}“`);
-    if (!game.needsCategory) {
-      this.touch();
-      this.gameId = game.id;
-      return game.startRound(this, null, opts);
+    if (opts.reveal === 'show') {
+      if (!game.showReveal) return fail('invalid_action', 'Dieses Spiel hat keine Show-Auflösung');
+      if (this.settings.hostPlays) return fail('invalid_action', 'Die Show-Auflösung geht nur, wenn der Host moderiert');
     }
-    const category = this.categories.get(categoryId);
-    if (!category) return fail('unknown_category', 'Kategorie unbekannt');
-    if (!category.games.includes(game.id)) return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
+    let category: Category | null = null;
+    if (game.needsCategory) {
+      category = this.categories.get(categoryId) ?? null;
+      if (!category) return fail('unknown_category', 'Kategorie unbekannt');
+      if (!category.games.includes(game.id)) return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
+    }
     this.touch();
     this.gameId = game.id;
     const res = game.startRound(this, category, opts);
-    if (res.ok && !this.playedCategoryIds.includes(category.id)) this.playedCategoryIds.push(category.id);
+    if (!res.ok) return res;
+    if (category && !this.playedCategoryIds.includes(category.id)) this.playedCategoryIds.push(category.id);
+    if (opts.reveal !== undefined) this.revealMode = opts.reveal;
+    if (opts.reveal === 'show' && this.round) this.round.reveal = { players: {}, solution: false };
     return res;
   }
 
@@ -299,6 +307,7 @@ export class Room {
           ...(msg.duplicates !== undefined ? { duplicates: msg.duplicates } : {}),
           ...(msg.missPoints !== undefined ? { missPoints: msg.missPoints } : {}),
           ...(msg.word !== undefined ? { word: msg.word } : {}),
+          ...(msg.reveal !== undefined ? { reveal: msg.reveal } : {}),
         });
       case 'back_to_lobby':
         return this.backToLobby(playerId);

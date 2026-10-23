@@ -17,6 +17,13 @@ export interface PseudoCategory {
 }
 
 /** Felder, die jede Runde unabhängig vom Spiel hat. `games/common.ts` arbeitet nur damit. */
+/** Show-Auflösung: was der Moderator schon aufgedeckt hat. */
+export interface ShowRevealState {
+  /** Spieler-ID → Schritt (1 oder bei No Risk No Fun bis 2). */
+  players: Record<string, number>;
+  solution: boolean;
+}
+
 export interface BaseRound {
   category: Category | PseudoCategory;
   turnOrder: string[];
@@ -25,6 +32,8 @@ export interface BaseRound {
   eliminated: string[];
   turnDeadline: number | null;
   soloMode: boolean;
+  /** null: Auflösung alles auf einmal. */
+  reveal: ShowRevealState | null;
 }
 
 // ---------------------------------------------------------------- Sortieren

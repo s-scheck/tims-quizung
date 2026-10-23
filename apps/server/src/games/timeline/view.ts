@@ -1,6 +1,7 @@
 import { yearDistance, type RoundView, type TimelineGuessView, type TimelineRoundView } from '@quiz/shared';
 import type { Room } from '../../rooms/room.ts';
 import { timelineRound } from './reducer.ts';
+import { revealView } from '../common.ts';
 
 /**
  * Sicht auf die Runde. Die Lösung nur für den Moderator oder ab der Auflösung,
@@ -27,14 +28,20 @@ export function timelineRoundView(room: Room, revealed: boolean, viewerId: strin
       .map(([id]) => id),
   };
 
-  if (revealed || privileged) view.target = { from: r.target.from, to: r.target.to };
+  // Show-Auflösung: Spieler sehen Lösung und Tipps erst, wenn der Moderator sie aufgedeckt hat.
+  const show = r.reveal;
+  const visible = (id: string) => !show || privileged || (show.players[id] ?? 0) >= 1;
+  if (privileged || (revealed && (!show || show.solution))) view.target = { from: r.target.from, to: r.target.to };
   if (privileged) view.privileged = true;
+  const rv = revealView(room);
+  if (rv) view.reveal = rv;
 
   const mine = viewerId !== null ? r.guesses[viewerId] : undefined;
   if (mine) view.myGuess = { ...mine };
 
   if (revealed) {
-    const guesses: TimelineGuessView[] = r.turnOrder
+    const ids = r.turnOrder.filter(visible);
+    const guesses: TimelineGuessView[] = ids
       .filter((id) => r.guesses[id]?.confirmed)
       .map((id) => {
         const year = r.guesses[id]!.year;
@@ -43,7 +50,7 @@ export function timelineRoundView(room: Room, revealed: boolean, viewerId: strin
     const ranked = [...guesses]
       .sort((a, b) => a.distanceYears - b.distanceYears)
       .map((g) => ({ playerId: g.playerId, distanceYears: g.distanceYears }));
-    const missing = r.turnOrder.filter((id) => !r.guesses[id]?.confirmed).map((id) => ({ playerId: id, distanceYears: null }));
+    const missing = ids.filter((id) => !r.guesses[id]?.confirmed).map((id) => ({ playerId: id, distanceYears: null }));
     view.guesses = guesses;
     view.ranking = [...ranked, ...missing];
   }

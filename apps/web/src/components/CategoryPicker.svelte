@@ -9,8 +9,10 @@
     toMorse,
     RISK_DUPLICATE_OPTIONS,
     RISK_MISS_OPTIONS,
+    SHOW_GAMES,
     type CategorySummary,
     type GameId,
+    type RevealMode,
     type RiskDuplicates,
     type RiskMissPoints,
     type RoomView,
@@ -29,11 +31,18 @@
   let borders = $state(untrack(() => view.mapBorders));
   let duplicates = $state<RiskDuplicates>(untrack(() => view.riskRules.duplicates));
   let missPoints = $state<RiskMissPoints>(untrack(() => view.riskRules.missPoints));
+  let reveal = $state<RevealMode>(untrack(() => view.revealMode));
+  const REVEAL_OPTIONS: { mode: RevealMode; label: string }[] = [
+    { mode: 'auto', label: 'Automatisch' },
+    { mode: 'show', label: 'Show' },
+  ];
   /** Bei Karte und Zeitstrahl als Moderator: gewählte Sammlung, deren Ziele gerade zur Wahl stehen. */
   let targetPickFor = $state<string | null>(null);
   const usesLives = $derived(gameId === 'topx' || gameId === 'match');
   const isMap = $derived(gameId === 'map');
   const isRisk = $derived(gameId === 'risk');
+  /** Show-Auflösung gibt es nur bei den gleichzeitigen Spielen und nur, wenn der Host moderiert. */
+  const hasShow = $derived(SHOW_GAMES.includes(gameId) && client.isModerator);
   const hasTargets = $derived(gameId === 'map' || gameId === 'timeline' || gameId === 'bluff');
   const targetNoun = $derived(gameId === 'map' ? 'Ziel' : gameId === 'timeline' ? 'Ereignis' : 'Aufgabe');
   const picksTarget = $derived(hasTargets && client.isModerator);
@@ -67,6 +76,7 @@
       ...(usesLives ? { lives } : {}),
       ...(isMap ? { borders } : {}),
       ...(isRisk ? { duplicates, missPoints } : {}),
+      ...(hasShow ? { reveal } : {}),
       ...(targetId ? { targetId } : {}),
     });
   }
@@ -119,6 +129,29 @@
       </div>
     {/if}
 
+    {#if hasShow}
+      <div class="card flex flex-wrap items-center justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold">Auflösung</p>
+          <p class="text-xs text-slate-500">
+            {reveal === 'show'
+              ? 'Show: Alle sehen erst nur die Namen. Du deckst jedes Ergebnis und die Lösung selbst auf, Stück für Stück.'
+              : 'Automatisch: Alle Ergebnisse erscheinen auf einmal.'}
+          </p>
+        </div>
+        <div class="flex gap-2">
+          {#each REVEAL_OPTIONS as opt (opt.mode)}
+            <button
+              class="rounded-xl border px-3 py-2 text-sm font-semibold transition
+                {reveal === opt.mode ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+              onclick={() => (reveal = opt.mode)}
+            >
+              {opt.label}
+            </button>
+          {/each}
+        </div>
+      </div>
+    {/if}
     {#if isMap}
       <div class="card flex flex-wrap items-center justify-between gap-3">
         <div>

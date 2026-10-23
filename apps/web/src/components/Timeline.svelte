@@ -5,6 +5,12 @@
     label: string;
     color: string;
   }
+
+  /** Zoom zu einem Jahr, `key` löst bei jedem neuen Wert einen neuen Zoom aus. */
+  export interface TimelineFocus {
+    year: number;
+    key: string;
+  }
 </script>
 
 <script lang="ts">
@@ -18,6 +24,7 @@
     markers = [],
     interactive = false,
     fitAll = false,
+    focus = null,
     large = false,
     onPick,
     class: className = '',
@@ -32,6 +39,8 @@
     interactive?: boolean;
     /** Startausschnitt passend zu Lösung und Markern statt des ganzen Zeitstrahls. */
     fitAll?: boolean;
+    /** Show-Auflösung: zum aufgedeckten Jahr zoomen und danach wieder alles zeigen. */
+    focus?: TimelineFocus | null;
     large?: boolean;
     onPick?: (year: number) => void;
     class?: string;
@@ -68,20 +77,77 @@
   }
 
   /** Ausschnitt, der Lösung und alle Marker mit etwas Rand zeigt. */
-  function fitView() {
+  function fitTarget(): { center: number; span: number } {
     const axes = [
       ...(target ? [yearToAxis(target.from), yearToAxis(target.to)] : []),
       ...markers.map((m) => yearToAxis(m.year)),
       ...(guess !== null ? [yearToAxis(guess)] : []),
     ];
-    if (axes.length === 0) return resetView();
+    if (axes.length === 0) return { center: (AXIS_MIN + AXIS_MAX) / 2, span: FULL_SPAN };
     const lo = Math.min(...axes);
     const hi = Math.max(...axes);
     const pad = Math.max(8, (hi - lo) * 0.2);
-    setView((lo + hi) / 2, hi - lo + 2 * pad);
+    return { center: (lo + hi) / 2, span: hi - lo + 2 * pad };
+  }
+
+  function fitView() {
+    const f = fitTarget();
+    setView(f.center, f.span);
   }
 
   untrack(() => (fitAll ? fitView() : resetView()));
+
+  // ------------------------------------------------------------ Show-Auflösung
+
+  let anim = 0;
+
+  /** Weicher Übergang des Ausschnitts, etwa zum aufgedeckten Jahr. */
+  function animateTo(toCenter: number, toSpan: number, ms = 700) {
+    cancelAnimationFrame(anim);
+    const fromCenter = center;
+    const fromSpan = span;
+    const t0 = performance.now();
+    const ease = (t: number) => 1 - Math.pow(1 - t, 3);
+    const step = (now: number) => {
+      const k = ease(Math.min(1, (now - t0) / ms));
+      setView(fromCenter + (toCenter - fromCenter) * k, fromSpan + (toSpan - fromSpan) * k);
+      if (k < 1) anim = requestAnimationFrame(step);
+    };
+    anim = requestAnimationFrame(step);
+  }
+
+  let focusTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Neue Marker holen den passenden Ausschnitt nach, solange gerade kein Zoom zu einem Jahr läuft.
+  $effect(() => {
+    void markers.length;
+    void target;
+    if (!fitAll) return;
+    untrack(() => {
+      if (!focusTimer) {
+        const f = fitTarget();
+        animateTo(f.center, f.span);
+      }
+    });
+  });
+
+  $effect(() => {
+    const f = focus;
+    if (!f) return;
+    untrack(() => animateTo(yearToAxis(f.year), Math.max(MIN_SPAN, 40)));
+    if (focusTimer) clearTimeout(focusTimer);
+    focusTimer = setTimeout(() => {
+      focusTimer = null;
+      untrack(() => {
+        const t = fitTarget();
+        animateTo(t.center, t.span);
+      });
+    }, 2600);
+    return () => {
+      if (focusTimer) clearTimeout(focusTimer);
+      focusTimer = null;
+    };
+  });
 
   const viewLo = $derived(center - span / 2);
   const toX = (axis: number) => ((axis - viewLo) / span) * width;

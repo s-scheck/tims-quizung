@@ -138,5 +138,10 @@
     <p>Der Host tippt ein Wort und morst es an seinem Gerät mit Ton und Licht. Alle raten, so oft sie wollen.</p>
     <p>Die drei Schnellsten bekommen 3, 2 und 1 Punkt. Auf Wunsch gibt der Host den Code oder die Morsetabelle frei.</p>
   </div>
+  <div class="card space-y-2 border-amber-500/40 text-sm text-slate-400">
+    <h3 class="font-semibold text-amber-300">Show-Auflösung</h3>
+    <p>Moderiert der Host, kann er bei Karte, Zeitstrahl, No Risk No Fun und Bluff vor der Runde „Show“ wählen: In der Auflösung sehen alle erst nur die Namen.</p>
+    <p>Der Moderator deckt dann jedes Ergebnis einzeln auf, indem er Namen oder Texte antippt, und die Lösung mit einem eigenen Knopf. Karte und Zeitstrahl fliegen dabei zum Ergebnis.</p>
+  </div>
 </section>
 <p class="mt-4 text-center text-xs text-slate-500">Der Host wählt vor jeder Runde das Spiel und die Kategorie. Punkte vergibt er nach jeder Runde von Hand.</p>

@@ -8,6 +8,7 @@ export const riskGame: GameModule = {
   description: 'Alle nennen geheim einen Eintrag aus einer Top-50-Liste. Je tiefer der Platz, desto mehr Punkte, aber daneben ist daneben.',
   turnBased: false,
   needsCategory: true,
+  showReveal: { steps: 2, solutionRequired: false },
   startRound: startRiskRound,
   handle: handleRiskMessage,
   onHostChanged: () => {},

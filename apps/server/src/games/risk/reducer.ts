@@ -4,7 +4,7 @@ import type { Room } from '../../rooms/room.ts';
 import type { RiskPass, RiskRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
 import type { StartRoundOptions } from '../registry.ts';
-import { baseRound, buildTurnOrder, scheduleRoundTimer, toReveal } from '../common.ts';
+import { baseRound, buildTurnOrder, revealComplete, scheduleRoundTimer, toReveal } from '../common.ts';
 
 export function riskRound(room: Room): RiskRound | null {
   return room.round?.game === 'risk' ? room.round : null;
@@ -112,7 +112,10 @@ function nextPass(room: Room, playerId: string): Result {
   const round = riskRound(room);
   if (room.phase !== 'reveal' || !round) return fail('invalid_action', 'Erst den Durchgang auflösen');
   if (round.turnOrder.length === 0) return fail('invalid_action', 'Ohne Mitspieler geht es nicht weiter');
+  if (round.reveal?.solution) return fail('invalid_action', 'Die Liste ist schon aufgedeckt, die Kategorie ist zu Ende');
+  if (!revealComplete(room)) return fail('invalid_action', 'Erst alle Tipps aufdecken');
   round.passes.push({ guesses: {} });
+  if (round.reveal) round.reveal = { players: {}, solution: false };
   round.turnNo++;
   room.phase = 'playing';
   scheduleRoundTimer(room, () => toReveal(room));

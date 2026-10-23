@@ -29,6 +29,10 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'start_game' })).toBe(true);
     expect(isClientMsg({ type: 'choose_category', gameId: 'topx', categoryId: 'x', lives: 3 })).toBe(true);
     expect(isClientMsg({ type: 'choose_category', gameId: 'sort', categoryId: 'x' })).toBe(true);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'map', categoryId: 'x', reveal: 'show' })).toBe(true);
+    expect(isClientMsg({ type: 'reveal_player', playerId: 'p1' })).toBe(true);
+    expect(isClientMsg({ type: 'reveal_solution' })).toBe(true);
+    expect(isClientMsg({ type: 'reveal_all' })).toBe(true);
     expect(isClientMsg({ type: 'guess', turnNo: 2, text: 'Haaland' })).toBe(true);
     expect(isClientMsg({ type: 'judge', turnNo: 2, correct: true, rank: 3 })).toBe(true);
     expect(isClientMsg({ type: 'judge', turnNo: 2, correct: false })).toBe(true);
@@ -53,6 +57,8 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'place_year', year: 1789.5 })).toBe(false);
     expect(isClientMsg({ type: 'place_year', year: 99999 })).toBe(false);
     expect(isClientMsg({ type: 'choose_category', gameId: 'map', categoryId: 'x', borders: 'ja' })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'map', categoryId: 'x', reveal: 'slow' })).toBe(false);
+    expect(isClientMsg({ type: 'reveal_player' })).toBe(false);
     expect(isClientMsg({ type: 'submit_scores', scores: { a: 1.5 } })).toBe(false);
     expect(isClientMsg({ type: 'submit_scores', scores: { a: 5000 } })).toBe(false);
     expect(isClientMsg({ type: 'set_settings', timerSeconds: 45 })).toBe(false);

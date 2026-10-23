@@ -1,6 +1,7 @@
 import type { BluffEntryView, BluffRoundView, RoundView } from '@quiz/shared';
 import type { Room } from '../../rooms/room.ts';
 import { bluffPoints, bluffRound, entryText } from './reducer.ts';
+import { revealView } from '../common.ts';
 
 /**
  * Sicht auf die Runde. Autoren, Wahrheit und Punkte nur für den Moderator oder ab der Auflösung,
@@ -11,6 +12,10 @@ export function bluffRoundView(room: Room, revealed: boolean, viewerId: string |
   if (!r) return null;
   const privileged = viewerId !== null && room.isModerator(viewerId);
   const showAll = revealed || privileged;
+  // Show-Auflösung: Spieler sehen Autoren, Wahrheit und Punkte erst, wenn der Moderator sie aufgedeckt hat.
+  const show = r.reveal;
+  const hiding = !!show && !privileged && room.phase === 'reveal';
+  const authorShown = (authorId: string | null) => !hiding || (authorId === null ? show!.solution : (show!.players[authorId] ?? 0) >= 1);
   const { prompts: _prompts, games: _games, kind: _kind, ...category } = r.category;
 
   const view: BluffRoundView = {
@@ -29,7 +34,7 @@ export function bluffRoundView(room: Room, revealed: boolean, viewerId: string |
   };
   if (viewerId !== null && r.texts[viewerId] !== undefined) view.myText = r.texts[viewerId];
   if (viewerId !== null && r.votes[viewerId] !== undefined) view.myVote = r.votes[viewerId];
-  if (showAll) view.truth = r.prompt.answer;
+  if (showAll && authorShown(null)) view.truth = r.prompt.answer;
   if (privileged) view.privileged = true;
 
   const votersOf = (entryId: string) => r.turnOrder.filter((id) => r.votes[id] === entryId);
@@ -46,7 +51,7 @@ export function bluffRoundView(room: Room, revealed: boolean, viewerId: string |
       const entry: BluffEntryView = { id: e.id, text: entryText(r, e) };
       if (viewerId !== null && e.authorId === viewerId) entry.mine = true;
       if (showVotes) entry.votes = votersOf(e.id);
-      if (showAll) {
+      if (showAll && authorShown(e.authorId)) {
         entry.authorId = e.authorId;
         entry.isTruth = e.authorId === null;
         if (e.authorId !== null) entry.points = votersOf(e.id).length;
@@ -54,6 +59,8 @@ export function bluffRoundView(room: Room, revealed: boolean, viewerId: string |
       return entry;
     });
   }
-  if (showAll && r.stage !== 'writing') view.points = bluffPoints(r);
+  if (showAll && r.stage !== 'writing') view.points = bluffPoints(r, hiding ? authorShown : undefined);
+  const rv = revealView(room);
+  if (rv) view.reveal = rv;
   return view;
 }

@@ -106,12 +106,15 @@ export function entryText(round: BluffRound, entry: BluffEntry): string {
   return entry.authorId === null ? round.prompt.answer : (round.texts[entry.authorId] ?? '');
 }
 
-/** Rundenpunkte: 1 je Stimme auf einen eigenen Text, 2 für die eigene Stimme auf die Wahrheit. */
-export function bluffPoints(round: BluffRound): Record<string, number> {
+/**
+ * Rundenpunkte: 1 je Stimme auf einen eigenen Text, 2 für die eigene Stimme auf die Wahrheit.
+ * `visible` blendet in der Show-Auflösung Einträge aus, die der Moderator noch nicht aufgedeckt hat (Wahrheit: null).
+ */
+export function bluffPoints(round: BluffRound, visible: (authorId: string | null) => boolean = () => true): Record<string, number> {
   const points: Record<string, number> = Object.fromEntries(round.turnOrder.map((id) => [id, 0]));
   for (const [voter, entryId] of Object.entries(round.votes)) {
     const entry = round.entries.find((e) => e.id === entryId);
-    if (!entry) continue;
+    if (!entry || !visible(entry.authorId)) continue;
     if (entry.authorId === null) {
       if (voter in points) points[voter] = (points[voter] ?? 0) + TRUTH_POINTS;
     } else if (entry.authorId in points) {

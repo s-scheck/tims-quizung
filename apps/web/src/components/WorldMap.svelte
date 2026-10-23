@@ -6,6 +6,13 @@
     label: string;
     color: string;
   }
+
+  /** Flug zu einem Punkt, `key` löst bei jedem neuen Wert einen neuen Flug aus. */
+  export interface MapFocus {
+    lat: number;
+    lng: number;
+    key: string;
+  }
 </script>
 
 <script lang="ts">
@@ -25,6 +32,7 @@
     target = null,
     showLines = false,
     fitAll = false,
+    focus = null,
     class: className = '',
   }: {
     borders?: boolean;
@@ -36,6 +44,8 @@
     target?: { lat: number; lng: number } | null;
     showLines?: boolean;
     fitAll?: boolean;
+    /** Show-Auflösung: zum aufgedeckten Pin fliegen und danach wieder alles zeigen. */
+    focus?: MapFocus | null;
     class?: string;
   } = $props();
 
@@ -46,6 +56,8 @@
   const overlay = L.layerGroup();
   let ready = $state(false);
   let failed = $state(false);
+  /** Während eines Flugs darf die Gesamtansicht nicht dazwischenfunken. */
+  let flying = $state(false);
 
   function escapeHtml(s: string): string {
     return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
@@ -160,11 +172,21 @@
         ).addTo(overlay);
       }
     }
-    if (fit && (ms.length > 0 || t)) {
+    if (fit && !flying && (ms.length > 0 || t)) {
       const points: [number, number][] = ms.map((m) => [m.lat, m.lng]);
       if (t) points.push([t.lat, t.lng]);
       map.fitBounds(L.latLngBounds(points).pad(0.35), { maxZoom: 7 });
     }
+  });
+
+  // Show-Auflösung: hinfliegen, kurz verweilen, dann übernimmt wieder die Gesamtansicht (Effekt oben).
+  $effect(() => {
+    const f = focus;
+    if (!map || !f) return;
+    flying = true;
+    map.flyTo([f.lat, f.lng], Math.max(map.getZoom(), 5), { duration: 1.2 });
+    const timer = setTimeout(() => (flying = false), 2600);
+    return () => clearTimeout(timer);
   });
 </script>
 

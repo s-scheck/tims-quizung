@@ -6,6 +6,7 @@ import {
   rotateTo,
   type ClientMsg,
   type RoundResult,
+  type ShowRevealView,
 } from '@quiz/shared';
 import type { Category } from '@quiz/content';
 import type { Room } from '../rooms/room.ts';
@@ -46,6 +47,7 @@ export function baseRound(category: BaseRound['category'], turnOrder: string[]):
     eliminated: [],
     turnDeadline: null,
     soloMode: turnOrder.length === 1,
+    reveal: null,
   };
 }
 
@@ -213,6 +215,12 @@ export function handleCommon(room: Room, playerId: string, msg: ClientMsg): Resu
       return hostDecision(room, playerId, msg.continue);
     case 'to_scoring':
       return toScoring(room, playerId);
+    case 'reveal_player':
+      return revealPlayer(room, playerId, msg.playerId);
+    case 'reveal_solution':
+      return revealSolution(room, playerId);
+    case 'reveal_all':
+      return revealAll(room, playerId);
     case 'submit_scores':
       return submitScores(room, playerId, msg.scores);
     case 'next_round':
@@ -264,7 +272,64 @@ function hostDecision(room: Room, playerId: string, cont: boolean): Result {
 function toScoring(room: Room, playerId: string): Result {
   if (!room.isHost(playerId)) return fail('not_host', 'Nur der Host trägt Punkte ein');
   if (room.phase !== 'reveal') return fail('invalid_action', 'Erst die Auflösung ansehen');
+  if (!revealComplete(room)) return fail('invalid_action', 'Erst alles aufdecken');
   room.phase = 'scoring';
+  return OK;
+}
+
+// ------------------------------------------------------- Show-Auflösung
+
+/** Ist alles aufgedeckt? Ohne Show-Auflösung immer. Bei No Risk No Fun schließt die aufgedeckte Liste die Kategorie ab. */
+export function revealComplete(room: Room): boolean {
+  const round = room.round;
+  const show = room.game?.showReveal;
+  if (!round?.reveal || !show) return true;
+  if (!show.solutionRequired && round.reveal.solution) return true;
+  const everyone = round.turnOrder.every((id) => (round.reveal!.players[id] ?? 0) >= show.steps);
+  return everyone && (!show.solutionRequired || round.reveal.solution);
+}
+
+/** Stand der Show-Auflösung für die Sicht, fehlt bei „alles auf einmal“. */
+export function revealView(room: Room): ShowRevealView | undefined {
+  const round = room.round;
+  const show = room.game?.showReveal;
+  if (!round?.reveal || !show) return undefined;
+  return { players: { ...round.reveal.players }, steps: show.steps, solution: round.reveal.solution, complete: revealComplete(room) };
+}
+
+function showRound(room: Room, playerId: string): { reveal: NonNullable<BaseRound['reveal']>; steps: number; solutionRequired: boolean } | { error: Result } {
+  if (!room.isHost(playerId)) return { error: fail('not_host', 'Nur der Host deckt auf') };
+  const round = room.round;
+  const show = room.game?.showReveal;
+  if (room.phase !== 'reveal' || !round) return { error: fail('invalid_action', 'Aufdecken geht nur in der Auflösung') };
+  if (!round.reveal || !show) return { error: fail('invalid_action', 'Diese Runde läuft ohne Show-Auflösung') };
+  return { reveal: round.reveal, ...show };
+}
+
+function revealPlayer(room: Room, playerId: string, targetId: string): Result {
+  const r = showRound(room, playerId);
+  if ('error' in r) return r.error;
+  if (!room.round!.turnOrder.includes(targetId)) return fail('invalid_action', 'Dieser Spieler ist nicht in der Runde');
+  const step = r.reveal.players[targetId] ?? 0;
+  if (step >= r.steps) return fail('invalid_action', 'Schon aufgedeckt');
+  r.reveal.players[targetId] = step + 1;
+  return OK;
+}
+
+function revealSolution(room: Room, playerId: string): Result {
+  const r = showRound(room, playerId);
+  if ('error' in r) return r.error;
+  if (r.reveal.solution) return fail('invalid_action', 'Die Lösung ist schon aufgedeckt');
+  r.reveal.solution = true;
+  return OK;
+}
+
+/** Deckt alle Spieler auf. Die Lösung nur dort, wo sie ohnehin dazugehört; bei No Risk No Fun beendet sie die Kategorie und bleibt ein eigener Schritt. */
+function revealAll(room: Room, playerId: string): Result {
+  const r = showRound(room, playerId);
+  if ('error' in r) return r.error;
+  for (const id of room.round!.turnOrder) r.reveal.players[id] = r.steps;
+  if (r.solutionRequired) r.reveal.solution = true;
   return OK;
 }
 
