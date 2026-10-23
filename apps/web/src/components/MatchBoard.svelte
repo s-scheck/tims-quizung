@@ -6,6 +6,7 @@
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
   import { draggable, type DragPoint, type DragStart } from '../lib/drag.ts';
+  import { scrollIntoViewIfHidden } from '../lib/scroll.ts';
   import Card from './Card.svelte';
   import TurnTimer from './TurnTimer.svelte';
   import HostDecision from './HostDecision.svelte';
@@ -122,6 +123,21 @@
 
   let barHeight = $state(0);
 
+  // Zuschauer und Screen scrollen zum Zielfeld, in das gerade eingeloggt wurde.
+  let targetsEl = $state<HTMLOListElement>();
+  let scrolledFor = '';
+  $effect(() => {
+    const a = attempt;
+    const list = targetsEl;
+    if (!a || a.status !== 'pending' || !list) return;
+    const key = `${a.cardId}:${a.targetId}:${round.turnNo}`;
+    if (key === scrolledFor) return;
+    scrolledFor = key;
+    if (!readonly && client.isActive) return;
+    const el = list.querySelector<HTMLElement>(`[data-target-id="${CSS.escape(a.targetId)}"]`);
+    if (el) scrollIntoViewIfHidden(el);
+  });
+
   const statusText = $derived.by(() => {
     if (view.phase === 'host_decision') return null;
     if (attempt) {
@@ -180,7 +196,7 @@
         <p class="text-xs font-semibold uppercase tracking-widest text-sky-300">{round.category.rightLabel}</p>
         <span class="text-xs text-slate-500">{matchedCount} von {round.cards.length} zugeordnet</span>
       </div>
-      <ol class="space-y-1.5">
+      <ol class="space-y-1.5" bind:this={targetsEl}>
         {#each round.targets as target (target.id)}
           {@const inSlot = cardIn(target)}
           {@const free = isFree(target)}
@@ -191,6 +207,7 @@
               {target.matchedCardId ? 'border-emerald-500/40 bg-emerald-500/10' : hovered ? 'border-indigo-400 bg-indigo-500/15 ring-2 ring-indigo-400/60' : 'border-slate-800 bg-slate-900/60'}
               {readonly ? 'text-xl' : ''}"
             data-drop={free && canAct ? `target:${target.id}` : undefined}
+            data-target-id={target.id}
           >
             <span class="min-w-0 flex-1 break-words font-semibold">
               {target.text}

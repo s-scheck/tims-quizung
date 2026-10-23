@@ -5,7 +5,7 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 ## Spielregeln „Sortieren"
 
 - Alle Karten einer Kategorie liegen offen, nur die Werte sind versteckt. Eine zufällige Karte startet die Kette.
-- Wer dran ist, zieht eine Karte in eine Lücke der Kette (Maus, oder am Handy kurz halten und ziehen) oder tippt Karte und Lücke nacheinander an. Die Karte liegt dann als Vorschau in der Kette und lässt sich noch verschieben, mit „Bestätigen“ wird gelegt. Nach zwei Sekunden Spannung wird sie grün oder fliegt zurück.
+- Wer dran ist, zieht eine Karte in eine Lücke der Kette (Maus, oder am Handy kurz halten und ziehen) oder tippt Karte und Lücke nacheinander an. Die Karte liegt dann als Vorschau in der Kette und lässt sich noch verschieben, mit „Bestätigen“ wird gelegt. Nach zwei Sekunden Spannung wird sie grün oder fliegt zurück. Alle anderen Geräte und der Screen scrollen dabei automatisch zur gelegten Karte, falls sie nicht im Bild ist.
 - Richtig heißt: Die Karte passt zwischen ihre Nachbarn. Falsch heißt: raus für diese Runde.
 - Bleibt nur ein Spieler übrig, entscheidet der Host, ob die Runde endet oder der Letzte allein weiterlegt.
 - Am Rundenende werden alle Werte aufgedeckt, der Host trägt Punkte pro Spieler ein. Danach nächste Runde oder Spiel beenden.
@@ -23,7 +23,7 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 ## Spielregeln „Zuordnen"
 
 - Eine Kategorie gibt Karten (z. B. Hauptstädte) und mehr Ziele (z. B. Länder) vor. Die überzähligen Ziele sind Köder ohne passende Karte. Vor der Runde legt der Host die Leben fest.
-- Wer dran ist, zieht eine Karte auf ein Ziel oder tippt Karte und Ziel nacheinander an, dann bestätigen. Nach zwei Sekunden bleibt die Karte grün im Zielfeld liegen oder fliegt rot zurück und kostet ein Leben. Ob ein Ziel ein Köder war, bleibt geheim.
+- Wer dran ist, zieht eine Karte auf ein Ziel oder tippt Karte und Ziel nacheinander an, dann bestätigen. Nach zwei Sekunden bleibt die Karte grün im Zielfeld liegen oder fliegt rot zurück und kostet ein Leben. Alle anderen Geräte und der Screen scrollen automatisch zum Zielfeld, falls es nicht im Bild ist. Ob ein Ziel ein Köder war, bleibt geheim.
 - Der moderierende Host sieht Lösung und Köder, alle anderen nicht.
 - Rundenende, Host-Entscheidung, Zeitlimit und Punkte wie bei den anderen Spielen.
 

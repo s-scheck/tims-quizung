@@ -6,6 +6,7 @@
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
   import { draggable, type DragPoint, type DragStart } from '../lib/drag.ts';
+  import { scrollIntoViewIfHidden } from '../lib/scroll.ts';
   import Card from './Card.svelte';
   import TurnTimer from './TurnTimer.svelte';
   import HostDecision from './HostDecision.svelte';
@@ -161,6 +162,21 @@
 
   let barHeight = $state(0);
 
+  // Zuschauer und Screen scrollen zur gerade eingeloggten Karte, damit bei langen Ketten niemand den Moment verpasst.
+  let chainEl = $state<HTMLOListElement>();
+  let scrolledFor = '';
+  $effect(() => {
+    const p = placement;
+    const list = chainEl;
+    if (!p || p.status !== 'pending' || !list) return;
+    const key = `${p.cardId}:${round.turnNo}`;
+    if (key === scrolledFor) return;
+    scrolledFor = key;
+    if (!readonly && client.isActive) return;
+    const el = list.querySelector<HTMLElement>(`[data-card-id="${CSS.escape(p.cardId)}"]`);
+    if (el) scrollIntoViewIfHidden(el);
+  });
+
   const statusText = $derived.by(() => {
     if (view.phase === 'host_decision') return null;
     if (placement) {
@@ -235,7 +251,7 @@
 
     <div class="card">
       <p class="mb-2 text-center text-xs font-semibold uppercase tracking-widest text-emerald-300">▲ {category.topLabel}</p>
-      <ol class="space-y-1">
+      <ol class="space-y-1" bind:this={chainEl}>
         {#each rows as row (row.cardId)}
           {@const card = cardsById.get(row.cardId)}
           {@const status = row.preview ? null : statusFor(row.cardId)}
@@ -245,6 +261,7 @@
             {/if}
             <div
               class="relative transition-opacity {drag?.cardId === row.cardId ? 'opacity-30' : ''}"
+              data-card-id={row.cardId}
               data-drop="row:{row.gapAbove}:{row.gapBelow}"
               in:receive|global={{ key: row.cardId }}
               out:send|global={{ key: row.cardId }}
