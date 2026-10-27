@@ -1,7 +1,7 @@
 import { slugify, validateCategory, CategoryValidationError } from '@quiz/content/schema';
 import type { GameId } from '@quiz/shared';
 
-export type Kind = 'ranked' | 'pairs' | 'places' | 'events' | 'prompts';
+export type Kind = 'ranked' | 'pairs' | 'places' | 'events' | 'prompts' | 'picture';
 export type Raw = Record<string, unknown>;
 
 /** Spiele in der Reihenfolge der Spielauswahl, mit der Art Liste, die sie brauchen. */
@@ -13,6 +13,7 @@ export const EDITOR_GAMES: { id: GameId; name: string; kind: Kind; hint: string 
   { id: 'timeline', name: 'Zeitstrahl', kind: 'events', hint: 'Beliebig viele Ereignisse mit Jahr oder Spanne, negativ heißt v. Chr. Pro Runde wird eines gespielt.' },
   { id: 'risk', name: 'No Risk No Fun', kind: 'ranked', hint: 'Beliebig viele Einträge, Platz 1 zuerst. Je länger die Liste, desto mehr Punkte gibt es hinten. Platz 1 sollte bekannt, die hinteren Plätze Nischenwissen sein.' },
   { id: 'bluff', name: 'Bluff', kind: 'prompts', hint: 'Beliebig viele Aufgaben mit der echten Antwort, etwa Film und Subline. Die Antwort muss stimmen, sie ist die Wahrheit im Spiel.' },
+  { id: 'picture', name: 'Bilderrätsel', kind: 'picture', hint: 'Ein Bild, darauf mindestens zwei Felder mit Antwort. Bild vorher verkleinern (höchstens 8 MB), optional ein Original zum bearbeiteten Bild.' },
 ];
 
 export const GAME_NAMES: Record<string, string> = Object.fromEntries(EDITOR_GAMES.map((g) => [g.id, g.name]));
@@ -55,6 +56,14 @@ export const COLUMNS: Record<Kind, Column[]> = {
   prompts: [
     { key: 'name', label: 'Aufgabe', type: 'text', placeholder: 'z. B. Alien (1979)', width: 'min-w-52' },
     { key: 'answer', label: 'Echte Antwort', type: 'text', placeholder: 'z. B. Im Weltraum hört dich niemand schreien.', width: 'min-w-72' },
+  ],
+  // Felder werden im Bild gezeichnet, die Spalten dienen nur der Prüfung.
+  picture: [
+    { key: 'answer', label: 'Antwort', type: 'text', placeholder: 'z. B. Lampe', width: 'min-w-52' },
+    { key: 'x', label: 'x', type: 'number' },
+    { key: 'y', label: 'y', type: 'number' },
+    { key: 'w', label: 'Breite', type: 'number' },
+    { key: 'h', label: 'Höhe', type: 'number' },
   ],
 };
 
@@ -105,6 +114,11 @@ export const FIELDS: Record<Kind, Field[]> = {
     { key: 'answerLabel', label: 'Bezeichnung der Antwort', type: 'text', placeholder: 'Subline' },
     { key: 'instruction', label: 'Anweisung an die Spieler', type: 'text', placeholder: 'Schreib eine Subline, wie sie auf dem Plakat stehen könnte.' },
     { key: 'source', label: 'Quelle', type: 'text', optional: true, placeholder: 'nach Kinoplakat' },
+  ],
+  picture: [
+    { key: 'title', label: 'Titel', type: 'text', placeholder: 'Wohnzimmer' },
+    { key: 'question', label: 'Frage', type: 'text', placeholder: 'Was fehlt hier?' },
+    { key: 'source', label: 'Quelle', type: 'text', optional: true, placeholder: 'eigenes Foto' },
   ],
 };
 
@@ -163,6 +177,7 @@ export function kindOfRaw(raw: Raw): Kind {
   if ('places' in raw) return 'places';
   if ('events' in raw) return 'events';
   if ('prompts' in raw) return 'prompts';
+  if ('fields' in raw) return 'picture';
   return 'ranked';
 }
 
@@ -205,6 +220,11 @@ export function draftFromRaw(raw: Raw): Draft {
     case 'prompts':
       rows = arr(raw.prompts).map((p) => ({ name: str(p.name), answer: str(p.answer) }));
       break;
+    case 'picture':
+      meta.image = str(raw.image);
+      meta.original = str(raw.original);
+      rows = arr(raw.fields).map((f) => ({ answer: str(f.answer), x: formatNumber(f.x), y: formatNumber(f.y), w: formatNumber(f.w), h: formatNumber(f.h) }));
+      break;
   }
   const decoys = kind === 'pairs' && Array.isArray(raw.decoys) ? raw.decoys.map((d) => ({ text: str(d) })) : [];
   return { kind, meta, games, rows, decoys };
@@ -220,7 +240,13 @@ export function newDraft(game: GameId): Draft {
   if (kind === 'events') meta.question = 'Wann war das?';
   if (kind === 'places') meta.question = 'Wo liegt das?';
   if (kind === 'prompts') meta.question = 'Wie lautet die echte Antwort?';
-  const rows = Array.from({ length: 3 }, () => emptyRow(COLUMNS[kind]));
+  if (kind === 'picture') {
+    meta.question = 'Was fehlt hier?';
+    meta.image = '';
+    meta.original = '';
+  }
+  // Felder im Bild entstehen durch Zeichnen, nicht aus Leerzeilen.
+  const rows = kind === 'picture' ? [] : Array.from({ length: 3 }, () => emptyRow(COLUMNS[kind]));
   return { kind, meta, games: kind === 'ranked' ? [game] : [], rows, decoys: kind === 'pairs' ? [emptyRow(DECOY_COLUMNS)] : [] };
 }
 
@@ -282,6 +308,21 @@ export function draftToRaw(draft: Draft, id: string, base: Raw = {}): Raw {
       raw.games = ['bluff'];
       raw.prompts = rows.map((r) => ({ name: (r.name ?? '').trim(), answer: (r.answer ?? '').trim() }));
       break;
+    case 'picture': {
+      raw.games = ['picture'];
+      const image = (draft.meta.image ?? '').trim();
+      const original = (draft.meta.original ?? '').trim();
+      if (image) raw.image = image;
+      else delete raw.image;
+      if (original) raw.original = original;
+      else delete raw.original;
+      const pct = (v: string | undefined) => {
+        const n = Number((v ?? '').trim());
+        return Number.isFinite(n) ? Math.round(n * 10) / 10 : (v ?? '').trim();
+      };
+      raw.fields = rows.map((r) => ({ answer: (r.answer ?? '').trim(), x: pct(r.x), y: pct(r.y), w: pct(r.w), h: pct(r.h) }));
+      break;
+    }
   }
   return raw;
 }
@@ -301,6 +342,7 @@ export function validate(raw: Raw, id: string): string | null {
 
 export function humanize(msg: string): string {
   return msg
+    .replace(/\bfields\[(\d+)\]/g, (_, n) => `Feld ${Number(n) + 1}`)
     .replace(/\b(?:items|pairs|places|events|prompts)\[(\d+)\]/g, (_, n) => `Zeile ${Number(n) + 1}`)
     .replace(/\bvalue ist keine Zahl/, 'Wert ist keine Zahl')
     .replace(/\blat\/lng ungültig/, 'Koordinaten ungültig');
@@ -335,7 +377,8 @@ export function cellIssues(kind: Kind, rows: Row[]): Record<string, string>[] {
       }
     }
     const k = (r[first] ?? '').trim().toLowerCase();
-    if (k && (counts.get(k) ?? 0) > 1) out[first] = 'doppelt';
+    // Zwei Felder dürfen dieselbe Antwort haben (zwei Fenster), sonst sind Namen eindeutig.
+    if (kind !== 'picture' && k && (counts.get(k) ?? 0) > 1) out[first] = 'doppelt';
     return out;
   });
 }
@@ -368,7 +411,7 @@ export function rowsFromCells(cells: string[][], columns: Column[]): Row[] {
 
 // -------------------------------------------------------------------- ids
 
-const PREFIX: Partial<Record<GameId, string>> = { topx: 'topx-', risk: 'risk-', match: 'match-', map: 'map-', timeline: 'zeit-', bluff: 'bluff-' };
+const PREFIX: Partial<Record<GameId, string>> = { topx: 'topx-', risk: 'risk-', match: 'match-', map: 'map-', timeline: 'zeit-', bluff: 'bluff-', picture: 'bild-' };
 
 /** Neue id aus dem Titel, mit dem üblichen Präfix des Spiels, eindeutig gegenüber `taken`. */
 export function makeId(title: string, game: GameId, taken: Set<string>): string {

@@ -141,7 +141,22 @@ export const PROMPTS: Category = {
   ],
 };
 
-const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES, PROMPTS];
+export const PICTURE: Category = {
+  kind: 'picture',
+  id: 'bild-zimmer',
+  title: 'Wohnzimmer',
+  question: 'Was fehlt hier?',
+  games: ['picture'],
+  source: 'Test',
+  image: 'k1-zimmer.jpg',
+  fields: [
+    { id: 'f1', answer: 'Lampe', x: 10, y: 10, w: 20, h: 15 },
+    { id: 'f2', answer: 'Katze', x: 50, y: 60, w: 12, h: 10 },
+    { id: 'f3', answer: 'Uhr', x: 80, y: 5, w: 20, h: 20 },
+  ],
+};
+
+const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES, PROMPTS, PICTURE];
 
 export const provider: CategoryProvider = {
   list: () => ALL,
@@ -247,6 +262,12 @@ export function startRisk(h: Harness, opts: { duplicates?: 'both' | 'none'; miss
 export function startBluff(h: Harness, opts: { targetId?: string; reveal?: RevealMode } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'bluff', categoryId: 'taglines', ...opts }));
+}
+
+/** Startet Spiel und Bilderrätsel-Runde. */
+export function startPicture(h: Harness, opts: { lives?: number } = {}): void {
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'picture', categoryId: 'bild-zimmer', ...opts }));
 }
 
 /** Startet Spiel und Morse-Runde mit dem gegebenen Wort. */

@@ -316,3 +316,45 @@ describe('validateCategory (Aufgabenliste)', () => {
   });
 });
 
+
+
+describe('validateCategory (Bild)', () => {
+  const base = {
+    id: 'bild-test',
+    title: 'Wohnzimmer',
+    question: 'Was fehlt hier?',
+    image: 'k7x2-wohnzimmer.jpg',
+    fields: [
+      { answer: 'Lampe', x: 10, y: 10, w: 20, h: 15 },
+      { answer: 'Katze', x: 50.5, y: 60, w: 12.5, h: 10 },
+      { answer: 'Uhr', x: 80, y: 5, w: 20, h: 20 },
+    ],
+  };
+
+  test('akzeptiert ein Bild, games ist standardmäßig picture, Felder bekommen IDs in Reihenfolge', () => {
+    const c = validateCategory(base, 'f');
+    expect(c.kind).toBe('picture');
+    if (c.kind !== 'picture') return;
+    expect(c.games).toEqual(['picture']);
+    expect(c.image).toBe('k7x2-wohnzimmer.jpg');
+    expect(c.original).toBeUndefined();
+    expect(c.fields.map((f) => f.id)).toEqual(['f1', 'f2', 'f3']);
+    expect(c.fields[1]).toEqual({ id: 'f2', answer: 'Katze', x: 50.5, y: 60, w: 12.5, h: 10 });
+    const withOriginal = validateCategory({ ...base, original: 'https://example.org/orig.png' }, 'f');
+    if (withOriginal.kind !== 'picture') throw new Error();
+    expect(withOriginal.original).toBe('https://example.org/orig.png');
+  });
+
+  test('lehnt Fehler ab', () => {
+    expect(() => validateCategory({ ...base, fields: base.fields.slice(0, 1) }, 'f')).toThrow(/mindestens 2/);
+    expect(() => validateCategory({ ...base, image: '../etc/passwd' }, 'f')).toThrow(/image/);
+    expect(() => validateCategory({ ...base, image: 'bild.gif' }, 'f')).toThrow(/image/);
+    expect(() => validateCategory({ ...base, original: 'Groß.jpg' }, 'f')).toThrow(/original/);
+    expect(() => validateCategory({ ...base, fields: [...base.fields.slice(0, 2), { answer: ' ', x: 1, y: 1, w: 1, h: 1 }] }, 'f')).toThrow(/answer/);
+    expect(() => validateCategory({ ...base, fields: [...base.fields.slice(0, 2), { answer: 'X', x: 90, y: 1, w: 20, h: 1 }] }, 'f')).toThrow(/Rechteck/);
+    expect(() => validateCategory({ ...base, fields: [...base.fields.slice(0, 2), { answer: 'X', x: 1, y: 1, w: 0, h: 1 }] }, 'f')).toThrow(/Rechteck/);
+    expect(() => validateCategory({ ...base, fields: [...base.fields.slice(0, 2), { answer: 'X', x: '1', y: 1, w: 1, h: 1 }] }, 'f')).toThrow(/keine Zahl/);
+    expect(() => validateCategory({ ...base, games: ['sort'] }, 'f')).toThrow(/picture/);
+    expect(() => validateCategory({ id: 'x', title: 'T', question: 'Q', topLabel: 'a', bottomLabel: 'b', order: 'desc', games: ['picture'], items: [] }, 'f')).toThrow(/fields/);
+  });
+});

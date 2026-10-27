@@ -51,6 +51,9 @@ export type ClientMsg =
   | { type: 'confirm'; turnNo: number }
   | { type: 'guess'; turnNo: number; text: string }
   | { type: 'judge'; turnNo: number; correct: boolean; rank?: number }
+  /** Bilderrätsel: Feld wählen und Lösung tippen, der Host prüft. */
+  | { type: 'picture_guess'; turnNo: number; fieldId: string; text: string }
+  | { type: 'picture_judge'; turnNo: number; correct: boolean }
   | { type: 'place_pin'; lat: number; lng: number }
   | { type: 'place_year'; year: number }
   | { type: 'confirm_pin' }

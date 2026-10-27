@@ -127,3 +127,51 @@ describe('Editor: Aufgabenliste (Bluff)', () => {
   });
 });
 
+describe('Bilderrätsel im Editor', () => {
+  test('Entwurf aus Rohdaten und zurück, Felder mit einer Nachkommastelle', () => {
+    const raw = {
+      id: 'bild-zimmer',
+      title: 'Wohnzimmer',
+      question: 'Was fehlt hier?',
+      games: ['picture'],
+      image: 'k1-zimmer.jpg',
+      original: 'k1-orig.jpg',
+      fields: [
+        { answer: 'Lampe', x: 10, y: 10.25, w: 20, h: 15 },
+        { answer: 'Katze', x: 50, y: 60, w: 12, h: 10 },
+      ],
+    };
+    const draft = draftFromRaw(raw);
+    expect(draft.kind).toBe('picture');
+    expect(draft.meta.image).toBe('k1-zimmer.jpg');
+    expect(draft.meta.original).toBe('k1-orig.jpg');
+    expect(draft.rows).toEqual([
+      { answer: 'Lampe', x: '10', y: '10.25', w: '20', h: '15' },
+      { answer: 'Katze', x: '50', y: '60', w: '12', h: '10' },
+    ]);
+    const back = draftToRaw(draft, 'bild-zimmer');
+    expect(back).toMatchObject({ games: ['picture'], image: 'k1-zimmer.jpg', original: 'k1-orig.jpg' });
+    expect(back.fields).toEqual([
+      { answer: 'Lampe', x: 10, y: 10.3, w: 20, h: 15 },
+      { answer: 'Katze', x: 50, y: 60, w: 12, h: 10 },
+    ]);
+    expect(validate(back, 'bild-zimmer')).toBeNull();
+
+    draft.meta.original = '';
+    draft.rows.push({ answer: '', x: '1', y: '1', w: '5', h: '5' });
+    const again = draftToRaw(draft, 'bild-zimmer');
+    expect(again.original).toBeUndefined();
+    expect(validate(again, 'bild-zimmer')).toMatch(/Feld 3/);
+    expect(cellIssues('picture', draft.rows)[2]).toEqual({ answer: 'fehlt' });
+    expect(cellIssues('picture', [{ answer: 'Fenster', x: '1', y: '1', w: '5', h: '5' }, { answer: 'Fenster', x: '9', y: '1', w: '5', h: '5' }])).toEqual([{}, {}]);
+  });
+
+  test('neuer Entwurf hat kein Bild und keine Leerzeilen, id mit Präfix', () => {
+    const draft = newDraft('picture');
+    expect(draft.rows).toEqual([]);
+    expect(draft.meta.question).toBe('Was fehlt hier?');
+    draft.meta.title = 'Garten';
+    expect(validate(draftToRaw(draft, 'bild-x'), 'bild-x')).toMatch(/image/);
+    expect(makeId('Mein Garten', 'picture', new Set())).toBe('bild-mein-garten');
+  });
+});

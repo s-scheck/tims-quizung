@@ -33,6 +33,8 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'reveal_player', playerId: 'p1' })).toBe(true);
     expect(isClientMsg({ type: 'reveal_solution' })).toBe(true);
     expect(isClientMsg({ type: 'reveal_all' })).toBe(true);
+    expect(isClientMsg({ type: 'picture_guess', turnNo: 2, fieldId: 'f3', text: 'Eiffelturm' })).toBe(true);
+    expect(isClientMsg({ type: 'picture_judge', turnNo: 2, correct: false })).toBe(true);
     expect(isClientMsg({ type: 'guess', turnNo: 2, text: 'Haaland' })).toBe(true);
     expect(isClientMsg({ type: 'judge', turnNo: 2, correct: true, rank: 3 })).toBe(true);
     expect(isClientMsg({ type: 'judge', turnNo: 2, correct: false })).toBe(true);
@@ -59,6 +61,8 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'choose_category', gameId: 'map', categoryId: 'x', borders: 'ja' })).toBe(false);
     expect(isClientMsg({ type: 'choose_category', gameId: 'map', categoryId: 'x', reveal: 'slow' })).toBe(false);
     expect(isClientMsg({ type: 'reveal_player' })).toBe(false);
+    expect(isClientMsg({ type: 'picture_guess', turnNo: 2, fieldId: 'f3', text: '' })).toBe(false);
+    expect(isClientMsg({ type: 'picture_judge', turnNo: 2 })).toBe(false);
     expect(isClientMsg({ type: 'submit_scores', scores: { a: 1.5 } })).toBe(false);
     expect(isClientMsg({ type: 'submit_scores', scores: { a: 5000 } })).toBe(false);
     expect(isClientMsg({ type: 'set_settings', timerSeconds: 45 })).toBe(false);

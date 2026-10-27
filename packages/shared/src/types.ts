@@ -12,8 +12,8 @@ export type Phase =
   | 'scoreboard'
   | 'finished';
 
-export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse';
-export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse'];
+export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse' | 'picture';
+export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture'];
 /** Auflösung: alles auf einmal („auto“) oder vom Moderator Stück für Stück aufgedeckt („show“). */
 export type RevealMode = 'auto' | 'show';
 export const REVEAL_MODES: readonly RevealMode[] = ['auto', 'show'];
@@ -453,6 +453,57 @@ export interface MorseRoundView extends BaseRoundView {
   privileged?: boolean;
 }
 
+// ------------------------------------------------------------ Bilderrätsel
+
+/** Kategorie eines Bilderrätsels: ein Bild mit verdeckten Stellen. */
+export interface PictureCategoryInfo {
+  id: string;
+  title: string;
+  question: string;
+  source?: string;
+}
+
+/** Ein verdecktes Feld im Bild. Lage und Größe in Prozent der Bildmaße. */
+export interface PictureFieldView {
+  id: string;
+  /** Laufende Nummer ab 1, in Reihenfolge der Liste. */
+  number: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  solved: boolean;
+  solvedBy?: string;
+  /** Nur gelöst, in der Sicht des Moderators oder ab der Auflösung. */
+  answer?: string;
+}
+
+export interface PictureGuessView {
+  by: string;
+  fieldId: string;
+  text: string;
+  status: GuessStatus;
+  resolveAt: number | null;
+  applyAt: number | null;
+}
+
+export interface PictureRoundView extends BaseRoundView {
+  game: 'picture';
+  category: PictureCategoryInfo;
+  /** Adresse des angezeigten Bilds. */
+  image: string;
+  /** Adresse des Originals, wenn das angezeigte Bild bearbeitet wurde: Aufdecken zeigt dann den Originalausschnitt. */
+  original?: string;
+  fields: PictureFieldView[];
+  lives: Record<string, number>;
+  maxLives: number;
+  hits: Record<string, number>;
+  wrongGuesses: { by: string; fieldId: string; text: string }[];
+  guess: PictureGuessView | null;
+  /** Nur in der Sicht des moderierenden Hosts: alle Antworten sind sichtbar. */
+  privileged?: boolean;
+}
+
 export type RoundView =
   | SortRoundView
   | TopXRoundView
@@ -461,7 +512,8 @@ export type RoundView =
   | TimelineRoundView
   | RiskRoundView
   | BluffRoundView
-  | MorseRoundView;
+  | MorseRoundView
+  | PictureRoundView;
 
 export interface RoundResult {
   gameId: GameId;
@@ -504,7 +556,7 @@ export type EditorStatus = 'builtin' | 'modified' | 'custom' | 'hidden';
 export interface EditorEntry {
   id: string;
   title: string;
-  kind: 'ranked' | 'pairs' | 'places' | 'events' | 'prompts';
+  kind: 'ranked' | 'pairs' | 'places' | 'events' | 'prompts' | 'picture';
   games: GameId[];
   count: number;
   status: EditorStatus;

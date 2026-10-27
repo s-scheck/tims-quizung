@@ -8,6 +8,7 @@ import {
   type LatLngBounds,
   type MapCategoryInfo,
   type MatchCategoryInfo,
+  type PictureCategoryInfo,
   type SortOrder,
   type TimelineCategoryInfo,
 } from '@quiz/shared';
@@ -90,7 +91,44 @@ export interface PromptsCategory extends BluffCategoryInfo {
   prompts: Prompt[];
 }
 
-export type Category = RankedCategory | PairsCategory | PlacesCategory | EventsCategory | PromptsCategory;
+/** Ein verdecktes Feld im Bild, Lage und Größe in Prozent der Bildmaße. */
+export interface PictureField {
+  /** `f1`, `f2`, … in Reihenfolge der Liste. */
+  id: string;
+  answer: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Bild mit verdeckten Stellen, für Bilderrätsel. */
+export interface PictureCategory extends PictureCategoryInfo {
+  kind: 'picture';
+  games: GameId[];
+  /** Dateiname in der Bildablage oder http(s)-Adresse. */
+  image: string;
+  /** Optionales Original, wenn `image` bearbeitet ist: Aufdecken zeigt den Originalausschnitt. */
+  original?: string;
+  fields: PictureField[];
+}
+
+export type Category = RankedCategory | PairsCategory | PlacesCategory | EventsCategory | PromptsCategory | PictureCategory;
+
+/** Dateinamen in der Bildablage: klein, ohne Pfad, mit Bildendung. */
+export const IMAGE_NAME_PATTERN = /^[a-z0-9][a-z0-9._-]{0,119}\.(jpg|jpeg|png|webp|svg)$/;
+export const IMAGE_MAX_BYTES = 8 * 1024 * 1024;
+/** Erlaubte Upload-Typen mit ihrer Dateiendung. */
+export const IMAGE_TYPES: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/svg+xml': 'svg',
+};
+
+export function isImageRef(value: unknown): value is string {
+  return typeof value === 'string' && (IMAGE_NAME_PATTERN.test(value) || /^https?:\/\/\S+$/.test(value));
+}
 
 /** Jede Liste braucht mindestens zwei Einträge. Nach oben gibt es keine Grenze, die Daten bestimmen die Rundenlänge. */
 export const MIN_ENTRIES = 2;
@@ -137,6 +175,7 @@ export function validateCategory(raw: unknown, file: string): Category {
   if ('places' in raw) return validatePlaces(raw, file);
   if ('events' in raw) return validateEvents(raw, file);
   if ('prompts' in raw) return validatePrompts(raw, file);
+  if ('fields' in raw) return validatePicture(raw, file);
   return validateRanked(raw, file);
 }
 
@@ -169,6 +208,7 @@ function validateRanked(raw: Record<string, unknown>, file: string): RankedCateg
   if (games.includes('map')) throw new CategoryValidationError(file, 'Karte braucht eine Ortsliste mit "places"');
   if (games.includes('timeline')) throw new CategoryValidationError(file, 'Zeitstrahl braucht eine Ereignisliste mit "events"');
   if (games.includes('bluff')) throw new CategoryValidationError(file, 'Bluff braucht eine Aufgabenliste mit "prompts"');
+  if (games.includes('picture')) throw new CategoryValidationError(file, 'Bilderrätsel braucht ein Bild mit "fields"');
   const forSort = games.includes('sort');
   const forTopX = games.includes('topx');
 
@@ -420,5 +460,56 @@ function validatePrompts(raw: Record<string, unknown>, file: string): PromptsCat
     source: typeof raw.source === 'string' ? raw.source : undefined,
     games,
     prompts,
+  };
+}
+
+
+function readPercent(raw: Record<string, unknown>, key: string, file: string, idx: number): number {
+  const v = raw[key];
+  if (typeof v !== 'number' || !Number.isFinite(v)) throw new CategoryValidationError(file, `fields[${idx}]: ${key} ist keine Zahl`);
+  return v;
+}
+
+function validatePicture(raw: Record<string, unknown>, file: string): PictureCategory {
+  const id = readId(raw, file);
+  const title = requireString(raw, 'title', file);
+  const question = requireString(raw, 'question', file);
+  const games = readGames(raw, file, ['picture']);
+  if (!games.includes('picture')) throw new CategoryValidationError(file, 'Bilder gehören zu "picture"');
+  if (games.some((g) => g !== 'picture')) throw new CategoryValidationError(file, 'Bilder taugen nur für "picture"');
+  if (!isImageRef(raw.image)) throw new CategoryValidationError(file, 'image fehlt oder ist kein Dateiname bzw. keine http-Adresse');
+  if (raw.original !== undefined && !isImageRef(raw.original)) {
+    throw new CategoryValidationError(file, 'original ist kein Dateiname bzw. keine http-Adresse');
+  }
+
+  const fieldsRaw = raw.fields;
+  if (!Array.isArray(fieldsRaw)) throw new CategoryValidationError(file, 'fields fehlt');
+  if (fieldsRaw.length < MIN_ENTRIES) throw new CategoryValidationError(file, `mindestens ${MIN_ENTRIES} Felder nötig, ${fieldsRaw.length} vorhanden`);
+
+  const fields: PictureField[] = fieldsRaw.map((f, idx) => {
+    if (!isRecord(f)) throw new CategoryValidationError(file, `fields[${idx}] ist kein Objekt`);
+    const answer = typeof f.answer === 'string' ? f.answer.trim() : '';
+    if (!answer) throw new CategoryValidationError(file, `fields[${idx}]: answer fehlt oder ist leer`);
+    const x = readPercent(f, 'x', file, idx);
+    const y = readPercent(f, 'y', file, idx);
+    const w = readPercent(f, 'w', file, idx);
+    const h = readPercent(f, 'h', file, idx);
+    if (x < 0 || y < 0 || w <= 0 || h <= 0 || x + w > 100.01 || y + h > 100.01) {
+      throw new CategoryValidationError(file, `fields[${idx}]: Rechteck liegt nicht im Bild (Prozentwerte 0 bis 100)`);
+    }
+    return { id: `f${idx + 1}`, answer, x, y, w, h };
+  });
+
+  const source = typeof raw.source === 'string' && raw.source.trim() ? raw.source : undefined;
+  return {
+    kind: 'picture',
+    id,
+    title,
+    question,
+    games,
+    image: raw.image,
+    ...(typeof raw.original === 'string' ? { original: raw.original } : {}),
+    fields,
+    ...(source !== undefined ? { source } : {}),
   };
 }

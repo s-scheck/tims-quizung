@@ -26,6 +26,7 @@
   import StatusBadges from '../components/editor/StatusBadges.svelte';
   import Toast from '../components/Toast.svelte';
   import WorldMap, { type MapMarker } from '../components/WorldMap.svelte';
+  import PictureEditor from '../components/editor/PictureEditor.svelte';
 
   const ORDER_OPTIONS: [string, string][] = [
     ['desc', 'Größter Wert zuerst'],
@@ -181,6 +182,42 @@
     return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? { lat, lng } : null;
   };
 
+  // --------------------------------------------------------------- Bild
+
+  let uploading = $state<'image' | 'original' | null>(null);
+
+  const imageUrl = (name: string) => (/^https?:\/\//.test(name) ? name : `/images/${name}`);
+
+  function imageRatio(url: string): Promise<number | null> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img.naturalWidth > 0 ? img.naturalWidth / img.naturalHeight : null);
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  }
+
+  async function uploadPicture(kind: 'image' | 'original', input: HTMLInputElement) {
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || uploading) return;
+    uploading = kind;
+    try {
+      const res = await editorApi.uploadImage(file);
+      draft.meta[kind] = res.name;
+      toasts.success(kind === 'image' ? 'Bild hochgeladen. Jetzt Felder zeichnen.' : 'Original hochgeladen.');
+      const other = draft.meta[kind === 'image' ? 'original' : 'image'];
+      if (other) {
+        const [a, b] = await Promise.all([imageRatio(imageUrl(res.name)), imageRatio(imageUrl(other))]);
+        if (a && b && Math.abs(a - b) / b > 0.02) toasts.error('Achtung: Bild und Original haben unterschiedliche Proportionen, die Ausschnitte passen dann nicht.');
+      }
+    } catch (e) {
+      toasts.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      uploading = null;
+    }
+  }
+
   const markers = $derived<MapMarker[]>(
     draft.kind !== 'places'
       ? []
@@ -287,7 +324,7 @@
       <div class="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 class="text-lg font-black">
-            {draft.kind === 'pairs' ? 'Paare' : draft.kind === 'places' ? 'Orte' : draft.kind === 'events' ? 'Ereignisse' : draft.kind === 'prompts' ? 'Aufgaben' : 'Einträge'}
+            {draft.kind === 'pairs' ? 'Paare' : draft.kind === 'places' ? 'Orte' : draft.kind === 'events' ? 'Ereignisse' : draft.kind === 'prompts' ? 'Aufgaben' : draft.kind === 'picture' ? 'Felder' : 'Einträge'}
             <span class="text-slate-500">{filledRows}</span>
           </h2>
           <p class="text-xs text-slate-500">
@@ -295,6 +332,7 @@
             {:else if draft.kind === 'events'}Ein Jahr oder eine Spanne. Vor Christus als negative Zahl oder "44 v. Chr.".
             {:else if draft.kind === 'pairs'}Jede Karte gehört zu genau einem Ziel. Ziele müssen eindeutig sein.
             {:else if draft.kind === 'prompts'}Jede Aufgabe mit ihrer echten Antwort. Die Spieler erfinden später eigene Antworten dazu, also muss die echte wirklich stimmen.
+            {:else if draft.kind === 'picture'}Bild hochladen, dann Felder im Bild aufziehen und zu jedem die Antwort eintragen. Die Nummer folgt der Reihenfolge der Liste.
             {:else if needsSorting}Die Reihenfolge ist der Platz: Platz 1 zuerst. Zahlen wie "17.098.246" oder "1.450,9" gehen.
             {:else}Reihenfolge egal, Werte müssen eindeutig sein. Zahlen wie "17.098.246" oder "1.450,9" gehen.{/if}
           </p>
@@ -320,6 +358,47 @@
             </p>
           </div>
         </div>
+      {:else if draft.kind === 'picture'}
+        <div class="card space-y-3">
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="btn-secondary cursor-pointer px-4 py-2 text-sm {uploading ? 'opacity-60' : ''}">
+              {uploading === 'image' ? 'Lade hoch …' : draft.meta.image ? 'Bild ersetzen' : 'Bild hochladen'}
+              <input type="file" class="hidden" accept="image/jpeg,image/png,image/webp,image/svg+xml" disabled={!editable || !!uploading} onchange={(e) => uploadPicture('image', e.currentTarget)} />
+            </label>
+            {#if draft.meta.image}<span class="font-mono text-xs text-slate-500">{draft.meta.image}</span>{/if}
+            <label class="btn-ghost cursor-pointer text-sm {uploading ? 'opacity-60' : ''}">
+              {uploading === 'original' ? 'Lade hoch …' : draft.meta.original ? 'Original ersetzen' : 'Originalbild dazu (optional)'}
+              <input type="file" class="hidden" accept="image/jpeg,image/png,image/webp,image/svg+xml" disabled={!editable || !!uploading} onchange={(e) => uploadPicture('original', e.currentTarget)} />
+            </label>
+            {#if draft.meta.original}
+              <span class="font-mono text-xs text-slate-500">{draft.meta.original}</span>
+              <button type="button" class="btn-ghost text-xs text-rose-300" onclick={() => (draft.meta.original = '')}>Original entfernen</button>
+            {/if}
+          </div>
+          <p class="text-xs text-slate-500">
+            Ohne Original legt die App undurchsichtige Kästchen über die Felder. Mit Original zeigst du ein bearbeitetes Bild, in dem die Dinge fehlen, und beim Aufdecken erscheint der Originalausschnitt.
+            Beide Bilder brauchen dieselben Proportionen. Bilder vorher verkleinern, höchstens 8 MB.
+          </p>
+        </div>
+        {#if draft.meta.image}
+          <div class="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <PictureEditor image={imageUrl(draft.meta.image)} original={draft.meta.original ? imageUrl(draft.meta.original) : ''} bind:rows={draft.rows} bind:selected />
+            <ol class="space-y-2 lg:sticky lg:top-4 lg:self-start">
+              {#each draft.rows as row, i (i)}
+                <li class="flex items-center gap-2 rounded-xl border-2 px-3 py-2 {selected === i ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-800'}">
+                  <button type="button" class="w-7 shrink-0 rounded-md bg-slate-800 py-0.5 text-center font-mono text-sm font-bold" aria-label="Feld {i + 1} wählen" onclick={() => (selected = selected === i ? null : i)}>{i + 1}</button>
+                  <input class="input flex-1 px-3 py-2 text-sm {issues[i]?.answer ? 'border-rose-500' : ''}" type="text" placeholder="Antwort" bind:value={row.answer} onfocus={() => (selected = i)} />
+                  <button type="button" class="btn-ghost px-2 text-xs text-rose-300" aria-label="Feld {i + 1} löschen" onclick={() => { draft.rows.splice(i, 1); selected = null; }}>×</button>
+                </li>
+              {/each}
+              {#if draft.rows.length === 0}
+                <li class="text-sm text-slate-500">Noch kein Feld. Zieh im Bild ein Rechteck auf.</li>
+              {/if}
+            </ol>
+          </div>
+        {:else}
+          <p class="text-sm text-slate-500">Lade zuerst ein Bild hoch.</p>
+        {/if}
       {:else}
         <EditTable columns={COLUMNS[draft.kind]} bind:rows={draft.rows} {issues} bind:selected noun={draft.kind === 'pairs' ? 'Paar' : draft.kind === 'events' ? 'Ereignis' : draft.kind === 'prompts' ? 'Aufgabe' : 'Eintrag'} />
       {/if}

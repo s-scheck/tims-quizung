@@ -2,6 +2,7 @@ import { serve, type Server } from 'bun';
 import { CATEGORIES_DIR, CategoryStore } from '@quiz/content';
 import './games/index.ts';
 import { editorRoutes } from './http/editor.ts';
+import { imageRoutes } from './http/images.ts';
 import { createStaticHandler } from './http/static.ts';
 import { RoomRegistry } from './rooms/registry.ts';
 import type { CategoryProvider } from './rooms/room.ts';
@@ -54,6 +55,7 @@ export function createServer(opts: ServerOptions): QuizServer {
     hostname: opts.hostname,
     routes: {
       ...editorRoutes(store),
+      ...imageRoutes(opts.dataDir ?? null),
       '/health': () => Response.json({ ok: true, rooms: registry.size, uptime: Math.round(process.uptime()) }),
       '/ws': (req: Request, srv: Server<WsData>) => {
         const upgraded = srv.upgrade(req, {

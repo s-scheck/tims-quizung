@@ -42,7 +42,7 @@
       const rank = (r.ranking ?? []).indexOf(entry) + 1;
       return `${rank}. Platz, ${entry.distanceYears === 0 ? 'Treffer' : `${formatYearDistance(entry.distanceYears)} daneben`}`;
     }
-    if (r.game === 'topx' || r.game === 'match') {
+    if (r.game === 'topx' || r.game === 'match' || r.game === 'picture') {
       const hits = r.hits[id] ?? 0;
       const lives = r.lives[id] ?? 0;
       const hitText = `${hits} Treffer`;

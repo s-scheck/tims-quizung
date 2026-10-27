@@ -41,7 +41,9 @@ export function toView(room: Room, viewerId: string | null): RoomView {
                 ? c.events.length
                 : c.kind === 'prompts'
                   ? c.prompts.length
-                  : c.items.length,
+                  : c.kind === 'picture'
+                    ? c.fields.length
+                    : c.items.length,
         played: room.playedCategoryIds.includes(c.id),
         games: [...c.games],
       };

@@ -70,6 +70,15 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 
 Die Kartendaten stammen von [Natural Earth](https://www.naturalearthdata.com/) (gemeinfrei) und liegen unter `apps/web/public/geo/`. Die Karte selbst rendert [Leaflet](https://leafletjs.com/) ohne Kacheln, es wird kein externer Dienst angesprochen.
 
+## Spielregeln „Bilderrätsel"
+
+- Alle sehen ein gemeinsames Bild mit nummerierten Stellen, die verdeckt sind oder fehlen. Das Bild lässt sich mit zwei Fingern oder dem Mausrad zoomen und verschieben.
+- Wer dran ist, tippt ein Feld im Bild oder seine Nummer an und schreibt, was dort fehlt. Alle sehen Nummer und Text sofort.
+- Der Host moderiert bei diesem Spiel immer, auch wenn er laut Lobby mitspielt: Er sieht die Antworten und entscheidet richtig oder falsch.
+- Richtig deckt die Stelle auf, die Antwort steht am Feld, der Nächste ist dran. Falsch kostet ein Leben, die Stelle bleibt verdeckt und der Nächste darf sie versuchen. Leben legt der Host vor der Runde fest.
+- Die Runde endet, wenn alle Felder gelöst sind, keine Leben mehr da sind (Host-Entscheidung) oder der Host die Kategorie beendet. Die Auflösung zeigt alle Antworten, Treffer je Spieler stehen in der Punkteeingabe.
+- Zwei Darstellungen aus demselben Format: Nur ein Bild → die App legt nummerierte Kästchen über die Felder. Bearbeitetes Bild plus Original → gestrichelte Rahmen mit Nummer, Aufdecken zeigt den Originalausschnitt.
+
 ## Show-Auflösung
 
 Bei Karte, Zeitstrahl, No Risk No Fun und Bluff wählt ein moderierender Host vor jeder Runde im Kategorie-Picker zwischen „Automatisch“ (Auflösung wie gewohnt, alles auf einmal) und „Show“. Die letzte Wahl bleibt im Raum vorausgewählt. Spielt der Host mit, gibt es nur „Automatisch“.
@@ -204,6 +213,22 @@ Für Bluff gibt es Aufgabenlisten mit echten Antworten:
 ```
 
 Regeln: mindestens 2 Aufgaben, nach oben offen, Namen eindeutig, Antwort nicht leer. Dateien beginnen mit `bluff-`. Die mitgelieferten Sublines sind nach Kinoplakaten und Verleihtexten notiert, bitte vor dem ersten Abend einmal gegenlesen.
+
+Für Bilderrätsel gibt es Bilder mit Feldern in Prozent der Bildmaße:
+
+```json
+{
+  "id": "bild-wohnzimmer",
+  "title": "Wohnzimmer",
+  "question": "Was fehlt hier?",
+  "games": ["picture"],
+  "image": "k7x2-wohnzimmer.jpg",
+  "original": "k7x2-wohnzimmer-original.jpg",
+  "fields": [{ "answer": "Lampe", "x": 10, "y": 10, "w": 20, "h": 15 }]
+}
+```
+
+Regeln: mindestens 2 Felder, Antwort nicht leer, `x`, `y`, `w`, `h` in Prozent (0 bis 100, das Rechteck muss im Bild liegen). `image` ist ein Dateiname aus der Bildablage `data/images` (Upload im Editor) oder eine http-Adresse, `original` ist optional. Dateien beginnen mit `bild-`. Am einfachsten geht das im Editor: Bild hochladen, Felder im Bild aufziehen, Antworten eintragen.
 
 Für Top X kommt `"games": ["topx"]` dazu (Standard ist `["sort"]`, beides zusammen geht auch). Top-X-Listen müssen echte Top-Listen ohne Gleichstand über die Listengrenze sein, dürfen kurz sein und Gleichstände enthalten. Pro Eintrag helfen `aliases` beim Abgleich, etwa `["Mbappe", "Mbappé"]`; ein eindeutiger Nachname trifft automatisch. Dateien beginnen mit `topx-`.
 

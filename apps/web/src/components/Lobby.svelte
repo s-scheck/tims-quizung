@@ -139,6 +139,11 @@
     <p>Die drei Schnellsten bekommen 3, 2 und 1 Punkt. Auf Wunsch gibt der Host den Code oder die Morsetabelle frei.</p>
   </div>
   <div class="card space-y-2 text-sm text-slate-400">
+    <h3 class="font-semibold text-slate-200">Bilderrätsel</h3>
+    <p>Alle sehen ein Bild mit nummerierten, verdeckten Stellen. Wer dran ist, wählt eine Nummer und tippt, was dort fehlt. Der Host prüft und sieht die Antworten.</p>
+    <p>Richtig deckt die Stelle auf, falsch kostet ein Leben. Bilder und Felder legst du im Editor an.</p>
+  </div>
+  <div class="card space-y-2 text-sm text-slate-400">
     <h3 class="font-semibold text-slate-200">Dabeibleiben und Beenden</h3>
     <p>Wer kurz in eine andere App wechselt, bleibt im Spiel und in der Zugreihenfolge. Ist er am Zug, läuft der Timer oder der Host überspringt den Zug.</p>
     <p>Bei Sortieren, Top X und Zuordnen kann der Host eine Kategorie jederzeit beenden: Alle Werte werden aufgedeckt, Punkte gibt es wie gewohnt.</p>

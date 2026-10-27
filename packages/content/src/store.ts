@@ -34,17 +34,18 @@ export function kindOf(raw: Record<string, unknown>): CategoryKind {
   if ('places' in raw) return 'places';
   if ('events' in raw) return 'events';
   if ('prompts' in raw) return 'prompts';
+  if ('fields' in raw) return 'picture';
   return 'ranked';
 }
 
 function countOf(raw: Record<string, unknown>): number {
-  const list = raw.pairs ?? raw.places ?? raw.events ?? raw.prompts ?? raw.items;
+  const list = raw.pairs ?? raw.places ?? raw.events ?? raw.prompts ?? raw.fields ?? raw.items;
   return Array.isArray(list) ? list.length : 0;
 }
 
 function gamesOf(raw: Record<string, unknown>, kind: CategoryKind): GameId[] {
   if (Array.isArray(raw.games)) return raw.games.filter((g): g is GameId => (GAME_IDS as readonly unknown[]).includes(g));
-  return kind === 'pairs' ? ['match'] : kind === 'places' ? ['map'] : kind === 'events' ? ['timeline'] : kind === 'prompts' ? ['bluff'] : ['sort'];
+  return kind === 'pairs' ? ['match'] : kind === 'places' ? ['map'] : kind === 'events' ? ['timeline'] : kind === 'prompts' ? ['bluff'] : kind === 'picture' ? ['picture'] : ['sort'];
 }
 
 /** Prüft Rohdaten wie beim Laden. Wirft nicht, sondern liefert die Kategorie oder die erste Regelverletzung. */

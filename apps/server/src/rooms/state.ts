@@ -1,5 +1,5 @@
 import type { BluffStage, GuessStatus, MatchSelection, PlacementStatus, RiskRules, Selection } from '@quiz/shared';
-import type { Category, EventsCategory, PairsCategory, PlacesCategory, PromptsCategory, RankedCategory, TimelineEvent } from '@quiz/content';
+import type { Category, EventsCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, RankedCategory, TimelineEvent } from '@quiz/content';
 
 export interface Player {
   id: string;
@@ -240,4 +240,27 @@ export interface MorseRound extends BaseRound {
   tableShown: boolean;
 }
 
-export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound;
+// ------------------------------------------------------------ Bilderrätsel
+
+export interface PictureGuess {
+  by: string;
+  fieldId: string;
+  text: string;
+  status: 'judging' | 'correct' | 'wrong';
+  resolveAt: number | null;
+  applyAt: number | null;
+}
+
+export interface PictureRound extends BaseRound {
+  game: 'picture';
+  category: PictureCategory;
+  /** Feld-ID → Spieler, der es gelöst hat. */
+  solved: Record<string, string>;
+  lives: Record<string, number>;
+  maxLives: number;
+  hits: Record<string, number>;
+  wrongGuesses: { by: string; fieldId: string; text: string }[];
+  guess: PictureGuess | null;
+}
+
+export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound;

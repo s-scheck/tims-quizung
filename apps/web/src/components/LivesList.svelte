@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { MatchRoundView, RoomView, TopXRoundView } from '@quiz/shared';
+  import type { MatchRoundView, PictureRoundView, RoomView, TopXRoundView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
 
-  let { view, round, readonly = false }: { view: RoomView; round: TopXRoundView | MatchRoundView; readonly?: boolean } = $props();
+  let { view, round, readonly = false }: { view: RoomView; round: TopXRoundView | MatchRoundView | PictureRoundView; readonly?: boolean } = $props();
   const players = $derived(view.players.filter((p) => round.turnOrder.includes(p.id)));
 </script>
 

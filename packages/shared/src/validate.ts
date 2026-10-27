@@ -106,6 +106,10 @@ export function isClientMsg(x: unknown): x is ClientMsg {
       );
     case 'reveal_player':
       return isStr(x.playerId, 100);
+    case 'picture_guess':
+      return isInt(x.turnNo) && isStr(x.fieldId, 20) && isStr(x.text, GUESS_MAX_LENGTH) && x.text.trim().length > 0;
+    case 'picture_judge':
+      return isInt(x.turnNo) && typeof x.correct === 'boolean';
     case 'reveal_solution':
     case 'reveal_all':
       return true;

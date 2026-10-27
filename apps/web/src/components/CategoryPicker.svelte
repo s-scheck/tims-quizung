@@ -38,7 +38,8 @@
   ];
   /** Bei Karte und Zeitstrahl als Moderator: gewählte Sammlung, deren Ziele gerade zur Wahl stehen. */
   let targetPickFor = $state<string | null>(null);
-  const usesLives = $derived(gameId === 'topx' || gameId === 'match');
+  const usesLives = $derived(gameId === 'topx' || gameId === 'match' || gameId === 'picture');
+  const isPicture = $derived(gameId === 'picture');
   const isMap = $derived(gameId === 'map');
   const isRisk = $derived(gameId === 'risk');
   /** Show-Auflösung gibt es nur bei den gleichzeitigen Spielen und nur, wenn der Host moderiert. */
@@ -129,6 +130,11 @@
       </div>
     {/if}
 
+    {#if isPicture}
+      <p class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+        Beim Bilderrätsel moderierst du immer: Du siehst die Antworten und prüfst jeden Tipp, auch wenn du laut Lobby mitspielst. Bilder legst du im Editor an.
+      </p>
+    {/if}
     {#if hasShow}
       <div class="card flex flex-wrap items-center justify-between gap-3">
         <div class="min-w-0 flex-1">
@@ -273,7 +279,7 @@
               {#if c.played}<span class="badge shrink-0 bg-emerald-500/20 text-emerald-300">gespielt</span>{/if}
             </div>
             <span class="text-sm text-slate-400">{c.question}</span>
-            <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : c.games.includes('bluff') ? 'Aufgaben' : 'Karten'}</span>
+            <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : c.games.includes('bluff') ? 'Aufgaben' : c.games.includes('picture') ? 'Felder' : 'Karten'}</span>
           </button>
         {/each}
       </div>

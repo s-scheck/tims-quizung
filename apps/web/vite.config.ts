@@ -11,6 +11,7 @@ export default defineConfig({
       '/ws': { target: 'ws://127.0.0.1:3000', ws: true, changeOrigin: true },
       '/health': { target: 'http://127.0.0.1:3000', changeOrigin: true },
       '/api': { target: 'http://127.0.0.1:3000', changeOrigin: true },
+      '/images': { target: 'http://127.0.0.1:3000', changeOrigin: true },
     },
   },
   build: {

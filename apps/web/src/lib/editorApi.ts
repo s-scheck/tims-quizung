@@ -16,4 +16,10 @@ export const editorApi = {
     call<EditorDocument>(`${BASE}/${id}`, { method: 'PUT', body: JSON.stringify(raw), headers: { 'Content-Type': 'application/json' } }),
   remove: (id: string) => call<{ entry: EditorEntry | null }>(`${BASE}/${id}`, { method: 'DELETE' }),
   reset: (id: string) => call<{ entry: EditorEntry | null }>(`${BASE}/${id}/reset`, { method: 'POST' }),
+  /** Bild in die Ablage laden, Antwort ist der gespeicherte Dateiname. */
+  uploadImage: (file: File) => {
+    const form = new FormData();
+    form.set('file', file);
+    return call<{ name: string; url: string }>('/api/editor/images', { method: 'POST', body: form });
+  },
 };
