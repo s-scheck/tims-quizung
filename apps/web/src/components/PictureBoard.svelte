@@ -126,6 +126,7 @@
       flashId={guess?.status === 'correct' ? guess.fieldId : null}
       interactive={canGuess}
       large={readonly}
+      peek={!!round.privileged}
       onPick={pick}
     />
 

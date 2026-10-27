@@ -22,6 +22,7 @@
     flashId = null,
     interactive = false,
     large = false,
+    peek = false,
     onPick,
     class: className = '',
   }: {
@@ -38,6 +39,11 @@
     /** Offene Felder lassen sich antippen. Zoomen und Verschieben geht immer. */
     interactive?: boolean;
     large?: boolean;
+    /**
+     * Nur für den Moderator: Das geprüfte Feld darf beim Pulsieren durchscheinen.
+     * Für alle anderen pulsiert nur der Rahmen, sonst wäre die Lösung vor der Entscheidung zu sehen.
+     */
+    peek?: boolean;
     onPick?: (fieldId: string) => void;
     class?: string;
   } = $props();
@@ -200,7 +206,7 @@
             ? 'rounded-sm border-2 border-dashed border-amber-300/90 bg-amber-300/10'
             : 'rounded-sm border-2 border-slate-600 bg-slate-800'}
           {selected ? 'ring-4 ring-indigo-400' : ''}
-          {pending ? 'animate-pulse ring-4 ring-amber-400' : ''}
+          {pending ? (peek ? 'animate-pulse ring-4 ring-amber-400' : 'animate-ring') : ''}
           {flash ? 'animate-flash' : ''}
           {interactive && !f.solved ? 'cursor-pointer' : ''}"
         style="left:{f.x}%; top:{f.y}%; width:{f.w}%; height:{f.h}%; {f.solved ? cropStyle(f) : ''}"

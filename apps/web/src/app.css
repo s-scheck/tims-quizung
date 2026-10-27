@@ -20,6 +20,8 @@
   --animate-flash: quiz-hop 450ms ease-out, quiz-flash 700ms ease-out;
   --animate-shake: quiz-shake 500ms ease-in-out;
   --animate-pop: quiz-pop 250ms ease-out;
+  /* Pulsierender Rahmen, der die Deckkraft nicht anfasst: verdeckte Felder bleiben verdeckt. */
+  --animate-ring: quiz-ring 1.2s ease-in-out infinite;
 
   --color-slate-50: #111111;
   --color-slate-100: #1f1f1f;
@@ -178,6 +180,11 @@
   40% { transform: translateX(7px) rotate(1deg); }
   60% { transform: translateX(-4px); }
   80% { transform: translateX(4px); }
+}
+
+@keyframes quiz-ring {
+  0%, 100% { box-shadow: 0 0 0 4px rgb(255 150 0 / 0.95); }
+  50% { box-shadow: 0 0 0 10px rgb(255 150 0 / 0.35); }
 }
 
 @keyframes quiz-pop {
