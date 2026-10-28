@@ -13,6 +13,12 @@ import type { Room } from '../rooms/room.ts';
 import type { BaseRound } from '../rooms/state.ts';
 import { fail, OK, type Result } from '../rooms/result.ts';
 
+/** Läuft die aktuelle Runde mit Zugreihenfolge? Das Bilderrätsel entscheidet das je Runde. */
+export function isTurnBased(room: Room): boolean {
+  const t = room.game?.turnBased;
+  return typeof t === 'function' ? t(room) : t === true;
+}
+
 // ------------------------------------------------------------ Rundenstart
 
 /**
@@ -182,7 +188,7 @@ export function removePlayerFromRound(room: Room, playerId: string): void {
   round.eliminated = round.eliminated.filter((id) => id !== playerId);
   game.onPlayerRemoved?.(room, playerId);
 
-  if (!game.turnBased) {
+  if (!isTurnBased(room)) {
     if (round.turnOrder.length === 0) toReveal(room);
     return;
   }
@@ -217,7 +223,7 @@ export function handleCommon(room: Room, playerId: string, msg: ClientMsg): Resu
       return toScoring(room, playerId);
     case 'end_round':
       // Die gleichzeitigen Spiele beenden ihre Runde selbst, hier nur das vorzeitige Ende der rundenbasierten.
-      return room.game?.turnBased ? endRoundEarly(room, playerId) : undefined;
+      return isTurnBased(room) ? endRoundEarly(room, playerId) : undefined;
     case 'reveal_player':
       return revealPlayer(room, playerId, msg.playerId);
     case 'reveal_solution':
@@ -240,7 +246,7 @@ function skipTurn(room: Room, playerId: string, turnNo: number): Result {
   const round = room.round;
   const game = room.game;
   if (room.phase !== 'playing' || !round || !game) return fail('invalid_action', 'Gerade wird nicht gespielt');
-  if (!game.turnBased) return fail('invalid_action', 'Dieses Spiel hat keine Züge');
+  if (!isTurnBased(room)) return fail('invalid_action', 'Dieses Spiel hat keine Züge');
   if (round.turnNo !== turnNo) return fail('invalid_action', 'Zug ist schon vorbei');
   if (game.isBusy(room)) return fail('invalid_action', 'Auflösung läuft noch');
   room.cancelTimer('turn');
@@ -253,7 +259,7 @@ function hostDecision(room: Room, playerId: string, cont: boolean): Result {
   if (!room.isHost(playerId)) return fail('not_host', 'Nur der Host entscheidet');
   const round = room.round;
   const game = room.game;
-  if (room.phase !== 'host_decision' || !round || !game || !game.turnBased) return fail('invalid_action', 'Keine Entscheidung offen');
+  if (room.phase !== 'host_decision' || !round || !game || !isTurnBased(room)) return fail('invalid_action', 'Keine Entscheidung offen');
   if (!cont) {
     toReveal(room);
     return OK;
@@ -294,7 +300,9 @@ function toScoring(room: Room, playerId: string): Result {
 /** Ist alles aufgedeckt? Ohne Show-Auflösung immer. Bei No Risk No Fun schließt die aufgedeckte Liste die Kategorie ab. */
 export function revealComplete(room: Room): boolean {
   const round = room.round;
-  const show = room.game?.showReveal;
+  const game = room.game;
+  if (game?.isRevealComplete && !game.isRevealComplete(room)) return false;
+  const show = game?.showReveal;
   if (!round?.reveal || !show) return true;
   if (!show.solutionRequired && round.reveal.solution) return true;
   const everyone = round.turnOrder.every((id) => (round.reveal!.players[id] ?? 0) >= show.steps);

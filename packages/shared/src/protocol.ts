@@ -1,4 +1,4 @@
-import type { FaceEffect, GameId, MorseSpeed, RevealMode, Role, RoomView, Selection, TimerSeconds } from './types.ts';
+import type { FaceEffect, GameId, MorseSpeed, PictureMode, RevealMode, Role, RoomView, Selection, TimerSeconds } from './types.ts';
 import type { RiskDuplicates, RiskMissPoints } from './rules/risk.ts';
 
 export const PROTOCOL_VERSION = 2;
@@ -50,6 +50,8 @@ export type ClientMsg =
       effect?: FaceEffect;
       level?: number;
       cols?: number;
+      /** Bilderrätsel: reihum oder alle gleichzeitig. */
+      mode?: PictureMode;
     }
   | ({ type: 'select'; turnNo: number; targetId?: string } & Selection)
   | { type: 'confirm'; turnNo: number }
@@ -58,6 +60,11 @@ export type ClientMsg =
   /** Bilderrätsel: Feld wählen und Lösung tippen, der Host prüft. */
   | { type: 'picture_guess'; turnNo: number; fieldId: string; text: string }
   | { type: 'picture_judge'; turnNo: number; correct: boolean }
+  /** Bilderrätsel „Alle gleichzeitig“: eigene Antwort je Feld (leer löscht), Fertigmeldung, Prüfung durch den Host. */
+  | { type: 'picture_fill'; fieldId: string; text: string }
+  | { type: 'picture_done' }
+  | { type: 'picture_step'; index: number }
+  | { type: 'picture_verdict'; playerId: string; fieldId: string; correct: boolean }
   /** Wer ist das?: Tipp, Prüfung durch den Host, neuer Effektzustand vom Host. */
   | { type: 'face_guess'; text: string }
   | { type: 'face_judge'; playerId: string; index: number; correct: boolean }

@@ -1,4 +1,4 @@
-import type { BluffStage, FaceEffectState, GuessStatus, MatchSelection, PlacementStatus, RiskRules, Selection } from '@quiz/shared';
+import type { BluffStage, FaceEffectState, GuessStatus, MatchSelection, PictureMode, PlacementStatus, RiskRules, Selection } from '@quiz/shared';
 import type { Category, EventsCategory, Face, FacesCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, RankedCategory, TimelineEvent } from '@quiz/content';
 
 export interface Player {
@@ -261,6 +261,18 @@ export interface PictureRound extends BaseRound {
   hits: Record<string, number>;
   wrongGuesses: { by: string; fieldId: string; text: string }[];
   guess: PictureGuess | null;
+  /** Reihum oder alle gleichzeitig. Die folgenden Felder zählen nur bei „Alle gleichzeitig“. */
+  mode: PictureMode;
+  startedAt: number;
+  /** Spieler → Feld → Text. */
+  answers: Record<string, Record<string, string>>;
+  /** Spieler → Zeitpunkt von „Fertig“. */
+  doneAt: Record<string, number>;
+  /** Spieler → Feld → Urteil, ab der Auflösung. */
+  verdicts: Record<string, Record<string, boolean>>;
+  /** Gerade geprüftes Feld und Zahl der aufgerufenen Felder, ab der Auflösung. */
+  judgeIndex: number;
+  judgeShown: number;
 }
 
 // ------------------------------------------------------------ Wer ist das?

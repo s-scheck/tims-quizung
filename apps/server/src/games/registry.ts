@@ -1,4 +1,4 @@
-import type { ClientMsg, FaceEffect, GameId, RiskDuplicates, RiskMissPoints, RoundView, RevealMode } from '@quiz/shared';
+import type { ClientMsg, FaceEffect, GameId, PictureMode, RiskDuplicates, RiskMissPoints, RoundView, RevealMode } from '@quiz/shared';
 import type { Category } from '@quiz/content';
 import type { Room } from '../rooms/room.ts';
 import type { Result } from '../rooms/result.ts';
@@ -17,6 +17,8 @@ export interface StartRoundOptions {
   effect?: FaceEffect;
   level?: number;
   cols?: number;
+  /** Bilderrätsel: reihum oder alle gleichzeitig. */
+  mode?: PictureMode;
 }
 
 /**
@@ -28,8 +30,8 @@ export interface GameModule {
   id: GameId;
   name: string;
   description: string;
-  /** Rundenbasiert mit Zugreihenfolge, Ausscheiden und Host-Entscheidung? Karte ist es nicht. */
-  turnBased: boolean;
+  /** Rundenbasiert mit Zugreihenfolge, Ausscheiden und Host-Entscheidung? Karte ist es nicht, das Bilderrätsel entscheidet je Runde. */
+  turnBased: boolean | ((room: Room) => boolean);
   /** Braucht eine Kategorie aus der Liste? Morse bekommt sein Wort vom Host. */
   needsCategory: boolean;
   /**
@@ -55,6 +57,8 @@ export interface GameModule {
   clearTurn(room: Room): void;
   /** Räumt vor der Auflösung auf. */
   onReveal(room: Room): void;
+  /** Ist die Auflösung so weit, dass Punkte eingetragen werden dürfen? Ohne den Hook immer. */
+  isRevealComplete?(room: Room): boolean;
 }
 
 const games = new Map<GameId, GameModule>();

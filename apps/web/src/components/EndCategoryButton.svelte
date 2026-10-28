@@ -3,7 +3,12 @@
   import { client } from '../lib/client.svelte.ts';
 
   /** Host beendet eine rundenbasierte Kategorie vorzeitig: Zwei-Schritt-Knopf, sendet `end_round`. */
-  let { view, readonly = false }: { view: RoomView; readonly?: boolean } = $props();
+  let {
+    view,
+    readonly = false,
+    label = 'Kategorie beenden',
+    title = 'Alle Werte werden aufgedeckt, Punkte wie gewohnt.',
+  }: { view: RoomView; readonly?: boolean; label?: string; title?: string } = $props();
 
   const canEnd = $derived(!readonly && client.isHost && (view.phase === 'playing' || view.phase === 'host_decision'));
   let confirming = $state(false);
@@ -25,9 +30,9 @@
 {#if canEnd}
   <button
     class="{confirming ? 'btn-danger' : 'btn-ghost'} shrink-0 px-3 py-2 text-xs"
-    title="Alle Werte werden aufgedeckt, Punkte wie gewohnt."
+    {title}
     onclick={click}
   >
-    {confirming ? 'Wirklich beenden?' : 'Kategorie beenden'}
+    {confirming ? 'Wirklich beenden?' : label}
   </button>
 {/if}

@@ -280,7 +280,7 @@ export function startBluff(h: Harness, opts: { targetId?: string; reveal?: Revea
 }
 
 /** Startet Spiel und Bilderrätsel-Runde. */
-export function startPicture(h: Harness, opts: { lives?: number } = {}): void {
+export function startPicture(h: Harness, opts: { lives?: number; mode?: 'turns' | 'all' } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'picture', categoryId: 'bild-zimmer', ...opts }));
 }

@@ -467,6 +467,35 @@ export interface MorseRoundView extends BaseRoundView {
 
 // ------------------------------------------------------------ Bilderrätsel
 
+/** Reihum mit Zugreihenfolge und Leben, oder alle gleichzeitig mit Prüfung am Ende. */
+export type PictureMode = 'turns' | 'all';
+export const PICTURE_MODES: readonly PictureMode[] = ['turns', 'all'];
+
+/** Stand eines Spielers im Modus „Alle gleichzeitig“. */
+export interface PictureProgressView {
+  /** Ausgefüllte Felder. */
+  filled: number;
+  /** Zeitpunkt von „Fertig“, null solange nicht gemeldet. */
+  doneAt: number | null;
+}
+
+/** Stand der Prüfung im Modus „Alle gleichzeitig“, nur ab der Auflösung. */
+export interface PictureJudgeView {
+  /** Feld, das der Host gerade prüft (Index in `fields`). */
+  index: number;
+  /** So viele Felder von vorn sind aufgerufen und für alle sichtbar. */
+  shown: number;
+  /** Alle Felder aufgerufen, Punkte dürfen eingetragen werden. */
+  complete: boolean;
+}
+
+export interface PictureResultView {
+  playerId: string;
+  /** Richtige Antworten unter den aufgerufenen Feldern. */
+  hits: number;
+  doneAt: number | null;
+}
+
 /** Kategorie eines Bilderrätsels: ein Bild mit verdeckten Stellen. */
 export interface PictureCategoryInfo {
   id: string;
@@ -514,6 +543,18 @@ export interface PictureRoundView extends BaseRoundView {
   guess: PictureGuessView | null;
   /** Nur in der Sicht des moderierenden Hosts: alle Antworten sind sichtbar. */
   privileged?: boolean;
+  mode: PictureMode;
+  /** Modus „Alle gleichzeitig“: Rundenstart und Fortschritt je Teilnehmer. */
+  startedAt?: number;
+  progress?: Record<string, PictureProgressView>;
+  /** Eigene Antworten des Betrachters je Feld. */
+  myAnswers?: Record<string, string>;
+  /** Antworten und Urteile aller Teilnehmer, nur aufgerufene Felder, ab der Auflösung. */
+  answers?: Record<string, Record<string, string>>;
+  verdicts?: Record<string, Record<string, boolean>>;
+  judge?: PictureJudgeView;
+  /** Nach Treffern, dann Fertig-Zeit; nicht Fertige zuletzt. */
+  results?: PictureResultView[];
 }
 
 // ------------------------------------------------------------ Wer ist das?

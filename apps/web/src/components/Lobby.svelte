@@ -140,8 +140,8 @@
   </div>
   <div class="card space-y-2 text-sm text-slate-400">
     <h3 class="font-semibold text-slate-200">Bilderrätsel</h3>
-    <p>Alle sehen ein Bild mit nummerierten, verdeckten Stellen. Wer dran ist, wählt eine Nummer und tippt, was dort fehlt. Der Host prüft und sieht die Antworten.</p>
-    <p>Richtig deckt die Stelle auf, falsch kostet ein Leben. Bilder und Felder legst du im Editor an.</p>
+    <p>Alle sehen ein Bild mit nummerierten, verdeckten Stellen. Reihum wählt einer eine Nummer und tippt, was dort fehlt: richtig deckt die Stelle auf, falsch kostet ein Leben.</p>
+    <p>Oder alle gleichzeitig: Jeder füllt jedes Feld aus und meldet sich fertig, der Host prüft am Ende Feld für Feld als Show. Punkte nach Treffern und Tempo. Bilder legst du im Editor an.</p>
   </div>
   <div class="card space-y-2 text-sm text-slate-400">
     <h3 class="font-semibold text-slate-200">Wer ist das?</h3>

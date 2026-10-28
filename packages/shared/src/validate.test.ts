@@ -35,6 +35,11 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'reveal_all' })).toBe(true);
     expect(isClientMsg({ type: 'picture_guess', turnNo: 2, fieldId: 'f3', text: 'Eiffelturm' })).toBe(true);
     expect(isClientMsg({ type: 'picture_judge', turnNo: 2, correct: false })).toBe(true);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'picture', categoryId: 'x', mode: 'all' })).toBe(true);
+    expect(isClientMsg({ type: 'picture_fill', fieldId: 'f1', text: '' })).toBe(true);
+    expect(isClientMsg({ type: 'picture_done' })).toBe(true);
+    expect(isClientMsg({ type: 'picture_step', index: 2 })).toBe(true);
+    expect(isClientMsg({ type: 'picture_verdict', playerId: 'p1', fieldId: 'f1', correct: true })).toBe(true);
     expect(isClientMsg({ type: 'choose_category', gameId: 'faces', categoryId: 'x', targetId: 'p', effect: 'tiles', cols: 6 })).toBe(true);
     expect(isClientMsg({ type: 'face_guess', text: 'Angela Merkel' })).toBe(true);
     expect(isClientMsg({ type: 'face_judge', playerId: 'p1', index: 0, correct: true })).toBe(true);
@@ -68,6 +73,10 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'reveal_player' })).toBe(false);
     expect(isClientMsg({ type: 'picture_guess', turnNo: 2, fieldId: 'f3', text: '' })).toBe(false);
     expect(isClientMsg({ type: 'picture_judge', turnNo: 2 })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'picture', categoryId: 'x', mode: 'race' })).toBe(false);
+    expect(isClientMsg({ type: 'picture_fill', fieldId: 'f1', text: 'x'.repeat(61) })).toBe(false);
+    expect(isClientMsg({ type: 'picture_step', index: -1 })).toBe(false);
+    expect(isClientMsg({ type: 'picture_verdict', playerId: 'p1', fieldId: 'f1' })).toBe(false);
     expect(isClientMsg({ type: 'choose_category', gameId: 'faces', categoryId: 'x', effect: 'swirl' })).toBe(false);
     expect(isClientMsg({ type: 'choose_category', gameId: 'faces', categoryId: 'x', level: 101 })).toBe(false);
     expect(isClientMsg({ type: 'face_guess', text: '  ' })).toBe(false);

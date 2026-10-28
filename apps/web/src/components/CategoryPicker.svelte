@@ -16,6 +16,7 @@
     type CategorySummary,
     type FaceEffect,
     type GameId,
+    type PictureMode,
     type RevealMode,
     type RiskDuplicates,
     type RiskMissPoints,
@@ -42,8 +43,14 @@
   ];
   /** Bei Karte und Zeitstrahl als Moderator: gewählte Sammlung, deren Ziele gerade zur Wahl stehen. */
   let targetPickFor = $state<string | null>(null);
-  const usesLives = $derived(gameId === 'topx' || gameId === 'match' || gameId === 'picture');
   const isPicture = $derived(gameId === 'picture');
+  /** Bilderrätsel: reihum mit Leben oder alle gleichzeitig mit Prüfung am Ende. */
+  let pictureMode = $state<PictureMode>('turns');
+  const PICTURE_MODE_OPTIONS: { mode: PictureMode; label: string; hint: string }[] = [
+    { mode: 'turns', label: 'Reihum', hint: 'Einer nach dem anderen nennt ein Feld und tippt. Falsch kostet ein Leben, du prüfst jeden Tipp sofort.' },
+    { mode: 'all', label: 'Alle gleichzeitig', hint: 'Alle füllen jedes Feld aus und melden sich fertig. Du prüfst am Ende Feld für Feld als Show, Punkte nach Treffern und Tempo.' },
+  ];
+  const usesLives = $derived(gameId === 'topx' || gameId === 'match' || (isPicture && pictureMode === 'turns'));
   const isMap = $derived(gameId === 'map');
   const isRisk = $derived(gameId === 'risk');
   /** Show-Auflösung gibt es nur bei den gleichzeitigen Spielen und nur, wenn der Host moderiert. */
@@ -89,6 +96,7 @@
       gameId,
       categoryId,
       ...(usesLives ? { lives } : {}),
+      ...(isPicture ? { mode: pictureMode } : {}),
       ...(isMap ? { borders } : {}),
       ...(isRisk ? { duplicates, missPoints } : {}),
       ...(hasShow ? { reveal } : {}),
@@ -176,9 +184,27 @@
       </div>
     {/if}
     {#if isPicture}
-      <p class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-        Beim Bilderrätsel moderierst du immer: Du siehst die Antworten und prüfst jeden Tipp, auch wenn du laut Lobby mitspielst. Bilder legst du im Editor an.
-      </p>
+      <div class="card space-y-3">
+        <div>
+          <p class="font-semibold">Modus</p>
+          <p class="text-xs text-slate-500">Gilt für diese Runde.</p>
+        </div>
+        <div class="grid gap-2 sm:grid-cols-2">
+          {#each PICTURE_MODE_OPTIONS as o (o.mode)}
+            <button
+              type="button"
+              class="rounded-xl border px-3 py-2 text-left transition {pictureMode === o.mode ? 'border-indigo-500 bg-indigo-500/15' : 'border-slate-700 hover:border-slate-500'}"
+              onclick={() => (pictureMode = o.mode)}
+            >
+              <span class="block font-semibold">{o.label}</span>
+              <span class="block text-xs text-slate-400">{o.hint}</span>
+            </button>
+          {/each}
+        </div>
+        <p class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+          Beim Bilderrätsel moderierst du immer: Du siehst die Lösungen und prüfst, auch wenn du laut Lobby mitspielst. Bilder legst du im Editor an.
+        </p>
+      </div>
     {/if}
     {#if hasShow}
       <div class="card flex flex-wrap items-center justify-between gap-3">

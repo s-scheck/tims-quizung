@@ -20,6 +20,8 @@
   import MorseReveal from '../components/MorseReveal.svelte';
   import PictureBoard from '../components/PictureBoard.svelte';
   import PictureReveal from '../components/PictureReveal.svelte';
+  import PictureAllBoard from '../components/PictureAllBoard.svelte';
+  import PictureJudge from '../components/PictureJudge.svelte';
   import FacesBoard from '../components/FacesBoard.svelte';
   import FacesReveal from '../components/FacesReveal.svelte';
   import Scoreboard from '../components/Scoreboard.svelte';
@@ -100,7 +102,11 @@
         {:else if view.round?.game === 'morse'}
           <MorseBoard {view} round={view.round} readonly />
         {:else if view.round?.game === 'picture'}
-          <PictureBoard {view} round={view.round} readonly />
+          {#if view.round.mode === 'all'}
+            <PictureAllBoard {view} round={view.round} readonly />
+          {:else}
+            <PictureBoard {view} round={view.round} readonly />
+          {/if}
         {:else if view.round?.game === 'faces'}
           <FacesBoard {view} round={view.round} readonly />
       {:else if view.round?.game === 'sort'}
@@ -122,7 +128,11 @@
         {:else if view.round?.game === 'morse'}
           <MorseReveal {view} round={view.round} readonly />
         {:else if view.round?.game === 'picture'}
-          <PictureReveal {view} round={view.round} readonly />
+          {#if view.round.mode === 'all'}
+            <PictureJudge {view} round={view.round} readonly />
+          {:else}
+            <PictureReveal {view} round={view.round} readonly />
+          {/if}
         {:else if view.round?.game === 'faces'}
           <FacesReveal {view} round={view.round} readonly />
       {:else if view.round?.game === 'sort'}

@@ -9,11 +9,13 @@ import {
   LIVES_MAX,
   LIVES_MIN,
   MORSE_SPEEDS,
+  PICTURE_MODES,
   REVEAL_MODES,
   TIMER_OPTIONS,
   type FaceEffect,
   type GameId,
   type MorseSpeed,
+  type PictureMode,
   type RevealMode,
   type TimerSeconds,
 } from './types.ts';
@@ -53,6 +55,10 @@ export function isMorseSpeed(value: unknown): value is MorseSpeed {
 
 export function isRevealMode(value: unknown): value is RevealMode {
   return typeof value === 'string' && (REVEAL_MODES as readonly string[]).includes(value);
+}
+
+export function isPictureMode(value: unknown): value is PictureMode {
+  return typeof value === 'string' && (PICTURE_MODES as readonly string[]).includes(value);
 }
 
 export function isFaceEffect(value: unknown): value is FaceEffect {
@@ -134,7 +140,8 @@ export function isClientMsg(x: unknown): x is ClientMsg {
         (x.reveal === undefined || isRevealMode(x.reveal)) &&
         (x.effect === undefined || isFaceEffect(x.effect)) &&
         (x.level === undefined || isFaceLevel(x.level)) &&
-        (x.cols === undefined || isFaceCols(x.cols))
+        (x.cols === undefined || isFaceCols(x.cols)) &&
+        (x.mode === undefined || isPictureMode(x.mode))
       );
     case 'face_guess':
       return isStr(x.text, GUESS_MAX_LENGTH) && x.text.trim().length > 0;
@@ -154,6 +161,14 @@ export function isClientMsg(x: unknown): x is ClientMsg {
       return isInt(x.turnNo) && isStr(x.fieldId, 20) && isStr(x.text, GUESS_MAX_LENGTH) && x.text.trim().length > 0;
     case 'picture_judge':
       return isInt(x.turnNo) && typeof x.correct === 'boolean';
+    case 'picture_fill':
+      return isStr(x.fieldId, 20) && typeof x.text === 'string' && x.text.length <= GUESS_MAX_LENGTH;
+    case 'picture_done':
+      return true;
+    case 'picture_step':
+      return isInt(x.index) && x.index >= 0;
+    case 'picture_verdict':
+      return isStr(x.playerId, 100) && isStr(x.fieldId, 20) && typeof x.correct === 'boolean';
     case 'reveal_solution':
     case 'reveal_all':
       return true;

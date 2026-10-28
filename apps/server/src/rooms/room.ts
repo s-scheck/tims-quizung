@@ -314,6 +314,7 @@ export class Room {
           ...(msg.effect !== undefined ? { effect: msg.effect } : {}),
           ...(msg.level !== undefined ? { level: msg.level } : {}),
           ...(msg.cols !== undefined ? { cols: msg.cols } : {}),
+          ...(msg.mode !== undefined ? { mode: msg.mode } : {}),
         });
       case 'back_to_lobby':
         return this.backToLobby(playerId);

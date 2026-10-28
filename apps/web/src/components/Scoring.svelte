@@ -6,7 +6,14 @@
   let { view }: { view: RoomView } = $props();
 
   const round = $derived(view.round!);
-  const players = $derived(scoredPlayers(view));
+  // Bilderrätsel „Alle gleichzeitig“: Reihenfolge nach Treffern, dann Fertig-Zeit, damit der Host die Plätze vor sich hat.
+  const players = $derived.by(() => {
+    const base = scoredPlayers(view);
+    const r = view.round;
+    if (r?.game !== 'picture' || r.mode !== 'all' || !r.results) return base;
+    const rank = new Map(r.results.map((x, i) => [x.playerId, i]));
+    return [...base].sort((a, b) => (rank.get(a.id) ?? base.length) - (rank.get(b.id) ?? base.length));
+  });
   // Svelte liefert bei type="number" eine Zahl oder null, beim Tippen kann auch ein String ankommen.
   let inputs = $state<Record<string, number | string | null | undefined>>({});
 
@@ -46,6 +53,13 @@
       if (!entry || entry.distanceYears === null) return 'kein Tipp';
       const rank = (r.ranking ?? []).indexOf(entry) + 1;
       return `${rank}. Platz, ${entry.distanceYears === 0 ? 'Treffer' : `${formatYearDistance(entry.distanceYears)} daneben`}`;
+    }
+    if (r.game === 'picture' && r.mode === 'all') {
+      const res = r.results?.find((x) => x.playerId === id);
+      if (!res) return 'nicht dabei';
+      const rank = (r.results ?? []).indexOf(res) + 1;
+      const time = res.doneAt === null ? 'nicht fertig gemeldet' : `fertig nach ${((res.doneAt - (r.startedAt ?? 0)) / 1000).toFixed(1)} s`;
+      return `${rank}. Platz · ${res.hits} von ${r.fields.length} richtig · ${time}`;
     }
     if (r.game === 'topx' || r.game === 'match' || r.game === 'picture') {
       const hits = r.hits[id] ?? 0;
