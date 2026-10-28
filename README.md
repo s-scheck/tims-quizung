@@ -79,6 +79,14 @@ Die Kartendaten stammen von [Natural Earth](https://www.naturalearthdata.com/) (
 - Die Runde endet, wenn alle Felder gelöst sind, keine Leben mehr da sind (Host-Entscheidung) oder der Host die Kategorie beendet. Die Auflösung zeigt alle Antworten, Treffer je Spieler stehen in der Punkteeingabe.
 - Zwei Darstellungen aus demselben Format: Nur ein Bild → die App legt nummerierte Kästchen über die Felder. Bearbeitetes Bild plus Original → gestrichelte Rahmen mit Nummer, Aufdecken zeigt den Originalausschnitt.
 
+## Spielregeln „Wer ist das?"
+
+- Alle sehen dasselbe Promi-Foto, vom Host verfremdet: Verschwommen (Stärke 0 bis 100), Pixel (Stärke 0 bis 100) oder Kacheln (2 bis 12 Spalten). Effekt und Startwert wählt der Host vor der Runde, dazu die Person aus der Sammlung.
+- Der Host moderiert immer: Er sieht den Namen, stellt die Stärke mit Vorschau ein bzw. merkt Kacheln vor und gibt den Stand mit „Übernehmen“ an alle weiter. Die Kachelgröße steht fest, sobald die erste Kachel offen ist.
+- Alle tippen jederzeit per Text, so oft sie wollen. Nur der Host sieht die Tipps und prüft sie, mit Vorschlag aus Name und Aliassen. Fehltipps erscheinen danach bei allen, Treffer ergeben Platz 1, 2, 3 nach Versuchszeit.
+- Die Runde läuft, bis der Host auflöst oder der Rundentimer abläuft. Die Auflösung zeigt das klare Bild, den Namen, die Plätze und 3/2/1 als Punktevorschlag.
+- Die Effekte entstehen im Browser, das Original liegt als Bildadresse im Gerät. Unter Freunden reicht das.
+
 ## Show-Auflösung
 
 Bei Karte, Zeitstrahl, No Risk No Fun und Bluff wählt ein moderierender Host vor jeder Runde im Kategorie-Picker zwischen „Automatisch“ (Auflösung wie gewohnt, alles auf einmal) und „Show“. Die letzte Wahl bleibt im Raum vorausgewählt. Spielt der Host mit, gibt es nur „Automatisch“.
@@ -229,6 +237,20 @@ Für Bilderrätsel gibt es Bilder mit Feldern in Prozent der Bildmaße:
 ```
 
 Regeln: mindestens 2 Felder, Antwort nicht leer, `x`, `y`, `w`, `h` in Prozent (0 bis 100, das Rechteck muss im Bild liegen). `image` ist ein Dateiname aus der Bildablage `data/images` (Upload im Editor) oder eine http-Adresse, `original` ist optional. Dateien beginnen mit `bild-`. Am einfachsten geht das im Editor: Bild hochladen, Felder im Bild aufziehen, Antworten eintragen.
+
+Für Wer ist das? gibt es Promi-Sammlungen mit Bild je Person:
+
+```json
+{
+  "id": "promi-politik",
+  "title": "Politik",
+  "question": "Wer ist das?",
+  "games": ["faces"],
+  "faces": [{ "name": "Angela Merkel", "aliases": ["Merkel"], "image": "k7x2-merkel.jpg" }]
+}
+```
+
+Regeln: mindestens 2 Personen, Namen eindeutig, `aliases` optional, `image` ein Dateiname aus der Bildablage oder eine http-Adresse. Dateien beginnen mit `promi-`. Im Editor gibt es Upload je Zeile und einen Mehrfach-Upload, der aus Dateinamen wie „Angela Merkel.jpg“ Zeilen anlegt.
 
 Für Top X kommt `"games": ["topx"]` dazu (Standard ist `["sort"]`, beides zusammen geht auch). Top-X-Listen müssen echte Top-Listen ohne Gleichstand über die Listengrenze sein, dürfen kurz sein und Gleichstände enthalten. Pro Eintrag helfen `aliases` beim Abgleich, etwa `["Mbappe", "Mbappé"]`; ein eindeutiger Nachname trifft automatisch. Dateien beginnen mit `topx-`.
 

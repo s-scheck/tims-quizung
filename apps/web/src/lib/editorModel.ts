@@ -1,7 +1,7 @@
 import { slugify, validateCategory, CategoryValidationError } from '@quiz/content/schema';
 import type { GameId } from '@quiz/shared';
 
-export type Kind = 'ranked' | 'pairs' | 'places' | 'events' | 'prompts' | 'picture';
+export type Kind = 'ranked' | 'pairs' | 'places' | 'events' | 'prompts' | 'picture' | 'faces';
 export type Raw = Record<string, unknown>;
 
 /** Spiele in der Reihenfolge der Spielauswahl, mit der Art Liste, die sie brauchen. */
@@ -14,13 +14,14 @@ export const EDITOR_GAMES: { id: GameId; name: string; kind: Kind; hint: string 
   { id: 'risk', name: 'No Risk No Fun', kind: 'ranked', hint: 'Beliebig viele Einträge, Platz 1 zuerst. Je länger die Liste, desto mehr Punkte gibt es hinten. Platz 1 sollte bekannt, die hinteren Plätze Nischenwissen sein.' },
   { id: 'bluff', name: 'Bluff', kind: 'prompts', hint: 'Beliebig viele Aufgaben mit der echten Antwort, etwa Film und Subline. Die Antwort muss stimmen, sie ist die Wahrheit im Spiel.' },
   { id: 'picture', name: 'Bilderrätsel', kind: 'picture', hint: 'Ein Bild, darauf mindestens zwei Felder mit Antwort. Bild vorher verkleinern (höchstens 8 MB), optional ein Original zum bearbeiteten Bild.' },
+  { id: 'faces', name: 'Wer ist das?', kind: 'faces', hint: 'Mindestens zwei Personen mit Foto. Aliasse helfen beim Prüfen der Tipps. Der Mehrfach-Upload legt Zeilen aus Dateinamen an.' },
 ];
 
 export const GAME_NAMES: Record<string, string> = Object.fromEntries(EDITOR_GAMES.map((g) => [g.id, g.name]));
 
 // ---------------------------------------------------------------- Spalten
 
-export type ColumnType = 'text' | 'number' | 'list' | 'year' | 'coord';
+export type ColumnType = 'text' | 'number' | 'list' | 'year' | 'coord' | 'image';
 
 export interface Column {
   key: string;
@@ -64,6 +65,11 @@ export const COLUMNS: Record<Kind, Column[]> = {
     { key: 'y', label: 'y', type: 'number' },
     { key: 'w', label: 'Breite', type: 'number' },
     { key: 'h', label: 'Höhe', type: 'number' },
+  ],
+  faces: [
+    { key: 'name', label: 'Name', type: 'text', placeholder: 'z. B. Angela Merkel', width: 'min-w-44' },
+    { key: 'aliases', label: 'Aliasse', type: 'list', optional: true, placeholder: 'mit Komma getrennt', width: 'min-w-44' },
+    { key: 'image', label: 'Bild', type: 'image', width: 'w-60' },
   ],
 };
 
@@ -119,6 +125,11 @@ export const FIELDS: Record<Kind, Field[]> = {
     { key: 'title', label: 'Titel', type: 'text', placeholder: 'Wohnzimmer' },
     { key: 'question', label: 'Frage', type: 'text', placeholder: 'Was fehlt hier?' },
     { key: 'source', label: 'Quelle', type: 'text', optional: true, placeholder: 'eigenes Foto' },
+  ],
+  faces: [
+    { key: 'title', label: 'Titel', type: 'text', placeholder: 'Politik' },
+    { key: 'question', label: 'Frage', type: 'text', placeholder: 'Wer ist das?' },
+    { key: 'source', label: 'Quelle', type: 'text', optional: true, placeholder: 'Pressefotos' },
   ],
 };
 
@@ -178,6 +189,7 @@ export function kindOfRaw(raw: Raw): Kind {
   if ('events' in raw) return 'events';
   if ('prompts' in raw) return 'prompts';
   if ('fields' in raw) return 'picture';
+  if ('faces' in raw) return 'faces';
   return 'ranked';
 }
 
@@ -225,6 +237,9 @@ export function draftFromRaw(raw: Raw): Draft {
       meta.original = str(raw.original);
       rows = arr(raw.fields).map((f) => ({ answer: str(f.answer), x: formatNumber(f.x), y: formatNumber(f.y), w: formatNumber(f.w), h: formatNumber(f.h) }));
       break;
+    case 'faces':
+      rows = arr(raw.faces).map((f) => ({ name: str(f.name), aliases: Array.isArray(f.aliases) ? f.aliases.join(', ') : '', image: str(f.image) }));
+      break;
   }
   const decoys = kind === 'pairs' && Array.isArray(raw.decoys) ? raw.decoys.map((d) => ({ text: str(d) })) : [];
   return { kind, meta, games, rows, decoys };
@@ -240,6 +255,7 @@ export function newDraft(game: GameId): Draft {
   if (kind === 'events') meta.question = 'Wann war das?';
   if (kind === 'places') meta.question = 'Wo liegt das?';
   if (kind === 'prompts') meta.question = 'Wie lautet die echte Antwort?';
+  if (kind === 'faces') meta.question = 'Wer ist das?';
   if (kind === 'picture') {
     meta.question = 'Was fehlt hier?';
     meta.image = '';
@@ -323,6 +339,15 @@ export function draftToRaw(draft: Draft, id: string, base: Raw = {}): Raw {
       raw.fields = rows.map((r) => ({ answer: (r.answer ?? '').trim(), x: pct(r.x), y: pct(r.y), w: pct(r.w), h: pct(r.h) }));
       break;
     }
+    case 'faces':
+      raw.games = ['faces'];
+      raw.faces = rows.map((r) => {
+        const face: Raw = { name: (r.name ?? '').trim(), image: (r.image ?? '').trim() };
+        const aliases = (r.aliases ?? '').split(/[,;]/).map((a) => a.trim()).filter(Boolean);
+        if (aliases.length) face.aliases = aliases;
+        return face;
+      });
+      break;
   }
   return raw;
 }
@@ -343,7 +368,7 @@ export function validate(raw: Raw, id: string): string | null {
 export function humanize(msg: string): string {
   return msg
     .replace(/\bfields\[(\d+)\]/g, (_, n) => `Feld ${Number(n) + 1}`)
-    .replace(/\b(?:items|pairs|places|events|prompts)\[(\d+)\]/g, (_, n) => `Zeile ${Number(n) + 1}`)
+    .replace(/\b(?:items|pairs|places|events|prompts|faces)\[(\d+)\]/g, (_, n) => `Zeile ${Number(n) + 1}`)
     .replace(/\bvalue ist keine Zahl/, 'Wert ist keine Zahl')
     .replace(/\blat\/lng ungültig/, 'Koordinaten ungültig');
 }
@@ -411,7 +436,7 @@ export function rowsFromCells(cells: string[][], columns: Column[]): Row[] {
 
 // -------------------------------------------------------------------- ids
 
-const PREFIX: Partial<Record<GameId, string>> = { topx: 'topx-', risk: 'risk-', match: 'match-', map: 'map-', timeline: 'zeit-', bluff: 'bluff-', picture: 'bild-' };
+const PREFIX: Partial<Record<GameId, string>> = { topx: 'topx-', risk: 'risk-', match: 'match-', map: 'map-', timeline: 'zeit-', bluff: 'bluff-', picture: 'bild-', faces: 'promi-' };
 
 /** Neue id aus dem Titel, mit dem üblichen Präfix des Spiels, eindeutig gegenüber `taken`. */
 export function makeId(title: string, game: GameId, taken: Set<string>): string {

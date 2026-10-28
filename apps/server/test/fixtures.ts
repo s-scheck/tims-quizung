@@ -156,7 +156,21 @@ export const PICTURE: Category = {
   ],
 };
 
-const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES, PROMPTS, PICTURE];
+export const FACES: Category = {
+  kind: 'faces',
+  id: 'promi-politik',
+  title: 'Politik',
+  question: 'Wer ist das?',
+  games: ['faces'],
+  source: 'Test',
+  faces: [
+    { id: 'angela-merkel', name: 'Angela Merkel', aliases: ['Merkel', 'Mutti'], image: 'p1-merkel.jpg' },
+    { id: 'barack-obama', name: 'Barack Obama', aliases: ['Obama'], image: 'p2-obama.jpg' },
+    { id: 'olaf-scholz', name: 'Olaf Scholz', image: 'https://example.org/scholz.png' },
+  ],
+};
+
+const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES, PROMPTS, PICTURE, FACES];
 
 export const provider: CategoryProvider = {
   list: () => ALL,
@@ -268,6 +282,12 @@ export function startBluff(h: Harness, opts: { targetId?: string; reveal?: Revea
 export function startPicture(h: Harness, opts: { lives?: number } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'picture', categoryId: 'bild-zimmer', ...opts }));
+}
+
+/** Startet Spiel und Wer-ist-das-Runde. */
+export function startFaces(h: Harness, opts: { targetId?: string; effect?: 'blur' | 'tiles' | 'pixel'; level?: number; cols?: number } = {}): void {
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'faces', categoryId: 'promi-politik', ...opts }));
 }
 
 /** Startet Spiel und Morse-Runde mit dem gegebenen Wort. */

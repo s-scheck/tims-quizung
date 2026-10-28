@@ -358,3 +358,34 @@ describe('validateCategory (Bild)', () => {
     expect(() => validateCategory({ id: 'x', title: 'T', question: 'Q', topLabel: 'a', bottomLabel: 'b', order: 'desc', games: ['picture'], items: [] }, 'f')).toThrow(/fields/);
   });
 });
+
+describe('validateCategory (Promi-Sammlung)', () => {
+  const base = {
+    id: 'promi-test',
+    title: 'Politik',
+    question: 'Wer ist das?',
+    faces: [
+      { name: 'Angela Merkel', aliases: ['Merkel', 'Mutti'], image: 'a1-merkel.jpg' },
+      { name: 'Barack Obama', image: 'https://example.org/obama.png' },
+    ],
+  };
+
+  test('akzeptiert eine Sammlung, games ist standardmäßig faces, IDs aus Namen', () => {
+    const c = validateCategory(base, 'f');
+    expect(c.kind).toBe('faces');
+    if (c.kind !== 'faces') return;
+    expect(c.games).toEqual(['faces']);
+    expect(c.faces[0]).toEqual({ id: 'angela-merkel', name: 'Angela Merkel', aliases: ['Merkel', 'Mutti'], image: 'a1-merkel.jpg' });
+    expect(c.faces[1]).toEqual({ id: 'barack-obama', name: 'Barack Obama', image: 'https://example.org/obama.png' });
+  });
+
+  test('lehnt Fehler ab', () => {
+    expect(() => validateCategory({ ...base, faces: base.faces.slice(0, 1) }, 'f')).toThrow(/mindestens 2/);
+    expect(() => validateCategory({ ...base, faces: [...base.faces, { name: 'angela merkel', image: 'x.jpg' }] }, 'f')).toThrow(/doppelte Person/);
+    expect(() => validateCategory({ ...base, faces: [...base.faces, { name: 'X', image: 'kein-bild' }] }, 'f')).toThrow(/image/);
+    expect(() => validateCategory({ ...base, faces: [...base.faces, { name: ' ', image: 'x.jpg' }] }, 'f')).toThrow(/name/);
+    expect(() => validateCategory({ ...base, faces: [...base.faces, { name: 'Y', image: 'y.jpg', aliases: 'nope' }] }, 'f')).toThrow(/aliases/);
+    expect(() => validateCategory({ ...base, games: ['picture'] }, 'f')).toThrow(/faces/);
+    expect(() => validateCategory({ id: 'x', title: 'T', question: 'Q', topLabel: 'a', bottomLabel: 'b', order: 'desc', games: ['faces'], items: [] }, 'f')).toThrow(/faces/);
+  });
+});

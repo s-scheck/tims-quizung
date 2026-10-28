@@ -12,8 +12,8 @@ export type Phase =
   | 'scoreboard'
   | 'finished';
 
-export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse' | 'picture';
-export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture'];
+export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse' | 'picture' | 'faces';
+export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture', 'faces'];
 /** Auflösung: alles auf einmal („auto“) oder vom Moderator Stück für Stück aufgedeckt („show“). */
 export type RevealMode = 'auto' | 'show';
 export const REVEAL_MODES: readonly RevealMode[] = ['auto', 'show'];
@@ -504,6 +504,72 @@ export interface PictureRoundView extends BaseRoundView {
   privileged?: boolean;
 }
 
+// ------------------------------------------------------------ Wer ist das?
+
+export type FaceEffect = 'blur' | 'tiles' | 'pixel';
+export const FACE_EFFECTS: readonly FaceEffect[] = ['blur', 'tiles', 'pixel'];
+export const FACE_LEVEL_MAX = 100;
+export const FACE_COLS_MIN = 2;
+export const FACE_COLS_MAX = 12;
+/** Spielpunkte für die ersten drei Richtigen. */
+export const FACE_POINTS: readonly number[] = [3, 2, 1];
+
+/**
+ * Vom Host übernommener Effektzustand. Bei Kacheln: Index = Zeile × Spalten + Spalte,
+ * die Zeilenzahl ergibt sich auf jedem Gerät gleich aus dem Seitenverhältnis des Bilds.
+ */
+export interface FaceEffectState {
+  effect: FaceEffect;
+  /** Stärke 0 bis 100 für Verschwommen und Pixel, 0 ist klar. */
+  level: number;
+  /** Spalten des Kachelrasters. */
+  cols: number;
+  /** Aufgedeckte Kacheln. */
+  revealed: number[];
+}
+
+export interface FacesCategoryInfo {
+  id: string;
+  title: string;
+  question: string;
+  source?: string;
+}
+
+export interface FaceAttemptView {
+  text: string;
+  at: number;
+  status: 'judging' | 'correct' | 'wrong';
+  /** Nur Host: Abgleich mit Name und Aliassen passt. */
+  suggested?: boolean;
+}
+
+export interface FaceSolvedView {
+  playerId: string;
+  at: number;
+  rank: number;
+}
+
+export interface FacesRoundView extends BaseRoundView {
+  game: 'faces';
+  category: FacesCategoryInfo;
+  image: string;
+  /** Name der Person, nur Host oder ab der Auflösung. */
+  name?: string;
+  startedAt: number;
+  effect: FaceEffectState;
+  /** Richtige in Reihenfolge ihrer Versuchszeit. */
+  solved: FaceSolvedView[];
+  /** Geprüfte Fehltipps aller Spieler, für alle sichtbar. */
+  wrongGuesses: { by: string; text: string }[];
+  /** Eigene Versuche des Betrachters. */
+  myAttempts?: FaceAttemptView[];
+  /** Alle Versuche, nur Host oder ab der Auflösung. */
+  attempts?: Record<string, FaceAttemptView[]>;
+  /** Spielpunkte 3/2/1, nur Host oder ab der Auflösung. */
+  points?: Record<string, number>;
+  privileged?: boolean;
+}
+
 export type RoundView =
   | SortRoundView
   | TopXRoundView
@@ -513,7 +579,8 @@ export type RoundView =
   | RiskRoundView
   | BluffRoundView
   | MorseRoundView
-  | PictureRoundView;
+  | PictureRoundView
+  | FacesRoundView;
 
 export interface RoundResult {
   gameId: GameId;
@@ -556,7 +623,7 @@ export type EditorStatus = 'builtin' | 'modified' | 'custom' | 'hidden';
 export interface EditorEntry {
   id: string;
   title: string;
-  kind: 'ranked' | 'pairs' | 'places' | 'events' | 'prompts' | 'picture';
+  kind: 'ranked' | 'pairs' | 'places' | 'events' | 'prompts' | 'picture' | 'faces';
   games: GameId[];
   count: number;
   status: EditorStatus;

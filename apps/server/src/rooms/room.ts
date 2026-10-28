@@ -308,6 +308,9 @@ export class Room {
           ...(msg.missPoints !== undefined ? { missPoints: msg.missPoints } : {}),
           ...(msg.word !== undefined ? { word: msg.word } : {}),
           ...(msg.reveal !== undefined ? { reveal: msg.reveal } : {}),
+          ...(msg.effect !== undefined ? { effect: msg.effect } : {}),
+          ...(msg.level !== undefined ? { level: msg.level } : {}),
+          ...(msg.cols !== undefined ? { cols: msg.cols } : {}),
         });
       case 'back_to_lobby':
         return this.backToLobby(playerId);

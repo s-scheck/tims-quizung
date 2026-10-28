@@ -1,5 +1,5 @@
-import type { BluffStage, GuessStatus, MatchSelection, PlacementStatus, RiskRules, Selection } from '@quiz/shared';
-import type { Category, EventsCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, RankedCategory, TimelineEvent } from '@quiz/content';
+import type { BluffStage, FaceEffectState, GuessStatus, MatchSelection, PlacementStatus, RiskRules, Selection } from '@quiz/shared';
+import type { Category, EventsCategory, Face, FacesCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, RankedCategory, TimelineEvent } from '@quiz/content';
 
 export interface Player {
   id: string;
@@ -263,4 +263,24 @@ export interface PictureRound extends BaseRound {
   guess: PictureGuess | null;
 }
 
-export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound;
+// ------------------------------------------------------------ Wer ist das?
+
+export interface FaceAttempt {
+  text: string;
+  at: number;
+  status: 'judging' | 'correct' | 'wrong';
+}
+
+export interface FacesRound extends BaseRound {
+  game: 'faces';
+  category: FacesCategory;
+  target: Face;
+  startedAt: number;
+  /** Vom Host übernommener Effektzustand, den alle sehen. */
+  effect: FaceEffectState;
+  attempts: Record<string, FaceAttempt[]>;
+  /** Spieler-ID → Zeit des richtigen Versuchs. */
+  solved: Record<string, number>;
+}
+
+export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound | FacesRound;

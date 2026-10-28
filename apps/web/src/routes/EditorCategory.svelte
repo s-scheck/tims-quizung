@@ -218,6 +218,49 @@
     }
   }
 
+  // ------------------------------------------------------------ Promis
+
+  let bulkUploading = $state(0);
+
+  async function uploadRowImage(rowIndex: number, file: File) {
+    try {
+      const res = await editorApi.uploadImage(file);
+      const row = draft.rows[rowIndex];
+      if (row) row.image = res.name;
+    } catch (e) {
+      toasts.error(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  /** „Angela_Merkel.jpg“ → „Angela Merkel“. */
+  function nameFromFile(file: File): string {
+    return file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  async function uploadMany(input: HTMLInputElement) {
+    const files = [...(input.files ?? [])];
+    input.value = '';
+    if (files.length === 0 || bulkUploading) return;
+    bulkUploading = files.length;
+    let failed = 0;
+    for (const file of files) {
+      try {
+        const res = await editorApi.uploadImage(file);
+        const name = nameFromFile(file);
+        const empty = draft.rows.findIndex((r) => !(r.name ?? '').trim() && !(r.image ?? '').trim());
+        const row = { name, aliases: '', image: res.name };
+        if (empty === -1) draft.rows.push(row);
+        else draft.rows[empty] = row;
+      } catch {
+        failed++;
+      } finally {
+        bulkUploading--;
+      }
+    }
+    if (failed) toasts.error(`${failed} ${failed === 1 ? 'Bild' : 'Bilder'} konnten nicht hochgeladen werden.`);
+    else toasts.success(`${files.length} ${files.length === 1 ? 'Bild' : 'Bilder'} hochgeladen. Namen prüfen, dann speichern.`);
+  }
+
   const markers = $derived<MapMarker[]>(
     draft.kind !== 'places'
       ? []
@@ -324,7 +367,7 @@
       <div class="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 class="text-lg font-black">
-            {draft.kind === 'pairs' ? 'Paare' : draft.kind === 'places' ? 'Orte' : draft.kind === 'events' ? 'Ereignisse' : draft.kind === 'prompts' ? 'Aufgaben' : draft.kind === 'picture' ? 'Felder' : 'Einträge'}
+            {draft.kind === 'pairs' ? 'Paare' : draft.kind === 'places' ? 'Orte' : draft.kind === 'events' ? 'Ereignisse' : draft.kind === 'prompts' ? 'Aufgaben' : draft.kind === 'picture' ? 'Felder' : draft.kind === 'faces' ? 'Personen' : 'Einträge'}
             <span class="text-slate-500">{filledRows}</span>
           </h2>
           <p class="text-xs text-slate-500">
@@ -333,12 +376,19 @@
             {:else if draft.kind === 'pairs'}Jede Karte gehört zu genau einem Ziel. Ziele müssen eindeutig sein.
             {:else if draft.kind === 'prompts'}Jede Aufgabe mit ihrer echten Antwort. Die Spieler erfinden später eigene Antworten dazu, also muss die echte wirklich stimmen.
             {:else if draft.kind === 'picture'}Bild hochladen, dann Felder im Bild aufziehen und zu jedem die Antwort eintragen. Die Nummer folgt der Reihenfolge der Liste.
+            {:else if draft.kind === 'faces'}Je Person ein Foto. Aliasse (mit Komma) helfen dem Host beim Prüfen der Tipps. Bilder vorher verkleinern, höchstens 8 MB.
             {:else if needsSorting}Die Reihenfolge ist der Platz: Platz 1 zuerst. Zahlen wie "17.098.246" oder "1.450,9" gehen.
             {:else}Reihenfolge egal, Werte müssen eindeutig sein. Zahlen wie "17.098.246" oder "1.450,9" gehen.{/if}
           </p>
         </div>
         {#if needsSorting}
           <button type="button" class="btn-secondary px-4 py-2 text-sm" onclick={() => (draft.rows = sortRowsByValue(draft.rows, draft.meta.order ?? 'desc'))}>Nach Wert sortieren</button>
+        {/if}
+        {#if draft.kind === 'faces'}
+          <label class="btn-secondary cursor-pointer px-4 py-2 text-sm {bulkUploading ? 'opacity-60' : ''}">
+            {bulkUploading ? `Lade hoch … (${bulkUploading})` : 'Viele Bilder hochladen'}
+            <input type="file" class="hidden" multiple accept="image/jpeg,image/png,image/webp,image/svg+xml" disabled={!editable || !!bulkUploading} onchange={(e) => uploadMany(e.currentTarget)} />
+          </label>
         {/if}
       </div>
 
@@ -400,7 +450,14 @@
           <p class="text-sm text-slate-500">Lade zuerst ein Bild hoch.</p>
         {/if}
       {:else}
-        <EditTable columns={COLUMNS[draft.kind]} bind:rows={draft.rows} {issues} bind:selected noun={draft.kind === 'pairs' ? 'Paar' : draft.kind === 'events' ? 'Ereignis' : draft.kind === 'prompts' ? 'Aufgabe' : 'Eintrag'} />
+        <EditTable
+          columns={COLUMNS[draft.kind]}
+          bind:rows={draft.rows}
+          {issues}
+          bind:selected
+          noun={draft.kind === 'pairs' ? 'Paar' : draft.kind === 'events' ? 'Ereignis' : draft.kind === 'prompts' ? 'Aufgabe' : draft.kind === 'faces' ? 'Person' : 'Eintrag'}
+          onImageUpload={draft.kind === 'faces' ? uploadRowImage : undefined}
+        />
       {/if}
     </section>
 

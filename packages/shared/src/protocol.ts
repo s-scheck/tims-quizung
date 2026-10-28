@@ -1,4 +1,4 @@
-import type { GameId, MorseSpeed, RevealMode, Role, RoomView, Selection, TimerSeconds } from './types.ts';
+import type { FaceEffect, GameId, MorseSpeed, RevealMode, Role, RoomView, Selection, TimerSeconds } from './types.ts';
 import type { RiskDuplicates, RiskMissPoints } from './rules/risk.ts';
 
 export const PROTOCOL_VERSION = 2;
@@ -46,6 +46,10 @@ export type ClientMsg =
       word?: string;
       /** Auflösung alles auf einmal oder als Show, nur bei Karte, Zeitstrahl, No Risk No Fun und Bluff mit moderierendem Host. */
       reveal?: RevealMode;
+      /** Wer ist das?: Effekt und Startwert. */
+      effect?: FaceEffect;
+      level?: number;
+      cols?: number;
     }
   | ({ type: 'select'; turnNo: number; targetId?: string } & Selection)
   | { type: 'confirm'; turnNo: number }
@@ -54,6 +58,10 @@ export type ClientMsg =
   /** Bilderrätsel: Feld wählen und Lösung tippen, der Host prüft. */
   | { type: 'picture_guess'; turnNo: number; fieldId: string; text: string }
   | { type: 'picture_judge'; turnNo: number; correct: boolean }
+  /** Wer ist das?: Tipp, Prüfung durch den Host, neuer Effektzustand vom Host. */
+  | { type: 'face_guess'; text: string }
+  | { type: 'face_judge'; playerId: string; index: number; correct: boolean }
+  | { type: 'face_effect'; level?: number; cols?: number; revealed?: number[] }
   | { type: 'place_pin'; lat: number; lng: number }
   | { type: 'place_year'; year: number }
   | { type: 'confirm_pin' }

@@ -1,4 +1,4 @@
-import type { ClientMsg, GameId, RiskDuplicates, RiskMissPoints, RoundView, RevealMode } from '@quiz/shared';
+import type { ClientMsg, FaceEffect, GameId, RiskDuplicates, RiskMissPoints, RoundView, RevealMode } from '@quiz/shared';
 import type { Category } from '@quiz/content';
 import type { Room } from '../rooms/room.ts';
 import type { Result } from '../rooms/result.ts';
@@ -13,6 +13,10 @@ export interface StartRoundOptions {
   word?: string;
   /** Auflösung alles auf einmal oder als Show. */
   reveal?: RevealMode;
+  /** Wer ist das?: Effekt und Startwert. */
+  effect?: FaceEffect;
+  level?: number;
+  cols?: number;
 }
 
 /**

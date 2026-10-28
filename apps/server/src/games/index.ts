@@ -8,6 +8,7 @@ import { riskGame } from './risk/index.ts';
 import { bluffGame } from './bluff/index.ts';
 import { morseGame } from './morse/index.ts';
 import { pictureGame } from './picture/index.ts';
+import { facesGame } from './faces/index.ts';
 
 registerGame(sortGame);
 registerGame(topxGame);
@@ -18,5 +19,6 @@ registerGame(riskGame);
 registerGame(bluffGame);
 registerGame(morseGame);
 registerGame(pictureGame);
+registerGame(facesGame);
 
-export { sortGame, topxGame, matchGame, mapGame, timelineGame, riskGame, bluffGame, morseGame, pictureGame };
+export { sortGame, topxGame, matchGame, mapGame, timelineGame, riskGame, bluffGame, morseGame, pictureGame, facesGame };

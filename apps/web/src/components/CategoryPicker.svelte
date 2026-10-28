@@ -10,7 +10,11 @@
     RISK_DUPLICATE_OPTIONS,
     RISK_MISS_OPTIONS,
     SHOW_GAMES,
+    FACE_COLS_MAX,
+    FACE_COLS_MIN,
+    FACE_LEVEL_MAX,
     type CategorySummary,
+    type FaceEffect,
     type GameId,
     type RevealMode,
     type RiskDuplicates,
@@ -44,9 +48,19 @@
   const isRisk = $derived(gameId === 'risk');
   /** Show-Auflösung gibt es nur bei den gleichzeitigen Spielen und nur, wenn der Host moderiert. */
   const hasShow = $derived(SHOW_GAMES.includes(gameId) && client.isModerator);
-  const hasTargets = $derived(gameId === 'map' || gameId === 'timeline' || gameId === 'bluff');
-  const targetNoun = $derived(gameId === 'map' ? 'Ziel' : gameId === 'timeline' ? 'Ereignis' : 'Aufgabe');
-  const picksTarget = $derived(hasTargets && client.isModerator);
+  const isFaces = $derived(gameId === 'faces');
+  const hasTargets = $derived(gameId === 'map' || gameId === 'timeline' || gameId === 'bluff' || isFaces);
+  const targetNoun = $derived(gameId === 'map' ? 'Ziel' : gameId === 'timeline' ? 'Ereignis' : isFaces ? 'Promi' : 'Aufgabe');
+  // Bei „Wer ist das?“ prüft der Host immer selbst, also wählt er die Person auch als Mitspieler.
+  const picksTarget = $derived(hasTargets && (client.isModerator || (isFaces && client.isHost)));
+  let faceEffect = $state<FaceEffect>('blur');
+  let faceLevel = $state(80);
+  let faceCols = $state(6);
+  const FACE_EFFECT_OPTIONS: { effect: FaceEffect; label: string; hint: string }[] = [
+    { effect: 'blur', label: 'Verschwommen', hint: 'Du stellst die Schärfe und gibst sie Stück für Stück frei.' },
+    { effect: 'pixel', label: 'Pixel', hint: 'Grobe Klötzchen, die du nach und nach feiner machst.' },
+    { effect: 'tiles', label: 'Kacheln', hint: 'Das Bild liegt unter Kacheln, die du einzeln aufdeckst.' },
+  ];
   const targetCategory = $derived((view.categories ?? []).find((c) => c.id === targetPickFor) ?? null);
   const isMorse = $derived(gameId === 'morse');
   let morseWord = $state('');
@@ -78,6 +92,7 @@
       ...(isMap ? { borders } : {}),
       ...(isRisk ? { duplicates, missPoints } : {}),
       ...(hasShow ? { reveal } : {}),
+      ...(isFaces ? { effect: faceEffect, ...(faceEffect === 'tiles' ? { cols: faceCols } : { level: faceLevel }) } : {}),
       ...(targetId ? { targetId } : {}),
     });
   }
@@ -130,6 +145,36 @@
       </div>
     {/if}
 
+    {#if isFaces}
+      <div class="card space-y-3">
+        <div>
+          <p class="font-semibold">Effekt</p>
+          <p class="text-xs text-slate-500">Du moderierst bei diesem Spiel immer, auch wenn du sonst mitspielst: Du siehst den Namen, gibst das Bild frei und prüfst die Tipps.</p>
+        </div>
+        <div class="grid gap-2 sm:grid-cols-3">
+          {#each FACE_EFFECT_OPTIONS as opt (opt.effect)}
+            <button
+              class="rounded-xl border px-3 py-2 text-left transition {faceEffect === opt.effect ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+              onclick={() => (faceEffect = opt.effect)}
+            >
+              <span class="block text-sm font-semibold">{opt.label}</span>
+              <span class="block text-xs opacity-80">{opt.hint}</span>
+            </button>
+          {/each}
+        </div>
+        {#if faceEffect === 'tiles'}
+          <label class="block text-sm">
+            <span class="mb-1 flex justify-between text-slate-400"><span>Spalten zu Beginn</span><span class="font-mono text-slate-200">{faceCols}</span></span>
+            <input type="range" class="w-full accent-[var(--color-indigo-500)]" min={FACE_COLS_MIN} max={FACE_COLS_MAX} step="1" bind:value={faceCols} />
+          </label>
+        {:else}
+          <label class="block text-sm">
+            <span class="mb-1 flex justify-between text-slate-400"><span>Stärke zu Beginn</span><span class="font-mono text-slate-200">{faceLevel}</span></span>
+            <input type="range" class="w-full accent-[var(--color-indigo-500)]" min="0" max={FACE_LEVEL_MAX} step="1" bind:value={faceLevel} />
+          </label>
+        {/if}
+      </div>
+    {/if}
     {#if isPicture}
       <p class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
         Beim Bilderrätsel moderierst du immer: Du siehst die Antworten und prüfst jeden Tipp, auch wenn du laut Lobby mitspielst. Bilder legst du im Editor an.
@@ -279,7 +324,7 @@
               {#if c.played}<span class="badge shrink-0 bg-emerald-500/20 text-emerald-300">gespielt</span>{/if}
             </div>
             <span class="text-sm text-slate-400">{c.question}</span>
-            <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : c.games.includes('bluff') ? 'Aufgaben' : c.games.includes('picture') ? 'Felder' : 'Karten'}</span>
+            <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : c.games.includes('bluff') ? 'Aufgaben' : c.games.includes('picture') ? 'Felder' : c.games.includes('faces') ? 'Personen' : 'Karten'}</span>
           </button>
         {/each}
       </div>

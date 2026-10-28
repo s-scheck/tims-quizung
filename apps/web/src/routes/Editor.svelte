@@ -70,7 +70,7 @@
             {#each list as e (e.id)}
               <button class="card flex flex-col items-start gap-1.5 text-left {e.status === 'hidden' ? 'opacity-60' : ''}" onclick={() => router.navigate(`/editor/${e.id}`)}>
                 <span class="font-bold">{e.title}</span>
-                <span class="text-xs text-slate-500">{e.count} {e.kind === 'picture' ? 'Felder' : 'Einträge'}{e.games.length > 1 ? ` · auch für ${e.games.filter((g) => g !== game.id).map((g) => EDITOR_GAMES.find((x) => x.id === g)?.name).join(', ')}` : ''}</span>
+                <span class="text-xs text-slate-500">{e.count} {e.kind === 'picture' ? 'Felder' : e.kind === 'faces' ? 'Personen' : 'Einträge'}{e.games.length > 1 ? ` · auch für ${e.games.filter((g) => g !== game.id).map((g) => EDITOR_GAMES.find((x) => x.id === g)?.name).join(', ')}` : ''}</span>
                 <StatusBadges entry={e} />
               </button>
             {/each}

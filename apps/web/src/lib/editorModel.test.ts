@@ -175,3 +175,36 @@ describe('Bilderrätsel im Editor', () => {
     expect(makeId('Mein Garten', 'picture', new Set())).toBe('bild-mein-garten');
   });
 });
+
+
+describe('Wer ist das? im Editor', () => {
+  test('Entwurf hin und zurück mit Aliassen, Bild fehlt wird gemeldet', () => {
+    const raw = {
+      id: 'promi-politik',
+      title: 'Politik',
+      question: 'Wer ist das?',
+      games: ['faces'],
+      faces: [
+        { name: 'Angela Merkel', aliases: ['Merkel', 'Mutti'], image: 'k1-merkel.jpg' },
+        { name: 'Barack Obama', image: 'k2-obama.jpg' },
+      ],
+    };
+    const draft = draftFromRaw(raw);
+    expect(draft.kind).toBe('faces');
+    expect(draft.rows).toEqual([
+      { name: 'Angela Merkel', aliases: 'Merkel, Mutti', image: 'k1-merkel.jpg' },
+      { name: 'Barack Obama', aliases: '', image: 'k2-obama.jpg' },
+    ]);
+    const back = draftToRaw(draft, 'promi-politik');
+    expect(back.faces).toEqual([
+      { name: 'Angela Merkel', image: 'k1-merkel.jpg', aliases: ['Merkel', 'Mutti'] },
+      { name: 'Barack Obama', image: 'k2-obama.jpg' },
+    ]);
+    expect(validate(back, 'promi-politik')).toBeNull();
+    draft.rows.push({ name: 'Olaf Scholz', aliases: '', image: '' });
+    expect(cellIssues('faces', draft.rows)[2]).toEqual({ image: 'fehlt' });
+    expect(validate(draftToRaw(draft, 'promi-politik'), 'promi-politik')).toMatch(/Zeile 3/);
+    expect(makeId('Politik', 'faces', new Set())).toBe('promi-politik');
+    expect(newDraft('faces').meta.question).toBe('Wer ist das?');
+  });
+});

@@ -25,6 +25,8 @@
   import MorseReveal from '../components/MorseReveal.svelte';
   import PictureBoard from '../components/PictureBoard.svelte';
   import PictureReveal from '../components/PictureReveal.svelte';
+  import FacesBoard from '../components/FacesBoard.svelte';
+  import FacesReveal from '../components/FacesReveal.svelte';
   import Scoring from '../components/Scoring.svelte';
   import Scoreboard from '../components/Scoreboard.svelte';
   import FinalStandings from '../components/FinalStandings.svelte';
@@ -128,6 +130,8 @@
           <MorseBoard {view} round={view.round} />
         {:else if view.round?.game === 'picture'}
           <PictureBoard {view} round={view.round} />
+        {:else if view.round?.game === 'faces'}
+          <FacesBoard {view} round={view.round} />
         {:else if view.round?.game === 'sort'}
           <Board {view} round={view.round} />
         {/if}
@@ -150,6 +154,8 @@
           <MorseReveal {view} round={view.round} />
         {:else if view.round?.game === 'picture'}
           <PictureReveal {view} round={view.round} />
+        {:else if view.round?.game === 'faces'}
+          <FacesReveal {view} round={view.round} />
         {:else if view.round?.game === 'sort'}
           <Reveal {view} round={view.round} />
         {/if}

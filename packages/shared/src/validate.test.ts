@@ -35,6 +35,11 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'reveal_all' })).toBe(true);
     expect(isClientMsg({ type: 'picture_guess', turnNo: 2, fieldId: 'f3', text: 'Eiffelturm' })).toBe(true);
     expect(isClientMsg({ type: 'picture_judge', turnNo: 2, correct: false })).toBe(true);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'faces', categoryId: 'x', targetId: 'p', effect: 'tiles', cols: 6 })).toBe(true);
+    expect(isClientMsg({ type: 'face_guess', text: 'Angela Merkel' })).toBe(true);
+    expect(isClientMsg({ type: 'face_judge', playerId: 'p1', index: 0, correct: true })).toBe(true);
+    expect(isClientMsg({ type: 'face_effect', level: 40 })).toBe(true);
+    expect(isClientMsg({ type: 'face_effect', revealed: [0, 5, 7] })).toBe(true);
     expect(isClientMsg({ type: 'guess', turnNo: 2, text: 'Haaland' })).toBe(true);
     expect(isClientMsg({ type: 'judge', turnNo: 2, correct: true, rank: 3 })).toBe(true);
     expect(isClientMsg({ type: 'judge', turnNo: 2, correct: false })).toBe(true);
@@ -63,6 +68,12 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'reveal_player' })).toBe(false);
     expect(isClientMsg({ type: 'picture_guess', turnNo: 2, fieldId: 'f3', text: '' })).toBe(false);
     expect(isClientMsg({ type: 'picture_judge', turnNo: 2 })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'faces', categoryId: 'x', effect: 'swirl' })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'faces', categoryId: 'x', level: 101 })).toBe(false);
+    expect(isClientMsg({ type: 'face_guess', text: '  ' })).toBe(false);
+    expect(isClientMsg({ type: 'face_effect' })).toBe(false);
+    expect(isClientMsg({ type: 'face_effect', cols: 1 })).toBe(false);
+    expect(isClientMsg({ type: 'face_effect', revealed: [-1] })).toBe(false);
     expect(isClientMsg({ type: 'submit_scores', scores: { a: 1.5 } })).toBe(false);
     expect(isClientMsg({ type: 'submit_scores', scores: { a: 5000 } })).toBe(false);
     expect(isClientMsg({ type: 'set_settings', timerSeconds: 45 })).toBe(false);

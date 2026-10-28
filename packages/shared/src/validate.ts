@@ -1,5 +1,22 @@
 import type { ClientMsg } from './protocol.ts';
-import { GAME_IDS, GUESS_MAX_LENGTH, LIVES_MAX, LIVES_MIN, MORSE_SPEEDS, REVEAL_MODES, TIMER_OPTIONS, type GameId, type MorseSpeed, type RevealMode, type TimerSeconds } from './types.ts';
+import {
+  FACE_COLS_MAX,
+  FACE_COLS_MIN,
+  FACE_EFFECTS,
+  FACE_LEVEL_MAX,
+  GAME_IDS,
+  GUESS_MAX_LENGTH,
+  LIVES_MAX,
+  LIVES_MIN,
+  MORSE_SPEEDS,
+  REVEAL_MODES,
+  TIMER_OPTIONS,
+  type FaceEffect,
+  type GameId,
+  type MorseSpeed,
+  type RevealMode,
+  type TimerSeconds,
+} from './types.ts';
 import { isValidLatLng } from './rules/geo.ts';
 import { isTimelineYear } from './rules/timeline.ts';
 import { isRiskDuplicates, isRiskMissPoints } from './rules/risk.ts';
@@ -36,6 +53,18 @@ export function isMorseSpeed(value: unknown): value is MorseSpeed {
 
 export function isRevealMode(value: unknown): value is RevealMode {
   return typeof value === 'string' && (REVEAL_MODES as readonly string[]).includes(value);
+}
+
+export function isFaceEffect(value: unknown): value is FaceEffect {
+  return typeof value === 'string' && (FACE_EFFECTS as readonly string[]).includes(value);
+}
+
+export function isFaceLevel(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= FACE_LEVEL_MAX;
+}
+
+export function isFaceCols(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= FACE_COLS_MIN && value <= FACE_COLS_MAX;
 }
 
 export function isLives(value: unknown): value is number {
@@ -102,7 +131,22 @@ export function isClientMsg(x: unknown): x is ClientMsg {
         (x.duplicates === undefined || isRiskDuplicates(x.duplicates)) &&
         (x.missPoints === undefined || isRiskMissPoints(x.missPoints)) &&
         (x.word === undefined || isStr(x.word, 200)) &&
-        (x.reveal === undefined || isRevealMode(x.reveal))
+        (x.reveal === undefined || isRevealMode(x.reveal)) &&
+        (x.effect === undefined || isFaceEffect(x.effect)) &&
+        (x.level === undefined || isFaceLevel(x.level)) &&
+        (x.cols === undefined || isFaceCols(x.cols))
+      );
+    case 'face_guess':
+      return isStr(x.text, GUESS_MAX_LENGTH) && x.text.trim().length > 0;
+    case 'face_judge':
+      return isStr(x.playerId, 100) && isInt(x.index) && x.index >= 0 && typeof x.correct === 'boolean';
+    case 'face_effect':
+      return (
+        (x.level !== undefined || x.cols !== undefined || x.revealed !== undefined) &&
+        (x.level === undefined || isFaceLevel(x.level)) &&
+        (x.cols === undefined || isFaceCols(x.cols)) &&
+        (x.revealed === undefined ||
+          (Array.isArray(x.revealed) && x.revealed.length <= 1000 && x.revealed.every((i) => isInt(i) && i >= 0)))
       );
     case 'reveal_player':
       return isStr(x.playerId, 100);

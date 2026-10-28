@@ -144,6 +144,11 @@
     <p>Richtig deckt die Stelle auf, falsch kostet ein Leben. Bilder und Felder legst du im Editor an.</p>
   </div>
   <div class="card space-y-2 text-sm text-slate-400">
+    <h3 class="font-semibold text-slate-200">Wer ist das?</h3>
+    <p>Ein Promi-Foto, verschwommen, verpixelt oder hinter Kacheln. Der Host gibt es Stück für Stück frei, alle raten um die Wette per Text.</p>
+    <p>Der Host prüft jeden Tipp, die ersten drei Richtigen bekommen 3, 2 und 1 Punkt als Vorschlag.</p>
+  </div>
+  <div class="card space-y-2 text-sm text-slate-400">
     <h3 class="font-semibold text-slate-200">Dabeibleiben und Beenden</h3>
     <p>Wer kurz in eine andere App wechselt, bleibt im Spiel und in der Zugreihenfolge. Ist er am Zug, läuft der Timer oder der Host überspringt den Zug.</p>
     <p>Bei Sortieren, Top X und Zuordnen kann der Host eine Kategorie jederzeit beenden: Alle Werte werden aufgedeckt, Punkte gibt es wie gewohnt.</p>

@@ -4,6 +4,7 @@ import {
   isValidLatLng,
   type BluffCategoryInfo,
   type CategoryInfo,
+  type FacesCategoryInfo,
   type GameId,
   type LatLngBounds,
   type MapCategoryInfo,
@@ -113,7 +114,25 @@ export interface PictureCategory extends PictureCategoryInfo {
   fields: PictureField[];
 }
 
-export type Category = RankedCategory | PairsCategory | PlacesCategory | EventsCategory | PromptsCategory | PictureCategory;
+/** Eine Person mit Foto, für Wer ist das?. */
+export interface Face {
+  /** Aus dem Namen abgeleitet, eindeutig innerhalb der Sammlung. */
+  id: string;
+  name: string;
+  /** Weitere Schreibweisen für den Vorschlag beim Prüfen. */
+  aliases?: string[];
+  /** Dateiname in der Bildablage oder http(s)-Adresse. */
+  image: string;
+}
+
+/** Promi-Sammlung, für Wer ist das?. */
+export interface FacesCategory extends FacesCategoryInfo {
+  kind: 'faces';
+  games: GameId[];
+  faces: Face[];
+}
+
+export type Category = RankedCategory | PairsCategory | PlacesCategory | EventsCategory | PromptsCategory | PictureCategory | FacesCategory;
 
 /** Dateinamen in der Bildablage: klein, ohne Pfad, mit Bildendung. */
 export const IMAGE_NAME_PATTERN = /^[a-z0-9][a-z0-9._-]{0,119}\.(jpg|jpeg|png|webp|svg)$/;
@@ -176,6 +195,7 @@ export function validateCategory(raw: unknown, file: string): Category {
   if ('events' in raw) return validateEvents(raw, file);
   if ('prompts' in raw) return validatePrompts(raw, file);
   if ('fields' in raw) return validatePicture(raw, file);
+  if ('faces' in raw) return validateFaces(raw, file);
   return validateRanked(raw, file);
 }
 
@@ -209,6 +229,7 @@ function validateRanked(raw: Record<string, unknown>, file: string): RankedCateg
   if (games.includes('timeline')) throw new CategoryValidationError(file, 'Zeitstrahl braucht eine Ereignisliste mit "events"');
   if (games.includes('bluff')) throw new CategoryValidationError(file, 'Bluff braucht eine Aufgabenliste mit "prompts"');
   if (games.includes('picture')) throw new CategoryValidationError(file, 'Bilderrätsel braucht ein Bild mit "fields"');
+  if (games.includes('faces')) throw new CategoryValidationError(file, 'Wer ist das? braucht eine Promi-Sammlung mit "faces"');
   const forSort = games.includes('sort');
   const forTopX = games.includes('topx');
 
@@ -512,4 +533,40 @@ function validatePicture(raw: Record<string, unknown>, file: string): PictureCat
     fields,
     ...(source !== undefined ? { source } : {}),
   };
+}
+
+function validateFaces(raw: Record<string, unknown>, file: string): FacesCategory {
+  const id = readId(raw, file);
+  const title = requireString(raw, 'title', file);
+  const question = requireString(raw, 'question', file);
+  const games = readGames(raw, file, ['faces']);
+  if (!games.includes('faces')) throw new CategoryValidationError(file, 'Promi-Sammlungen gehören zu "faces"');
+  if (games.some((g) => g !== 'faces')) throw new CategoryValidationError(file, 'Promi-Sammlungen taugen nur für "faces"');
+
+  const facesRaw = raw.faces;
+  if (!Array.isArray(facesRaw)) throw new CategoryValidationError(file, 'faces fehlt');
+  if (facesRaw.length < MIN_ENTRIES) throw new CategoryValidationError(file, `mindestens ${MIN_ENTRIES} Personen nötig, ${facesRaw.length} vorhanden`);
+
+  const names = new Set<string>();
+  const ids = new Set<string>();
+  const faces: Face[] = facesRaw.map((f, idx) => {
+    if (!isRecord(f)) throw new CategoryValidationError(file, `faces[${idx}] ist kein Objekt`);
+    const name = typeof f.name === 'string' ? f.name.trim() : '';
+    if (!name) throw new CategoryValidationError(file, `faces[${idx}]: name fehlt oder ist leer`);
+    const key = name.toLowerCase();
+    if (names.has(key)) throw new CategoryValidationError(file, `doppelte Person "${name}"`);
+    names.add(key);
+    const faceId = slugify(name);
+    if (!faceId || ids.has(faceId)) throw new CategoryValidationError(file, `faces[${idx}]: Name "${name}" ergibt keine eindeutige id`);
+    ids.add(faceId);
+    if (!isImageRef(f.image)) throw new CategoryValidationError(file, `faces[${idx}]: image fehlt oder ist kein Dateiname bzw. keine http-Adresse`);
+    if (f.aliases !== undefined && (!Array.isArray(f.aliases) || !f.aliases.every((a) => typeof a === 'string'))) {
+      throw new CategoryValidationError(file, `faces[${idx}]: aliases muss eine Liste von Strings sein`);
+    }
+    const aliases = Array.isArray(f.aliases) ? (f.aliases as string[]).map((a) => a.trim()).filter(Boolean) : [];
+    return { id: faceId, name, image: f.image, ...(aliases.length ? { aliases } : {}) };
+  });
+
+  const source = typeof raw.source === 'string' && raw.source.trim() ? raw.source : undefined;
+  return { kind: 'faces', id, title, question, games, faces, ...(source !== undefined ? { source } : {}) };
 }

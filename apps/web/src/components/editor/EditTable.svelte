@@ -11,6 +11,7 @@
     numbered = true,
     noun = 'Eintrag',
     onCellPaste,
+    onImageUpload,
   }: {
     columns: Column[];
     rows: Row[];
@@ -21,7 +22,11 @@
     noun?: string;
     /** Spezielles Einfügen in eine Zelle. `true` heißt: erledigt, Standard überspringen. */
     onCellPaste?: (rowIndex: number, key: string, text: string) => boolean;
+    /** Bildspalten: Datei für eine Zeile hochladen, der Aufrufer trägt den Dateinamen ein. */
+    onImageUpload?: (rowIndex: number, file: File) => void;
   } = $props();
+
+  const imageSrc = (name: string) => (/^https?:\/\//.test(name) ? name : `/images/${name}`);
 
   let table = $state<HTMLTableElement>();
   let pasting = $state(false);
@@ -106,6 +111,20 @@
             {#if numbered}<td class="px-2 py-1 text-right font-mono text-xs text-slate-500">{i + 1}</td>{/if}
             {#each columns as c (c.key)}
               <td class="px-1.5 py-1 {c.width ?? ''}">
+                {#if c.type === 'image'}
+                  <div class="flex items-center gap-2">
+                    {#if row[c.key]}
+                      <img src={imageSrc(row[c.key] ?? '')} alt="" class="h-10 w-10 shrink-0 rounded-md object-cover" />
+                      <span class="min-w-0 flex-1 truncate font-mono text-xs text-slate-400" title={row[c.key]}>{row[c.key]}</span>
+                    {:else}
+                      <span class="min-w-0 flex-1 text-xs {rowIssues[c.key] ? 'text-rose-400' : 'text-slate-600'}">{rowIssues[c.key] ? 'Bild fehlt' : 'kein Bild'}</span>
+                    {/if}
+                    <label class="btn-ghost shrink-0 cursor-pointer px-2 py-1 text-xs">
+                      {row[c.key] ? 'Ersetzen' : 'Hochladen'}
+                      <input type="file" class="hidden" accept="image/jpeg,image/png,image/webp,image/svg+xml" onchange={(e) => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (f) onImageUpload?.(i, f); }} />
+                    </label>
+                  </div>
+                {:else}
                 <input
                   class="w-full rounded-lg border-2 bg-slate-950 px-2 py-1.5 font-semibold text-slate-100 outline-none transition placeholder:font-medium placeholder:text-slate-600 focus:border-indigo-500
                     {rowIssues[c.key] ? 'border-rose-500' : 'border-transparent hover:border-slate-800'}"
@@ -121,6 +140,7 @@
                   onkeydown={(e) => onKey(e, i, c.key)}
                   onpaste={(e) => onPaste(e, i, c.key)}
                 />
+                {/if}
               </td>
             {/each}
             <td class="whitespace-nowrap px-1.5 py-1 text-right">
