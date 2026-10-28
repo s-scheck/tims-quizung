@@ -27,7 +27,7 @@ export function toView(room: Room, viewerId: string | null): RoomView {
   };
   if (room.phase === 'choosing_category') {
     view.games = listGames().map((g) => ({ id: g.id, name: g.name, description: g.description }));
-    view.categories = room.categories.list().map((c) => {
+    const summaries: NonNullable<RoomView['categories']> = room.categories.list().map((c) => {
       const summary: NonNullable<RoomView['categories']>[number] = {
         id: c.id,
         title: c.title,
@@ -57,6 +57,13 @@ export function toView(room: Room, viewerId: string | null): RoomView {
       }
       return summary;
     });
+    // Entwürfe aus dem Editor sieht der Host ausgegraut, damit klar ist, warum eine Liste fehlt.
+    if (viewerId !== null && viewerId === room.hostId) {
+      for (const d of room.categories.drafts()) {
+        summaries.push({ id: d.id, title: d.title, question: d.question, count: d.count, played: false, games: [...d.games], draft: d.error });
+      }
+    }
+    view.categories = summaries;
   }
   return view;
 }

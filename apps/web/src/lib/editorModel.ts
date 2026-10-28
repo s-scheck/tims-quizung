@@ -14,7 +14,7 @@ export const EDITOR_GAMES: { id: GameId; name: string; kind: Kind; hint: string 
   { id: 'risk', name: 'No Risk No Fun', kind: 'ranked', hint: 'Beliebig viele Einträge, Platz 1 zuerst. Je länger die Liste, desto mehr Punkte gibt es hinten. Platz 1 sollte bekannt, die hinteren Plätze Nischenwissen sein.' },
   { id: 'bluff', name: 'Bluff', kind: 'prompts', hint: 'Beliebig viele Aufgaben mit der echten Antwort, etwa Film und Subline. Die Antwort muss stimmen, sie ist die Wahrheit im Spiel.' },
   { id: 'picture', name: 'Bilderrätsel', kind: 'picture', hint: 'Ein Bild, darauf mindestens zwei Felder mit Antwort. Bild vorher verkleinern (höchstens 8 MB), optional ein Original zum bearbeiteten Bild.' },
-  { id: 'faces', name: 'Wer ist das?', kind: 'faces', hint: 'Mindestens zwei Personen mit Foto. Aliasse helfen beim Prüfen der Tipps. Der Mehrfach-Upload legt Zeilen aus Dateinamen an.' },
+  { id: 'faces', name: 'Wer ist das?', kind: 'faces', hint: 'Mindestens eine Person mit Foto, jede Runde zeigt eine. Aliasse helfen beim Prüfen der Tipps. Der Mehrfach-Upload legt Zeilen aus Dateinamen an.' },
 ];
 
 export const GAME_NAMES: Record<string, string> = Object.fromEntries(EDITOR_GAMES.map((g) => [g.id, g.name]));

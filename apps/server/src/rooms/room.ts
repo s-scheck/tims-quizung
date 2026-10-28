@@ -5,6 +5,7 @@ import {
   isTimerSeconds,
   LIVES_DEFAULT,
   normalizeName,
+  type CategoryDraft,
   type ClientMsg,
   type GameId,
   type Phase,
@@ -23,6 +24,8 @@ import { handleCommon, removePlayerFromRound } from '../games/common.ts';
 export interface CategoryProvider {
   list(): Category[];
   get(id: string): Category | undefined;
+  /** Unfertige eigene Listen, die der Host in der Auswahl ausgegraut sieht. */
+  drafts(): CategoryDraft[];
 }
 
 export interface RoomDeps {

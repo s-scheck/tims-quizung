@@ -250,13 +250,13 @@ Für Wer ist das? gibt es Promi-Sammlungen mit Bild je Person:
 }
 ```
 
-Regeln: mindestens 2 Personen, Namen eindeutig, `aliases` optional, `image` ein Dateiname aus der Bildablage oder eine http-Adresse. Dateien beginnen mit `promi-`. Im Editor gibt es Upload je Zeile und einen Mehrfach-Upload, der aus Dateinamen wie „Angela Merkel.jpg“ Zeilen anlegt.
+Regeln: mindestens 1 Person, Namen eindeutig, `aliases` optional, `image` ein Dateiname aus der Bildablage oder eine http-Adresse. Dateien beginnen mit `promi-`. Im Editor gibt es Upload je Zeile und einen Mehrfach-Upload, der aus Dateinamen wie „Angela Merkel.jpg“ Zeilen anlegt.
 
 Für Top X kommt `"games": ["topx"]` dazu (Standard ist `["sort"]`, beides zusammen geht auch). Top-X-Listen müssen echte Top-Listen ohne Gleichstand über die Listengrenze sein, dürfen kurz sein und Gleichstände enthalten. Pro Eintrag helfen `aliases` beim Abgleich, etwa `["Mbappe", "Mbappé"]`; ein eindeutiger Nachname trifft automatisch. Dateien beginnen mit `topx-`.
 
 ## Kategorien-Editor
 
-Unter `/editor` (Link auf der Startseite) lassen sich alle Listen im Browser bearbeiten: eigene anlegen, mitgelieferte ändern, ausblenden oder auf das Original zurücksetzen. Einträge stehen in einer Tabelle; Zeilen aus Excel, Numbers oder Google Sheets lassen sich direkt einfügen, Zahlen wie `1.450,9` und Jahre wie `44 v. Chr.` werden erkannt. Bei Karte setzt ein Klick auf die Weltkarte die Koordinaten der gewählten Zeile. Der Editor prüft live mit denselben Regeln wie der Server. Unfertige Listen werden als Entwurf gespeichert und erscheinen erst in der Spielauswahl, wenn alle Regeln erfüllt sind. Änderungen gelten ab der nächsten Runde.
+Unter `/editor` (Link auf der Startseite) lassen sich alle Listen im Browser bearbeiten: eigene anlegen, mitgelieferte ändern, ausblenden oder auf das Original zurücksetzen. Einträge stehen in einer Tabelle; Zeilen aus Excel, Numbers oder Google Sheets lassen sich direkt einfügen, Zahlen wie `1.450,9` und Jahre wie `44 v. Chr.` werden erkannt. Bei Karte setzt ein Klick auf die Weltkarte die Koordinaten der gewählten Zeile. Der Editor prüft live mit denselben Regeln wie der Server. Unfertige Listen werden als Entwurf gespeichert; in der Spielauswahl sieht der Host sie ausgegraut mit dem Grund und kann sie erst wählen, wenn alle Regeln erfüllt sind. Änderungen gelten ab der nächsten Runde.
 
 Gespeichert wird im Datenordner `DATA_DIR` (Standard: `data/` im Repo, in Docker `/data`, per `compose.yaml` als `./data` eingehängt). Dort liegt je Liste eine JSON-Datei im selben Format wie unter `packages/content/categories/`; sie überlagert die mitgelieferte Liste gleicher id. Ausgeblendete Listen stehen dort als `{ "id": …, "deleted": true }`. Der Ordner ist nicht in git. Der Editor hat keinen Zugangsschutz: Wer die Adresse kennt, kann bearbeiten.
 

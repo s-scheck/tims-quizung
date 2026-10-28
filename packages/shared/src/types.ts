@@ -92,6 +92,18 @@ export interface CategorySummary {
   games: GameId[];
   /** Nur bei Orts-, Ereignis- und Aufgabenlisten und nur in der Sicht des Hosts: wählbare Ziele. */
   targets?: MapTargetSummary[];
+  /** Nur bei Entwürfen aus dem Editor und nur in der Sicht des Hosts: warum die Liste noch nicht spielbar ist. */
+  draft?: string;
+}
+
+/** Eigene Liste aus dem Editor, die noch gegen eine Regel verstößt. */
+export interface CategoryDraft {
+  id: string;
+  title: string;
+  question: string;
+  count: number;
+  games: GameId[];
+  error: string;
 }
 
 export interface GameInfo {

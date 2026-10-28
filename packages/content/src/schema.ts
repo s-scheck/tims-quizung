@@ -151,6 +151,8 @@ export function isImageRef(value: unknown): value is string {
 
 /** Jede Liste braucht mindestens zwei Einträge. Nach oben gibt es keine Grenze, die Daten bestimmen die Rundenlänge. */
 export const MIN_ENTRIES = 2;
+/** Promi-Sammlungen brauchen nur eine Person, jede Runde zeigt genau eine. */
+export const FACES_MIN_ENTRIES = 1;
 
 export class CategoryValidationError extends Error {
   constructor(
@@ -545,7 +547,7 @@ function validateFaces(raw: Record<string, unknown>, file: string): FacesCategor
 
   const facesRaw = raw.faces;
   if (!Array.isArray(facesRaw)) throw new CategoryValidationError(file, 'faces fehlt');
-  if (facesRaw.length < MIN_ENTRIES) throw new CategoryValidationError(file, `mindestens ${MIN_ENTRIES} Personen nötig, ${facesRaw.length} vorhanden`);
+  if (facesRaw.length < FACES_MIN_ENTRIES) throw new CategoryValidationError(file, `mindestens ${FACES_MIN_ENTRIES} Person nötig, ${facesRaw.length} vorhanden`);
 
   const names = new Set<string>();
   const ids = new Set<string>();

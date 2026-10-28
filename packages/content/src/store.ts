@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { GAME_IDS, type EditorDocument, type EditorEntry, type EditorStatus, type GameId } from '@quiz/shared';
+import { GAME_IDS, type CategoryDraft, type EditorDocument, type EditorEntry, type EditorStatus, type GameId } from '@quiz/shared';
 import { CategoryValidationError, validateCategory, type Category } from './schema.ts';
 
 export type { EditorDocument, EditorEntry, EditorStatus } from '@quiz/shared';
@@ -137,6 +137,19 @@ export class CategoryStore {
 
   get(id: string): Category | undefined {
     return this.playable.find((c) => c.id === id);
+  }
+
+  /** Eigene Listen, die noch gegen eine Regel verstoßen. Entwürfe mitgelieferter Listen fehlen, dort spielt das Original weiter. */
+  drafts(): CategoryDraft[] {
+    const out: CategoryDraft[] = [];
+    for (const id of [...this.overlay.keys()].sort()) {
+      const over = this.overlay.get(id)!;
+      if (over.deleted || over.category || this.builtin.has(id)) continue;
+      const e = this.entry(id)!;
+      const question = typeof over.raw.question === 'string' ? over.raw.question : '';
+      out.push({ id, title: e.title, question, count: e.count, games: e.games, error: over.error ?? 'ungültig' });
+    }
+    return out;
   }
 
   // ----------------------------------------------------------------- Editor

@@ -316,17 +316,29 @@
       <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {#each categories as c (c.id)}
           <button
-            class="card flex flex-col items-start gap-1 text-left transition hover:border-indigo-500/60 hover:bg-slate-800/60 {c.played ? 'opacity-60' : ''}"
+            class="card flex flex-col items-start gap-1 text-left transition {c.draft ? 'cursor-not-allowed opacity-50' : 'hover:border-indigo-500/60 hover:bg-slate-800/60'} {c.played ? 'opacity-60' : ''}"
+            disabled={!!c.draft}
             onclick={() => onCategoryClick(c)}
           >
             <div class="flex w-full items-start justify-between gap-2">
               <span class="font-bold">{c.title}</span>
-              {#if c.played}<span class="badge shrink-0 bg-emerald-500/20 text-emerald-300">gespielt</span>{/if}
+              {#if c.draft}
+                <span class="badge shrink-0 bg-amber-500/20 text-amber-300">Entwurf</span>
+              {:else if c.played}
+                <span class="badge shrink-0 bg-emerald-500/20 text-emerald-300">gespielt</span>
+              {/if}
             </div>
             <span class="text-sm text-slate-400">{c.question}</span>
-            <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : c.games.includes('bluff') ? 'Aufgaben' : c.games.includes('picture') ? 'Felder' : c.games.includes('faces') ? 'Personen' : 'Karten'}</span>
+            {#if c.draft}
+              <span class="text-xs text-amber-300">Noch nicht spielbar: {c.draft}</span>
+            {:else}
+              <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : c.games.includes('bluff') ? 'Aufgaben' : c.games.includes('picture') ? 'Felder' : c.games.includes('faces') ? 'Personen' : 'Karten'}</span>
+            {/if}
           </button>
         {/each}
+        {#if categories.length === 0}
+          <p class="text-sm text-slate-500 sm:col-span-2 lg:col-span-3">Noch keine Liste für dieses Spiel. Im Editor lässt sich eine anlegen.</p>
+        {/if}
       </div>
     </div>
     {/if}

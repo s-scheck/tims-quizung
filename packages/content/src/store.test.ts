@@ -45,6 +45,19 @@ describe('CategoryStore', () => {
     expect(existsSync(join(dataDir, 'categories', 'map-b.json'))).toBe(false);
   });
 
+  test('drafts(): nur eigene unfertige Listen, nicht die Entwürfe mitgelieferter', () => {
+    const store = new CategoryStore(builtinDir, dataDir);
+    store.save('map-b', mapList('map-b', 1));
+    store.save('map-a', { ...mapList('map-a', 1), title: 'Kaputt' });
+    expect(store.drafts()).toEqual([
+      { id: 'map-b', title: 'Liste map-b', question: 'Wo?', count: 1, games: ['map'], error: expect.stringMatching(/mindestens 2/) },
+    ]);
+    expect(store.list().map((c) => c.id)).toEqual(['map-a']);
+
+    store.save('map-b', mapList('map-b', 12));
+    expect(store.drafts()).toEqual([]);
+  });
+
   test('mitgelieferte Liste: ändern, Entwurf behält Original im Spiel, ausblenden, zurücksetzen', () => {
     const store = new CategoryStore(builtinDir, dataDir);
     expect(store.save('map-a', { ...mapList('map-a', 11), title: 'Neu' }).status).toBe('modified');

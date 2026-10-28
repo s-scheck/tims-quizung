@@ -380,7 +380,8 @@ describe('validateCategory (Promi-Sammlung)', () => {
   });
 
   test('lehnt Fehler ab', () => {
-    expect(() => validateCategory({ ...base, faces: base.faces.slice(0, 1) }, 'f')).toThrow(/mindestens 2/);
+    expect(validateCategory({ ...base, faces: base.faces.slice(0, 1) }, 'f')).toMatchObject({ kind: 'faces' });
+    expect(() => validateCategory({ ...base, faces: [] }, 'f')).toThrow(/mindestens 1 Person/);
     expect(() => validateCategory({ ...base, faces: [...base.faces, { name: 'angela merkel', image: 'x.jpg' }] }, 'f')).toThrow(/doppelte Person/);
     expect(() => validateCategory({ ...base, faces: [...base.faces, { name: 'X', image: 'kein-bild' }] }, 'f')).toThrow(/image/);
     expect(() => validateCategory({ ...base, faces: [...base.faces, { name: ' ', image: 'x.jpg' }] }, 'f')).toThrow(/name/);

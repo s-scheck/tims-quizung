@@ -36,7 +36,7 @@ export interface QuizServer {
 export function createServer(opts: ServerOptions): QuizServer {
   const scheduler = opts.scheduler ?? new RealScheduler();
   const store = opts.store ?? new CategoryStore(CATEGORIES_DIR, opts.dataDir ?? null);
-  const categories: CategoryProvider = opts.categories ?? { list: () => store.list(), get: (id) => store.get(id) };
+  const categories: CategoryProvider = opts.categories ?? { list: () => store.list(), get: (id) => store.get(id), drafts: () => store.drafts() };
   const serveStatic = createStaticHandler(opts.distDir);
 
   // Hub und Registry verweisen aufeinander, deshalb die späte Zuweisung.

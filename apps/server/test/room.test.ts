@@ -121,6 +121,28 @@ describe('View', () => {
     expect(view.categories).toBeUndefined();
   });
 
+  test('Entwürfe aus dem Editor sieht nur der Host, mit Grund, wählen geht nicht', () => {
+    const drafts = [{ id: 'promi-neu', title: 'Neu', question: 'Wer?', count: 0, games: ['faces' as const], error: 'mindestens 1 Person nötig, 0 vorhanden' }];
+    const room = new Room('ABCD', { scheduler: new FakeScheduler(), categories: { ...provider, drafts: () => drafts }, random: seeded() });
+    const host = room.join('H', undefined);
+    const guest = room.join('A', undefined);
+    if (!host.ok || !guest.ok) throw new Error();
+    expect(room.handle(host.player.id, { type: 'start_game' }).ok).toBe(true);
+    expect(toView(room, host.player.id).categories?.find((c) => c.id === 'promi-neu')).toEqual({
+      id: 'promi-neu',
+      title: 'Neu',
+      question: 'Wer?',
+      count: 0,
+      played: false,
+      games: ['faces'],
+      draft: 'mindestens 1 Person nötig, 0 vorhanden',
+    });
+    expect(toView(room, null).categories?.some((c) => c.id === 'promi-neu')).toBe(false);
+    expect(toView(room, guest.player.id).categories?.some((c) => c.id === 'promi-neu')).toBe(false);
+    expect(room.handle(host.player.id, { type: 'choose_category', gameId: 'faces', categoryId: 'promi-neu' }).ok).toBe(false);
+    expect(room.phase).toBe('choosing_category');
+  });
+
   test('Kategorienliste nur bei der Kategoriewahl, mit gespielt-Markierung', () => {
     const h = makeHarness(['A']);
     h.act(h.host, { type: 'start_game' });

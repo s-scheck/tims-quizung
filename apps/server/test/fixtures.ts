@@ -175,6 +175,7 @@ const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES, PROMPTS, PIC
 export const provider: CategoryProvider = {
   list: () => ALL,
   get: (id) => ALL.find((c) => c.id === id),
+  drafts: () => [],
 };
 
 /** Deterministischer Zufall (mulberry32). */
