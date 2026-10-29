@@ -104,13 +104,11 @@
     {/if}
 
     <div class="card">
-      <h3 class="mb-2 font-bold">{listDone ? 'Die ganze Liste' : 'Getroffene Plätze'}</h3>
+      <h3 class="mb-2 font-bold">{listDone ? 'Die ganze Liste' : `Plätze 1–${round.size}`}</h3>
       {#if listDone && round.solution}
         <RiskSlots {view} {round} slots={round.solution} large={readonly} />
-      {:else if round.hitSlots.length > 0}
-        <RiskSlots {view} {round} slots={round.hitSlots} large={readonly} />
       {:else}
-        <p class="text-sm text-slate-500">{show && !moderator ? 'Noch nichts aufgedeckt.' : 'Noch kein Platz getroffen.'}</p>
+        <RiskSlots {view} {round} slots={round.hitSlots} full large={readonly} />
       {/if}
     </div>
 

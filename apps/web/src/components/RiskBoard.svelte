@@ -86,10 +86,10 @@
         <h3 class="mb-2 font-bold">Ganze Liste <span class="text-xs font-normal text-amber-300/80">nur für dich</span></h3>
         <RiskSlots {view} {round} slots={round.solution} />
       </div>
-    {:else if round.hitSlots.length > 0}
+    {:else}
       <div class="card">
-        <h3 class="mb-2 font-bold">Schon getroffen</h3>
-        <RiskSlots {view} {round} slots={round.hitSlots} large={readonly} />
+        <h3 class="mb-2 font-bold">Plätze 1–{round.size}</h3>
+        <RiskSlots {view} {round} slots={round.hitSlots} full large={readonly} />
       </div>
     {/if}
   </section>
