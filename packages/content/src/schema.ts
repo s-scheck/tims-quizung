@@ -541,9 +541,10 @@ function validateFaces(raw: Record<string, unknown>, file: string): FacesCategor
   const id = readId(raw, file);
   const title = requireString(raw, 'title', file);
   const question = requireString(raw, 'question', file);
+  // Promi-Sammlungen gehören entweder zu Wer ist das? oder zu Kinderpromis, nie zu beiden: Die Fotos passen nur zu einem Spiel.
   const games = readGames(raw, file, ['faces']);
-  if (!games.includes('faces')) throw new CategoryValidationError(file, 'Promi-Sammlungen gehören zu "faces"');
-  if (games.some((g) => g !== 'faces')) throw new CategoryValidationError(file, 'Promi-Sammlungen taugen nur für "faces"');
+  if (games.some((g) => g !== 'faces' && g !== 'kids')) throw new CategoryValidationError(file, 'Promi-Sammlungen taugen nur für "faces" oder "kids"');
+  if (games.length !== 1) throw new CategoryValidationError(file, 'Promi-Sammlungen gehören entweder zu "faces" oder zu "kids", nicht zu beiden');
 
   const facesRaw = raw.faces;
   if (!Array.isArray(facesRaw)) throw new CategoryValidationError(file, 'faces fehlt');

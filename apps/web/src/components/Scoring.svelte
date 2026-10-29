@@ -43,6 +43,12 @@
       if (!s) return 'nicht erkannt';
       return `${s.rank}. Platz nach ${((s.at - r.startedAt) / 1000).toFixed(1)} s, ${r.points?.[id] ?? 0} Spielpunkte`;
     }
+    if (r.game === 'kids') {
+      const hits = r.hits[id] ?? 0;
+      const misses = r.misses[id] ?? 0;
+      const base = `${r.points[id] ?? 0} Spielpunkte · ${hits} Treffer`;
+      return r.mode === 'buzz' ? `${base} · ${misses} Fehlbuzzer` : base;
+    }
     if (r.game === 'morse') {
       const s = r.solved.find((x) => x.playerId === id);
       if (!s) return 'nicht gelöst';

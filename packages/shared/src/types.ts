@@ -12,8 +12,8 @@ export type Phase =
   | 'scoreboard'
   | 'finished';
 
-export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse' | 'picture' | 'faces';
-export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture', 'faces'];
+export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse' | 'picture' | 'faces' | 'kids';
+export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture', 'faces', 'kids'];
 /** Auflösung: alles auf einmal („auto“) oder vom Moderator Stück für Stück aufgedeckt („show“). */
 export type RevealMode = 'auto' | 'show';
 export const REVEAL_MODES: readonly RevealMode[] = ['auto', 'show'];
@@ -623,6 +623,77 @@ export interface FacesRoundView extends BaseRoundView {
   privileged?: boolean;
 }
 
+// ------------------------------------------------------------ Kinderpromis
+
+/** Tippen: alle gleichzeitig per Text. Buzzern: einer buzzert, sagt den Namen laut, der Host wertet. */
+export type KidsMode = 'type' | 'buzz';
+export const KIDS_MODES: readonly KidsMode[] = ['type', 'buzz'];
+/** Bedenkzeit nach dem Buzzern in Sekunden. */
+export const KIDS_THINK_OPTIONS = [5, 10, 15, 20] as const;
+export type KidsThinkSeconds = (typeof KIDS_THINK_OPTIONS)[number];
+export const KIDS_THINK_DEFAULT: KidsThinkSeconds = 10;
+/** Fehlbuzzer oder abgelaufene Bedenkzeit: ohne Abzug oder minus 1 Spielpunkt. */
+export type KidsPenalty = 'none' | 'minus';
+export const KIDS_PENALTIES: readonly KidsPenalty[] = ['none', 'minus'];
+/** Promis je Runde, wenn der Host nichts wählt; die Sammlung begrenzt nach oben. */
+export const KIDS_COUNT_DEFAULT = 5;
+export const KIDS_COUNT_MAX = 500;
+/** Spielpunkte je Promi im Tippen-Modus für die drei Schnellsten. Beim Buzzern gibt es 1 je Treffer. */
+export const KIDS_POINTS: readonly number[] = [3, 2, 1];
+
+export type KidsStage = 'hidden' | 'open' | 'solved';
+
+/** Abgeschlossener Promi der Runde: wer ihn in welcher Reihenfolge erkannt hat. */
+export interface KidsItemView {
+  id: string;
+  name: string;
+  image: string;
+  shownAt: number | null;
+  winners: FaceSolvedView[];
+}
+
+export interface KidsBuzzerView {
+  /** Wer gerade den Buzzer hält. */
+  holder: string | null;
+  /** Ende der Bedenkzeit. */
+  deadline: number | null;
+  /** Wer bei diesem Promi schon seinen Versuch verbraucht hat. */
+  used: string[];
+}
+
+export interface KidsRoundView extends BaseRoundView {
+  game: 'kids';
+  category: FacesCategoryInfo;
+  mode: KidsMode;
+  thinkSeconds: KidsThinkSeconds;
+  penalty: KidsPenalty;
+  /** Promis der Runde und Index des aktuellen (ab 0). */
+  total: number;
+  index: number;
+  stage: KidsStage;
+  /** Foto des aktuellen Promis, Host immer, andere ab „Zeigen“. */
+  image?: string;
+  /** Name des aktuellen Promis, Host immer, andere ab der Auflösung des Promis. */
+  name?: string;
+  shownAt: number | null;
+  /** Richtige beim aktuellen Promi in Reihenfolge ihrer Zeit. */
+  solved: FaceSolvedView[];
+  /** Eigene Versuche des Betrachters, nur Tippen. */
+  myAttempts?: FaceAttemptView[];
+  /** Alle Versuche beim aktuellen Promi, nur Host. */
+  attempts?: Record<string, FaceAttemptView[]>;
+  /** Nur Buzzern. */
+  buzzer?: KidsBuzzerView;
+  /** Spielpunkte über alle Promis der Runde, für alle sichtbar. */
+  points: Record<string, number>;
+  /** Treffer und Fehlbuzzer je Spieler über die Runde. */
+  hits: Record<string, number>;
+  misses: Record<string, number>;
+  /** Abgeschlossene Promis, in der Auflösung alle gezeigten. */
+  history: KidsItemView[];
+  privileged?: boolean;
+}
+
 export type RoundView =
   | SortRoundView
   | TopXRoundView
@@ -633,7 +704,8 @@ export type RoundView =
   | BluffRoundView
   | MorseRoundView
   | PictureRoundView
-  | FacesRoundView;
+  | FacesRoundView
+  | KidsRoundView;
 
 export interface RoundResult {
   gameId: GameId;

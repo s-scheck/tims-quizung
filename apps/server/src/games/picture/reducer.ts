@@ -18,7 +18,7 @@ export function startPictureRound(room: Room, category: Category | null, opts: S
   // Der Host kennt die Antworten und prüft jeden Tipp, also rät er nie mit, auch wenn er laut Lobby mitspielt.
   const turnOrder = buildTurnOrder(room).filter((id) => id !== room.hostId);
   if (turnOrder.length === 0) return fail('invalid_action', 'Bilderrätsel braucht mindestens einen Mitspieler außer dem Host');
-  const mode: PictureMode = opts.mode ?? 'turns';
+  const mode: PictureMode = opts.mode === 'all' ? 'all' : 'turns';
   const all = mode === 'all';
   const lives = all ? 0 : (opts.lives ?? room.defaultLives);
   if (!all) room.defaultLives = lives;

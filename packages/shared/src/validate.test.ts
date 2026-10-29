@@ -45,6 +45,14 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'face_judge', playerId: 'p1', index: 0, correct: true })).toBe(true);
     expect(isClientMsg({ type: 'face_effect', level: 40 })).toBe(true);
     expect(isClientMsg({ type: 'face_effect', revealed: [0, 5, 7] })).toBe(true);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'kids', categoryId: 'x', mode: 'buzz', count: 5, thinkSeconds: 15, penalty: 'minus' })).toBe(true);
+    expect(isClientMsg({ type: 'kids_show' })).toBe(true);
+    expect(isClientMsg({ type: 'kids_guess', text: 'Merkel' })).toBe(true);
+    expect(isClientMsg({ type: 'kids_judge', playerId: 'p1', index: 0, correct: false })).toBe(true);
+    expect(isClientMsg({ type: 'kids_buzz' })).toBe(true);
+    expect(isClientMsg({ type: 'kids_verdict', correct: true })).toBe(true);
+    expect(isClientMsg({ type: 'kids_resolve' })).toBe(true);
+    expect(isClientMsg({ type: 'kids_next' })).toBe(true);
     expect(isClientMsg({ type: 'guess', turnNo: 2, text: 'Haaland' })).toBe(true);
     expect(isClientMsg({ type: 'judge', turnNo: 2, correct: true, rank: 3 })).toBe(true);
     expect(isClientMsg({ type: 'judge', turnNo: 2, correct: false })).toBe(true);
@@ -83,6 +91,13 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'face_effect' })).toBe(false);
     expect(isClientMsg({ type: 'face_effect', cols: 1 })).toBe(false);
     expect(isClientMsg({ type: 'face_effect', revealed: [-1] })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'kids', categoryId: 'x', mode: 'shout' })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'kids', categoryId: 'x', count: 0 })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'kids', categoryId: 'x', thinkSeconds: 7 })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'kids', categoryId: 'x', penalty: 'double' })).toBe(false);
+    expect(isClientMsg({ type: 'kids_guess', text: ' ' })).toBe(false);
+    expect(isClientMsg({ type: 'kids_judge', playerId: 'p1', index: -1, correct: true })).toBe(false);
+    expect(isClientMsg({ type: 'kids_verdict' })).toBe(false);
     expect(isClientMsg({ type: 'submit_scores', scores: { a: 1.5 } })).toBe(false);
     expect(isClientMsg({ type: 'submit_scores', scores: { a: 5000 } })).toBe(false);
     expect(isClientMsg({ type: 'set_settings', timerSeconds: 45 })).toBe(false);

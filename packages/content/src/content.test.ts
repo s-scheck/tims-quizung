@@ -387,6 +387,8 @@ describe('validateCategory (Promi-Sammlung)', () => {
     expect(() => validateCategory({ ...base, faces: [...base.faces, { name: ' ', image: 'x.jpg' }] }, 'f')).toThrow(/name/);
     expect(() => validateCategory({ ...base, faces: [...base.faces, { name: 'Y', image: 'y.jpg', aliases: 'nope' }] }, 'f')).toThrow(/aliases/);
     expect(() => validateCategory({ ...base, games: ['picture'] }, 'f')).toThrow(/faces/);
+    expect(validateCategory({ ...base, games: ['kids'] }, 'f')).toMatchObject({ kind: 'faces', games: ['kids'] });
+    expect(() => validateCategory({ ...base, games: ['faces', 'kids'] }, 'f')).toThrow(/nicht zu beiden/);
     expect(() => validateCategory({ id: 'x', title: 'T', question: 'Q', topLabel: 'a', bottomLabel: 'b', order: 'desc', games: ['faces'], items: [] }, 'f')).toThrow(/faces/);
   });
 });

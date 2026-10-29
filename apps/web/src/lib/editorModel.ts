@@ -15,6 +15,7 @@ export const EDITOR_GAMES: { id: GameId; name: string; kind: Kind; hint: string 
   { id: 'bluff', name: 'Bluff', kind: 'prompts', hint: 'Beliebig viele Aufgaben mit der echten Antwort, etwa Film und Subline. Die Antwort muss stimmen, sie ist die Wahrheit im Spiel.' },
   { id: 'picture', name: 'Bilderrätsel', kind: 'picture', hint: 'Ein Bild, darauf mindestens zwei Felder mit Antwort. Bild vorher verkleinern (höchstens 8 MB), optional ein Original zum bearbeiteten Bild.' },
   { id: 'faces', name: 'Wer ist das?', kind: 'faces', hint: 'Mindestens eine Person mit Foto, jede Runde zeigt eine. Aliasse helfen beim Prüfen der Tipps. Der Mehrfach-Upload legt Zeilen aus Dateinamen an.' },
+  { id: 'kids', name: 'Kinderpromis', kind: 'faces', hint: 'Kinderfotos von Promis, gleiches Format wie bei Wer ist das?. Pro Runde zeigt der Host mehrere Personen nacheinander. Der Mehrfach-Upload legt Zeilen aus Dateinamen an.' },
 ];
 
 export const GAME_NAMES: Record<string, string> = Object.fromEntries(EDITOR_GAMES.map((g) => [g.id, g.name]));
@@ -255,7 +256,7 @@ export function newDraft(game: GameId): Draft {
   if (kind === 'events') meta.question = 'Wann war das?';
   if (kind === 'places') meta.question = 'Wo liegt das?';
   if (kind === 'prompts') meta.question = 'Wie lautet die echte Antwort?';
-  if (kind === 'faces') meta.question = 'Wer ist das?';
+  if (kind === 'faces') meta.question = game === 'kids' ? 'Wer war das als Kind?' : 'Wer ist das?';
   if (kind === 'picture') {
     meta.question = 'Was fehlt hier?';
     meta.image = '';
@@ -263,7 +264,8 @@ export function newDraft(game: GameId): Draft {
   }
   // Felder im Bild entstehen durch Zeichnen, nicht aus Leerzeilen.
   const rows = kind === 'picture' ? [] : Array.from({ length: 3 }, () => emptyRow(COLUMNS[kind]));
-  return { kind, meta, games: kind === 'ranked' ? [game] : [], rows, decoys: kind === 'pairs' ? [emptyRow(DECOY_COLUMNS)] : [] };
+  // Promi-Sammlungen tragen ihr Spiel in `games`, weil Wer ist das? und Kinderpromis dasselbe Format teilen.
+  return { kind, meta, games: kind === 'ranked' || kind === 'faces' ? [game] : [], rows, decoys: kind === 'pairs' ? [emptyRow(DECOY_COLUMNS)] : [] };
 }
 
 const filled = (row: Row) => Object.values(row).some((v) => v.trim() !== '');
@@ -340,7 +342,7 @@ export function draftToRaw(draft: Draft, id: string, base: Raw = {}): Raw {
       break;
     }
     case 'faces':
-      raw.games = ['faces'];
+      raw.games = draft.games.includes('kids') ? ['kids'] : ['faces'];
       raw.faces = rows.map((r) => {
         const face: Raw = { name: (r.name ?? '').trim(), image: (r.image ?? '').trim() };
         const aliases = (r.aliases ?? '').split(/[,;]/).map((a) => a.trim()).filter(Boolean);
@@ -436,7 +438,7 @@ export function rowsFromCells(cells: string[][], columns: Column[]): Row[] {
 
 // -------------------------------------------------------------------- ids
 
-const PREFIX: Partial<Record<GameId, string>> = { topx: 'topx-', risk: 'risk-', match: 'match-', map: 'map-', timeline: 'zeit-', bluff: 'bluff-', picture: 'bild-', faces: 'promi-' };
+const PREFIX: Partial<Record<GameId, string>> = { topx: 'topx-', risk: 'risk-', match: 'match-', map: 'map-', timeline: 'zeit-', bluff: 'bluff-', picture: 'bild-', faces: 'promi-', kids: 'kind-' };
 
 /** Neue id aus dem Titel, mit dem üblichen Präfix des Spiels, eindeutig gegenüber `taken`. */
 export function makeId(title: string, game: GameId, taken: Set<string>): string {

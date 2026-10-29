@@ -13,9 +13,15 @@
     FACE_COLS_MAX,
     FACE_COLS_MIN,
     FACE_LEVEL_MAX,
+    KIDS_COUNT_DEFAULT,
+    KIDS_THINK_DEFAULT,
+    KIDS_THINK_OPTIONS,
     type CategorySummary,
     type FaceEffect,
     type GameId,
+    type KidsMode,
+    type KidsPenalty,
+    type KidsThinkSeconds,
     type PictureMode,
     type RevealMode,
     type RiskDuplicates,
@@ -69,6 +75,22 @@
     { effect: 'tiles', label: 'Kacheln', hint: 'Das Bild liegt unter Kacheln, die du einzeln aufdeckst.' },
   ];
   const targetCategory = $derived((view.categories ?? []).find((c) => c.id === targetPickFor) ?? null);
+  // Kinderpromis: Modus, Bedenkzeit und Fehlbuzzer-Regel vorab, die Anzahl je Sammlung beim Antippen.
+  const isKids = $derived(gameId === 'kids');
+  let kidsMode = $state<KidsMode>('type');
+  let kidsThink = $state<KidsThinkSeconds>(KIDS_THINK_DEFAULT);
+  let kidsPenalty = $state<KidsPenalty>('none');
+  let kidsCountFor = $state<string | null>(null);
+  let kidsCount = $state(KIDS_COUNT_DEFAULT);
+  const kidsCategory = $derived((view.categories ?? []).find((c) => c.id === kidsCountFor) ?? null);
+  const KIDS_MODE_OPTIONS: { mode: KidsMode; label: string; hint: string }[] = [
+    { mode: 'type', label: 'Tippen', hint: 'Alle tippen gleichzeitig, so oft sie wollen. Treffer zählen sofort, den Rest prüfst du. 3, 2, 1 Punkte für die Schnellsten.' },
+    { mode: 'buzz', label: 'Buzzern', hint: 'Einer buzzert und sagt den Namen laut, du wertest in der Bedenkzeit. Ein Versuch je Promi, 1 Punkt je Treffer.' },
+  ];
+  const KIDS_PENALTY_OPTIONS: { penalty: KidsPenalty; label: string }[] = [
+    { penalty: 'none', label: 'Kein Abzug' },
+    { penalty: 'minus', label: 'Minus 1' },
+  ];
   const isMorse = $derived(gameId === 'morse');
   let morseWord = $state('');
   const morseNormalized = $derived(normalizeMorseText(morseWord));
@@ -101,18 +123,23 @@
       ...(isRisk ? { duplicates, missPoints } : {}),
       ...(hasShow ? { reveal } : {}),
       ...(isFaces ? { effect: faceEffect, ...(faceEffect === 'tiles' ? { cols: faceCols } : { level: faceLevel }) } : {}),
+      ...(isKids ? { mode: kidsMode, count: kidsCount, ...(kidsMode === 'buzz' ? { thinkSeconds: kidsThink, penalty: kidsPenalty } : {}) } : {}),
       ...(targetId ? { targetId } : {}),
     });
   }
 
   function onCategoryClick(c: CategorySummary) {
-    if (picksTarget) targetPickFor = c.id;
+    if (isKids) {
+      kidsCountFor = c.id;
+      kidsCount = Math.max(1, Math.min(KIDS_COUNT_DEFAULT, c.count));
+    } else if (picksTarget) targetPickFor = c.id;
     else choose(c.id);
   }
 
   function selectGame(id: GameId) {
     gameId = id;
     targetPickFor = null;
+    kidsCountFor = null;
   }
 </script>
 
@@ -181,6 +208,67 @@
             <input type="range" class="w-full accent-[var(--color-indigo-500)]" min="0" max={FACE_LEVEL_MAX} step="1" bind:value={faceLevel} />
           </label>
         {/if}
+      </div>
+    {/if}
+    {#if isKids}
+      <div class="card space-y-3">
+        <div>
+          <p class="font-semibold">Modus</p>
+          <p class="text-xs text-slate-500">Gilt für diese Runde. Die Anzahl der Promis wählst du beim Antippen der Sammlung.</p>
+        </div>
+        <div class="grid gap-2 sm:grid-cols-2">
+          {#each KIDS_MODE_OPTIONS as o (o.mode)}
+            <button
+              type="button"
+              class="rounded-xl border px-3 py-2 text-left transition {kidsMode === o.mode ? 'border-indigo-500 bg-indigo-500/15' : 'border-slate-700 hover:border-slate-500'}"
+              onclick={() => (kidsMode = o.mode)}
+            >
+              <span class="block font-semibold">{o.label}</span>
+              <span class="block text-xs text-slate-400">{o.hint}</span>
+            </button>
+          {/each}
+        </div>
+        {#if kidsMode === 'buzz'}
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p class="font-semibold">Bedenkzeit</p>
+              <p class="text-xs text-slate-500">Nach dem Buzzern. Richtig oder Falsch beendet sie vorzeitig, Ablauf zählt als falsch.</p>
+            </div>
+            <div class="flex gap-2">
+              {#each KIDS_THINK_OPTIONS as s (s)}
+                <button
+                  type="button"
+                  class="rounded-xl border px-3 py-2 text-sm font-semibold transition
+                    {kidsThink === s ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+                  onclick={() => (kidsThink = s)}
+                >
+                  {s} s
+                </button>
+              {/each}
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p class="font-semibold">Fehlbuzzer</p>
+              <p class="text-xs text-slate-500">Falsch oder Bedenkzeit abgelaufen: nur raus für diesen Promi, oder zusätzlich ein Spielpunkt Abzug.</p>
+            </div>
+            <div class="flex gap-2">
+              {#each KIDS_PENALTY_OPTIONS as o (o.penalty)}
+                <button
+                  type="button"
+                  class="rounded-xl border px-3 py-2 text-sm font-semibold transition
+                    {kidsPenalty === o.penalty ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+                  onclick={() => (kidsPenalty = o.penalty)}
+                >
+                  {o.label}
+                </button>
+              {/each}
+            </div>
+          </div>
+        {/if}
+        <p class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+          Bei Kinderpromis moderierst du immer: Du siehst Foto und Namen vorab, zeigst jeden Promi und löst auf. Sammlungen legst du im Editor an.
+        </p>
       </div>
     {/if}
     {#if isPicture}
@@ -315,6 +403,24 @@
           <button class="btn-primary flex-1" disabled={!morseOk} onclick={startMorse}>Runde starten</button>
         </div>
       </div>
+    {:else if kidsCategory && isKids}
+      <div class="card space-y-4">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-sm text-slate-400">{kidsCategory.title} · {kidsCategory.count} {kidsCategory.count === 1 ? 'Person' : 'Personen'}</p>
+            <h3 class="text-lg font-bold">Wie viele Promis in dieser Runde?</h3>
+          </div>
+          <button class="btn-ghost text-sm" onclick={() => (kidsCountFor = null)}>Zurück</button>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button class="btn-secondary px-4" disabled={kidsCount <= 1} onclick={() => (kidsCount = Math.max(1, kidsCount - 1))} aria-label="weniger Promis">−</button>
+          <span class="w-16 text-center text-2xl font-black text-indigo-200">{kidsCount}</span>
+          <button class="btn-secondary px-4" disabled={kidsCount >= kidsCategory.count} onclick={() => (kidsCount = Math.min(kidsCategory.count, kidsCount + 1))} aria-label="mehr Promis">+</button>
+          <button class="btn-ghost text-sm" disabled={kidsCount >= kidsCategory.count} onclick={() => (kidsCount = kidsCategory.count)}>Alle {kidsCategory.count}</button>
+        </div>
+        <p class="text-xs text-slate-500">Noch nicht gezeigte Personen kommen zuerst dran. Du kannst die Runde jederzeit vorzeitig beenden.</p>
+        <button class="btn-primary w-full text-lg" onclick={() => choose(kidsCategory.id)}>Runde starten</button>
+      </div>
     {:else if targetCategory && picksTarget}
       <div class="space-y-3">
         <div class="flex items-center justify-between gap-3">
@@ -358,7 +464,7 @@
             {#if c.draft}
               <span class="text-xs text-amber-300">Noch nicht spielbar: {c.draft}</span>
             {:else}
-              <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : c.games.includes('bluff') ? 'Aufgaben' : c.games.includes('picture') ? 'Felder' : c.games.includes('faces') ? 'Personen' : 'Karten'}</span>
+              <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : c.games.includes('bluff') ? 'Aufgaben' : c.games.includes('picture') ? 'Felder' : c.games.includes('faces') || c.games.includes('kids') ? 'Personen' : 'Karten'}</span>
             {/if}
           </button>
         {/each}

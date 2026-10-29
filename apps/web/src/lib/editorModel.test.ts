@@ -206,5 +206,22 @@ describe('Wer ist das? im Editor', () => {
     expect(validate(draftToRaw(draft, 'promi-politik'), 'promi-politik')).toMatch(/Zeile 3/);
     expect(makeId('Politik', 'faces', new Set())).toBe('promi-politik');
     expect(newDraft('faces').meta.question).toBe('Wer ist das?');
+    expect(draftToRaw(newDraft('faces'), 'promi-x').games).toEqual(['faces']);
+  });
+
+  test('Kinderpromis nutzen das Promi-Format, behalten aber ihr Spiel und Präfix', () => {
+    const draft = newDraft('kids');
+    expect(draft.kind).toBe('faces');
+    expect(draft.games).toEqual(['kids']);
+    expect(draft.meta.question).toBe('Wer war das als Kind?');
+    expect(makeId('Stars', 'kids', new Set())).toBe('kind-stars');
+    draft.meta.title = 'Stars';
+    draft.rows[0] = { name: 'Taylor Swift', aliases: 'Swift', image: 'k1-swift.jpg' };
+    const raw = draftToRaw(draft, 'kind-stars');
+    expect(raw.games).toEqual(['kids']);
+    expect(validate(raw, 'kind-stars')).toBeNull();
+    const back = draftFromRaw(raw);
+    expect(back.games).toEqual(['kids']);
+    expect(draftToRaw(back, 'kind-stars').games).toEqual(['kids']);
   });
 });

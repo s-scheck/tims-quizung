@@ -149,6 +149,11 @@
     <p>Der Host prüft jeden Tipp, die ersten drei Richtigen bekommen 3, 2 und 1 Punkt als Vorschlag.</p>
   </div>
   <div class="card space-y-2 text-sm text-slate-400">
+    <h3 class="font-semibold text-slate-200">Kinderpromis</h3>
+    <p>Kinderfotos von Promis, der Host zeigt mehrere nacheinander. Beim Tippen raten alle gleichzeitig per Text, Treffer zählen sofort, die Schnellsten bekommen 3, 2 und 1 Punkt je Promi.</p>
+    <p>Beim Buzzern drückt einer, sagt den Namen laut und der Host wertet in der Bedenkzeit. Ein Versuch je Promi, 1 Punkt je Treffer, Fehlbuzzer nach Wahl mit Abzug.</p>
+  </div>
+  <div class="card space-y-2 text-sm text-slate-400">
     <h3 class="font-semibold text-slate-200">Dabeibleiben und Beenden</h3>
     <p>Wer kurz in eine andere App wechselt, bleibt im Spiel und in der Zugreihenfolge. Ist er am Zug, läuft der Timer oder der Host überspringt den Zug.</p>
     <p>Bei Sortieren, Top X und Zuordnen kann der Host eine Kategorie jederzeit beenden: Alle Werte werden aufgedeckt, Punkte gibt es wie gewohnt.</p>

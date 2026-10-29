@@ -315,6 +315,9 @@ export class Room {
           ...(msg.level !== undefined ? { level: msg.level } : {}),
           ...(msg.cols !== undefined ? { cols: msg.cols } : {}),
           ...(msg.mode !== undefined ? { mode: msg.mode } : {}),
+          ...(msg.count !== undefined ? { count: msg.count } : {}),
+          ...(msg.thinkSeconds !== undefined ? { thinkSeconds: msg.thinkSeconds } : {}),
+          ...(msg.penalty !== undefined ? { penalty: msg.penalty } : {}),
         });
       case 'back_to_lobby':
         return this.backToLobby(playerId);

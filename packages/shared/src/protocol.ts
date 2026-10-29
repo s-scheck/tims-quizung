@@ -1,4 +1,4 @@
-import type { FaceEffect, GameId, MorseSpeed, PictureMode, RevealMode, Role, RoomView, Selection, TimerSeconds } from './types.ts';
+import type { FaceEffect, GameId, KidsMode, KidsPenalty, KidsThinkSeconds, MorseSpeed, PictureMode, RevealMode, Role, RoomView, Selection, TimerSeconds } from './types.ts';
 import type { RiskDuplicates, RiskMissPoints } from './rules/risk.ts';
 
 export const PROTOCOL_VERSION = 2;
@@ -50,8 +50,12 @@ export type ClientMsg =
       effect?: FaceEffect;
       level?: number;
       cols?: number;
-      /** Bilderrätsel: reihum oder alle gleichzeitig. */
-      mode?: PictureMode;
+      /** Bilderrätsel: reihum oder alle gleichzeitig. Kinderpromis: Tippen oder Buzzern. */
+      mode?: PictureMode | KidsMode;
+      /** Kinderpromis: Promis je Runde, Bedenkzeit und Fehlbuzzer-Regel. */
+      count?: number;
+      thinkSeconds?: KidsThinkSeconds;
+      penalty?: KidsPenalty;
     }
   | ({ type: 'select'; turnNo: number; targetId?: string } & Selection)
   | { type: 'confirm'; turnNo: number }
@@ -69,6 +73,14 @@ export type ClientMsg =
   | { type: 'face_guess'; text: string }
   | { type: 'face_judge'; playerId: string; index: number; correct: boolean }
   | { type: 'face_effect'; level?: number; cols?: number; revealed?: number[] }
+  /** Kinderpromis: Host zeigt den Promi, löst ihn auf und geht weiter; Tippen mit Prüfung, Buzzern mit Urteil. */
+  | { type: 'kids_show' }
+  | { type: 'kids_guess'; text: string }
+  | { type: 'kids_judge'; playerId: string; index: number; correct: boolean }
+  | { type: 'kids_buzz' }
+  | { type: 'kids_verdict'; correct: boolean }
+  | { type: 'kids_resolve' }
+  | { type: 'kids_next' }
   | { type: 'place_pin'; lat: number; lng: number }
   | { type: 'place_year'; year: number }
   | { type: 'confirm_pin' }

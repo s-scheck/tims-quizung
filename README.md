@@ -1,6 +1,6 @@
 # Tims Quizung
 
-Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Spiele: **Sortieren**, **Top X**, **Zuordnen**, **Karte**, **Zeitstrahl**, **No Risk No Fun**, **Bluff** und **Morse**. Der Host wählt vor jeder Runde das Spiel und die Kategorie, der Punktestand läuft über alle Runden durch.
+Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, optional zeigt ein Fernseher das Spielfeld. Spiele: **Sortieren**, **Top X**, **Zuordnen**, **Karte**, **Zeitstrahl**, **No Risk No Fun**, **Bluff**, **Morse**, **Bilderrätsel**, **Wer ist das?** und **Kinderpromis**. Der Host wählt vor jeder Runde das Spiel und die Kategorie, der Punktestand läuft über alle Runden durch.
 
 ## Spielregeln „Sortieren"
 
@@ -88,6 +88,14 @@ Die Kartendaten stammen von [Natural Earth](https://www.naturalearthdata.com/) (
 - Alle tippen jederzeit per Text, so oft sie wollen. Nur der Host sieht die Tipps und prüft sie, mit Vorschlag aus Name und Aliassen. Fehltipps erscheinen danach bei allen, Treffer ergeben Platz 1, 2, 3 nach Versuchszeit.
 - Die Runde läuft, bis der Host auflöst oder der Rundentimer abläuft. Die Auflösung zeigt das klare Bild, den Namen, die Plätze und 3/2/1 als Punktevorschlag.
 - Die Effekte entstehen im Browser, das Original liegt als Bildadresse im Gerät. Unter Freunden reicht das.
+
+## Spielregeln „Kinderpromis"
+
+- Eine Sammlung mit Kinderfotos von Promis (eigener Typ im Editor, gleiches Format wie Promi-Sammlungen). Der Host wählt vor der Runde den Modus, die Anzahl der Promis (noch nicht gezeigte zuerst) und beim Buzzern die Bedenkzeit (5, 10, 15 oder 20 s) sowie die Fehlbuzzer-Regel (kein Abzug oder minus 1).
+- Der Host moderiert immer: Er sieht Foto und Namen vorab, zeigt jeden Promi per „Zeigen“ für alle gleichzeitig, löst ihn mit „Auflösen“ auf (Name erscheint) und geht mit „Nächster Promi“ weiter. „Runde beenden“ geht jederzeit, verdeckte Promis fallen dann weg. Ein Zeitlimit gibt es nicht.
+- Tippen: Alle tippen gleichzeitig per Text, so oft sie wollen. Trifft der Tipp Name, Alias oder eindeutigen Nachnamen, zählt er sofort mit Zeit. Alles andere landet beim Host, der es noch als richtig werten kann (Tippfehler), gewertet wird dann die Eingangszeit. Fremde Tipps sieht niemand, nur wer richtig liegt. Liegen alle richtig, ist der Promi von selbst aufgelöst. 3, 2 und 1 Spielpunkte je Promi für die Schnellsten.
+- Buzzern: Wer das Kind erkennt, drückt den Buzzer, nur einer kann ihn halten. Er sagt den Namen laut, alle sehen den Countdown, der Host wertet mit Richtig oder Falsch. Richtig löst den Promi auf, Falsch oder abgelaufene Bedenkzeit verbraucht den einzigen Versuch bei diesem Promi und gibt den Buzzer frei. Haben alle verbraucht, ist der Promi ohne Gewinner durch. 1 Spielpunkt je Treffer, bei „minus 1“ ein Abzug je Fehlbuzzer, auch ins Minus.
+- Die Auflösung nach dem letzten Promi zeigt alle gezeigten Promis mit Foto, Name und Gewinnern sowie die Rangliste mit Spielpunkten als Vorschlag. Die Punkte trägt der Host wie überall selbst ein.
 
 ## Show-Auflösung
 
@@ -253,6 +261,8 @@ Für Wer ist das? gibt es Promi-Sammlungen mit Bild je Person:
 ```
 
 Regeln: mindestens 1 Person, Namen eindeutig, `aliases` optional, `image` ein Dateiname aus der Bildablage oder eine http-Adresse. Dateien beginnen mit `promi-`. Im Editor gibt es Upload je Zeile und einen Mehrfach-Upload, der aus Dateinamen wie „Angela Merkel.jpg“ Zeilen anlegt.
+
+Kinderpromis nutzen dasselbe Format mit `"games": ["kids"]` (entweder `faces` oder `kids`, nie beides). Dateien beginnen mit `kind-`, im Editor gibt es dafür den eigenen Typ „Kinderpromis“.
 
 Für Top X kommt `"games": ["topx"]` dazu (Standard ist `["sort"]`, beides zusammen geht auch). Top-X-Listen müssen echte Top-Listen ohne Gleichstand über die Listengrenze sein, dürfen kurz sein und Gleichstände enthalten. Pro Eintrag helfen `aliases` beim Abgleich, etwa `["Mbappe", "Mbappé"]`; ein eindeutiger Nachname trifft automatisch. Dateien beginnen mit `topx-`.
 

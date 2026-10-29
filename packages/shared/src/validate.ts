@@ -6,6 +6,10 @@ import {
   FACE_LEVEL_MAX,
   GAME_IDS,
   GUESS_MAX_LENGTH,
+  KIDS_COUNT_MAX,
+  KIDS_MODES,
+  KIDS_PENALTIES,
+  KIDS_THINK_OPTIONS,
   LIVES_MAX,
   LIVES_MIN,
   MORSE_SPEEDS,
@@ -14,6 +18,9 @@ import {
   TIMER_OPTIONS,
   type FaceEffect,
   type GameId,
+  type KidsMode,
+  type KidsPenalty,
+  type KidsThinkSeconds,
   type MorseSpeed,
   type PictureMode,
   type RevealMode,
@@ -59,6 +66,22 @@ export function isRevealMode(value: unknown): value is RevealMode {
 
 export function isPictureMode(value: unknown): value is PictureMode {
   return typeof value === 'string' && (PICTURE_MODES as readonly string[]).includes(value);
+}
+
+export function isKidsMode(value: unknown): value is KidsMode {
+  return typeof value === 'string' && (KIDS_MODES as readonly string[]).includes(value);
+}
+
+export function isKidsThink(value: unknown): value is KidsThinkSeconds {
+  return typeof value === 'number' && (KIDS_THINK_OPTIONS as readonly number[]).includes(value);
+}
+
+export function isKidsPenalty(value: unknown): value is KidsPenalty {
+  return typeof value === 'string' && (KIDS_PENALTIES as readonly string[]).includes(value);
+}
+
+export function isKidsCount(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= KIDS_COUNT_MAX;
 }
 
 export function isFaceEffect(value: unknown): value is FaceEffect {
@@ -141,8 +164,22 @@ export function isClientMsg(x: unknown): x is ClientMsg {
         (x.effect === undefined || isFaceEffect(x.effect)) &&
         (x.level === undefined || isFaceLevel(x.level)) &&
         (x.cols === undefined || isFaceCols(x.cols)) &&
-        (x.mode === undefined || isPictureMode(x.mode))
+        (x.mode === undefined || isPictureMode(x.mode) || isKidsMode(x.mode)) &&
+        (x.count === undefined || isKidsCount(x.count)) &&
+        (x.thinkSeconds === undefined || isKidsThink(x.thinkSeconds)) &&
+        (x.penalty === undefined || isKidsPenalty(x.penalty))
       );
+    case 'kids_show':
+    case 'kids_buzz':
+    case 'kids_resolve':
+    case 'kids_next':
+      return true;
+    case 'kids_guess':
+      return isStr(x.text, GUESS_MAX_LENGTH) && x.text.trim().length > 0;
+    case 'kids_judge':
+      return isStr(x.playerId, 100) && isInt(x.index) && x.index >= 0 && typeof x.correct === 'boolean';
+    case 'kids_verdict':
+      return typeof x.correct === 'boolean';
     case 'face_guess':
       return isStr(x.text, GUESS_MAX_LENGTH) && x.text.trim().length > 0;
     case 'face_judge':

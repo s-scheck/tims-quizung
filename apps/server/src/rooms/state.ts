@@ -1,4 +1,4 @@
-import type { BluffStage, FaceEffectState, GuessStatus, MatchSelection, PictureMode, PlacementStatus, RiskRules, Selection } from '@quiz/shared';
+import type { BluffStage, FaceEffectState, GuessStatus, KidsMode, KidsPenalty, KidsStage, KidsThinkSeconds, MatchSelection, PictureMode, PlacementStatus, RiskRules, Selection } from '@quiz/shared';
 import type { Category, EventsCategory, Face, FacesCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, RankedCategory, TimelineEvent } from '@quiz/content';
 
 export interface Player {
@@ -295,4 +295,31 @@ export interface FacesRound extends BaseRound {
   solved: Record<string, number>;
 }
 
-export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound | FacesRound;
+// ------------------------------------------------------------ Kinderpromis
+
+/** Ein Promi der Runde. Tippen füllt `attempts` und `solved`, Buzzern `holder`, `used` und `solved`. */
+export interface KidsItem {
+  face: Face;
+  stage: KidsStage;
+  shownAt: number | null;
+  attempts: Record<string, FaceAttempt[]>;
+  /** Spieler-ID → Zeit des Treffers. */
+  solved: Record<string, number>;
+  /** Buzzern: wer seinen Versuch schon verbraucht hat. */
+  used: string[];
+  holder: string | null;
+  /** Zählt jedes Buzzern, damit ein alter Bedenkzeit-Timer nichts mehr anrichtet. */
+  buzzNo: number;
+}
+
+export interface KidsRound extends BaseRound {
+  game: 'kids';
+  category: FacesCategory;
+  mode: KidsMode;
+  thinkSeconds: KidsThinkSeconds;
+  penalty: KidsPenalty;
+  items: KidsItem[];
+  index: number;
+}
+
+export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound | FacesRound | KidsRound;

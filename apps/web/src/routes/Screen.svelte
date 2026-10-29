@@ -24,6 +24,8 @@
   import PictureJudge from '../components/PictureJudge.svelte';
   import FacesBoard from '../components/FacesBoard.svelte';
   import FacesReveal from '../components/FacesReveal.svelte';
+  import KidsBoard from '../components/KidsBoard.svelte';
+  import KidsReveal from '../components/KidsReveal.svelte';
   import Scoreboard from '../components/Scoreboard.svelte';
   import FinalStandings from '../components/FinalStandings.svelte';
   import PlayerList from '../components/PlayerList.svelte';
@@ -109,6 +111,8 @@
           {/if}
         {:else if view.round?.game === 'faces'}
           <FacesBoard {view} round={view.round} readonly />
+        {:else if view.round?.game === 'kids'}
+          <KidsBoard {view} round={view.round} readonly />
       {:else if view.round?.game === 'sort'}
         <Board {view} round={view.round} readonly />
       {/if}
@@ -135,6 +139,8 @@
           {/if}
         {:else if view.round?.game === 'faces'}
           <FacesReveal {view} round={view.round} readonly />
+        {:else if view.round?.game === 'kids'}
+          <KidsReveal {view} round={view.round} readonly />
       {:else if view.round?.game === 'sort'}
         <Reveal {view} round={view.round} readonly />
       {/if}

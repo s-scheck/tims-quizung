@@ -170,7 +170,20 @@ export const FACES: Category = {
   ],
 };
 
-const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES, PROMPTS, PICTURE, FACES];
+export const KIDS: Category = {
+  kind: 'faces',
+  id: 'kind-stars',
+  title: 'Stars als Kinder',
+  question: 'Wer war das als Kind?',
+  games: ['kids'],
+  faces: [
+    { id: 'taylor-swift', name: 'Taylor Swift', aliases: ['Swift'], image: 'k1-swift.jpg' },
+    { id: 'leonardo-dicaprio', name: 'Leonardo DiCaprio', aliases: ['DiCaprio', 'Leo'], image: 'k2-leo.jpg' },
+    { id: 'helene-fischer', name: 'Helene Fischer', image: 'https://example.org/helene.png' },
+  ],
+};
+
+const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES, PROMPTS, PICTURE, FACES, KIDS];
 
 export const provider: CategoryProvider = {
   list: () => ALL,
@@ -289,6 +302,12 @@ export function startPicture(h: Harness, opts: { lives?: number; mode?: 'turns' 
 export function startFaces(h: Harness, opts: { targetId?: string; effect?: 'blur' | 'tiles' | 'pixel'; level?: number; cols?: number } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'faces', categoryId: 'promi-politik', ...opts }));
+}
+
+/** Startet Spiel und Kinderpromis-Runde. */
+export function startKids(h: Harness, opts: { mode?: 'type' | 'buzz'; count?: number; thinkSeconds?: 5 | 10 | 15 | 20; penalty?: 'none' | 'minus' } = {}): void {
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'kids', categoryId: 'kind-stars', ...opts }));
 }
 
 /** Startet Spiel und Morse-Runde mit dem gegebenen Wort. */
