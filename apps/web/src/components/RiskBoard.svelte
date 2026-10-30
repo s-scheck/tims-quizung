@@ -89,7 +89,7 @@
     {:else}
       <div class="card">
         <h3 class="mb-2 font-bold">Plätze 1–{round.size}</h3>
-        <RiskSlots {view} {round} slots={round.hitSlots} full large={readonly} />
+        <RiskSlots {view} {round} slots={round.hitSlots} large={readonly} />
       </div>
     {/if}
   </section>

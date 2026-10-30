@@ -1,7 +1,7 @@
 import { slugify, validateCategory, CategoryValidationError } from '@quiz/content/schema';
-import { STILLS_COUNT, STILLS_DEFAULT_POINTS, type GameId } from '@quiz/shared';
+import { STILLS_DEFAULT_POINTS, type CategoryKind, type GameId } from '@quiz/shared';
 
-export type Kind = 'ranked' | 'pairs' | 'places' | 'events' | 'prompts' | 'picture' | 'faces' | 'stills';
+export type Kind = CategoryKind;
 export type Raw = Record<string, unknown>;
 
 /** Spiele in der Reihenfolge der Spielauswahl, mit der Art Liste, die sie brauchen. */
@@ -185,6 +185,14 @@ function formatNumber(n: unknown): string {
   return typeof n === 'number' ? String(n) : typeof n === 'string' ? n : '';
 }
 
+/** Aliasse aus dem Eingabefeld: mit Komma oder Semikolon getrennt, Leeres fällt weg. */
+function parseAliases(text: string | undefined): string[] {
+  return (text ?? '')
+    .split(/[,;]/)
+    .map((a) => a.trim())
+    .filter(Boolean);
+}
+
 // ----------------------------------------------------------------- Modell
 
 export type Row = Record<string, string>;
@@ -258,7 +266,8 @@ export function draftFromRaw(raw: Raw): Draft {
     case 'stills':
       meta.aliases = Array.isArray(raw.aliases) ? raw.aliases.join(', ') : '';
       rows = arr(raw.stills).map((s, i) => ({ image: str(s.image), points: formatNumber(s.points ?? STILLS_DEFAULT_POINTS[i]) }));
-      while (rows.length < STILLS_COUNT) rows.push({ image: '', points: String(STILLS_DEFAULT_POINTS[rows.length] ?? '') });
+      // Fehlende Fotozeilen bis zur festen Zahl auffüllen, mit den Standardpunkten ihres Platzes.
+      for (const p of STILLS_DEFAULT_POINTS.slice(rows.length)) rows.push({ image: '', points: String(p) });
       break;
   }
   const decoys = kind === 'pairs' && Array.isArray(raw.decoys) ? raw.decoys.map((d) => ({ text: str(d) })) : [];
@@ -315,7 +324,7 @@ export function draftToRaw(draft: Draft, id: string, base: Raw = {}): Raw {
         const value = parseNumber(r.value ?? '');
         const item: Raw = { name: (r.name ?? '').trim(), value: Number.isFinite(value) ? value : (r.value ?? '').trim() };
         if ((r.label ?? '').trim()) item.label = r.label!.trim();
-        const aliases = (r.aliases ?? '').split(/[,;]/).map((a) => a.trim()).filter(Boolean);
+        const aliases = parseAliases(r.aliases);
         if (aliases.length) item.aliases = aliases;
         return item;
       });
@@ -370,14 +379,14 @@ export function draftToRaw(draft: Draft, id: string, base: Raw = {}): Raw {
       raw.games = draft.games.includes('kids') ? ['kids'] : ['faces'];
       raw.faces = rows.map((r) => {
         const face: Raw = { name: (r.name ?? '').trim(), image: (r.image ?? '').trim() };
-        const aliases = (r.aliases ?? '').split(/[,;]/).map((a) => a.trim()).filter(Boolean);
+        const aliases = parseAliases(r.aliases);
         if (aliases.length) face.aliases = aliases;
         return face;
       });
       break;
     case 'stills': {
       raw.games = ['stills'];
-      const aliases = (draft.meta.aliases ?? '').split(/[,;]/).map((a) => a.trim()).filter(Boolean);
+      const aliases = parseAliases(draft.meta.aliases);
       if (aliases.length) raw.aliases = aliases;
       else delete raw.aliases;
       // Die Punktespalte zählt nicht als Inhalt: eine Zeile ohne Foto fehlt.

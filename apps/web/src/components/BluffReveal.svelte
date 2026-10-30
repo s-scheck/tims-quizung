@@ -5,6 +5,7 @@
   import { playerName } from '../lib/format.ts';
   import { canReveal, ranksVisible, revealPlayer, revealSolution, revealStep } from '../lib/reveal.ts';
   import RevealControls from './RevealControls.svelte';
+  import ScoringHandoff from './ScoringHandoff.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: BluffRoundView; readonly?: boolean } = $props();
 
@@ -159,14 +160,7 @@
     </div>
 
     {#if !readonly}
-      {#if client.isHost && view.phase === 'reveal'}
-        <button class="btn-primary w-full text-lg" disabled={!complete} onclick={() => client.send({ type: 'to_scoring' })}>Punkte eintragen</button>
-        {#if !complete}<p class="text-center text-xs text-slate-500">Erst alle Texte und die Wahrheit aufdecken.</p>{/if}
-      {:else if view.phase === 'scoring'}
-        <p class="card text-center text-sm text-slate-400">{playerName(view, view.hostId)} trägt gerade die Punkte ein…</p>
-      {:else}
-        <p class="card text-center text-sm text-slate-400">Warte auf {playerName(view, view.hostId)}…</p>
-      {/if}
+      <ScoringHandoff {view} disabled={!complete} hint="Erst alle Texte und die Wahrheit aufdecken." />
     {/if}
   </aside>
 </div>

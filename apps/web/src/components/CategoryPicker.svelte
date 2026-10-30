@@ -19,10 +19,11 @@
     THINK_SECONDS_DEFAULT,
     THINK_SECONDS_MAX,
     THINK_SECONDS_MIN,
+    isThinkSeconds,
     type CategorySummary,
     type FaceEffect,
     type GameId,
-    type KidsMode,
+    type GuessMode,
     type KidsPenalty,
     type KidsThinkSeconds,
     type PictureMode,
@@ -32,8 +33,8 @@
     type RoomView,
   } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
-  import { unlockBuzzer } from '../lib/buzzer.ts';
   import { playerName } from '../lib/format.ts';
+  import ModeChoice from './ModeChoice.svelte';
   import Scoreboard from './Scoreboard.svelte';
 
   let { view }: { view: RoomView } = $props();
@@ -81,13 +82,13 @@
   const targetCategory = $derived((view.categories ?? []).find((c) => c.id === targetPickFor) ?? null);
   // Kinderpromis: Modus, Bedenkzeit und Fehlbuzzer-Regel vorab, die Anzahl je Sammlung beim Antippen.
   const isKids = $derived(gameId === 'kids');
-  let kidsMode = $state<KidsMode>('type');
+  let kidsMode = $state<GuessMode>('type');
   let kidsThink = $state<KidsThinkSeconds>(KIDS_THINK_DEFAULT);
   let kidsPenalty = $state<KidsPenalty>('none');
   let kidsCountFor = $state<string | null>(null);
   let kidsCount = $state(KIDS_COUNT_DEFAULT);
   const kidsCategory = $derived((view.categories ?? []).find((c) => c.id === kidsCountFor) ?? null);
-  const KIDS_MODE_OPTIONS: { mode: KidsMode; label: string; hint: string }[] = [
+  const KIDS_MODE_OPTIONS: { mode: GuessMode; label: string; hint: string }[] = [
     { mode: 'type', label: 'Tippen', hint: 'Alle tippen gleichzeitig, so oft sie wollen. Treffer zählen sofort, den Rest prüfst du. 3, 2, 1 Punkte für die Schnellsten.' },
     { mode: 'buzz', label: 'Buzzern', hint: 'Einer buzzert und sagt den Namen laut, du wertest in der Bedenkzeit. Ein Versuch je Promi, 1 Punkt je Treffer.' },
   ];
@@ -97,15 +98,14 @@
   ];
   /** Filmfotos: ein Tipp je Foto oder Buzzer mit frei wählbarer Bedenkzeit. */
   const isStills = $derived(gameId === 'stills');
-  let stillsMode = $state<KidsMode>('type');
+  let stillsMode = $state<GuessMode>('type');
   let stillsThink = $state<number | null>(THINK_SECONDS_DEFAULT);
-  const STILLS_MODE_OPTIONS: { mode: KidsMode; label: string; hint: string }[] = [
+  const STILLS_MODE_OPTIONS: { mode: GuessMode; label: string; hint: string }[] = [
     { mode: 'type', label: 'Tippen', hint: 'Jeder tippt einmal pro Foto. Du schließt die Tipps, prüfst sie und schaltest weiter. Alle Richtigen bei einem Foto bekommen dessen Punkte.' },
     { mode: 'buzz', label: 'Buzzern', hint: 'Wer zuerst buzzert, sagt den Film laut. Falsch sperrt für dieses Foto, der Erste mit der richtigen Antwort gewinnt.' },
   ];
-  const stillsThinkOk = $derived(
-    typeof stillsThink === 'number' && Number.isInteger(stillsThink) && stillsThink >= THINK_SECONDS_MIN && stillsThink <= THINK_SECONDS_MAX,
-  );
+  /** Die Bedenkzeit, sofern sie im erlaubten Rahmen liegt; das Zahlenfeld lässt auch Unsinn zu. */
+  const stillsThinkValid = $derived(isThinkSeconds(stillsThink) ? stillsThink : null);
   const isMorse = $derived(gameId === 'morse');
   let morseWord = $state('');
   const morseNormalized = $derived(normalizeMorseText(morseWord));
@@ -139,18 +139,14 @@
       ...(hasShow ? { reveal } : {}),
       ...(isFaces ? { effect: faceEffect, ...(faceEffect === 'tiles' ? { cols: faceCols } : { level: faceLevel }) } : {}),
       ...(isKids ? { mode: kidsMode, count: kidsCount, ...(kidsMode === 'buzz' ? { thinkSeconds: kidsThink, penalty: kidsPenalty } : {}) } : {}),
-      ...(isStills ? { mode: stillsMode, ...(stillsMode === 'buzz' && stillsThinkOk ? { thinkSeconds: stillsThink! } : {}) } : {}),
+      ...(isStills ? { mode: stillsMode, ...(stillsMode === 'buzz' && stillsThinkValid !== null ? { thinkSeconds: stillsThinkValid } : {}) } : {}),
       ...(targetId ? { targetId } : {}),
     });
   }
 
   function onCategoryClick(c: CategorySummary) {
-    if (isStills && stillsMode === 'buzz') {
-      // Rot markierte Bedenkzeit erst korrigieren.
-      if (!stillsThinkOk) return;
-      // Der Klick zählt als Nutzergeste, danach darf das Host-Gerät den Buzzer-Ton spielen.
-      unlockBuzzer();
-    }
+    // Rot markierte Bedenkzeit erst korrigieren.
+    if (isStills && stillsMode === 'buzz' && stillsThinkValid === null) return;
     if (isKids) {
       kidsCountFor = c.id;
       kidsCount = Math.max(1, Math.min(KIDS_COUNT_DEFAULT, c.count));
@@ -238,25 +234,14 @@
           <p class="font-semibold">Modus</p>
           <p class="text-xs text-slate-500">Gilt für diese Runde.</p>
         </div>
-        <div class="grid gap-2 sm:grid-cols-2">
-          {#each STILLS_MODE_OPTIONS as o (o.mode)}
-            <button
-              type="button"
-              class="rounded-xl border px-3 py-2 text-left transition {stillsMode === o.mode ? 'border-indigo-500 bg-indigo-500/15' : 'border-slate-700 hover:border-slate-500'}"
-              onclick={() => (stillsMode = o.mode)}
-            >
-              <span class="block font-semibold">{o.label}</span>
-              <span class="block text-xs text-slate-400">{o.hint}</span>
-            </button>
-          {/each}
-        </div>
+        <ModeChoice options={STILLS_MODE_OPTIONS} value={stillsMode} onChange={(m) => (stillsMode = m)} />
         {#if stillsMode === 'buzz'}
           <label class="flex flex-wrap items-center justify-between gap-3 text-sm">
             <span>
               <span class="block font-semibold">Bedenkzeit in Sekunden</span>
               <span class="block text-xs text-slate-500">Läuft nach dem Buzzern als Countdown, du urteilst auch danach noch. {THINK_SECONDS_MIN} bis {THINK_SECONDS_MAX} s.</span>
             </span>
-            <input class="input w-24 text-center font-mono text-lg {stillsThinkOk ? '' : 'border-rose-500'}" type="number" inputmode="numeric" step="1" min={THINK_SECONDS_MIN} max={THINK_SECONDS_MAX} bind:value={stillsThink} />
+            <input class="input w-24 text-center font-mono text-lg {stillsThinkValid === null ? 'border-rose-500' : ''}" type="number" inputmode="numeric" step="1" min={THINK_SECONDS_MIN} max={THINK_SECONDS_MAX} bind:value={stillsThink} />
           </label>
         {/if}
         <p class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
@@ -270,18 +255,7 @@
           <p class="font-semibold">Modus</p>
           <p class="text-xs text-slate-500">Gilt für diese Runde. Die Anzahl der Promis wählst du beim Antippen der Sammlung.</p>
         </div>
-        <div class="grid gap-2 sm:grid-cols-2">
-          {#each KIDS_MODE_OPTIONS as o (o.mode)}
-            <button
-              type="button"
-              class="rounded-xl border px-3 py-2 text-left transition {kidsMode === o.mode ? 'border-indigo-500 bg-indigo-500/15' : 'border-slate-700 hover:border-slate-500'}"
-              onclick={() => (kidsMode = o.mode)}
-            >
-              <span class="block font-semibold">{o.label}</span>
-              <span class="block text-xs text-slate-400">{o.hint}</span>
-            </button>
-          {/each}
-        </div>
+        <ModeChoice options={KIDS_MODE_OPTIONS} value={kidsMode} onChange={(m) => (kidsMode = m)} />
         {#if kidsMode === 'buzz'}
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -331,18 +305,7 @@
           <p class="font-semibold">Modus</p>
           <p class="text-xs text-slate-500">Gilt für diese Runde.</p>
         </div>
-        <div class="grid gap-2 sm:grid-cols-2">
-          {#each PICTURE_MODE_OPTIONS as o (o.mode)}
-            <button
-              type="button"
-              class="rounded-xl border px-3 py-2 text-left transition {pictureMode === o.mode ? 'border-indigo-500 bg-indigo-500/15' : 'border-slate-700 hover:border-slate-500'}"
-              onclick={() => (pictureMode = o.mode)}
-            >
-              <span class="block font-semibold">{o.label}</span>
-              <span class="block text-xs text-slate-400">{o.hint}</span>
-            </button>
-          {/each}
-        </div>
+        <ModeChoice options={PICTURE_MODE_OPTIONS} value={pictureMode} onChange={(m) => (pictureMode = m)} />
         <p class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
           Beim Bilderrätsel moderierst du immer: Du siehst die Lösungen und prüfst, auch wenn du laut Lobby mitspielst. Bilder legst du im Editor an.
         </p>

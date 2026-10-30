@@ -1,4 +1,4 @@
-import type { BluffStage, FaceEffectState, GuessStatus, KidsMode, KidsPenalty, KidsStage, KidsThinkSeconds, MatchSelection, PictureMode, PlacementStatus, RiskRules, Selection } from '@quiz/shared';
+import type { BluffStage, FaceEffectState, GuessMode, GuessStatus, JudgeStatus, KidsPenalty, KidsStage, KidsThinkSeconds, MatchSelection, PictureMode, PlacementStatus, RiskRules, Selection, StillsStage } from '@quiz/shared';
 import type { Category, EventsCategory, Face, FacesCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, RankedCategory, StillsCategory, TimelineEvent } from '@quiz/content';
 
 export interface Player {
@@ -280,7 +280,7 @@ export interface PictureRound extends BaseRound {
 export interface FaceAttempt {
   text: string;
   at: number;
-  status: 'judging' | 'correct' | 'wrong';
+  status: JudgeStatus;
 }
 
 export interface FacesRound extends BaseRound {
@@ -315,7 +315,7 @@ export interface KidsItem {
 export interface KidsRound extends BaseRound {
   game: 'kids';
   category: FacesCategory;
-  mode: KidsMode;
+  mode: GuessMode;
   thinkSeconds: KidsThinkSeconds;
   penalty: KidsPenalty;
   items: KidsItem[];
@@ -324,34 +324,31 @@ export interface KidsRound extends BaseRound {
 
 // --------------------------------------------------------------- Filmfotos
 
-export interface StillGuess {
+export interface StillAttempt {
   /** Index des Fotos, bei dem getippt wurde. */
-  stage: number;
+  index: number;
   text: string;
-  at: number;
-  status: 'judging' | 'correct' | 'wrong';
+  status: JudgeStatus;
 }
 
 export interface StillsRound extends BaseRound {
   game: 'stills';
   category: StillsCategory;
-  mode: KidsMode;
-  /** Bedenkzeit beim Buzzern, nur als Anzeige. */
+  mode: GuessMode;
+  /** Bedenkzeit beim Buzzern, nur als Anzeige über `turnDeadline`. */
   thinkSeconds: number;
-  /** Index des aktuellen Fotos, freigegeben sind `stage + 1`. */
-  stage: number;
+  /** Index des aktuellen Fotos, freigegeben sind `index + 1`. */
+  index: number;
   /** Tippen: Eingabe offen oder Host prüft das aktuelle Foto. */
-  stagePhase: 'guessing' | 'judging';
+  stage: StillsStage;
   /** Tippen: höchstens ein Tipp je Spieler und Foto. */
-  guesses: Record<string, StillGuess[]>;
+  attempts: Record<string, StillAttempt[]>;
   /** Buzzern: wer gerade antwortet. */
-  buzz: { playerId: string; at: number; deadline: number } | null;
-  /** Buzzern: für das aktuelle Foto gesperrt. */
-  locked: string[];
-  /** Buzzern: falsche Antworten, für die Auflösung. */
-  wrongBuzzes: { playerId: string; stage: number }[];
+  holder: string | null;
+  /** Buzzern: wer beim aktuellen Foto schon verbraucht ist. */
+  used: string[];
   /** Buzzern: der Erste mit richtiger Antwort. */
-  buzzWinner: { playerId: string; stage: number } | null;
+  buzzWinner: { playerId: string; index: number } | null;
 }
 
 export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound | FacesRound | KidsRound | StillsRound;

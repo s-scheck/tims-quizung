@@ -108,7 +108,7 @@
       {#if listDone && round.solution}
         <RiskSlots {view} {round} slots={round.solution} large={readonly} />
       {:else}
-        <RiskSlots {view} {round} slots={round.hitSlots} full large={readonly} />
+        <RiskSlots {view} {round} slots={round.hitSlots} large={readonly} />
       {/if}
     </div>
 

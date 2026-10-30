@@ -205,6 +205,20 @@ function readId(raw: Record<string, unknown>, file: string): string {
   return id;
 }
 
+/** Aliasse für den Abgleich beim Prüfen: eine Liste von Strings, getrimmt und ohne leere Einträge. `label` benennt die Stelle in der Fehlermeldung. */
+function readAliases(obj: Record<string, unknown>, file: string, label: string): string[] {
+  if (obj.aliases === undefined) return [];
+  if (!Array.isArray(obj.aliases) || !obj.aliases.every((a) => typeof a === 'string')) {
+    throw new CategoryValidationError(file, `${label}aliases muss eine Liste von Strings sein`);
+  }
+  return (obj.aliases as string[]).map((a) => a.trim()).filter(Boolean);
+}
+
+/** Quellenangabe, nur wenn sie nicht leer ist. */
+function readSource(raw: Record<string, unknown>): string | undefined {
+  return typeof raw.source === 'string' && raw.source.trim() ? raw.source : undefined;
+}
+
 function readGames(raw: Record<string, unknown>, file: string, fallback: GameId[]): GameId[] {
   if (raw.games === undefined) return fallback;
   if (!Array.isArray(raw.games) || raw.games.length === 0 || !raw.games.every((g) => (GAME_IDS as readonly unknown[]).includes(g))) {
@@ -548,7 +562,7 @@ function validatePicture(raw: Record<string, unknown>, file: string): PictureCat
     return { id: `f${idx + 1}`, answer, x, y, w, h };
   });
 
-  const source = typeof raw.source === 'string' && raw.source.trim() ? raw.source : undefined;
+  const source = readSource(raw);
   return {
     kind: 'picture',
     id,
@@ -588,14 +602,11 @@ function validateFaces(raw: Record<string, unknown>, file: string): FacesCategor
     if (!faceId || ids.has(faceId)) throw new CategoryValidationError(file, `faces[${idx}]: Name "${name}" ergibt keine eindeutige id`);
     ids.add(faceId);
     if (!isImageRef(f.image)) throw new CategoryValidationError(file, `faces[${idx}]: image fehlt oder ist kein Dateiname bzw. keine http-Adresse`);
-    if (f.aliases !== undefined && (!Array.isArray(f.aliases) || !f.aliases.every((a) => typeof a === 'string'))) {
-      throw new CategoryValidationError(file, `faces[${idx}]: aliases muss eine Liste von Strings sein`);
-    }
-    const aliases = Array.isArray(f.aliases) ? (f.aliases as string[]).map((a) => a.trim()).filter(Boolean) : [];
+    const aliases = readAliases(f, file, `faces[${idx}]: `);
     return { id: faceId, name, image: f.image, ...(aliases.length ? { aliases } : {}) };
   });
 
-  const source = typeof raw.source === 'string' && raw.source.trim() ? raw.source : undefined;
+  const source = readSource(raw);
   return { kind: 'faces', id, title, question, games, faces, ...(source !== undefined ? { source } : {}) };
 }
 
@@ -605,12 +616,8 @@ function validateStills(raw: Record<string, unknown>, file: string): StillsCateg
   const question = requireString(raw, 'question', file);
   const answer = requireString(raw, 'answer', file).trim();
   const games = readGames(raw, file, ['stills']);
-  if (!games.includes('stills')) throw new CategoryValidationError(file, 'Filme gehören zu "stills"');
-  if (games.some((g) => g !== 'stills')) throw new CategoryValidationError(file, 'Filme taugen nur für "stills"');
-  if (raw.aliases !== undefined && (!Array.isArray(raw.aliases) || !raw.aliases.every((a) => typeof a === 'string'))) {
-    throw new CategoryValidationError(file, 'aliases muss eine Liste von Strings sein');
-  }
-  const aliases = Array.isArray(raw.aliases) ? (raw.aliases as string[]).map((a) => a.trim()).filter(Boolean) : [];
+  if (games.length !== 1 || games[0] !== 'stills') throw new CategoryValidationError(file, 'Filme gehören genau zu "stills"');
+  const aliases = readAliases(raw, file, '');
 
   const stillsRaw = raw.stills;
   if (!Array.isArray(stillsRaw)) throw new CategoryValidationError(file, 'stills fehlt');
@@ -625,6 +632,6 @@ function validateStills(raw: Record<string, unknown>, file: string): StillsCateg
     return { image: s.image, points };
   });
 
-  const source = typeof raw.source === 'string' && raw.source.trim() ? raw.source : undefined;
+  const source = readSource(raw);
   return { kind: 'stills', id, title, question, games, answer, ...(aliases.length ? { aliases } : {}), stills, ...(source !== undefined ? { source } : {}) };
 }

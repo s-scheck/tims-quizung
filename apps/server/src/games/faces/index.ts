@@ -1,5 +1,6 @@
 import type { GameModule } from '../registry.ts';
-import { handleFacesMessage, onHostChanged, onPlayerRemoved, startFacesRound } from './reducer.ts';
+import { hostLeavesRound } from '../common.ts';
+import { handleFacesMessage, onPlayerRemoved, startFacesRound } from './reducer.ts';
 import { facesRoundView } from './view.ts';
 
 export const facesGame: GameModule = {
@@ -10,7 +11,7 @@ export const facesGame: GameModule = {
   needsCategory: true,
   startRound: startFacesRound,
   handle: handleFacesMessage,
-  onHostChanged,
+  onHostChanged: hostLeavesRound,
   onPlayerRemoved,
   roundView: facesRoundView,
   isBusy: () => false,

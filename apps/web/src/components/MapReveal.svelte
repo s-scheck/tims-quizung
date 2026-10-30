@@ -6,6 +6,7 @@
   import { canReveal, newlyRevealed, ranksVisible, revealPlayer, revealStep } from '../lib/reveal.ts';
   import WorldMap, { type MapFocus, type MapMarker } from './WorldMap.svelte';
   import RevealControls from './RevealControls.svelte';
+  import ScoringHandoff from './ScoringHandoff.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: MapRoundView; readonly?: boolean } = $props();
 
@@ -108,14 +109,7 @@
     </ol>
 
     {#if !readonly}
-      {#if client.isHost && view.phase === 'reveal'}
-        <button class="btn-primary w-full text-lg" disabled={!complete} onclick={() => client.send({ type: 'to_scoring' })}>Punkte eintragen</button>
-        {#if !complete}<p class="text-center text-xs text-slate-500">Erst alle Spieler und das Ziel aufdecken.</p>{/if}
-      {:else if view.phase === 'scoring'}
-        <p class="card text-center text-sm text-slate-400">{playerName(view, view.hostId)} trägt gerade die Punkte ein…</p>
-      {:else}
-        <p class="card text-center text-sm text-slate-400">Warte auf {playerName(view, view.hostId)}…</p>
-      {/if}
+      <ScoringHandoff {view} disabled={!complete} hint="Erst alle Spieler und das Ziel aufdecken." />
     {/if}
   </aside>
 </div>

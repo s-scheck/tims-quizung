@@ -1,6 +1,7 @@
-import { matchGuess, type FaceAttemptView, type KidsRoundView, type RoundView } from '@quiz/shared';
+import type { FaceAttemptView, JudgeStatus, KidsRoundView, RoundView } from '@quiz/shared';
 import type { Room } from '../../rooms/room.ts';
 import type { KidsItem, KidsRound } from '../../rooms/state.ts';
+import { suggestionFor } from '../common.ts';
 import { imageUrl } from '../picture/view.ts';
 import { currentItem, kidsPoints, kidsRanking, kidsRound } from './reducer.ts';
 
@@ -47,12 +48,11 @@ export function kidsRoundView(room: Room, revealed: boolean, viewerId: string | 
   if (privileged || stage !== 'hidden') view.image = imageUrl(item.face.image);
   if (privileged || stage === 'solved' || revealed) view.name = item.face.name;
   if (r.mode === 'type') {
-    const matchable = [{ rank: 1, name: item.face.name, aliases: item.face.aliases ?? [] }];
-    const toView = (a: { text: string; at: number; status: FaceAttemptView['status'] }, withSuggestion: boolean): FaceAttemptView => ({
+    const toView = (a: { text: string; at: number; status: JudgeStatus }, withSuggestion: boolean): FaceAttemptView => ({
       text: a.text,
       at: a.at,
       status: a.status,
-      ...(withSuggestion ? { suggested: matchGuess(a.text, matchable) !== null } : {}),
+      ...(withSuggestion ? { suggested: suggestionFor(a.text, item.face.name, item.face.aliases) } : {}),
     });
     const mine = viewerId !== null ? item.attempts[viewerId] : undefined;
     if (mine) view.myAttempts = mine.map((a) => toView(a, false));

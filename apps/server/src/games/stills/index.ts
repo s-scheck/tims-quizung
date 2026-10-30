@@ -1,16 +1,17 @@
 import type { GameModule } from '../registry.ts';
-import { handleStillsMessage, onHostChanged, onPlayerRemoved, startStillsRound } from './reducer.ts';
+import { hostLeavesRound } from '../common.ts';
+import { handleStillsMessage, onPlayerRemoved, startStillsRound, STILLS_NAME } from './reducer.ts';
 import { stillsRoundView } from './view.ts';
 
 export const stillsGame: GameModule = {
   id: 'stills',
-  name: 'Filmfotos',
+  name: STILLS_NAME,
   description: 'Fünf Fotos aus einem Film, vom schwersten zum leichtesten. Wer den Film früher erkennt, bekommt mehr Punkte. Getippt oder gebuzzert.',
   turnBased: false,
   needsCategory: true,
   startRound: startStillsRound,
   handle: handleStillsMessage,
-  onHostChanged,
+  onHostChanged: hostLeavesRound,
   onPlayerRemoved,
   roundView: stillsRoundView,
   isBusy: () => false,

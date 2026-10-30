@@ -105,7 +105,7 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'face_effect', revealed: [-1] })).toBe(false);
     expect(isClientMsg({ type: 'choose_category', gameId: 'kids', categoryId: 'x', mode: 'shout' })).toBe(false);
     expect(isClientMsg({ type: 'choose_category', gameId: 'kids', categoryId: 'x', count: 0 })).toBe(false);
-    expect(isClientMsg({ type: 'choose_category', gameId: 'kids', categoryId: 'x', thinkSeconds: 7 })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'kids', categoryId: 'x', thinkSeconds: 61 })).toBe(false);
     expect(isClientMsg({ type: 'choose_category', gameId: 'kids', categoryId: 'x', penalty: 'double' })).toBe(false);
     expect(isClientMsg({ type: 'kids_guess', text: ' ' })).toBe(false);
     expect(isClientMsg({ type: 'kids_judge', playerId: 'p1', index: -1, correct: true })).toBe(false);

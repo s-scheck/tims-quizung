@@ -2,6 +2,7 @@
   import type { KidsRoundView, RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
+  import ScoringHandoff from './ScoringHandoff.svelte';
 
   /** Auflösung der Runde: alle gezeigten Promis mit Gewinnern, dazu die Rangliste der Spielpunkte. */
   let { view, round, readonly = false }: { view: RoomView; round: KidsRoundView; readonly?: boolean } = $props();
@@ -74,13 +75,7 @@
     </div>
 
     {#if !readonly}
-      {#if client.isHost && view.phase === 'reveal'}
-        <button class="btn-primary w-full text-lg" onclick={() => client.send({ type: 'to_scoring' })}>Punkte eintragen</button>
-      {:else if view.phase === 'scoring'}
-        <p class="card text-center text-sm text-slate-400">{playerName(view, view.hostId)} trägt gerade die Punkte ein…</p>
-      {:else}
-        <p class="card text-center text-sm text-slate-400">Warte auf {playerName(view, view.hostId)}…</p>
-      {/if}
+      <ScoringHandoff {view} />
     {/if}
   </aside>
 </div>

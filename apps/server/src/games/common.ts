@@ -1,5 +1,6 @@
 import {
   isValidScore,
+  matchGuess,
   nextActivePlayer,
   remainingPlayers,
   rotateStartPlayer,
@@ -172,6 +173,19 @@ export function toReveal(room: Room): void {
   round.activePlayerId = null;
   round.turnDeadline = null;
   room.game?.onReveal(room);
+}
+
+/** Passt ein Tipp zu Name, Alias oder eindeutigem Nachnamen? Vorschlag für die Prüfung durch den Host. */
+export function suggestionFor(text: string, name: string, aliases: readonly string[] = []): boolean {
+  return matchGuess(text, [{ rank: 1, name, aliases }]) !== null;
+}
+
+/** Der neue Host moderiert ab jetzt: Er fliegt aus der Zugreihenfolge, seine Spuren in der Runde verfallen. */
+export function hostLeavesRound(room: Room): void {
+  const round = room.round;
+  const host = room.hostId;
+  if (!round || host === null || !round.turnOrder.includes(host)) return;
+  removePlayerFromRound(room, host);
 }
 
 /** Ein Spieler ist aus dem Raum verschwunden: aus der Runde nehmen und den Ablauf reparieren. */

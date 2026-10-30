@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { GUESS_MAX_LENGTH, type FaceEffectState, type KidsRoundView, type RoomView } from '@quiz/shared';
+  import type { FaceEffectState, KidsRoundView, RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
   import FaceImage from './FaceImage.svelte';
+  import GuessBar from './GuessBar.svelte';
   import TurnTimer from './TurnTimer.svelte';
 
   /** Kinderpromis: Der Host zeigt einen Promi nach dem anderen, alle tippen um die Wette oder buzzern. */
@@ -51,16 +52,6 @@
   }
 
   // ------------------------------------------------------------ Spieler
-
-  let text = $state('');
-  let barHeight = $state(0);
-
-  function submitGuess() {
-    const t = text.trim();
-    if (!t || !canGuess) return;
-    client.send({ type: 'kids_guess', text: t });
-    text = '';
-  }
 
   const statusText = $derived.by(() => {
     if (round.total === 0) return 'Kein Promi gezeigt';
@@ -285,11 +276,5 @@
 </div>
 
 {#if canGuess}
-  <div aria-hidden="true" style="height:{barHeight}px"></div>
-  <div bind:clientHeight={barHeight} class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-800 bg-slate-950/95 px-4 py-3 backdrop-blur" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px))">
-    <form class="mx-auto flex max-w-5xl items-center gap-3" onsubmit={(e) => { e.preventDefault(); submitGuess(); }}>
-      <input class="input flex-1" type="text" maxlength={GUESS_MAX_LENGTH} placeholder="Wer war das als Kind?" autocomplete="off" autocapitalize="words" bind:value={text} />
-      <button class="btn-primary" type="submit" disabled={text.trim().length === 0}>Raten</button>
-    </form>
-  </div>
+  <GuessBar placeholder="Wer war das als Kind?" submitLabel="Raten" onSubmit={(text) => client.send({ type: 'kids_guess', text })} />
 {/if}

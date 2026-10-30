@@ -21,7 +21,7 @@
     untrack(() => {
       const r = view.round;
       if (r?.game !== 'stills') return {};
-      return Object.fromEntries(scoredPlayers(view).map((p) => [p.id, r.awarded[p.id] ?? 0]));
+      return Object.fromEntries(scoredPlayers(view).map((p) => [p.id, r.points[p.id] ?? 0]));
     }),
   );
 
@@ -59,7 +59,7 @@
     }
     if (r.game === 'stills') {
       if (!r.solved?.winners.includes(id)) return 'nicht erkannt';
-      return `bei Foto ${r.solved.stage + 1} erkannt, ${r.points[r.solved.stage] ?? 0} Punkte`;
+      return `bei Foto ${r.solved.index + 1} erkannt, ${r.stagePoints[r.solved.index] ?? 0} Punkte`;
     }
     if (r.game === 'morse') {
       const s = r.solved.find((x) => x.playerId === id);

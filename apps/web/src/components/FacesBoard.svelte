@@ -1,9 +1,10 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { FACE_COLS_MAX, FACE_COLS_MIN, FACE_LEVEL_MAX, GUESS_MAX_LENGTH, type FaceEffectState, type FacesRoundView, type RoomView } from '@quiz/shared';
+  import { FACE_COLS_MAX, FACE_COLS_MIN, FACE_LEVEL_MAX, type FaceEffectState, type FacesRoundView, type RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
   import FaceImage, { tileRows } from './FaceImage.svelte';
+  import GuessBar from './GuessBar.svelte';
   import TurnTimer from './TurnTimer.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: FacesRoundView; readonly?: boolean } = $props();
@@ -80,16 +81,6 @@
   }
 
   // ------------------------------------------------------------ Spieler: Raten
-
-  let text = $state('');
-  let barHeight = $state(0);
-
-  function submitGuess() {
-    const t = text.trim();
-    if (!t || !canGuess) return;
-    client.send({ type: 'face_guess', text: t });
-    text = '';
-  }
 
   const hint = $derived.by(() => {
     if (readonly) return '';
@@ -250,11 +241,5 @@
 </div>
 
 {#if canGuess}
-  <div aria-hidden="true" style="height:{barHeight}px"></div>
-  <div bind:clientHeight={barHeight} class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-800 bg-slate-950/95 px-4 py-3 backdrop-blur" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px))">
-    <form class="mx-auto flex max-w-5xl items-center gap-3" onsubmit={(e) => { e.preventDefault(); submitGuess(); }}>
-      <input class="input flex-1" type="text" maxlength={GUESS_MAX_LENGTH} placeholder="Wer ist das?" autocomplete="off" autocapitalize="words" bind:value={text} />
-      <button class="btn-primary" type="submit" disabled={text.trim().length === 0}>Raten</button>
-    </form>
-  </div>
+  <GuessBar placeholder="Wer ist das?" submitLabel="Raten" onSubmit={(text) => client.send({ type: 'face_guess', text })} />
 {/if}

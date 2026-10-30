@@ -2,11 +2,10 @@
   import type { RiskRoundView, RiskSlotView, RoomView } from '@quiz/shared';
   import { formatValue, playerName } from '../lib/format.ts';
 
-  /** `full` zeigt alle Plätze 1–N, nicht getroffene als leere Zeile, damit man die Lücken sieht. */
-  let { view, round, slots, large = false, full = false }: { view: RoomView; round: RiskRoundView; slots: RiskSlotView[]; large?: boolean; full?: boolean } = $props();
+  /** Zeigt alle Plätze 1–N; Plätze ohne Eintrag erscheinen als leere Zeile, damit man die Lücken sieht. */
+  let { view, round, slots, large = false }: { view: RoomView; round: RiskRoundView; slots: RiskSlotView[]; large?: boolean } = $props();
 
   const rows = $derived.by((): { rank: number; slot?: RiskSlotView }[] => {
-    if (!full) return slots.map((slot) => ({ rank: slot.rank, slot }));
     const byRank = new Map(slots.map((s) => [s.rank, s]));
     return Array.from({ length: round.size }, (_, i) => ({ rank: i + 1, slot: byRank.get(i + 1) }));
   });

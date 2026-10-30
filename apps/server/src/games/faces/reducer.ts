@@ -4,7 +4,7 @@ import type { Room } from '../../rooms/room.ts';
 import type { FacesRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
 import type { StartRoundOptions } from '../registry.ts';
-import { baseRound, buildTurnOrder, rememberTarget, removePlayerFromRound, scheduleRoundTimer, toReveal } from '../common.ts';
+import { baseRound, buildTurnOrder, rememberTarget, scheduleRoundTimer, toReveal } from '../common.ts';
 
 /** Mehr Versuche braucht niemand, das bremst höchstens Spam. */
 export const MAX_ATTEMPTS = 50;
@@ -152,12 +152,4 @@ export function onPlayerRemoved(room: Room, playerId: string): void {
   if (!round) return;
   delete round.attempts[playerId];
   delete round.solved[playerId];
-}
-
-/** Der neue Host prüft ab jetzt: Er fliegt aus der Reihenfolge, seine Versuche verfallen. */
-export function onHostChanged(room: Room): void {
-  const round = facesRound(room);
-  const host = room.hostId;
-  if (!round || host === null || !round.turnOrder.includes(host)) return;
-  removePlayerFromRound(room, host);
 }

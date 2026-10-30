@@ -237,26 +237,33 @@
     return file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
-  async function uploadMany(input: HTMLInputElement) {
-    const files = [...(input.files ?? [])];
-    input.value = '';
-    if (files.length === 0 || bulkUploading) return;
+  /** Lädt die Dateien nacheinander hoch und reicht jeden gespeicherten Namen an `place`; liefert die Zahl der Fehlschläge. */
+  async function uploadFiles(files: File[], place: (file: File, name: string) => void): Promise<number> {
     bulkUploading = files.length;
     let failed = 0;
     for (const file of files) {
       try {
         const res = await editorApi.uploadImage(file);
-        const name = nameFromFile(file);
-        const empty = draft.rows.findIndex((r) => !(r.name ?? '').trim() && !(r.image ?? '').trim());
-        const row = { name, aliases: '', image: res.name };
-        if (empty === -1) draft.rows.push(row);
-        else draft.rows[empty] = row;
+        place(file, res.name);
       } catch {
         failed++;
       } finally {
         bulkUploading--;
       }
     }
+    return failed;
+  }
+
+  async function uploadMany(input: HTMLInputElement) {
+    const files = [...(input.files ?? [])];
+    input.value = '';
+    if (files.length === 0 || bulkUploading) return;
+    const failed = await uploadFiles(files, (file, name) => {
+      const empty = draft.rows.findIndex((r) => !(r.name ?? '').trim() && !(r.image ?? '').trim());
+      const row = { name: nameFromFile(file), aliases: '', image: name };
+      if (empty === -1) draft.rows.push(row);
+      else draft.rows[empty] = row;
+    });
     if (failed) toasts.error(`${failed} ${failed === 1 ? 'Bild' : 'Bilder'} konnten nicht hochgeladen werden.`);
     else toasts.success(`${files.length} ${files.length === 1 ? 'Bild' : 'Bilder'} hochgeladen. Namen prüfen, dann speichern.`);
   }
@@ -268,24 +275,15 @@
     const files = [...(input.files ?? [])].sort((a, b) => a.name.localeCompare(b.name, 'de', { numeric: true }));
     input.value = '';
     if (files.length === 0 || bulkUploading) return;
-    const free = draft.rows.map((r, i) => ((r.image ?? '').trim() ? -1 : i)).filter((i) => i >= 0);
+    const free = draft.rows.flatMap((r, i) => ((r.image ?? '').trim() ? [] : [i]));
     const take = files.slice(0, free.length);
     if (take.length === 0) {
       toasts.error('Alle fünf Fotos sind schon belegt. Einzelne Fotos über „Ersetzen“ tauschen.');
       return;
     }
-    bulkUploading = take.length;
-    let failed = 0;
-    for (const [n, file] of take.entries()) {
-      try {
-        const res = await editorApi.uploadImage(file);
-        draft.rows[free[n]!]!.image = res.name;
-      } catch {
-        failed++;
-      } finally {
-        bulkUploading--;
-      }
-    }
+    const failed = await uploadFiles(take, (file, name) => {
+      draft.rows[free[take.indexOf(file)]!]!.image = name;
+    });
     if (failed) toasts.error(`${failed} ${failed === 1 ? 'Foto' : 'Fotos'} konnten nicht hochgeladen werden.`);
     else if (files.length > take.length) toasts.info(`${take.length} von ${files.length} Fotos übernommen, mehr freie Plätze gibt es nicht.`);
     else toasts.success(`${take.length} ${take.length === 1 ? 'Foto' : 'Fotos'} hochgeladen. Reihenfolge prüfen, dann speichern.`);
@@ -492,7 +490,7 @@
           bind:rows={draft.rows}
           {issues}
           bind:selected
-          noun={draft.kind === 'pairs' ? 'Paar' : draft.kind === 'events' ? 'Ereignis' : draft.kind === 'prompts' ? 'Aufgabe' : draft.kind === 'faces' ? 'Person' : draft.kind === 'stills' ? 'Foto' : 'Eintrag'}
+          noun={draft.kind === 'pairs' ? 'Paar' : draft.kind === 'events' ? 'Ereignis' : draft.kind === 'prompts' ? 'Aufgabe' : draft.kind === 'faces' ? 'Person' : 'Eintrag'}
           onImageUpload={draft.kind === 'faces' || draft.kind === 'stills' ? uploadRowImage : undefined}
           fixedRows={draft.kind === 'stills'}
         />

@@ -4,10 +4,9 @@ import {
   KIDS_POINTS,
   KIDS_THINK_DEFAULT,
   isKidsThink,
-  matchGuess,
   type ClientMsg,
   type FaceSolvedView,
-  type KidsMode,
+  type GuessMode,
   type KidsPenalty,
 } from '@quiz/shared';
 import type { Category, Face } from '@quiz/content';
@@ -15,7 +14,7 @@ import type { Room } from '../../rooms/room.ts';
 import type { KidsItem, KidsRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
 import type { StartRoundOptions } from '../registry.ts';
-import { baseRound, buildTurnOrder, rememberTarget, removePlayerFromRound, toReveal } from '../common.ts';
+import { baseRound, buildTurnOrder, rememberTarget, suggestionFor, toReveal } from '../common.ts';
 import { MAX_ATTEMPTS } from '../faces/reducer.ts';
 
 export function kidsRound(room: Room): KidsRound | null {
@@ -51,7 +50,7 @@ export function startKidsRound(room: Room, category: Category | null, opts: Star
   const seen = shuffle(category.faces.filter((f) => played.includes(f.id)), room.random);
   const count = Math.min(category.faces.length, Math.max(1, Math.round(opts.count ?? KIDS_COUNT_DEFAULT)));
   const faces = [...fresh, ...seen].slice(0, count);
-  const mode: KidsMode = opts.mode === 'buzz' ? 'buzz' : 'type';
+  const mode: GuessMode = opts.mode === 'buzz' ? 'buzz' : 'type';
   const penalty: KidsPenalty = opts.penalty ?? 'none';
 
   room.round = {
@@ -118,10 +117,6 @@ function show(room: Room, playerId: string): Result {
   return OK;
 }
 
-function matchable(item: KidsItem) {
-  return [{ rank: 1, name: item.face.name, aliases: item.face.aliases ?? [] }];
-}
-
 /** Tippen: Treffer per Name, Alias oder eindeutigem Nachnamen zählen sofort, alles andere prüft der Host. */
 function guess(room: Room, playerId: string, text: string): Result {
   const p = playing(room);
@@ -135,7 +130,7 @@ function guess(room: Room, playerId: string, text: string): Result {
   if (!isValidGuess(trimmed)) return fail('bad_message', 'Tipp muss 1 bis 60 Zeichen haben');
   const list = (item.attempts[playerId] ??= []);
   if (list.length >= MAX_ATTEMPTS) return fail('invalid_action', 'Genug geraten für diesen Promi');
-  const hit = matchGuess(trimmed, matchable(item)) !== null;
+  const hit = suggestionFor(trimmed, item.face.name, item.face.aliases);
   list.push({ text: trimmed, at: room.now, status: hit ? 'correct' : 'judging' });
   if (hit) {
     item.solved[playerId] = room.now;
@@ -317,12 +312,4 @@ export function onPlayerRemoved(room: Room, playerId: string): void {
   if (!item || item.stage !== 'open' || round.turnOrder.length === 0) return;
   if (round.mode === 'type') settleIfDone(round, item);
   else if (round.turnOrder.every((id) => item.used.includes(id))) item.stage = 'solved';
-}
-
-/** Der neue Host prüft ab jetzt: Er fliegt aus der Reihenfolge, seine Treffer verfallen. */
-export function onHostChanged(room: Room): void {
-  const round = kidsRound(room);
-  const host = room.hostId;
-  if (!round || host === null || !round.turnOrder.includes(host)) return;
-  removePlayerFromRound(room, host);
 }

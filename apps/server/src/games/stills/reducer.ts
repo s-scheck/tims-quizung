@@ -1,16 +1,17 @@
-import { isValidGuess, THINK_SECONDS_DEFAULT, THINK_SECONDS_MAX, THINK_SECONDS_MIN, type ClientMsg } from '@quiz/shared';
+import { isThinkSeconds, isValidGuess, THINK_SECONDS_DEFAULT, type ClientMsg } from '@quiz/shared';
 import type { Category } from '@quiz/content';
 import type { Room } from '../../rooms/room.ts';
-import type { StillsRound } from '../../rooms/state.ts';
+import type { StillAttempt, StillsRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
 import type { StartRoundOptions } from '../registry.ts';
-import { baseRound, buildTurnOrder, removePlayerFromRound, toReveal } from '../common.ts';
+import { baseRound, buildTurnOrder, toReveal } from '../common.ts';
+
+/** Anzeigename des Spiels; Spieler sehen ihn statt des Kategorie-Titels, bis der Film aufgelöst ist. */
+export const STILLS_NAME = 'Filmfotos';
 
 export function stillsRound(room: Room): StillsRound | null {
   return room.round?.game === 'stills' ? room.round : null;
 }
-
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 export function startStillsRound(room: Room, category: Category | null, opts: StartRoundOptions): Result {
   if (!category || category.kind !== 'stills') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
@@ -25,13 +26,12 @@ export function startStillsRound(room: Room, category: Category | null, opts: St
     game: 'stills',
     category,
     mode: opts.mode === 'buzz' ? 'buzz' : 'type',
-    thinkSeconds: clamp(Math.round(opts.thinkSeconds ?? THINK_SECONDS_DEFAULT), THINK_SECONDS_MIN, THINK_SECONDS_MAX),
-    stage: 0,
-    stagePhase: 'guessing',
-    guesses: {},
-    buzz: null,
-    locked: [],
-    wrongBuzzes: [],
+    thinkSeconds: isThinkSeconds(opts.thinkSeconds) ? opts.thinkSeconds : THINK_SECONDS_DEFAULT,
+    index: 0,
+    stage: 'guessing',
+    attempts: {},
+    holder: null,
+    used: [],
     buzzWinner: null,
   };
   room.phase = 'playing';
@@ -61,32 +61,32 @@ export function handleStillsMessage(room: Room, playerId: string, msg: ClientMsg
 
 // ------------------------------------------------------------- Auswertung
 
-const lastStage = (r: StillsRound) => r.category.stills.length - 1;
+const lastIndex = (r: StillsRound) => r.category.stills.length - 1;
 
 /** Tipps zu einem Foto, je Spieler höchstens einer. */
-export function stageGuesses(r: StillsRound, stage: number): { playerId: string; index: number }[] {
+export function attemptsAt(r: StillsRound, index: number): { playerId: string; attempt: StillAttempt }[] {
   return r.turnOrder.flatMap((playerId) => {
-    const index = (r.guesses[playerId] ?? []).findIndex((g) => g.stage === stage);
-    return index >= 0 ? [{ playerId, index }] : [];
+    const attempt = (r.attempts[playerId] ?? []).find((a) => a.index === index);
+    return attempt ? [{ playerId, attempt }] : [];
   });
 }
 
-function stageJudged(r: StillsRound, stage: number): boolean {
-  return stageGuesses(r, stage).every(({ playerId, index }) => r.guesses[playerId]![index]!.status !== 'judging');
+function judgedAt(r: StillsRound, index: number): boolean {
+  return attemptsAt(r, index).every(({ attempt }) => attempt.status !== 'judging');
 }
 
 /**
  * Gelöst: beim Tippen das erste fertig geprüfte Foto mit Treffern, alle Treffer gewinnen;
  * beim Buzzern der Erste mit richtiger Antwort.
  */
-export function stillsSolved(r: StillsRound): { stage: number; winners: string[] } | null {
-  if (r.mode === 'buzz') return r.buzzWinner ? { stage: r.buzzWinner.stage, winners: [r.buzzWinner.playerId] } : null;
-  for (let stage = 0; stage <= r.stage; stage++) {
-    if (r.stage === stage && r.stagePhase === 'guessing') return null;
-    const winners = stageGuesses(r, stage)
-      .filter(({ playerId, index }) => r.guesses[playerId]![index]!.status === 'correct')
+export function stillsSolved(r: StillsRound): { index: number; winners: string[] } | null {
+  if (r.mode === 'buzz') return r.buzzWinner ? { index: r.buzzWinner.index, winners: [r.buzzWinner.playerId] } : null;
+  for (let index = 0; index <= r.index; index++) {
+    if (r.index === index && r.stage === 'guessing') return null;
+    const winners = attemptsAt(r, index)
+      .filter(({ attempt }) => attempt.status === 'correct')
       .map(({ playerId }) => playerId);
-    if (winners.length > 0 && stageJudged(r, stage)) return { stage, winners };
+    if (winners.length > 0 && judgedAt(r, index)) return { index, winners };
   }
   return null;
 }
@@ -94,17 +94,17 @@ export function stillsSolved(r: StillsRound): { stage: number; winners: string[]
 /** Raten vorbei: gelöst oder das letzte Foto ist ohne Treffer durch. */
 export function stillsOver(r: StillsRound): boolean {
   if (stillsSolved(r)) return true;
-  if (r.stage < lastStage(r)) return false;
-  if (r.mode === 'type') return r.stagePhase === 'judging' && stageJudged(r, r.stage);
-  return r.buzz === null && r.turnOrder.every((id) => r.locked.includes(id));
+  if (r.index < lastIndex(r)) return false;
+  if (r.mode === 'type') return r.stage === 'judging' && judgedAt(r, r.index);
+  return r.holder === null && r.turnOrder.every((id) => r.used.includes(id));
 }
 
-/** Etappenpunkte je Spieler, Vorbelegung der Wertung. */
-export function stillsAwarded(r: StillsRound): Record<string, number> {
-  const awarded: Record<string, number> = Object.fromEntries(r.turnOrder.map((id) => [id, 0]));
+/** Spielpunkte je Spieler aus dem gelösten Foto, Vorbelegung der Wertung. */
+export function stillsPoints(r: StillsRound): Record<string, number> {
+  const points: Record<string, number> = Object.fromEntries(r.turnOrder.map((id) => [id, 0]));
   const solved = stillsSolved(r);
-  if (solved) for (const id of solved.winners) awarded[id] = r.category.stills[solved.stage]!.points;
-  return awarded;
+  if (solved) for (const id of solved.winners) points[id] = r.category.stills[solved.index]!.points;
+  return points;
 }
 
 // ---------------------------------------------------------------- Aktionen
@@ -120,12 +120,12 @@ function guess(room: Room, playerId: string, text: string): Result {
   if (r.mode !== 'type') return fail('invalid_action', 'In dieser Runde wird gebuzzert');
   if (!r.turnOrder.includes(playerId)) return fail('not_allowed', 'Du bist in dieser Runde nicht dabei');
   if (stillsOver(r)) return fail('invalid_action', 'Das Raten ist vorbei');
-  if (r.stagePhase !== 'guessing') return fail('invalid_action', 'Die Tipps zu diesem Foto sind geschlossen');
-  const list = (r.guesses[playerId] ??= []);
-  if (list.some((g) => g.stage === r.stage)) return fail('invalid_action', 'Du hast zu diesem Foto schon getippt');
+  if (r.stage !== 'guessing') return fail('invalid_action', 'Die Tipps zu diesem Foto sind geschlossen');
+  const list = (r.attempts[playerId] ??= []);
+  if (list.some((a) => a.index === r.index)) return fail('invalid_action', 'Du hast zu diesem Foto schon getippt');
   const trimmed = text.trim();
   if (!isValidGuess(trimmed)) return fail('bad_message', 'Tipp muss 1 bis 60 Zeichen haben');
-  list.push({ stage: r.stage, text: trimmed, at: room.now, status: 'judging' });
+  list.push({ index: r.index, text: trimmed, status: 'judging' });
   return OK;
 }
 
@@ -135,8 +135,8 @@ function close(room: Room, playerId: string): Result {
   if (!r) return fail('invalid_action', 'Gerade wird nicht gespielt');
   if (r.mode !== 'type') return fail('invalid_action', 'In dieser Runde wird gebuzzert');
   if (stillsOver(r)) return fail('invalid_action', 'Das Raten ist vorbei');
-  if (r.stagePhase !== 'guessing') return fail('invalid_action', 'Die Tipps sind schon geschlossen');
-  r.stagePhase = 'judging';
+  if (r.stage !== 'guessing') return fail('invalid_action', 'Die Tipps sind schon geschlossen');
+  r.stage = 'judging';
   return OK;
 }
 
@@ -146,12 +146,12 @@ function judge(room: Room, playerId: string, targetId: string, correct: boolean)
   const r = playing(room);
   if (!r) return fail('invalid_action', 'Gerade wird nicht gespielt');
   if (r.mode !== 'type') return fail('invalid_action', 'In dieser Runde wird gebuzzert');
-  if (r.stagePhase !== 'judging') return fail('invalid_action', 'Erst die Tipps schließen');
-  const g = (r.guesses[targetId] ?? []).find((x) => x.stage === r.stage);
-  if (!g) return fail('invalid_action', 'Zu diesem Foto gibt es keinen Tipp');
+  if (r.stage !== 'judging') return fail('invalid_action', 'Erst die Tipps schließen');
+  const attempt = (r.attempts[targetId] ?? []).find((a) => a.index === r.index);
+  if (!attempt) return fail('invalid_action', 'Zu diesem Foto gibt es keinen Tipp');
   const solved = stillsSolved(r);
-  if (solved && solved.stage < r.stage) return fail('invalid_action', 'Das Raten ist vorbei');
-  g.status = correct ? 'correct' : 'wrong';
+  if (solved && solved.index < r.index) return fail('invalid_action', 'Das Raten ist vorbei');
+  attempt.status = correct ? 'correct' : 'wrong';
   return OK;
 }
 
@@ -161,26 +161,28 @@ function buzz(room: Room, playerId: string): Result {
   if (r.mode !== 'buzz') return fail('invalid_action', 'In dieser Runde wird getippt');
   if (!r.turnOrder.includes(playerId)) return fail('not_allowed', 'Du bist in dieser Runde nicht dabei');
   if (stillsOver(r)) return fail('invalid_action', 'Das Raten ist vorbei');
-  if (r.buzz) return fail('invalid_action', r.buzz.playerId === playerId ? 'Du bist schon dran' : 'Jemand anderes ist schneller');
-  if (r.locked.includes(playerId)) return fail('invalid_action', 'Du bist für dieses Foto gesperrt');
-  r.buzz = { playerId, at: room.now, deadline: room.now + r.thinkSeconds * 1000 };
+  if (r.holder !== null) return fail('invalid_action', r.holder === playerId ? 'Du bist schon dran' : 'Jemand anderes ist schneller');
+  if (r.used.includes(playerId)) return fail('invalid_action', 'Du bist für dieses Foto gesperrt');
+  r.holder = playerId;
+  // Nur eine Anzeige: Kein Timer löst sie aus, der Host urteilt auch danach noch.
+  r.turnDeadline = room.now + r.thinkSeconds * 1000;
   return OK;
 }
 
-/** Die Bedenkzeit ist nur eine Anzeige: Der Host urteilt auch danach noch. */
+function releaseBuzzer(r: StillsRound): void {
+  r.holder = null;
+  r.turnDeadline = null;
+}
+
 function verdict(room: Room, playerId: string, correct: boolean): Result {
   if (!room.isHost(playerId)) return fail('not_host', 'Nur der Host urteilt');
   const r = playing(room);
   if (!r) return fail('invalid_action', 'Gerade wird nicht gespielt');
-  if (!r.buzz) return fail('invalid_action', 'Gerade hat niemand gebuzzert');
-  const by = r.buzz.playerId;
-  r.buzz = null;
-  if (correct) {
-    r.buzzWinner = { playerId: by, stage: r.stage };
-  } else {
-    r.locked.push(by);
-    r.wrongBuzzes.push({ playerId: by, stage: r.stage });
-  }
+  const by = r.holder;
+  if (by === null) return fail('invalid_action', 'Gerade hat niemand gebuzzert');
+  releaseBuzzer(r);
+  if (correct) r.buzzWinner = { playerId: by, index: r.index };
+  else r.used.push(by);
   return OK;
 }
 
@@ -189,15 +191,15 @@ function next(room: Room, playerId: string): Result {
   if (!room.isHost(playerId)) return fail('not_host', 'Nur der Host schaltet weiter');
   const r = playing(room);
   if (!r) return fail('invalid_action', 'Gerade wird nicht gespielt');
-  if (r.stage >= lastStage(r)) return fail('invalid_action', 'Das war das letzte Foto');
+  if (r.index >= lastIndex(r)) return fail('invalid_action', 'Das war das letzte Foto');
   if (!stillsOver(r)) {
-    if (r.mode === 'type' && r.stagePhase !== 'judging') return fail('invalid_action', 'Erst die Tipps schließen');
-    if (r.mode === 'type' && !stageJudged(r, r.stage)) return fail('invalid_action', 'Erst alle Tipps prüfen');
-    if (r.mode === 'buzz' && r.buzz) return fail('invalid_action', 'Erst die Antwort bewerten');
-    r.stagePhase = 'guessing';
-    r.locked = [];
+    if (r.mode === 'type' && r.stage !== 'judging') return fail('invalid_action', 'Erst die Tipps schließen');
+    if (r.mode === 'type' && !judgedAt(r, r.index)) return fail('invalid_action', 'Erst alle Tipps prüfen');
+    if (r.mode === 'buzz' && r.holder !== null) return fail('invalid_action', 'Erst die Antwort bewerten');
+    r.stage = 'guessing';
+    r.used = [];
   }
-  r.stage += 1;
+  r.index += 1;
   return OK;
 }
 
@@ -205,7 +207,7 @@ function endRound(room: Room, playerId: string): Result {
   if (!room.isHost(playerId)) return fail('not_host', 'Nur der Host löst auf');
   const r = playing(room);
   if (!r) return fail('invalid_action', 'Gerade läuft keine Runde');
-  r.buzz = null;
+  releaseBuzzer(r);
   toReveal(room);
   return OK;
 }
@@ -215,17 +217,8 @@ function endRound(room: Room, playerId: string): Result {
 export function onPlayerRemoved(room: Room, playerId: string): void {
   const r = stillsRound(room);
   if (!r) return;
-  delete r.guesses[playerId];
-  r.locked = r.locked.filter((id) => id !== playerId);
-  r.wrongBuzzes = r.wrongBuzzes.filter((w) => w.playerId !== playerId);
-  if (r.buzz?.playerId === playerId) r.buzz = null;
+  delete r.attempts[playerId];
+  r.used = r.used.filter((id) => id !== playerId);
+  if (r.holder === playerId) releaseBuzzer(r);
   if (r.buzzWinner?.playerId === playerId) r.buzzWinner = null;
-}
-
-/** Der neue Host prüft ab jetzt: Er fliegt aus der Reihenfolge, seine Tipps verfallen. */
-export function onHostChanged(room: Room): void {
-  const r = stillsRound(room);
-  const host = room.hostId;
-  if (!r || host === null || !r.turnOrder.includes(host)) return;
-  removePlayerFromRound(room, host);
 }

@@ -1,10 +1,9 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { GAME_IDS, type CategoryDraft, type EditorDocument, type EditorEntry, type EditorStatus, type GameId } from '@quiz/shared';
+import { GAME_IDS, type CategoryDraft, type CategoryKind, type EditorDocument, type EditorEntry, type EditorStatus, type GameId } from '@quiz/shared';
 import { CategoryValidationError, validateCategory, type Category } from './schema.ts';
 
-export type { EditorDocument, EditorEntry, EditorStatus } from '@quiz/shared';
-export type CategoryKind = Category['kind'];
+export type { CategoryKind, EditorDocument, EditorEntry, EditorStatus } from '@quiz/shared';
 
 export const CATEGORY_ID_PATTERN = /^[a-z0-9-]{1,80}$/;
 /** Großzügig für 50 Einträge mit Aliassen, aber klein genug gegen Missbrauch. */

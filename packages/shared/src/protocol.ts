@@ -1,4 +1,4 @@
-import type { FaceEffect, GameId, KidsMode, KidsPenalty, MorseSpeed, PictureMode, RevealMode, Role, RoomView, Selection, TimerSeconds } from './types.ts';
+import type { FaceEffect, GameId, GuessMode, KidsPenalty, MorseSpeed, PictureMode, RevealMode, Role, RoomView, Selection, TimerSeconds } from './types.ts';
 import type { RiskDuplicates, RiskMissPoints } from './rules/risk.ts';
 
 export const PROTOCOL_VERSION = 2;
@@ -51,7 +51,7 @@ export type ClientMsg =
       level?: number;
       cols?: number;
       /** Bilderrätsel: reihum oder alle gleichzeitig. Kinderpromis und Filmfotos: Tippen oder Buzzern. */
-      mode?: PictureMode | KidsMode;
+      mode?: PictureMode | GuessMode;
       /** Kinderpromis: Promis je Runde und Fehlbuzzer-Regel. */
       count?: number;
       penalty?: KidsPenalty;
@@ -72,13 +72,6 @@ export type ClientMsg =
   | { type: 'picture_verdict'; playerId: string; fieldId: string; correct: boolean }
   /** Wer ist das?: Tipp, Prüfung durch den Host, neuer Effektzustand vom Host. */
   | { type: 'face_guess'; text: string }
-  /** Filmfotos: Tipp zum aktuellen Foto, Eingabe schließen, Prüfung, Buzzer mit Urteil, nächstes Foto. */
-  | { type: 'still_guess'; text: string }
-  | { type: 'still_close' }
-  | { type: 'still_judge'; playerId: string; correct: boolean }
-  | { type: 'still_buzz' }
-  | { type: 'still_verdict'; correct: boolean }
-  | { type: 'still_next' }
   | { type: 'face_judge'; playerId: string; index: number; correct: boolean }
   | { type: 'face_effect'; level?: number; cols?: number; revealed?: number[] }
   /** Kinderpromis: Host zeigt den Promi, löst ihn auf und geht weiter; Tippen mit Prüfung, Buzzern mit Urteil. */
@@ -89,6 +82,13 @@ export type ClientMsg =
   | { type: 'kids_verdict'; correct: boolean }
   | { type: 'kids_resolve' }
   | { type: 'kids_next' }
+  /** Filmfotos: Tipp zum aktuellen Foto, Eingabe schließen, Prüfung, Buzzer mit Urteil, nächstes Foto. */
+  | { type: 'still_guess'; text: string }
+  | { type: 'still_close' }
+  | { type: 'still_judge'; playerId: string; correct: boolean }
+  | { type: 'still_buzz' }
+  | { type: 'still_verdict'; correct: boolean }
+  | { type: 'still_next' }
   | { type: 'place_pin'; lat: number; lng: number }
   | { type: 'place_year'; year: number }
   | { type: 'confirm_pin' }

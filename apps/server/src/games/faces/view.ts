@@ -1,5 +1,6 @@
-import { matchGuess, type FaceAttemptView, type RoundView } from '@quiz/shared';
+import type { FaceAttemptView, JudgeStatus, RoundView } from '@quiz/shared';
 import type { Room } from '../../rooms/room.ts';
+import { suggestionFor } from '../common.ts';
 import { imageUrl } from '../picture/view.ts';
 import { facesPoints, facesRanking, facesRound } from './reducer.ts';
 
@@ -13,18 +14,17 @@ export function facesRoundView(room: Room, revealed: boolean, viewerId: string |
   const privileged = viewerId !== null && viewerId === room.hostId;
   const showAll = revealed || privileged;
   const { faces: _faces, games: _games, kind: _kind, ...category } = r.category;
-  const matchable = [{ rank: 1, name: r.target.name, aliases: r.target.aliases ?? [] }];
 
   const wrongGuesses = r.turnOrder
     .flatMap((id) => (r.attempts[id] ?? []).filter((a) => a.status === 'wrong').map((a) => ({ by: id, text: a.text, at: a.at })))
     .sort((a, b) => a.at - b.at)
     .map(({ by, text }) => ({ by, text }));
 
-  const toView = (a: { text: string; at: number; status: FaceAttemptView['status'] }, withSuggestion: boolean): FaceAttemptView => ({
+  const toView = (a: { text: string; at: number; status: JudgeStatus }, withSuggestion: boolean): FaceAttemptView => ({
     text: a.text,
     at: a.at,
     status: a.status,
-    ...(withSuggestion ? { suggested: matchGuess(a.text, matchable) !== null } : {}),
+    ...(withSuggestion ? { suggested: suggestionFor(a.text, r.target.name, r.target.aliases) } : {}),
   });
 
   const view: RoundView = {

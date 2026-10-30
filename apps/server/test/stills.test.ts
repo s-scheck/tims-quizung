@@ -30,11 +30,11 @@ describe('Filmfotos: Rundenstart', () => {
     expect(r.turnOrder).toEqual([h.ids[1]!, h.ids[2]!]);
     expect(r.mode).toBe('buzz');
     expect(r.thinkSeconds).toBe(15);
-    expect(r.stage).toBe(0);
+    expect(r.index).toBe(0);
 
     const h2 = makeHarness(['Host', 'B']);
     startStills(h2);
-    expect(sr(h2)).toMatchObject({ mode: 'type', thinkSeconds: 10, stagePhase: 'guessing' });
+    expect(sr(h2)).toMatchObject({ mode: 'type', thinkSeconds: 10, stage: 'guessing' });
   });
 
   test('ohne Mitspieler außer dem Host geht es nicht los', () => {
@@ -51,7 +51,7 @@ describe('Filmfotos: Rundenstart', () => {
     expect(seenByB.images).toEqual(['/images/s1-hand.jpg']);
     expect(seenByB.answer).toBeUndefined();
     expect(seenByB.category.title).toBe('Filmfotos');
-    expect(seenByB.points).toEqual([5, 4, 3, 2, 10]);
+    expect(seenByB.stagePoints).toEqual([5, 4, 3, 2, 10]);
     expect(seenByB.typed).toBeUndefined();
 
     const seenByHost = viewRound(h, h.host);
@@ -75,24 +75,24 @@ describe('Filmfotos: Tippen', () => {
 
     expect(viewRound(h, h.host).typed).toEqual([b]);
     expect(viewRound(h, null).typed).toEqual([b]);
-    expect(viewRound(h, h.host).guesses?.[b]).toEqual([]);
+    expect(viewRound(h, h.host).attempts?.[b]).toEqual([]);
     expect(h.act(h.host, { type: 'still_next' })).toMatchObject({ ok: false });
     expect(h.act(b, { type: 'still_close' })).toMatchObject({ ok: false, code: 'not_host' });
 
     expectOk(h.act(h.host, { type: 'still_close' }));
     expect(h.act(c, { type: 'still_guess', text: 'Der Pate' })).toMatchObject({ ok: false, code: 'invalid_action' });
-    expect(viewRound(h, h.host).guesses?.[b]).toEqual([{ stage: 0, text: 'Scarface', status: 'judging', suggested: false }]);
+    expect(viewRound(h, h.host).attempts?.[b]).toEqual([{ index: 0, text: 'Scarface', status: 'judging', suggested: false }]);
     expect(h.act(h.host, { type: 'still_next' })).toMatchObject({ ok: false });
     expect(h.act(h.host, { type: 'still_judge', playerId: c, correct: true })).toMatchObject({ ok: false });
 
     expectOk(h.act(h.host, { type: 'still_judge', playerId: b, correct: false }));
-    expect(viewRound(h, b).myGuesses).toEqual([{ stage: 0, text: 'Scarface', status: 'wrong' }]);
+    expect(viewRound(h, b).myAttempts).toEqual([{ index: 0, text: 'Scarface', status: 'wrong' }]);
     // Fremde Urteile und Texte bleiben geheim.
-    expect(viewRound(h, c).myGuesses).toBeUndefined();
-    expect(viewRound(h, c).guesses).toBeUndefined();
+    expect(viewRound(h, c).myAttempts).toBeUndefined();
+    expect(viewRound(h, c).attempts).toBeUndefined();
 
     expectOk(h.act(h.host, { type: 'still_next' }));
-    expect(sr(h)).toMatchObject({ stage: 1, stagePhase: 'guessing' });
+    expect(sr(h)).toMatchObject({ index: 1, stage: 'guessing' });
     expect(viewRound(h, b).images).toHaveLength(2);
     expectOk(h.act(b, { type: 'still_guess', text: 'Goodfellas' }));
   });
@@ -109,8 +109,8 @@ describe('Filmfotos: Tippen', () => {
     expectOk(h.act(d, { type: 'still_guess', text: 'Casino' }));
     expectOk(h.act(h.host, { type: 'still_close' }));
     const hostView = viewRound(h, h.host);
-    expect(hostView.guesses?.[b]?.[0]?.suggested).toBe(true);
-    expect(hostView.guesses?.[c]?.[0]?.suggested).toBe(false);
+    expect(hostView.attempts?.[b]?.[0]?.suggested).toBe(true);
+    expect(hostView.attempts?.[c]?.[0]?.suggested).toBe(false);
 
     expectOk(h.act(h.host, { type: 'still_judge', playerId: b, correct: true }));
     expectOk(h.act(h.host, { type: 'still_judge', playerId: c, correct: true }));
@@ -120,10 +120,10 @@ describe('Filmfotos: Tippen', () => {
     expectOk(h.act(h.host, { type: 'still_judge', playerId: d, correct: false }));
 
     const seenByD = viewRound(h, d);
-    expect(seenByD.solved).toEqual({ stage: 1, winners: [b, c] });
+    expect(seenByD.solved).toEqual({ index: 1, winners: [b, c] });
     expect(seenByD.over).toBe(true);
     expect(seenByD.answer).toBe('Der Pate');
-    expect(seenByD.awarded).toEqual({ [b]: 4, [c]: 4, [d]: 0 });
+    expect(seenByD.points).toEqual({ [b]: 4, [c]: 4, [d]: 0 });
 
     // Raten vorbei, der Host darf die übrigen Fotos trotzdem zeigen.
     expect(h.act(h.host, { type: 'still_close' })).toMatchObject({ ok: false });
@@ -133,13 +133,13 @@ describe('Filmfotos: Tippen', () => {
     expect(h.act(h.host, { type: 'still_next' })).toMatchObject({ ok: false });
     expect(h.act(d, { type: 'still_guess', text: 'Der Pate' })).toMatchObject({ ok: false });
     expect(viewRound(h, d).images).toHaveLength(5);
-    expect(viewRound(h, d).awarded).toEqual({ [b]: 4, [c]: 4, [d]: 0 });
+    expect(viewRound(h, d).points).toEqual({ [b]: 4, [c]: 4, [d]: 0 });
 
     expectOk(h.act(h.host, { type: 'end_round' }));
     expect(h.room.phase).toBe('reveal');
     const revealed = viewRound(h, d);
     expect(revealed.category.title).toBe('Film 7');
-    expect(revealed.guesses?.[c]).toEqual([{ stage: 1, text: 'Pate 2', status: 'correct' }]);
+    expect(revealed.attempts?.[c]).toEqual([{ index: 1, text: 'Pate 2', status: 'correct' }]);
   });
 
   test('ein Urteil lässt sich bis zum Weiterschalten ändern', () => {
@@ -170,8 +170,8 @@ describe('Filmfotos: Tippen', () => {
     expect(seen.over).toBe(true);
     expect(seen.solved).toBeNull();
     expect(seen.answer).toBe('Der Pate');
-    expect(seen.awarded).toEqual({ [b]: 0 });
-    expect(seen.myGuesses).toHaveLength(4);
+    expect(seen.points).toEqual({ [b]: 0 });
+    expect(seen.myAttempts).toHaveLength(4);
   });
 
   test('beim letzten Foto zählen die Punkte aus den Daten', () => {
@@ -184,7 +184,7 @@ describe('Filmfotos: Tippen', () => {
     }
     expectOk(h.act(b, { type: 'still_guess', text: 'Der Pate' }));
     closeAndJudge(h, { [b]: true });
-    expect(viewRound(h, h.host).awarded).toEqual({ [b]: 10 });
+    expect(viewRound(h, h.host).points).toEqual({ [b]: 10 });
   });
 });
 
@@ -198,31 +198,31 @@ describe('Filmfotos: Buzzern', () => {
 
     expectOk(h.act(b, { type: 'still_buzz' }));
     const start = h.room.now;
-    expect(viewRound(h, c).buzz).toEqual({ playerId: b, deadline: start + 5000 });
+    expect(viewRound(h, c).buzzer).toEqual({ holder: b, deadline: start + 5000, used: [] });
     expect(h.act(c, { type: 'still_buzz' })).toMatchObject({ ok: false, code: 'invalid_action' });
     expect(h.act(h.host, { type: 'still_next' })).toMatchObject({ ok: false });
     expect(h.act(b, { type: 'still_verdict', correct: true })).toMatchObject({ ok: false, code: 'not_host' });
 
     // Die Bedenkzeit ist nur Anzeige: Der Host urteilt auch danach noch.
     h.scheduler.advance(8000);
-    expect(sr(h).buzz?.playerId).toBe(b);
+    expect(sr(h).holder).toBe(b);
     expectOk(h.act(h.host, { type: 'still_verdict', correct: false }));
-    expect(viewRound(h, b).locked).toEqual([b]);
+    expect(viewRound(h, b).buzzer?.used).toEqual([b]);
     expect(h.act(b, { type: 'still_buzz' })).toMatchObject({ ok: false, code: 'invalid_action' });
 
     expectOk(h.act(h.host, { type: 'still_next' }));
-    expect(sr(h).locked).toEqual([]);
+    expect(sr(h).used).toEqual([]);
     expectOk(h.act(c, { type: 'still_buzz' }));
     expectOk(h.act(h.host, { type: 'still_verdict', correct: true }));
 
     const seen = viewRound(h, b);
-    expect(seen.solved).toEqual({ stage: 1, winners: [c] });
+    expect(seen.solved).toEqual({ index: 1, winners: [c] });
     expect(seen.over).toBe(true);
     expect(seen.answer).toBe('Der Pate');
-    expect(seen.awarded).toEqual({ [b]: 0, [c]: 4 });
+    expect(seen.points).toEqual({ [b]: 0, [c]: 4 });
     expect(h.act(b, { type: 'still_buzz' })).toMatchObject({ ok: false });
     expectOk(h.act(h.host, { type: 'still_next' }));
-    expect(viewRound(h, b).awarded).toEqual({ [b]: 0, [c]: 4 });
+    expect(viewRound(h, b).points).toEqual({ [b]: 0, [c]: 4 });
   });
 
   test('sind beim letzten Foto alle gesperrt, ist der Film ungelöst', () => {
@@ -244,7 +244,7 @@ describe('Filmfotos: Buzzern', () => {
     const [, b, c] = h.ids as [string, string, string];
     expectOk(h.act(b, { type: 'still_buzz' }));
     h.room.leave(b);
-    expect(sr(h).buzz).toBeNull();
+    expect(sr(h).holder).toBeNull();
     expect(sr(h).turnOrder).toEqual([c]);
     expectOk(h.act(c, { type: 'still_buzz' }));
   });
@@ -258,9 +258,9 @@ describe('Filmfotos: Auflösung und Wertung', () => {
     expectOk(h.act(b, { type: 'still_buzz' }));
     expectOk(h.act(h.host, { type: 'end_round' }));
     expect(h.room.phase).toBe('reveal');
-    expect(sr(h).buzz).toBeNull();
+    expect(sr(h).holder).toBeNull();
     expectOk(h.act(h.host, { type: 'to_scoring' }));
-    expect(viewRound(h, h.host).awarded).toEqual({ [b]: 0, [h.ids[2]!]: 0 });
+    expect(viewRound(h, h.host).points).toEqual({ [b]: 0, [h.ids[2]!]: 0 });
     expectOk(h.act(h.host, { type: 'submit_scores', scores: { [b]: 3 } }));
     expect(h.room.scores[b]).toBe(3);
   });

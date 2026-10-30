@@ -7,7 +7,7 @@ import {
   GAME_IDS,
   GUESS_MAX_LENGTH,
   KIDS_COUNT_MAX,
-  KIDS_MODES,
+  GUESS_MODES,
   KIDS_PENALTIES,
   KIDS_THINK_OPTIONS,
   LIVES_MAX,
@@ -20,7 +20,7 @@ import {
   TIMER_OPTIONS,
   type FaceEffect,
   type GameId,
-  type KidsMode,
+  type GuessMode,
   type KidsPenalty,
   type KidsThinkSeconds,
   type MorseSpeed,
@@ -70,8 +70,8 @@ export function isPictureMode(value: unknown): value is PictureMode {
   return typeof value === 'string' && (PICTURE_MODES as readonly string[]).includes(value);
 }
 
-export function isKidsMode(value: unknown): value is KidsMode {
-  return typeof value === 'string' && (KIDS_MODES as readonly string[]).includes(value);
+export function isGuessMode(value: unknown): value is GuessMode {
+  return typeof value === 'string' && (GUESS_MODES as readonly string[]).includes(value);
 }
 
 export function isKidsThink(value: unknown): value is KidsThinkSeconds {
@@ -170,10 +170,9 @@ export function isClientMsg(x: unknown): x is ClientMsg {
         (x.effect === undefined || isFaceEffect(x.effect)) &&
         (x.level === undefined || isFaceLevel(x.level)) &&
         (x.cols === undefined || isFaceCols(x.cols)) &&
-        (x.mode === undefined || isPictureMode(x.mode) || isKidsMode(x.mode)) &&
+        (x.mode === undefined || isPictureMode(x.mode) || isGuessMode(x.mode)) &&
         (x.count === undefined || isKidsCount(x.count)) &&
-        // Kinderpromis kennt nur feste Stufen, Filmfotos jede ganze Sekundenzahl im Rahmen.
-        (x.thinkSeconds === undefined || (x.gameId === 'kids' ? isKidsThink(x.thinkSeconds) : isThinkSeconds(x.thinkSeconds))) &&
+        (x.thinkSeconds === undefined || isThinkSeconds(x.thinkSeconds)) &&
         (x.penalty === undefined || isKidsPenalty(x.penalty))
       );
     case 'kids_show':

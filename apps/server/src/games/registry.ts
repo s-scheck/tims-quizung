@@ -1,4 +1,4 @@
-import type { ClientMsg, FaceEffect, GameId, KidsMode, KidsPenalty, PictureMode, RiskDuplicates, RiskMissPoints, RoundView, RevealMode } from '@quiz/shared';
+import type { ClientMsg, FaceEffect, GameId, GuessMode, KidsPenalty, PictureMode, RiskDuplicates, RiskMissPoints, RoundView, RevealMode } from '@quiz/shared';
 import type { Category } from '@quiz/content';
 import type { Room } from '../rooms/room.ts';
 import type { Result } from '../rooms/result.ts';
@@ -18,7 +18,7 @@ export interface StartRoundOptions {
   level?: number;
   cols?: number;
   /** Bilderrätsel: reihum oder alle gleichzeitig. Kinderpromis und Filmfotos: Tippen oder Buzzern. */
-  mode?: PictureMode | KidsMode;
+  mode?: PictureMode | GuessMode;
   /** Kinderpromis: Promis je Runde und Fehlbuzzer-Regel. */
   count?: number;
   penalty?: KidsPenalty;
