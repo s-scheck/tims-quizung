@@ -6,6 +6,7 @@ import {
   FACE_LEVEL_MAX,
   GAME_IDS,
   GUESS_MAX_LENGTH,
+  SONG_PREVIEW_SECONDS,
   KIDS_COUNT_MAX,
   GUESS_MODES,
   KIDS_PENALTIES,
@@ -199,6 +200,19 @@ export function isClientMsg(x: unknown): x is ClientMsg {
     case 'still_buzz':
     case 'still_next':
       return true;
+    case 'song_next':
+    case 'song_resolve':
+      return true;
+    case 'song_pick':
+      return isInt(x.deezer) && x.deezer > 0 && isStr(x.title, 200) && x.title.trim().length > 0 && isStr(x.artist, 200) && x.artist.trim().length > 0;
+    case 'song_play':
+      return isInt(x.offset) && x.offset >= 0 && x.offset < SONG_PREVIEW_SECONDS && isInt(x.seconds) && x.seconds >= 1 && x.seconds <= SONG_PREVIEW_SECONDS;
+    case 'song_guess':
+      return isStr(x.title, GUESS_MAX_LENGTH) && isStr(x.artist, GUESS_MAX_LENGTH) && (x.title.trim().length > 0 || x.artist.trim().length > 0);
+    case 'song_correct':
+      return isStr(x.playerId, 100) && (x.part === 'title' || x.part === 'artist') && typeof x.ok === 'boolean';
+    case 'song_audio':
+      return x.target === 'host' || x.target === 'screen';
     case 'face_guess':
       return isStr(x.text, GUESS_MAX_LENGTH) && x.text.trim().length > 0;
     case 'face_judge':

@@ -291,6 +291,14 @@ Regeln: genau 5 Einträge in `stills`, Foto 1 ist das schwerste. `points` ist op
 
 Für Top X kommt `"games": ["topx"]` dazu (Standard ist `["sort"]`, beides zusammen geht auch). Top-X-Listen müssen echte Top-Listen ohne Gleichstand über die Listengrenze sein, dürfen kurz sein und Gleichstände enthalten. Pro Eintrag helfen `aliases` beim Abgleich, etwa `["Mbappe", "Mbappé"]`; ein eindeutiger Nachname trifft automatisch. Dateien beginnen mit `topx-`.
 
+## Spielregeln „Songs erraten"
+
+- Der Host wählt einen Song: zufällig aus einer Playlist (mitgeliefert: 100 Klassiker) oder über die Deezer-Suche. Abgespielt wird ein Teil des 30-Sekunden-Ausschnitts von Deezer, Startsekunde und Länge wählt der Host, beliebig oft.
+- Der Ton kommt vom Gerät des Hosts. Ist ein TV-Bildschirm verbunden, übernimmt er (einmal „Ton einschalten“ antippen); der Host kann jederzeit umschalten.
+- Alle tippen geheim Titel und Interpret, ein Feld reicht. Sobald alle eingeloggt haben, wird aufgelöst (oder der Host löst vorher auf, oder das Zeitlimit läuft ab, gerechnet ab dem ersten Abspielen).
+- Je 1 Punkt für Titel und Interpret. Erkannt wird ohne Klammerzusätze und „feat.“, mit kleinen Tippfehlern und Aliassen; der Host kann jede Zuordnung korrigieren. Die Punkte gelten nur in der Playlist, die Gesamtwertung trägt der Host wie gewohnt ein.
+- Ausschnitte und Cover kommen über den Server von der freien Deezer-API (ohne Konto und Schlüssel). Playlists lassen sich im Editor anlegen: Titel, Interpret und Deezer-ID je Song.
+
 ## Kategorien-Editor
 
 Unter `/editor` (Link auf der Startseite) lassen sich alle Listen im Browser bearbeiten: eigene anlegen, mitgelieferte ändern, ausblenden oder auf das Original zurücksetzen. Einträge stehen in einer Tabelle; Zeilen aus Excel, Numbers oder Google Sheets lassen sich direkt einfügen, Zahlen wie `1.450,9` und Jahre wie `44 v. Chr.` werden erkannt. Bei Karte setzt ein Klick auf die Weltkarte die Koordinaten der gewählten Zeile. Der Editor prüft live mit denselben Regeln wie der Server. Unfertige Listen werden als Entwurf gespeichert; in der Spielauswahl sieht der Host sie ausgegraut mit dem Grund und kann sie erst wählen, wenn alle Regeln erfüllt sind. Änderungen gelten ab der nächsten Runde.

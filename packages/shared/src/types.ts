@@ -12,8 +12,8 @@ export type Phase =
   | 'scoreboard'
   | 'finished';
 
-export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse' | 'picture' | 'faces' | 'kids' | 'stills';
-export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture', 'faces', 'kids', 'stills'];
+export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse' | 'picture' | 'faces' | 'kids' | 'stills' | 'songs';
+export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture', 'faces', 'kids', 'stills', 'songs'];
 /** Auflösung: alles auf einmal („auto“) oder vom Moderator Stück für Stück aufgedeckt („show“). */
 export type RevealMode = 'auto' | 'show';
 export const REVEAL_MODES: readonly RevealMode[] = ['auto', 'show'];
@@ -801,6 +801,89 @@ export interface StillsRoundView extends BaseRoundView {
   privileged?: boolean;
 }
 
+// --------------------------------------------------------- Songs erraten
+
+/** Ausschnitte sind 30 Sekunden lang, abgespielt wird ein Teil daraus. */
+export const SONG_PREVIEW_SECONDS = 30;
+
+export interface SongsCategoryInfo {
+  id: string;
+  title: string;
+  question: string;
+  source?: string;
+}
+
+/** Wo der Ton läuft: am Gerät des Hosts oder am TV-Bildschirm. */
+export type SongsAudio = 'host' | 'screen';
+export type SongStage = 'guessing' | 'resolved';
+
+export interface SongInfo {
+  deezer: number;
+  title: string;
+  artist: string;
+}
+
+export interface SongResultView {
+  playerId: string;
+  /** Eingeloggter Titel und Interpret, null ohne Tipp. */
+  title: string | null;
+  artist: string | null;
+  titleOk: boolean;
+  artistOk: boolean;
+  points: number;
+}
+
+export interface SongPassView {
+  passNo: number;
+  song: SongInfo;
+  results: SongResultView[];
+}
+
+/** Abspielbefehl: Ein neuer `nonce` heißt erneut abspielen. */
+export interface SongPlayView {
+  nonce: number;
+  offset: number;
+  seconds: number;
+}
+
+export interface SongsCurrentView {
+  passNo: number;
+  stage: SongStage;
+  play: SongPlayView | null;
+  /** Wer schon eingeloggt hat. */
+  loggedIn: string[];
+  /** Deezer-ID zum Abspielen, nur für Host und Bildschirm. */
+  deezer?: number;
+  /** Lösung: für den moderierenden Host sofort, für alle nach dem Auflösen. */
+  song?: SongInfo;
+  /** Eigener Tipp des Betrachters. */
+  myGuess?: { title: string; artist: string };
+  /** Nach dem Auflösen: alle Tipps mit Punkten. */
+  results?: SongResultView[];
+}
+
+export interface SongsRoundView extends BaseRoundView {
+  game: 'songs';
+  category: SongsCategoryInfo;
+  /** Songs in der Playlist und davon noch nicht gespielt. */
+  size: number;
+  remaining: number;
+  audio: SongsAudio;
+  screenConnected: boolean;
+  current: SongsCurrentView | null;
+  /** Aufgelöste Songs, der neueste zuletzt. Ein aufgelöster aktueller Song steht schon hier. */
+  history: SongPassView[];
+  /** Punkte innerhalb der Playlist: 1 für den Titel, 1 für den Interpreten je Song. */
+  totals: Record<string, number>;
+  privileged?: boolean;
+}
+
+/** Treffer aus der Deezer-Suche für den Host. */
+export interface SongSearchHit extends SongInfo {
+  cover: string | null;
+  duration: number;
+}
+
 export type RoundView =
   | SortRoundView
   | TopXRoundView
@@ -813,7 +896,8 @@ export type RoundView =
   | PictureRoundView
   | FacesRoundView
   | KidsRoundView
-  | StillsRoundView;
+  | StillsRoundView
+  | SongsRoundView;
 
 export interface RoundResult {
   gameId: GameId;
@@ -853,7 +937,7 @@ export interface RoomView {
 // ----------------------------------------------------------------- Editor
 
 /** Art einer Liste, erkennbar an ihren Feldern. */
-export type CategoryKind = 'ranked' | 'pairs' | 'places' | 'events' | 'prompts' | 'picture' | 'faces' | 'stills';
+export type CategoryKind = 'ranked' | 'pairs' | 'places' | 'events' | 'prompts' | 'picture' | 'faces' | 'stills' | 'songs';
 
 /** Herkunft einer Kategorie aus Sicht des Editors. */
 export type EditorStatus = 'builtin' | 'modified' | 'custom' | 'hidden';

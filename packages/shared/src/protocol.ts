@@ -1,4 +1,4 @@
-import type { FaceEffect, GameId, GuessMode, KidsPenalty, MorseSpeed, PictureMode, RevealMode, Role, RoomView, Selection, TimerSeconds } from './types.ts';
+import type { FaceEffect, GameId, GuessMode, KidsPenalty, MorseSpeed, PictureMode, RevealMode, Role, RoomView, Selection, SongsAudio, TimerSeconds } from './types.ts';
 import type { RiskDuplicates, RiskMissPoints } from './rules/risk.ts';
 
 export const PROTOCOL_VERSION = 2;
@@ -96,6 +96,13 @@ export type ClientMsg =
   | { type: 'still_next' }
   /** Filmfotos „Alle raten bis zum Schluss“: beim aktuellen Foto passen oder das Passen zurücknehmen. */
   | { type: 'still_pass'; pass: boolean }
+  | { type: 'song_next' }
+  | { type: 'song_pick'; deezer: number; title: string; artist: string }
+  | { type: 'song_play'; offset: number; seconds: number }
+  | { type: 'song_guess'; title: string; artist: string }
+  | { type: 'song_resolve' }
+  | { type: 'song_correct'; playerId: string; part: 'title' | 'artist'; ok: boolean }
+  | { type: 'song_audio'; target: SongsAudio }
   | { type: 'place_pin'; lat: number; lng: number }
   | { type: 'place_year'; year: number }
   | { type: 'confirm_pin' }

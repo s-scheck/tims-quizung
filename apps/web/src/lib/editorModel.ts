@@ -16,6 +16,7 @@ export const EDITOR_GAMES: { id: GameId; name: string; kind: Kind; hint: string 
   { id: 'picture', name: 'Bilderrätsel', kind: 'picture', hint: 'Ein Bild, darauf mindestens zwei Felder mit Antwort. Bild vorher verkleinern (höchstens 8 MB), optional ein Original zum bearbeiteten Bild.' },
   { id: 'faces', name: 'Wer ist das?', kind: 'faces', hint: 'Mindestens eine Person mit Foto, jede Runde zeigt eine. Aliasse helfen beim Prüfen der Tipps. Der Mehrfach-Upload legt Zeilen aus Dateinamen an.' },
   { id: 'kids', name: 'Kinderpromis', kind: 'faces', hint: 'Kinderfotos von Promis, gleiches Format wie bei Wer ist das?. Pro Runde zeigt der Host mehrere Personen nacheinander. Der Mehrfach-Upload legt Zeilen aus Dateinamen an.' },
+  { id: 'songs', name: 'Songs erraten', kind: 'songs', hint: 'Eine Playlist mit Titel, Interpret und Deezer-ID je Song. Die ID steht in der Deezer-Adresse eines Songs (deezer.com/track/…). Aliasse helfen beim Erkennen der Tipps.' },
   { id: 'stills', name: 'Filmfotos', kind: 'stills', hint: 'Ein Film mit genau fünf Fotos, vom schwersten zum leichtesten, und den Punkten je Foto. Aliasse helfen beim Prüfen der Tipps. Den Titel sieht nur der Host.' },
 ];
 
@@ -77,6 +78,13 @@ export const COLUMNS: Record<Kind, Column[]> = {
   stills: [
     { key: 'image', label: 'Foto', type: 'image', width: 'w-60' },
     { key: 'points', label: 'Punkte', type: 'number', placeholder: '5', width: 'w-24' },
+  ],
+  songs: [
+    { key: 'title', label: 'Titel', type: 'text', placeholder: 'z. B. Take On Me', width: 'min-w-44' },
+    { key: 'artist', label: 'Interpret', type: 'text', placeholder: 'z. B. a-ha', width: 'min-w-36' },
+    { key: 'deezer', label: 'Deezer-ID', type: 'number', placeholder: 'z. B. 664107', width: 'w-32' },
+    { key: 'titleAliases', label: 'Titel-Aliasse', type: 'list', optional: true, placeholder: 'mit Komma getrennt', width: 'min-w-40' },
+    { key: 'artistAliases', label: 'Interpret-Aliasse', type: 'list', optional: true, placeholder: 'mit Komma getrennt', width: 'min-w-40' },
   ],
 };
 
@@ -144,6 +152,11 @@ export const FIELDS: Record<Kind, Field[]> = {
     { key: 'answer', label: 'Filmtitel (Lösung)', type: 'text', placeholder: 'Der Pate' },
     { key: 'aliases', label: 'Aliasse', type: 'text', optional: true, placeholder: 'mit Komma getrennt, z. B. The Godfather' },
     { key: 'source', label: 'Quelle', type: 'text', optional: true, placeholder: 'eigene Screenshots' },
+  ],
+  songs: [
+    { key: 'title', label: 'Titel', type: 'text', placeholder: '80er Hits' },
+    { key: 'question', label: 'Frage', type: 'text', placeholder: 'Welcher Song ist das?' },
+    { key: 'source', label: 'Quelle', type: 'text', optional: true, placeholder: 'Ausschnitte von Deezer' },
   ],
 };
 
@@ -213,6 +226,7 @@ export function kindOfRaw(raw: Raw): Kind {
   if ('fields' in raw) return 'picture';
   if ('faces' in raw) return 'faces';
   if ('stills' in raw) return 'stills';
+  if ('songs' in raw) return 'songs';
   return 'ranked';
 }
 
@@ -269,6 +283,15 @@ export function draftFromRaw(raw: Raw): Draft {
       // Fehlende Fotozeilen bis zur festen Zahl auffüllen, mit den Standardpunkten ihres Platzes.
       for (const p of STILLS_DEFAULT_POINTS.slice(rows.length)) rows.push({ image: '', points: String(p) });
       break;
+    case 'songs':
+      rows = arr(raw.songs).map((s) => ({
+        title: str(s.title),
+        artist: str(s.artist),
+        deezer: formatNumber(s.deezer),
+        titleAliases: Array.isArray(s.titleAliases) ? s.titleAliases.join(', ') : '',
+        artistAliases: Array.isArray(s.artistAliases) ? s.artistAliases.join(', ') : '',
+      }));
+      break;
   }
   const decoys = kind === 'pairs' && Array.isArray(raw.decoys) ? raw.decoys.map((d) => ({ text: str(d) })) : [];
   return { kind, meta, games, rows, decoys };
@@ -286,6 +309,10 @@ export function newDraft(game: GameId): Draft {
   if (kind === 'prompts') meta.question = 'Wie lautet die echte Antwort?';
   if (kind === 'faces') meta.question = game === 'kids' ? 'Wer war das als Kind?' : 'Wer ist das?';
   if (kind === 'stills') meta.question = 'Aus welchem Film?';
+  if (kind === 'songs') {
+    meta.question = 'Welcher Song ist das?';
+    meta.source = 'Ausschnitte von Deezer';
+  }
   if (kind === 'picture') {
     meta.question = 'Was fehlt hier?';
     meta.image = '';
@@ -382,6 +409,18 @@ export function draftToRaw(draft: Draft, id: string, base: Raw = {}): Raw {
         const aliases = parseAliases(r.aliases);
         if (aliases.length) face.aliases = aliases;
         return face;
+      });
+      break;
+    case 'songs':
+      raw.games = ['songs'];
+      raw.songs = rows.map((r) => {
+        const deezer = parseNumber(r.deezer ?? '');
+        const song: Raw = { title: (r.title ?? '').trim(), artist: (r.artist ?? '').trim(), deezer: Number.isFinite(deezer) ? deezer : (r.deezer ?? '').trim() };
+        const titleAliases = parseAliases(r.titleAliases);
+        if (titleAliases.length) song.titleAliases = titleAliases;
+        const artistAliases = parseAliases(r.artistAliases);
+        if (artistAliases.length) song.artistAliases = artistAliases;
+        return song;
       });
       break;
     case 'stills': {
@@ -492,7 +531,7 @@ export function rowsFromCells(cells: string[][], columns: Column[]): Row[] {
 
 // -------------------------------------------------------------------- ids
 
-const PREFIX: Partial<Record<GameId, string>> = { topx: 'topx-', risk: 'risk-', match: 'match-', map: 'map-', timeline: 'zeit-', bluff: 'bluff-', picture: 'bild-', faces: 'promi-', kids: 'kind-', stills: 'film-' };
+const PREFIX: Partial<Record<GameId, string>> = { topx: 'topx-', risk: 'risk-', match: 'match-', map: 'map-', timeline: 'zeit-', bluff: 'bluff-', picture: 'bild-', faces: 'promi-', kids: 'kind-', stills: 'film-', songs: 'songs-' };
 
 /** Neue id aus dem Titel, mit dem üblichen Präfix des Spiels, eindeutig gegenüber `taken`. */
 export function makeId(title: string, game: GameId, taken: Set<string>): string {

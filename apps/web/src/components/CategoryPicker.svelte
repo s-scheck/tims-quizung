@@ -504,7 +504,7 @@
             {#if c.draft}
               <span class="text-xs text-amber-300">Noch nicht spielbar: {c.draft}</span>
             {:else}
-              <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : c.games.includes('bluff') ? 'Aufgaben' : c.games.includes('picture') ? 'Felder' : c.games.includes('faces') || c.games.includes('kids') ? 'Personen' : c.games.includes('stills') ? 'Fotos' : 'Karten'}</span>
+              <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : c.games.includes('bluff') ? 'Aufgaben' : c.games.includes('picture') ? 'Felder' : c.games.includes('faces') || c.games.includes('kids') ? 'Personen' : c.games.includes('stills') ? 'Fotos' : c.games.includes('songs') ? 'Songs' : 'Karten'}</span>
             {/if}
           </button>
         {/each}

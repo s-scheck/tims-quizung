@@ -1,5 +1,6 @@
+import type { SongStage, SongsAudio } from '@quiz/shared';
 import type { BluffStage, FaceEffectState, GuessMode, GuessStatus, JudgeStatus, KidsPenalty, KidsStage, KidsThinkSeconds, MatchSelection, PictureMode, PlacementStatus, RiskRules, Selection, StillsResultView, StillsStage } from '@quiz/shared';
-import type { Category, EventsCategory, Face, FacesCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, RankedCategory, StillsCategory, TimelineEvent } from '@quiz/content';
+import type { Category, EventsCategory, Face, FacesCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, RankedCategory, Song, SongsCategory, StillsCategory, TimelineEvent } from '@quiz/content';
 
 export interface Player {
   id: string;
@@ -373,4 +374,36 @@ export interface StillsRound extends BaseRound {
   buzzVerdicts: StillsResultView[];
 }
 
-export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound | FacesRound | KidsRound | StillsRound;
+// ------------------------------------------------------------ Songs erraten
+
+/** Der gespielte Song: aus der Playlist mit Aliassen oder vom Host gesucht. */
+export interface SongPick extends Song {
+  fromList: boolean;
+}
+
+export interface SongGuess {
+  title: string;
+  artist: string;
+  /** Vom Server vorgeschlagen, vom Host korrigierbar. */
+  titleOk: boolean;
+  artistOk: boolean;
+}
+
+export interface SongPass {
+  song: SongPick;
+  stage: SongStage;
+  guesses: Record<string, SongGuess>;
+  play: { nonce: number; offset: number; seconds: number } | null;
+}
+
+export interface SongsRound extends BaseRound {
+  game: 'songs';
+  category: SongsCategory;
+  /** Noch nicht gespielte Playlist-Songs in zufälliger Reihenfolge, als Index in `category.songs`. */
+  queue: number[];
+  passes: SongPass[];
+  audio: SongsAudio;
+  playNonce: number;
+}
+
+export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound | FacesRound | KidsRound | StillsRound | SongsRound;

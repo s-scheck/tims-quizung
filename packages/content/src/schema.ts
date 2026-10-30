@@ -15,6 +15,7 @@ import {
   type MatchCategoryInfo,
   type PictureCategoryInfo,
   type SortOrder,
+  type SongsCategoryInfo,
   type StillsCategoryInfo,
   type TimelineCategoryInfo,
 } from '@quiz/shared';
@@ -155,7 +156,23 @@ export interface StillsCategory extends StillsCategoryInfo {
   stills: Still[];
 }
 
-export type Category = RankedCategory | PairsCategory | PlacesCategory | EventsCategory | PromptsCategory | PictureCategory | FacesCategory | StillsCategory;
+/** Ein Song mit Deezer-ID; Aliasse helfen beim Erkennen der Tipps. */
+export interface Song {
+  title: string;
+  artist: string;
+  deezer: number;
+  titleAliases?: string[];
+  artistAliases?: string[];
+}
+
+/** Eine Playlist für Songs erraten. */
+export interface SongsCategory extends SongsCategoryInfo {
+  kind: 'songs';
+  games: GameId[];
+  songs: Song[];
+}
+
+export type Category = RankedCategory | PairsCategory | PlacesCategory | EventsCategory | PromptsCategory | PictureCategory | FacesCategory | StillsCategory | SongsCategory;
 
 /** Dateinamen in der Bildablage: klein, ohne Pfad, mit Bildendung. */
 export const IMAGE_NAME_PATTERN = /^[a-z0-9][a-z0-9._-]{0,119}\.(jpg|jpeg|png|webp|svg)$/;
@@ -236,6 +253,7 @@ export function validateCategory(raw: unknown, file: string): Category {
   if ('fields' in raw) return validatePicture(raw, file);
   if ('faces' in raw) return validateFaces(raw, file);
   if ('stills' in raw) return validateStills(raw, file);
+  if ('songs' in raw) return validateSongs(raw, file);
   return validateRanked(raw, file);
 }
 
@@ -271,6 +289,7 @@ function validateRanked(raw: Record<string, unknown>, file: string): RankedCateg
   if (games.includes('picture')) throw new CategoryValidationError(file, 'Bilderrätsel braucht ein Bild mit "fields"');
   if (games.includes('faces')) throw new CategoryValidationError(file, 'Wer ist das? braucht eine Promi-Sammlung mit "faces"');
   if (games.includes('stills')) throw new CategoryValidationError(file, 'Filmfotos braucht einen Film mit "stills"');
+  if (games.includes('songs')) throw new CategoryValidationError(file, 'Songs erraten braucht eine Playlist mit "songs"');
   const forSort = games.includes('sort');
   const forTopX = games.includes('topx');
 
@@ -634,4 +653,48 @@ function validateStills(raw: Record<string, unknown>, file: string): StillsCateg
 
   const source = readSource(raw);
   return { kind: 'stills', id, title, question, games, answer, ...(aliases.length ? { aliases } : {}), stills, ...(source !== undefined ? { source } : {}) };
+}
+
+function readStringList(raw: Record<string, unknown>, key: string, file: string, prefix: string): string[] {
+  const v = raw[key];
+  if (v === undefined) return [];
+  if (!Array.isArray(v) || !v.every((a) => typeof a === 'string' && a.trim().length > 0)) {
+    throw new CategoryValidationError(file, `${prefix}${key} muss eine Liste von Texten sein`);
+  }
+  return v.map((a: string) => a.trim());
+}
+
+function validateSongs(raw: Record<string, unknown>, file: string): SongsCategory {
+  const id = readId(raw, file);
+  const title = requireString(raw, 'title', file);
+  const question = requireString(raw, 'question', file);
+  const games = readGames(raw, file, ['songs']);
+  if (games.length !== 1 || games[0] !== 'songs') throw new CategoryValidationError(file, 'Playlists gehören genau zu "songs"');
+
+  const songsRaw = raw.songs;
+  if (!Array.isArray(songsRaw)) throw new CategoryValidationError(file, 'songs fehlt');
+  if (songsRaw.length < MIN_ENTRIES) throw new CategoryValidationError(file, `mindestens ${MIN_ENTRIES} Songs nötig, ${songsRaw.length} vorhanden`);
+  const ids = new Set<number>();
+  const songs: Song[] = songsRaw.map((s, idx) => {
+    if (!isRecord(s)) throw new CategoryValidationError(file, `songs[${idx}] ist kein Objekt`);
+    const songTitle = requireString(s, 'title', file).trim();
+    const artist = requireString(s, 'artist', file).trim();
+    if (typeof s.deezer !== 'number' || !Number.isInteger(s.deezer) || s.deezer <= 0) {
+      throw new CategoryValidationError(file, `songs[${idx}] "${songTitle}": deezer muss eine positive ganze Zahl sein`);
+    }
+    if (ids.has(s.deezer)) throw new CategoryValidationError(file, `songs[${idx}] "${songTitle}": Deezer-ID doppelt`);
+    ids.add(s.deezer);
+    const titleAliases = readStringList(s, 'titleAliases', file, `songs[${idx}]: `);
+    const artistAliases = readStringList(s, 'artistAliases', file, `songs[${idx}]: `);
+    return {
+      title: songTitle,
+      artist,
+      deezer: s.deezer,
+      ...(titleAliases.length ? { titleAliases } : {}),
+      ...(artistAliases.length ? { artistAliases } : {}),
+    };
+  });
+
+  const source = readSource(raw);
+  return { kind: 'songs', id, title, question, games, songs, ...(source !== undefined ? { source } : {}) };
 }

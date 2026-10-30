@@ -1,7 +1,20 @@
+import { matchSongArtist, matchSongTitle } from '@quiz/shared';
 import { describe, expect, test } from 'bun:test';
 import { CategoryValidationError, loadCategories, MIN_ENTRIES, slugify, validateCategory } from './index.ts';
 
 describe('Kategorien im Repo', () => {
+  test('Playlists: jeder Song erkennt seinen eigenen Titel und Interpreten samt Aliassen', () => {
+    const lists = loadCategories().filter((c) => c.kind === 'songs');
+    expect(lists.length).toBeGreaterThanOrEqual(1);
+    for (const c of lists) {
+      if (c.kind !== 'songs') continue;
+      for (const s of c.songs) {
+        for (const t of [s.title, ...(s.titleAliases ?? [])]) expect(matchSongTitle(t, s.title, s.titleAliases)).toBe(true);
+        for (const a of [s.artist, ...(s.artistAliases ?? [])]) expect(matchSongArtist(a, s.artist, s.artistAliases)).toBe(true);
+      }
+    }
+  });
+
   const categories = loadCategories();
   const ranked = categories.filter((c) => c.kind === 'ranked');
   const pairs = categories.filter((c) => c.kind === 'pairs');

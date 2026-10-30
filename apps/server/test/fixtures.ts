@@ -200,7 +200,20 @@ export const STILLS: Category = {
   ],
 };
 
-const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES, PROMPTS, PICTURE, FACES, KIDS, STILLS];
+export const SONGS: Category = {
+  kind: 'songs',
+  id: 'hits',
+  title: 'Hits',
+  question: 'Welcher Song ist das?',
+  games: ['songs'],
+  songs: [
+    { title: 'Take On Me', artist: 'a-ha', deezer: 101 },
+    { title: 'Uptown Funk', artist: 'Mark Ronson', deezer: 102, artistAliases: ['Bruno Mars'] },
+    { title: 'Hey Jude', artist: 'The Beatles', deezer: 103 },
+  ],
+};
+
+const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES, PROMPTS, PICTURE, FACES, KIDS, STILLS, SONGS];
 
 export const provider: CategoryProvider = {
   list: () => ALL,
@@ -337,6 +350,11 @@ export function startStills(h: Harness, opts: { mode?: 'type' | 'buzz'; thinkSec
 }
 
 /** Startet Spiel und Morse-Runde mit dem gegebenen Wort. */
+export function startSongs(h: Harness): void {
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'songs', categoryId: 'hits' }));
+}
+
 export function startMorse(h: Harness, word = 'Hallo Welt'): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'morse', categoryId: 'morse', word }));

@@ -2,6 +2,7 @@ import { serve, type Server } from 'bun';
 import { CATEGORIES_DIR, CategoryStore } from '@quiz/content';
 import './games/index.ts';
 import { editorRoutes } from './http/editor.ts';
+import { songsRoutes } from './http/songs.ts';
 import { imageRoutes } from './http/images.ts';
 import { createStaticHandler } from './http/static.ts';
 import { RoomRegistry } from './rooms/registry.ts';
@@ -22,6 +23,8 @@ export interface ServerOptions {
   store?: CategoryStore;
   /** Datenordner für den Editor. Ohne ihn ist der Editor schreibgeschützt. */
   dataDir?: string | null;
+  /** Abruf bei Deezer, für Tests ersetzbar. */
+  songsFetcher?: (url: string) => Promise<Response>;
   random?: () => number;
 }
 
@@ -55,6 +58,7 @@ export function createServer(opts: ServerOptions): QuizServer {
     hostname: opts.hostname,
     routes: {
       ...editorRoutes(store),
+      ...songsRoutes(opts.songsFetcher),
       ...imageRoutes(opts.dataDir ?? null),
       '/health': () => Response.json({ ok: true, rooms: registry.size, uptime: Math.round(process.uptime()) }),
       '/ws': (req: Request, srv: Server<WsData>) => {

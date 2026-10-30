@@ -160,8 +160,9 @@ describe('View', () => {
       ['promi-politik', false, 3, ['faces']],
       ['kind-stars', false, 3, ['kids']],
       ['film-pate', false, 5, ['stills']],
+      ['hits', false, 3, ['songs']],
     ]);
-    expect(view.games?.map((g) => g.id)).toEqual(['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture', 'faces', 'kids', 'stills']);
+    expect(view.games?.map((g) => g.id)).toEqual(['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture', 'faces', 'kids', 'stills', 'songs']);
     // Zielliste nur in der Host-Sicht.
     expect(view.categories?.find((c) => c.id === 'landmarks')?.targets).toBeUndefined();
     const hostView = toView(h.room, h.host);
