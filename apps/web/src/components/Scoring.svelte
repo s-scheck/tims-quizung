@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { SCORE_MAX, SCORE_MIN, type RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { formatKm, formatYearDistance, scoredPlayers } from '../lib/format.ts';
@@ -15,7 +16,14 @@
     return [...base].sort((a, b) => (rank.get(a.id) ?? base.length) - (rank.get(b.id) ?? base.length));
   });
   // Svelte liefert bei type="number" eine Zahl oder null, beim Tippen kann auch ein String ankommen.
-  let inputs = $state<Record<string, number | string | null | undefined>>({});
+  // Filmfotos: Etappenpunkte vorbelegen, der Host kann sie noch ändern. Nur einmal lesen, danach gehören die Felder dem Host.
+  let inputs = $state<Record<string, number | string | null | undefined>>(
+    untrack(() => {
+      const r = view.round;
+      if (r?.game !== 'stills') return {};
+      return Object.fromEntries(scoredPlayers(view).map((p) => [p.id, r.awarded[p.id] ?? 0]));
+    }),
+  );
 
   function parsed(id: string): number | null {
     const raw = inputs[id];
@@ -48,6 +56,10 @@
       const misses = r.misses[id] ?? 0;
       const base = `${r.points[id] ?? 0} Spielpunkte · ${hits} Treffer`;
       return r.mode === 'buzz' ? `${base} · ${misses} Fehlbuzzer` : base;
+    }
+    if (r.game === 'stills') {
+      if (!r.solved?.winners.includes(id)) return 'nicht erkannt';
+      return `bei Foto ${r.solved.stage + 1} erkannt, ${r.points[r.solved.stage] ?? 0} Punkte`;
     }
     if (r.game === 'morse') {
       const s = r.solved.find((x) => x.playerId === id);

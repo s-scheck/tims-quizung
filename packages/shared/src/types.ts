@@ -12,8 +12,8 @@ export type Phase =
   | 'scoreboard'
   | 'finished';
 
-export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse' | 'picture' | 'faces' | 'kids';
-export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture', 'faces', 'kids'];
+export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse' | 'picture' | 'faces' | 'kids' | 'stills';
+export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture', 'faces', 'kids', 'stills'];
 /** Auflösung: alles auf einmal („auto“) oder vom Moderator Stück für Stück aufgedeckt („show“). */
 export type RevealMode = 'auto' | 'show';
 export const REVEAL_MODES: readonly RevealMode[] = ['auto', 'show'];
@@ -694,6 +694,69 @@ export interface KidsRoundView extends BaseRoundView {
   privileged?: boolean;
 }
 
+// ------------------------------------------------------------ Filmfotos
+
+/** Fotos je Film, vom schwersten zum leichtesten. */
+export const STILLS_COUNT = 5;
+/** Punkte je Foto, wenn die Daten keine angeben. */
+export const STILLS_DEFAULT_POINTS: readonly number[] = [5, 4, 3, 2, 1];
+/** Bedenkzeit nach dem Buzzern in Sekunden, frei wählbar. Kinderpromis nutzt daraus feste Stufen. */
+export const THINK_SECONDS_MIN = 3;
+export const THINK_SECONDS_MAX = 60;
+export const THINK_SECONDS_DEFAULT = 10;
+
+export interface StillsCategoryInfo {
+  id: string;
+  /** Nur für den Host gedacht, Spieler sehen bis zur Auflösung „Filmfotos“. */
+  title: string;
+  question: string;
+  source?: string;
+}
+
+export interface StillGuessView {
+  /** Index des Fotos, bei dem getippt wurde. */
+  stage: number;
+  text: string;
+  status: 'judging' | 'correct' | 'wrong';
+  /** Nur Host: Abgleich mit Lösung und Aliassen passt. */
+  suggested?: boolean;
+}
+
+export interface StillsRoundView extends BaseRoundView {
+  game: 'stills';
+  category: StillsCategoryInfo;
+  /** Gleiche Modi wie Kinderpromis: Tippen je Foto oder Buzzern. */
+  mode: KidsMode;
+  thinkSeconds: number;
+  /** Punkte je Foto, für alle sichtbar. */
+  points: number[];
+  /** Bildadressen: Spieler bekommen nur die freigegebenen, der Host und die Auflösung alle. */
+  images: string[];
+  /** Index des aktuellen Fotos, freigegeben sind `stage + 1`. */
+  stage: number;
+  /** Tippen: Eingabe offen oder Host prüft. */
+  stagePhase: 'guessing' | 'judging';
+  /** Tippen: wer beim aktuellen Foto schon getippt hat, für Host und Screen. */
+  typed?: string[];
+  /** Buzzern: wer gerade antwortet, mit Ende der Bedenkzeit (nur Anzeige). */
+  buzz: { playerId: string; deadline: number } | null;
+  /** Buzzern: für das aktuelle Foto gesperrt. */
+  locked: string[];
+  /** Gelöst bei Foto `stage`, alle Gewinner. */
+  solved: { stage: number; winners: string[] } | null;
+  /** Raten ist vorbei, gelöst oder nach dem letzten Foto. */
+  over: boolean;
+  /** Lösung, für den Host immer, für alle sobald das Raten vorbei ist. */
+  answer?: string;
+  /** Eigene Tipps des Betrachters. */
+  myGuesses?: StillGuessView[];
+  /** Tipps aller: Host ab „Tipps schließen“ für das aktuelle Foto und früher, alle ab der Auflösung. */
+  guesses?: Record<string, StillGuessView[]>;
+  /** Etappenpunkte je Spieler, Vorbelegung der Wertung. */
+  awarded: Record<string, number>;
+  privileged?: boolean;
+}
+
 export type RoundView =
   | SortRoundView
   | TopXRoundView
@@ -705,7 +768,8 @@ export type RoundView =
   | MorseRoundView
   | PictureRoundView
   | FacesRoundView
-  | KidsRoundView;
+  | KidsRoundView
+  | StillsRoundView;
 
 export interface RoundResult {
   gameId: GameId;
@@ -748,7 +812,7 @@ export type EditorStatus = 'builtin' | 'modified' | 'custom' | 'hidden';
 export interface EditorEntry {
   id: string;
   title: string;
-  kind: 'ranked' | 'pairs' | 'places' | 'events' | 'prompts' | 'picture' | 'faces';
+  kind: 'ranked' | 'pairs' | 'places' | 'events' | 'prompts' | 'picture' | 'faces' | 'stills';
   games: GameId[];
   count: number;
   status: EditorStatus;

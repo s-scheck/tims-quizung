@@ -10,6 +10,7 @@ import { morseGame } from './morse/index.ts';
 import { pictureGame } from './picture/index.ts';
 import { facesGame } from './faces/index.ts';
 import { kidsGame } from './kids/index.ts';
+import { stillsGame } from './stills/index.ts';
 
 registerGame(sortGame);
 registerGame(topxGame);
@@ -22,5 +23,6 @@ registerGame(morseGame);
 registerGame(pictureGame);
 registerGame(facesGame);
 registerGame(kidsGame);
+registerGame(stillsGame);
 
-export { sortGame, topxGame, matchGame, mapGame, timelineGame, riskGame, bluffGame, morseGame, pictureGame, facesGame, kidsGame };
+export { sortGame, topxGame, matchGame, mapGame, timelineGame, riskGame, bluffGame, morseGame, pictureGame, facesGame, kidsGame, stillsGame };

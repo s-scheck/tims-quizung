@@ -97,6 +97,14 @@ Die Kartendaten stammen von [Natural Earth](https://www.naturalearthdata.com/) (
 - Buzzern: Wer das Kind erkennt, drückt den Buzzer, nur einer kann ihn halten. Er sagt den Namen laut, alle sehen den Countdown, der Host wertet mit Richtig oder Falsch. Richtig löst den Promi auf, Falsch oder abgelaufene Bedenkzeit verbraucht den einzigen Versuch bei diesem Promi und gibt den Buzzer frei. Haben alle verbraucht, ist der Promi ohne Gewinner durch. 1 Spielpunkt je Treffer, bei „minus 1“ ein Abzug je Fehlbuzzer, auch ins Minus.
 - Die Auflösung nach dem letzten Promi zeigt alle gezeigten Promis mit Foto, Name und Gewinnern sowie die Rangliste mit Spielpunkten als Vorschlag. Die Punkte trägt der Host wie überall selbst ein.
 
+## Spielregeln „Filmfotos"
+
+- Ein Film, fünf Fotos vom schwersten zum leichtesten. Der Host moderiert immer: Er sieht den Film, schaltet die Fotos selbst weiter und prüft. Spieler sehen die freigegebenen Fotos (das aktuelle groß, frühere als antippbare Leiste) und die Punkte je Foto, aber nicht den Kategorie-Titel.
+- Punkte je Foto stehen in den Daten, Standard 5/4/3/2/1. Sie sind in der Wertung vorbelegt, der Host kann sie noch ändern.
+- Tippen: Jeder hat pro Foto einen Tipp. Der Host sieht, wer getippt hat, schließt die Tipps, prüft sie mit Vorschlag aus Filmtitel und Aliassen und schaltet erst danach weiter. Jeder sieht nur sein eigenes Urteil. Alle, die beim selben Foto richtig lagen, bekommen dessen Punkte.
+- Buzzern: Wer zuerst buzzert, sagt den Film laut, alle sehen den Namen groß mit Countdown (Bedenkzeit 3 bis 60 s, im Picker einstellbar). Der Countdown ist nur Anzeige, der Host urteilt auch danach. Falsch sperrt für dieses Foto, der Erste mit der richtigen Antwort gewinnt. Das Host-Gerät spielt einen Ton, das Handy des Buzzernden vibriert.
+- Sobald jemand den Film hat, ist das Raten für alle vorbei und alle sehen Titel und Gewinner. Der Host kann die übrigen Fotos noch zeigen und löst dann auf. Hat nach Foto 5 niemand den Film, bleibt er ungelöst.
+
 ## Show-Auflösung
 
 Bei Karte, Zeitstrahl, No Risk No Fun und Bluff wählt ein moderierender Host vor jeder Runde im Kategorie-Picker zwischen „Automatisch“ (Auflösung wie gewohnt, alles auf einmal) und „Show“. Die letzte Wahl bleibt im Raum vorausgewählt. Spielt der Host mit, gibt es nur „Automatisch“.
@@ -263,6 +271,22 @@ Für Wer ist das? gibt es Promi-Sammlungen mit Bild je Person:
 Regeln: mindestens 1 Person, Namen eindeutig, `aliases` optional, `image` ein Dateiname aus der Bildablage oder eine http-Adresse. Dateien beginnen mit `promi-`. Im Editor gibt es Upload je Zeile und einen Mehrfach-Upload, der aus Dateinamen wie „Angela Merkel.jpg“ Zeilen anlegt.
 
 Kinderpromis nutzen dasselbe Format mit `"games": ["kids"]` (entweder `faces` oder `kids`, nie beides). Dateien beginnen mit `kind-`, im Editor gibt es dafür den eigenen Typ „Kinderpromis“.
+
+Für Filmfotos ist jede Datei ein Film mit genau fünf Fotos:
+
+```json
+{
+  "id": "film-klassiker-7",
+  "title": "Film 7",
+  "question": "Aus welchem Film?",
+  "answer": "Der Pate",
+  "aliases": ["The Godfather"],
+  "games": ["stills"],
+  "stills": [{ "image": "k7x2-a.jpg", "points": 5 }, { "image": "k7x3-b.jpg", "points": 4 }, …]
+}
+```
+
+Regeln: genau 5 Einträge in `stills`, Foto 1 ist das schwerste. `points` ist optional (Standard 5, 4, 3, 2, 1), ganze Zahlen. `answer` ist die Lösung, `aliases` optional, `title` sieht nur der Host. Dateien beginnen mit `film-`. Im Editor gibt es fünf feste Zeilen mit Upload je Foto und einen Mehrfach-Upload, der die freien Zeilen nach Dateinamen sortiert füllt. Fotos nicht nach dem Film benennen: Der Dateiname steckt in der Bildadresse.
 
 Für Top X kommt `"games": ["topx"]` dazu (Standard ist `["sort"]`, beides zusammen geht auch). Top-X-Listen müssen echte Top-Listen ohne Gleichstand über die Listengrenze sein, dürfen kurz sein und Gleichstände enthalten. Pro Eintrag helfen `aliases` beim Abgleich, etwa `["Mbappe", "Mbappé"]`; ein eindeutiger Nachname trifft automatisch. Dateien beginnen mit `topx-`.
 

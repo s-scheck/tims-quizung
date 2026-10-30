@@ -53,6 +53,13 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'kids_verdict', correct: true })).toBe(true);
     expect(isClientMsg({ type: 'kids_resolve' })).toBe(true);
     expect(isClientMsg({ type: 'kids_next' })).toBe(true);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'stills', categoryId: 'x', mode: 'buzz', thinkSeconds: 7 })).toBe(true);
+    expect(isClientMsg({ type: 'still_guess', text: 'Der Pate' })).toBe(true);
+    expect(isClientMsg({ type: 'still_judge', playerId: 'p1', correct: false })).toBe(true);
+    expect(isClientMsg({ type: 'still_verdict', correct: true })).toBe(true);
+    expect(isClientMsg({ type: 'still_close' })).toBe(true);
+    expect(isClientMsg({ type: 'still_buzz' })).toBe(true);
+    expect(isClientMsg({ type: 'still_next' })).toBe(true);
     expect(isClientMsg({ type: 'guess', turnNo: 2, text: 'Haaland' })).toBe(true);
     expect(isClientMsg({ type: 'judge', turnNo: 2, correct: true, rank: 3 })).toBe(true);
     expect(isClientMsg({ type: 'judge', turnNo: 2, correct: false })).toBe(true);
@@ -90,6 +97,11 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'face_guess', text: '  ' })).toBe(false);
     expect(isClientMsg({ type: 'face_effect' })).toBe(false);
     expect(isClientMsg({ type: 'face_effect', cols: 1 })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'stills', categoryId: 'x', mode: 'race' })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'stills', categoryId: 'x', thinkSeconds: 2 })).toBe(false);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'stills', categoryId: 'x', thinkSeconds: 61 })).toBe(false);
+    expect(isClientMsg({ type: 'still_guess', text: '' })).toBe(false);
+    expect(isClientMsg({ type: 'still_verdict' })).toBe(false);
     expect(isClientMsg({ type: 'face_effect', revealed: [-1] })).toBe(false);
     expect(isClientMsg({ type: 'choose_category', gameId: 'kids', categoryId: 'x', mode: 'shout' })).toBe(false);
     expect(isClientMsg({ type: 'choose_category', gameId: 'kids', categoryId: 'x', count: 0 })).toBe(false);

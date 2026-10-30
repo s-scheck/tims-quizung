@@ -1,7 +1,7 @@
 import { slugify, validateCategory, CategoryValidationError } from '@quiz/content/schema';
-import type { GameId } from '@quiz/shared';
+import { STILLS_COUNT, STILLS_DEFAULT_POINTS, type GameId } from '@quiz/shared';
 
-export type Kind = 'ranked' | 'pairs' | 'places' | 'events' | 'prompts' | 'picture' | 'faces';
+export type Kind = 'ranked' | 'pairs' | 'places' | 'events' | 'prompts' | 'picture' | 'faces' | 'stills';
 export type Raw = Record<string, unknown>;
 
 /** Spiele in der Reihenfolge der Spielauswahl, mit der Art Liste, die sie brauchen. */
@@ -16,6 +16,7 @@ export const EDITOR_GAMES: { id: GameId; name: string; kind: Kind; hint: string 
   { id: 'picture', name: 'Bilderrätsel', kind: 'picture', hint: 'Ein Bild, darauf mindestens zwei Felder mit Antwort. Bild vorher verkleinern (höchstens 8 MB), optional ein Original zum bearbeiteten Bild.' },
   { id: 'faces', name: 'Wer ist das?', kind: 'faces', hint: 'Mindestens eine Person mit Foto, jede Runde zeigt eine. Aliasse helfen beim Prüfen der Tipps. Der Mehrfach-Upload legt Zeilen aus Dateinamen an.' },
   { id: 'kids', name: 'Kinderpromis', kind: 'faces', hint: 'Kinderfotos von Promis, gleiches Format wie bei Wer ist das?. Pro Runde zeigt der Host mehrere Personen nacheinander. Der Mehrfach-Upload legt Zeilen aus Dateinamen an.' },
+  { id: 'stills', name: 'Filmfotos', kind: 'stills', hint: 'Ein Film mit genau fünf Fotos, vom schwersten zum leichtesten, und den Punkten je Foto. Aliasse helfen beim Prüfen der Tipps. Den Titel sieht nur der Host.' },
 ];
 
 export const GAME_NAMES: Record<string, string> = Object.fromEntries(EDITOR_GAMES.map((g) => [g.id, g.name]));
@@ -71,6 +72,11 @@ export const COLUMNS: Record<Kind, Column[]> = {
     { key: 'name', label: 'Name', type: 'text', placeholder: 'z. B. Angela Merkel', width: 'min-w-44' },
     { key: 'aliases', label: 'Aliasse', type: 'list', optional: true, placeholder: 'mit Komma getrennt', width: 'min-w-44' },
     { key: 'image', label: 'Bild', type: 'image', width: 'w-60' },
+  ],
+  // Genau fünf Zeilen, vom schwersten zum leichtesten Foto.
+  stills: [
+    { key: 'image', label: 'Foto', type: 'image', width: 'w-60' },
+    { key: 'points', label: 'Punkte', type: 'number', placeholder: '5', width: 'w-24' },
   ],
 };
 
@@ -132,6 +138,13 @@ export const FIELDS: Record<Kind, Field[]> = {
     { key: 'question', label: 'Frage', type: 'text', placeholder: 'Wer ist das?' },
     { key: 'source', label: 'Quelle', type: 'text', optional: true, placeholder: 'Pressefotos' },
   ],
+  stills: [
+    { key: 'title', label: 'Titel (nur für den Host)', type: 'text', placeholder: 'Film 7' },
+    { key: 'question', label: 'Frage', type: 'text', placeholder: 'Aus welchem Film?' },
+    { key: 'answer', label: 'Filmtitel (Lösung)', type: 'text', placeholder: 'Der Pate' },
+    { key: 'aliases', label: 'Aliasse', type: 'text', optional: true, placeholder: 'mit Komma getrennt, z. B. The Godfather' },
+    { key: 'source', label: 'Quelle', type: 'text', optional: true, placeholder: 'eigene Screenshots' },
+  ],
 };
 
 // ----------------------------------------------------------------- Zahlen
@@ -191,6 +204,7 @@ export function kindOfRaw(raw: Raw): Kind {
   if ('prompts' in raw) return 'prompts';
   if ('fields' in raw) return 'picture';
   if ('faces' in raw) return 'faces';
+  if ('stills' in raw) return 'stills';
   return 'ranked';
 }
 
@@ -241,6 +255,11 @@ export function draftFromRaw(raw: Raw): Draft {
     case 'faces':
       rows = arr(raw.faces).map((f) => ({ name: str(f.name), aliases: Array.isArray(f.aliases) ? f.aliases.join(', ') : '', image: str(f.image) }));
       break;
+    case 'stills':
+      meta.aliases = Array.isArray(raw.aliases) ? raw.aliases.join(', ') : '';
+      rows = arr(raw.stills).map((s, i) => ({ image: str(s.image), points: formatNumber(s.points ?? STILLS_DEFAULT_POINTS[i]) }));
+      while (rows.length < STILLS_COUNT) rows.push({ image: '', points: String(STILLS_DEFAULT_POINTS[rows.length] ?? '') });
+      break;
   }
   const decoys = kind === 'pairs' && Array.isArray(raw.decoys) ? raw.decoys.map((d) => ({ text: str(d) })) : [];
   return { kind, meta, games, rows, decoys };
@@ -257,13 +276,19 @@ export function newDraft(game: GameId): Draft {
   if (kind === 'places') meta.question = 'Wo liegt das?';
   if (kind === 'prompts') meta.question = 'Wie lautet die echte Antwort?';
   if (kind === 'faces') meta.question = game === 'kids' ? 'Wer war das als Kind?' : 'Wer ist das?';
+  if (kind === 'stills') meta.question = 'Aus welchem Film?';
   if (kind === 'picture') {
     meta.question = 'Was fehlt hier?';
     meta.image = '';
     meta.original = '';
   }
   // Felder im Bild entstehen durch Zeichnen, nicht aus Leerzeilen.
-  const rows = kind === 'picture' ? [] : Array.from({ length: 3 }, () => emptyRow(COLUMNS[kind]));
+  const rows =
+    kind === 'picture'
+      ? []
+      : kind === 'stills'
+        ? STILLS_DEFAULT_POINTS.map((p) => ({ image: '', points: String(p) }))
+        : Array.from({ length: 3 }, () => emptyRow(COLUMNS[kind]));
   // Promi-Sammlungen tragen ihr Spiel in `games`, weil Wer ist das? und Kinderpromis dasselbe Format teilen.
   return { kind, meta, games: kind === 'ranked' || kind === 'faces' ? [game] : [], rows, decoys: kind === 'pairs' ? [emptyRow(DECOY_COLUMNS)] : [] };
 }
@@ -350,6 +375,25 @@ export function draftToRaw(draft: Draft, id: string, base: Raw = {}): Raw {
         return face;
       });
       break;
+    case 'stills': {
+      raw.games = ['stills'];
+      const aliases = (draft.meta.aliases ?? '').split(/[,;]/).map((a) => a.trim()).filter(Boolean);
+      if (aliases.length) raw.aliases = aliases;
+      else delete raw.aliases;
+      // Die Punktespalte zählt nicht als Inhalt: eine Zeile ohne Foto fehlt.
+      raw.stills = draft.rows
+        .filter((r) => (r.image ?? '').trim() !== '')
+        .map((r) => {
+          const still: Raw = { image: (r.image ?? '').trim() };
+          const text = (r.points ?? '').trim();
+          if (text) {
+            const points = parseNumber(text);
+            still.points = Number.isFinite(points) ? points : text;
+          }
+          return still;
+        });
+      break;
+    }
   }
   return raw;
 }
@@ -371,6 +415,7 @@ export function humanize(msg: string): string {
   return msg
     .replace(/\bfields\[(\d+)\]/g, (_, n) => `Feld ${Number(n) + 1}`)
     .replace(/\b(?:items|pairs|places|events|prompts|faces)\[(\d+)\]/g, (_, n) => `Zeile ${Number(n) + 1}`)
+    .replace(/\bstills\[(\d+)\]/g, (_, n) => `Foto ${Number(n) + 1}`)
     .replace(/\bvalue ist keine Zahl/, 'Wert ist keine Zahl')
     .replace(/\blat\/lng ungültig/, 'Koordinaten ungültig');
 }
@@ -438,7 +483,7 @@ export function rowsFromCells(cells: string[][], columns: Column[]): Row[] {
 
 // -------------------------------------------------------------------- ids
 
-const PREFIX: Partial<Record<GameId, string>> = { topx: 'topx-', risk: 'risk-', match: 'match-', map: 'map-', timeline: 'zeit-', bluff: 'bluff-', picture: 'bild-', faces: 'promi-', kids: 'kind-' };
+const PREFIX: Partial<Record<GameId, string>> = { topx: 'topx-', risk: 'risk-', match: 'match-', map: 'map-', timeline: 'zeit-', bluff: 'bluff-', picture: 'bild-', faces: 'promi-', kids: 'kind-', stills: 'film-' };
 
 /** Neue id aus dem Titel, mit dem üblichen Präfix des Spiels, eindeutig gegenüber `taken`. */
 export function makeId(title: string, game: GameId, taken: Set<string>): string {

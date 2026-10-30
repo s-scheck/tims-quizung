@@ -15,6 +15,8 @@ import {
   MORSE_SPEEDS,
   PICTURE_MODES,
   REVEAL_MODES,
+  THINK_SECONDS_MAX,
+  THINK_SECONDS_MIN,
   TIMER_OPTIONS,
   type FaceEffect,
   type GameId,
@@ -82,6 +84,10 @@ export function isKidsPenalty(value: unknown): value is KidsPenalty {
 
 export function isKidsCount(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= KIDS_COUNT_MAX;
+}
+
+export function isThinkSeconds(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= THINK_SECONDS_MIN && value <= THINK_SECONDS_MAX;
 }
 
 export function isFaceEffect(value: unknown): value is FaceEffect {
@@ -166,7 +172,8 @@ export function isClientMsg(x: unknown): x is ClientMsg {
         (x.cols === undefined || isFaceCols(x.cols)) &&
         (x.mode === undefined || isPictureMode(x.mode) || isKidsMode(x.mode)) &&
         (x.count === undefined || isKidsCount(x.count)) &&
-        (x.thinkSeconds === undefined || isKidsThink(x.thinkSeconds)) &&
+        // Kinderpromis kennt nur feste Stufen, Filmfotos jede ganze Sekundenzahl im Rahmen.
+        (x.thinkSeconds === undefined || (x.gameId === 'kids' ? isKidsThink(x.thinkSeconds) : isThinkSeconds(x.thinkSeconds))) &&
         (x.penalty === undefined || isKidsPenalty(x.penalty))
       );
     case 'kids_show':
@@ -180,6 +187,16 @@ export function isClientMsg(x: unknown): x is ClientMsg {
       return isStr(x.playerId, 100) && isInt(x.index) && x.index >= 0 && typeof x.correct === 'boolean';
     case 'kids_verdict':
       return typeof x.correct === 'boolean';
+    case 'still_guess':
+      return isStr(x.text, GUESS_MAX_LENGTH) && x.text.trim().length > 0;
+    case 'still_judge':
+      return isStr(x.playerId, 100) && typeof x.correct === 'boolean';
+    case 'still_verdict':
+      return typeof x.correct === 'boolean';
+    case 'still_close':
+    case 'still_buzz':
+    case 'still_next':
+      return true;
     case 'face_guess':
       return isStr(x.text, GUESS_MAX_LENGTH) && x.text.trim().length > 0;
     case 'face_judge':

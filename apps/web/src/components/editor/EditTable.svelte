@@ -12,6 +12,7 @@
     noun = 'Eintrag',
     onCellPaste,
     onImageUpload,
+    fixedRows = false,
   }: {
     columns: Column[];
     rows: Row[];
@@ -24,6 +25,8 @@
     onCellPaste?: (rowIndex: number, key: string, text: string) => boolean;
     /** Bildspalten: Datei für eine Zeile hochladen, der Aufrufer trägt den Dateinamen ein. */
     onImageUpload?: (rowIndex: number, file: File) => void;
+    /** Feste Zeilenzahl (Filmfotos): kein Hinzufügen, Löschen, Verschieben oder Einfügen aus Tabellen. */
+    fixedRows?: boolean;
   } = $props();
 
   const imageSrc = (name: string) => (/^https?:\/\//.test(name) ? name : `/images/${name}`);
@@ -56,7 +59,10 @@
   function onKey(e: KeyboardEvent, i: number, key: string) {
     if (e.key !== 'Enter') return;
     e.preventDefault();
-    if (i === rows.length - 1) addRow();
+    if (i === rows.length - 1) {
+      if (fixedRows) return;
+      addRow();
+    }
     focusCell(i + 1, key);
   }
 
@@ -74,7 +80,10 @@
     lines.forEach((line, n) => {
       const cells = line.split('\t');
       const target = i + n;
-      if (target >= rows.length) rows.push(emptyRow(columns));
+      if (target >= rows.length) {
+        if (fixedRows) return;
+        rows.push(emptyRow(columns));
+      }
       cells.forEach((cell, k) => {
         const col = columns[startCol + k];
         if (col) rows[target]![col.key] = cell.trim();
@@ -98,7 +107,7 @@
           {#each columns as c (c.key)}
             <th class="px-2 py-2 {c.width ?? ''}">{c.label}{#if c.optional}<span class="font-semibold normal-case text-slate-500">{' (optional)'}</span>{/if}</th>
           {/each}
-          <th class="w-28 px-2 py-2"><span class="sr-only">Aktionen</span></th>
+          {#if !fixedRows}<th class="w-28 px-2 py-2"><span class="sr-only">Aktionen</span></th>{/if}
         </tr>
       </thead>
       <tbody>
@@ -143,20 +152,24 @@
                 {/if}
               </td>
             {/each}
+            {#if !fixedRows}
             <td class="whitespace-nowrap px-1.5 py-1 text-right">
               <button type="button" class="rounded-md px-1.5 py-1 font-bold text-slate-500 hover:bg-slate-900 hover:text-slate-200 disabled:opacity-30" disabled={i === 0} aria-label="Zeile {i + 1} nach oben" onclick={() => move(i, -1)}>↑</button>
               <button type="button" class="rounded-md px-1.5 py-1 font-bold text-slate-500 hover:bg-slate-900 hover:text-slate-200 disabled:opacity-30" disabled={i === rows.length - 1} aria-label="Zeile {i + 1} nach unten" onclick={() => move(i, 1)}>↓</button>
               <button type="button" class="rounded-md px-1.5 py-1 font-bold text-slate-500 hover:bg-rose-500/15 hover:text-rose-300" aria-label="Zeile {i + 1} löschen" onclick={() => removeRow(i)}>×</button>
             </td>
+            {/if}
           </tr>
         {/each}
       </tbody>
     </table>
   </div>
-  <div class="flex flex-wrap gap-2">
-    <button type="button" class="btn-secondary px-4 py-2 text-sm" onclick={() => addRow()}>+ {noun}</button>
-    <button type="button" class="btn-secondary px-4 py-2 text-sm" onclick={() => (pasting = true)}>Aus Tabelle einfügen</button>
-  </div>
+  {#if !fixedRows}
+    <div class="flex flex-wrap gap-2">
+      <button type="button" class="btn-secondary px-4 py-2 text-sm" onclick={() => addRow()}>+ {noun}</button>
+      <button type="button" class="btn-secondary px-4 py-2 text-sm" onclick={() => (pasting = true)}>Aus Tabelle einfügen</button>
+    </div>
+  {/if}
 </div>
 
 {#if pasting}

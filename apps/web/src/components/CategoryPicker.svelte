@@ -16,6 +16,9 @@
     KIDS_COUNT_DEFAULT,
     KIDS_THINK_DEFAULT,
     KIDS_THINK_OPTIONS,
+    THINK_SECONDS_DEFAULT,
+    THINK_SECONDS_MAX,
+    THINK_SECONDS_MIN,
     type CategorySummary,
     type FaceEffect,
     type GameId,
@@ -29,6 +32,7 @@
     type RoomView,
   } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
+  import { unlockBuzzer } from '../lib/buzzer.ts';
   import { playerName } from '../lib/format.ts';
   import Scoreboard from './Scoreboard.svelte';
 
@@ -91,6 +95,17 @@
     { penalty: 'none', label: 'Kein Abzug' },
     { penalty: 'minus', label: 'Minus 1' },
   ];
+  /** Filmfotos: ein Tipp je Foto oder Buzzer mit frei wählbarer Bedenkzeit. */
+  const isStills = $derived(gameId === 'stills');
+  let stillsMode = $state<KidsMode>('type');
+  let stillsThink = $state<number | null>(THINK_SECONDS_DEFAULT);
+  const STILLS_MODE_OPTIONS: { mode: KidsMode; label: string; hint: string }[] = [
+    { mode: 'type', label: 'Tippen', hint: 'Jeder tippt einmal pro Foto. Du schließt die Tipps, prüfst sie und schaltest weiter. Alle Richtigen bei einem Foto bekommen dessen Punkte.' },
+    { mode: 'buzz', label: 'Buzzern', hint: 'Wer zuerst buzzert, sagt den Film laut. Falsch sperrt für dieses Foto, der Erste mit der richtigen Antwort gewinnt.' },
+  ];
+  const stillsThinkOk = $derived(
+    typeof stillsThink === 'number' && Number.isInteger(stillsThink) && stillsThink >= THINK_SECONDS_MIN && stillsThink <= THINK_SECONDS_MAX,
+  );
   const isMorse = $derived(gameId === 'morse');
   let morseWord = $state('');
   const morseNormalized = $derived(normalizeMorseText(morseWord));
@@ -124,11 +139,18 @@
       ...(hasShow ? { reveal } : {}),
       ...(isFaces ? { effect: faceEffect, ...(faceEffect === 'tiles' ? { cols: faceCols } : { level: faceLevel }) } : {}),
       ...(isKids ? { mode: kidsMode, count: kidsCount, ...(kidsMode === 'buzz' ? { thinkSeconds: kidsThink, penalty: kidsPenalty } : {}) } : {}),
+      ...(isStills ? { mode: stillsMode, ...(stillsMode === 'buzz' && stillsThinkOk ? { thinkSeconds: stillsThink! } : {}) } : {}),
       ...(targetId ? { targetId } : {}),
     });
   }
 
   function onCategoryClick(c: CategorySummary) {
+    if (isStills && stillsMode === 'buzz') {
+      // Rot markierte Bedenkzeit erst korrigieren.
+      if (!stillsThinkOk) return;
+      // Der Klick zählt als Nutzergeste, danach darf das Host-Gerät den Buzzer-Ton spielen.
+      unlockBuzzer();
+    }
     if (isKids) {
       kidsCountFor = c.id;
       kidsCount = Math.max(1, Math.min(KIDS_COUNT_DEFAULT, c.count));
@@ -208,6 +230,38 @@
             <input type="range" class="w-full accent-[var(--color-indigo-500)]" min="0" max={FACE_LEVEL_MAX} step="1" bind:value={faceLevel} />
           </label>
         {/if}
+      </div>
+    {/if}
+    {#if isStills}
+      <div class="card space-y-3">
+        <div>
+          <p class="font-semibold">Modus</p>
+          <p class="text-xs text-slate-500">Gilt für diese Runde.</p>
+        </div>
+        <div class="grid gap-2 sm:grid-cols-2">
+          {#each STILLS_MODE_OPTIONS as o (o.mode)}
+            <button
+              type="button"
+              class="rounded-xl border px-3 py-2 text-left transition {stillsMode === o.mode ? 'border-indigo-500 bg-indigo-500/15' : 'border-slate-700 hover:border-slate-500'}"
+              onclick={() => (stillsMode = o.mode)}
+            >
+              <span class="block font-semibold">{o.label}</span>
+              <span class="block text-xs text-slate-400">{o.hint}</span>
+            </button>
+          {/each}
+        </div>
+        {#if stillsMode === 'buzz'}
+          <label class="flex flex-wrap items-center justify-between gap-3 text-sm">
+            <span>
+              <span class="block font-semibold">Bedenkzeit in Sekunden</span>
+              <span class="block text-xs text-slate-500">Läuft nach dem Buzzern als Countdown, du urteilst auch danach noch. {THINK_SECONDS_MIN} bis {THINK_SECONDS_MAX} s.</span>
+            </span>
+            <input class="input w-24 text-center font-mono text-lg {stillsThinkOk ? '' : 'border-rose-500'}" type="number" inputmode="numeric" step="1" min={THINK_SECONDS_MIN} max={THINK_SECONDS_MAX} bind:value={stillsThink} />
+          </label>
+        {/if}
+        <p class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+          Bei Filmfotos moderierst du immer: Du siehst den Film, schaltest die Fotos weiter und prüfst, auch wenn du laut Lobby mitspielst. Filme legst du im Editor an.
+        </p>
       </div>
     {/if}
     {#if isKids}
@@ -464,7 +518,7 @@
             {#if c.draft}
               <span class="text-xs text-amber-300">Noch nicht spielbar: {c.draft}</span>
             {:else}
-              <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : c.games.includes('bluff') ? 'Aufgaben' : c.games.includes('picture') ? 'Felder' : c.games.includes('faces') || c.games.includes('kids') ? 'Personen' : 'Karten'}</span>
+              <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : c.games.includes('bluff') ? 'Aufgaben' : c.games.includes('picture') ? 'Felder' : c.games.includes('faces') || c.games.includes('kids') ? 'Personen' : c.games.includes('stills') ? 'Fotos' : 'Karten'}</span>
             {/if}
           </button>
         {/each}

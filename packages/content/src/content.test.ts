@@ -392,3 +392,37 @@ describe('validateCategory (Promi-Sammlung)', () => {
     expect(() => validateCategory({ id: 'x', title: 'T', question: 'Q', topLabel: 'a', bottomLabel: 'b', order: 'desc', games: ['faces'], items: [] }, 'f')).toThrow(/faces/);
   });
 });
+
+describe('validateCategory (Film)', () => {
+  const stills = [1, 2, 3, 4, 5].map((n) => ({ image: `f${n}-szene.jpg` }));
+  const base = { id: 'film-test', title: 'Film 1', question: 'Aus welchem Film?', answer: 'Der Pate', aliases: ['The Godfather'], stills };
+
+  test('akzeptiert einen Film, games ist standardmäßig stills, Punkte 5 bis 1 als Standard', () => {
+    const c = validateCategory(base, 'f');
+    expect(c.kind).toBe('stills');
+    if (c.kind !== 'stills') return;
+    expect(c.games).toEqual(['stills']);
+    expect(c.answer).toBe('Der Pate');
+    expect(c.aliases).toEqual(['The Godfather']);
+    expect(c.stills.map((s) => s.points)).toEqual([5, 4, 3, 2, 1]);
+    expect(c.stills[0]).toEqual({ image: 'f1-szene.jpg', points: 5 });
+  });
+
+  test('übernimmt eigene Punkte', () => {
+    const c = validateCategory({ ...base, stills: stills.map((s, i) => ({ ...s, points: 10 - i * 2 })) }, 'f');
+    if (c.kind !== 'stills') throw new Error('falsche Art');
+    expect(c.stills.map((s) => s.points)).toEqual([10, 8, 6, 4, 2]);
+  });
+
+  test('lehnt Fehler ab', () => {
+    expect(() => validateCategory({ ...base, stills: stills.slice(0, 4) }, 'f')).toThrow(/genau 5 Fotos/);
+    expect(() => validateCategory({ ...base, stills: [...stills, { image: 'f6.jpg' }] }, 'f')).toThrow(/genau 5 Fotos/);
+    expect(() => validateCategory({ ...base, stills: [...stills.slice(0, 4), { image: 'kein-bild' }] }, 'f')).toThrow(/image/);
+    expect(() => validateCategory({ ...base, stills: [...stills.slice(0, 4), { image: 'x.jpg', points: 1.5 }] }, 'f')).toThrow(/points/);
+    expect(() => validateCategory({ ...base, stills: [...stills.slice(0, 4), { image: 'x.jpg', points: '3' }] }, 'f')).toThrow(/points/);
+    expect(() => validateCategory({ ...base, answer: ' ' }, 'f')).toThrow(/answer/);
+    expect(() => validateCategory({ ...base, aliases: 'nope' }, 'f')).toThrow(/aliases/);
+    expect(() => validateCategory({ ...base, games: ['faces'] }, 'f')).toThrow(/stills/);
+    expect(() => validateCategory({ id: 'x', title: 'T', question: 'Q', topLabel: 'a', bottomLabel: 'b', order: 'desc', games: ['stills'], items: [] }, 'f')).toThrow(/stills/);
+  });
+});

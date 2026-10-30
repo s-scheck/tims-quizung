@@ -225,3 +225,58 @@ describe('Wer ist das? im Editor', () => {
     expect(draftToRaw(back, 'kind-stars').games).toEqual(['kids']);
   });
 });
+
+describe('Filmfotos im Editor', () => {
+  test('neuer Entwurf hat fünf Fotozeilen mit Punkten 5 bis 1, id mit Präfix', () => {
+    const draft = newDraft('stills');
+    expect(draft.kind).toBe('stills');
+    expect(draft.meta.question).toBe('Aus welchem Film?');
+    expect(draft.rows).toEqual([5, 4, 3, 2, 1].map((p) => ({ image: '', points: String(p) })));
+    expect(makeId('Film 7', 'stills', new Set())).toBe('film-film-7');
+  });
+
+  test('Entwurf hin und zurück mit Aliassen und eigenen Punkten, fehlendes Foto wird gemeldet', () => {
+    const raw = {
+      id: 'film-pate',
+      title: 'Film 7',
+      question: 'Aus welchem Film?',
+      answer: 'Der Pate',
+      aliases: ['The Godfather', 'Pate'],
+      games: ['stills'],
+      stills: [
+        { image: 's1.jpg', points: 10 },
+        { image: 's2.jpg', points: 8 },
+        { image: 's3.jpg' },
+        { image: 's4.jpg', points: 2 },
+        { image: 's5.jpg', points: 1 },
+      ],
+    };
+    const draft = draftFromRaw(raw);
+    expect(draft.kind).toBe('stills');
+    expect(draft.meta.answer).toBe('Der Pate');
+    expect(draft.meta.aliases).toBe('The Godfather, Pate');
+    expect(draft.rows.map((r) => r.points)).toEqual(['10', '8', '3', '2', '1']);
+
+    const back = draftToRaw(draft, 'film-pate');
+    expect(back.aliases).toEqual(['The Godfather', 'Pate']);
+    expect(back.answer).toBe('Der Pate');
+    expect(back.stills).toEqual([
+      { image: 's1.jpg', points: 10 },
+      { image: 's2.jpg', points: 8 },
+      { image: 's3.jpg', points: 3 },
+      { image: 's4.jpg', points: 2 },
+      { image: 's5.jpg', points: 1 },
+    ]);
+    expect(validate(back, 'film-pate')).toBeNull();
+
+    draft.rows[4]!.image = '';
+    expect(cellIssues('stills', draft.rows)[4]).toEqual({ image: 'fehlt' });
+    expect(validate(draftToRaw(draft, 'film-pate'), 'film-pate')).toMatch(/genau 5 Fotos/);
+    draft.rows[4]!.image = 's5.jpg';
+    draft.meta.aliases = '';
+    draft.rows[0]!.points = 'viel';
+    const broken = draftToRaw(draft, 'film-pate');
+    expect(broken.aliases).toBeUndefined();
+    expect(validate(broken, 'film-pate')).toMatch(/Foto 1/);
+  });
+});

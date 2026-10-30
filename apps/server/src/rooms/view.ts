@@ -45,7 +45,9 @@ export function toView(room: Room, viewerId: string | null): RoomView {
                     ? c.fields.length
                     : c.kind === 'faces'
                       ? c.faces.length
-                      : c.items.length,
+                      : c.kind === 'stills'
+                        ? c.stills.length
+                        : c.items.length,
         played: room.playedCategoryIds.includes(c.id),
         games: [...c.games],
       };

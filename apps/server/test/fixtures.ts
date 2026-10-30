@@ -183,7 +183,24 @@ export const KIDS: Category = {
   ],
 };
 
-const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES, PROMPTS, PICTURE, FACES, KIDS];
+export const STILLS: Category = {
+  kind: 'stills',
+  id: 'film-pate',
+  title: 'Film 7',
+  question: 'Aus welchem Film?',
+  games: ['stills'],
+  answer: 'Der Pate',
+  aliases: ['The Godfather'],
+  stills: [
+    { image: 's1-hand.jpg', points: 5 },
+    { image: 's2-katze.jpg', points: 4 },
+    { image: 's3-orange.jpg', points: 3 },
+    { image: 's4-hochzeit.jpg', points: 2 },
+    { image: 'https://example.org/s5.png', points: 10 },
+  ],
+};
+
+const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES, PROMPTS, PICTURE, FACES, KIDS, STILLS];
 
 export const provider: CategoryProvider = {
   list: () => ALL,
@@ -308,6 +325,12 @@ export function startFaces(h: Harness, opts: { targetId?: string; effect?: 'blur
 export function startKids(h: Harness, opts: { mode?: 'type' | 'buzz'; count?: number; thinkSeconds?: 5 | 10 | 15 | 20; penalty?: 'none' | 'minus' } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'kids', categoryId: 'kind-stars', ...opts }));
+}
+
+/** Startet Spiel und Filmfotos-Runde. */
+export function startStills(h: Harness, opts: { mode?: 'type' | 'buzz'; thinkSeconds?: number } = {}): void {
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'stills', categoryId: 'film-pate', ...opts }));
 }
 
 /** Startet Spiel und Morse-Runde mit dem gegebenen Wort. */

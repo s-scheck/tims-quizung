@@ -261,6 +261,36 @@
     else toasts.success(`${files.length} ${files.length === 1 ? 'Bild' : 'Bilder'} hochgeladen. Namen prüfen, dann speichern.`);
   }
 
+  // ------------------------------------------------------------ Filmfotos
+
+  /** Füllt die Fotozeilen ohne Bild der Reihe nach, sortiert nach Dateiname („pate-1“, „pate-2“ …). */
+  async function uploadStills(input: HTMLInputElement) {
+    const files = [...(input.files ?? [])].sort((a, b) => a.name.localeCompare(b.name, 'de', { numeric: true }));
+    input.value = '';
+    if (files.length === 0 || bulkUploading) return;
+    const free = draft.rows.map((r, i) => ((r.image ?? '').trim() ? -1 : i)).filter((i) => i >= 0);
+    const take = files.slice(0, free.length);
+    if (take.length === 0) {
+      toasts.error('Alle fünf Fotos sind schon belegt. Einzelne Fotos über „Ersetzen“ tauschen.');
+      return;
+    }
+    bulkUploading = take.length;
+    let failed = 0;
+    for (const [n, file] of take.entries()) {
+      try {
+        const res = await editorApi.uploadImage(file);
+        draft.rows[free[n]!]!.image = res.name;
+      } catch {
+        failed++;
+      } finally {
+        bulkUploading--;
+      }
+    }
+    if (failed) toasts.error(`${failed} ${failed === 1 ? 'Foto' : 'Fotos'} konnten nicht hochgeladen werden.`);
+    else if (files.length > take.length) toasts.info(`${take.length} von ${files.length} Fotos übernommen, mehr freie Plätze gibt es nicht.`);
+    else toasts.success(`${take.length} ${take.length === 1 ? 'Foto' : 'Fotos'} hochgeladen. Reihenfolge prüfen, dann speichern.`);
+  }
+
   const markers = $derived<MapMarker[]>(
     draft.kind !== 'places'
       ? []
@@ -367,7 +397,7 @@
       <div class="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 class="text-lg font-black">
-            {draft.kind === 'pairs' ? 'Paare' : draft.kind === 'places' ? 'Orte' : draft.kind === 'events' ? 'Ereignisse' : draft.kind === 'prompts' ? 'Aufgaben' : draft.kind === 'picture' ? 'Felder' : draft.kind === 'faces' ? 'Personen' : 'Einträge'}
+            {draft.kind === 'pairs' ? 'Paare' : draft.kind === 'places' ? 'Orte' : draft.kind === 'events' ? 'Ereignisse' : draft.kind === 'prompts' ? 'Aufgaben' : draft.kind === 'picture' ? 'Felder' : draft.kind === 'faces' ? 'Personen' : draft.kind === 'stills' ? 'Fotos' : 'Einträge'}
             <span class="text-slate-500">{filledRows}</span>
           </h2>
           <p class="text-xs text-slate-500">
@@ -377,12 +407,19 @@
             {:else if draft.kind === 'prompts'}Jede Aufgabe mit ihrer echten Antwort. Die Spieler erfinden später eigene Antworten dazu, also muss die echte wirklich stimmen.
             {:else if draft.kind === 'picture'}Bild hochladen, dann Felder im Bild aufziehen und zu jedem die Antwort eintragen. Die Nummer folgt der Reihenfolge der Liste.
             {:else if draft.kind === 'faces'}Je Person ein Foto. Aliasse (mit Komma) helfen dem Host beim Prüfen der Tipps. Bilder vorher verkleinern, höchstens 8 MB.
+            {:else if draft.kind === 'stills'}Genau fünf Fotos, Foto 1 ist das schwerste. Punkte bekommt, wer den Film bei diesem Foto erkennt (leer heißt 5, 4, 3, 2, 1). Dateien nicht nach dem Film benennen, der Name steckt in der Bildadresse. Höchstens 8 MB je Foto.
             {:else if needsSorting}Die Reihenfolge ist der Platz: Platz 1 zuerst. Zahlen wie "17.098.246" oder "1.450,9" gehen.
             {:else}Reihenfolge egal, Werte müssen eindeutig sein. Zahlen wie "17.098.246" oder "1.450,9" gehen.{/if}
           </p>
         </div>
         {#if needsSorting}
           <button type="button" class="btn-secondary px-4 py-2 text-sm" onclick={() => (draft.rows = sortRowsByValue(draft.rows, draft.meta.order ?? 'desc'))}>Nach Wert sortieren</button>
+        {/if}
+        {#if draft.kind === 'stills'}
+          <label class="btn-secondary cursor-pointer px-4 py-2 text-sm {bulkUploading ? 'opacity-60' : ''}">
+            {bulkUploading ? `Lade hoch … (${bulkUploading})` : 'Mehrere Fotos hochladen'}
+            <input type="file" class="hidden" multiple accept="image/jpeg,image/png,image/webp,image/svg+xml" disabled={!editable || !!bulkUploading} onchange={(e) => uploadStills(e.currentTarget)} />
+          </label>
         {/if}
         {#if draft.kind === 'faces'}
           <label class="btn-secondary cursor-pointer px-4 py-2 text-sm {bulkUploading ? 'opacity-60' : ''}">
@@ -455,8 +492,9 @@
           bind:rows={draft.rows}
           {issues}
           bind:selected
-          noun={draft.kind === 'pairs' ? 'Paar' : draft.kind === 'events' ? 'Ereignis' : draft.kind === 'prompts' ? 'Aufgabe' : draft.kind === 'faces' ? 'Person' : 'Eintrag'}
-          onImageUpload={draft.kind === 'faces' ? uploadRowImage : undefined}
+          noun={draft.kind === 'pairs' ? 'Paar' : draft.kind === 'events' ? 'Ereignis' : draft.kind === 'prompts' ? 'Aufgabe' : draft.kind === 'faces' ? 'Person' : draft.kind === 'stills' ? 'Foto' : 'Eintrag'}
+          onImageUpload={draft.kind === 'faces' || draft.kind === 'stills' ? uploadRowImage : undefined}
+          fixedRows={draft.kind === 'stills'}
         />
       {/if}
     </section>

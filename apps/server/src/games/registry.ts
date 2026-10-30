@@ -1,4 +1,4 @@
-import type { ClientMsg, FaceEffect, GameId, KidsMode, KidsPenalty, KidsThinkSeconds, PictureMode, RiskDuplicates, RiskMissPoints, RoundView, RevealMode } from '@quiz/shared';
+import type { ClientMsg, FaceEffect, GameId, KidsMode, KidsPenalty, PictureMode, RiskDuplicates, RiskMissPoints, RoundView, RevealMode } from '@quiz/shared';
 import type { Category } from '@quiz/content';
 import type { Room } from '../rooms/room.ts';
 import type { Result } from '../rooms/result.ts';
@@ -17,12 +17,13 @@ export interface StartRoundOptions {
   effect?: FaceEffect;
   level?: number;
   cols?: number;
-  /** Bilderrätsel: reihum oder alle gleichzeitig. Kinderpromis: Tippen oder Buzzern. */
+  /** Bilderrätsel: reihum oder alle gleichzeitig. Kinderpromis und Filmfotos: Tippen oder Buzzern. */
   mode?: PictureMode | KidsMode;
-  /** Kinderpromis: Promis je Runde, Bedenkzeit und Fehlbuzzer-Regel. */
+  /** Kinderpromis: Promis je Runde und Fehlbuzzer-Regel. */
   count?: number;
-  thinkSeconds?: KidsThinkSeconds;
   penalty?: KidsPenalty;
+  /** Bedenkzeit in Sekunden, beim Kinderpromis nur die festen Stufen. */
+  thinkSeconds?: number;
 }
 
 /**

@@ -1,5 +1,5 @@
 import type { BluffStage, FaceEffectState, GuessStatus, KidsMode, KidsPenalty, KidsStage, KidsThinkSeconds, MatchSelection, PictureMode, PlacementStatus, RiskRules, Selection } from '@quiz/shared';
-import type { Category, EventsCategory, Face, FacesCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, RankedCategory, TimelineEvent } from '@quiz/content';
+import type { Category, EventsCategory, Face, FacesCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, RankedCategory, StillsCategory, TimelineEvent } from '@quiz/content';
 
 export interface Player {
   id: string;
@@ -322,4 +322,36 @@ export interface KidsRound extends BaseRound {
   index: number;
 }
 
-export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound | FacesRound | KidsRound;
+// --------------------------------------------------------------- Filmfotos
+
+export interface StillGuess {
+  /** Index des Fotos, bei dem getippt wurde. */
+  stage: number;
+  text: string;
+  at: number;
+  status: 'judging' | 'correct' | 'wrong';
+}
+
+export interface StillsRound extends BaseRound {
+  game: 'stills';
+  category: StillsCategory;
+  mode: KidsMode;
+  /** Bedenkzeit beim Buzzern, nur als Anzeige. */
+  thinkSeconds: number;
+  /** Index des aktuellen Fotos, freigegeben sind `stage + 1`. */
+  stage: number;
+  /** Tippen: Eingabe offen oder Host prüft das aktuelle Foto. */
+  stagePhase: 'guessing' | 'judging';
+  /** Tippen: höchstens ein Tipp je Spieler und Foto. */
+  guesses: Record<string, StillGuess[]>;
+  /** Buzzern: wer gerade antwortet. */
+  buzz: { playerId: string; at: number; deadline: number } | null;
+  /** Buzzern: für das aktuelle Foto gesperrt. */
+  locked: string[];
+  /** Buzzern: falsche Antworten, für die Auflösung. */
+  wrongBuzzes: { playerId: string; stage: number }[];
+  /** Buzzern: der Erste mit richtiger Antwort. */
+  buzzWinner: { playerId: string; stage: number } | null;
+}
+
+export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound | FacesRound | KidsRound | StillsRound;

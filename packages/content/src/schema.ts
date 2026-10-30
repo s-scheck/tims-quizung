@@ -1,5 +1,9 @@
 import {
   GAME_IDS,
+  SCORE_MAX,
+  SCORE_MIN,
+  STILLS_COUNT,
+  STILLS_DEFAULT_POINTS,
   isTimelineYear,
   isValidLatLng,
   type BluffCategoryInfo,
@@ -11,6 +15,7 @@ import {
   type MatchCategoryInfo,
   type PictureCategoryInfo,
   type SortOrder,
+  type StillsCategoryInfo,
   type TimelineCategoryInfo,
 } from '@quiz/shared';
 
@@ -132,7 +137,25 @@ export interface FacesCategory extends FacesCategoryInfo {
   faces: Face[];
 }
 
-export type Category = RankedCategory | PairsCategory | PlacesCategory | EventsCategory | PromptsCategory | PictureCategory | FacesCategory;
+/** Ein Foto aus dem Film mit den Punkten für alle, die ihn hier erkennen. */
+export interface Still {
+  /** Dateiname in der Bildablage oder http(s)-Adresse. */
+  image: string;
+  points: number;
+}
+
+/** Ein Film mit genau fünf Fotos von schwer bis leicht, für Filmfotos. */
+export interface StillsCategory extends StillsCategoryInfo {
+  kind: 'stills';
+  games: GameId[];
+  /** Der Filmtitel, die Lösung. */
+  answer: string;
+  /** Weitere Schreibweisen für den Vorschlag beim Prüfen. */
+  aliases?: string[];
+  stills: Still[];
+}
+
+export type Category = RankedCategory | PairsCategory | PlacesCategory | EventsCategory | PromptsCategory | PictureCategory | FacesCategory | StillsCategory;
 
 /** Dateinamen in der Bildablage: klein, ohne Pfad, mit Bildendung. */
 export const IMAGE_NAME_PATTERN = /^[a-z0-9][a-z0-9._-]{0,119}\.(jpg|jpeg|png|webp|svg)$/;
@@ -198,6 +221,7 @@ export function validateCategory(raw: unknown, file: string): Category {
   if ('prompts' in raw) return validatePrompts(raw, file);
   if ('fields' in raw) return validatePicture(raw, file);
   if ('faces' in raw) return validateFaces(raw, file);
+  if ('stills' in raw) return validateStills(raw, file);
   return validateRanked(raw, file);
 }
 
@@ -232,6 +256,7 @@ function validateRanked(raw: Record<string, unknown>, file: string): RankedCateg
   if (games.includes('bluff')) throw new CategoryValidationError(file, 'Bluff braucht eine Aufgabenliste mit "prompts"');
   if (games.includes('picture')) throw new CategoryValidationError(file, 'Bilderrätsel braucht ein Bild mit "fields"');
   if (games.includes('faces')) throw new CategoryValidationError(file, 'Wer ist das? braucht eine Promi-Sammlung mit "faces"');
+  if (games.includes('stills')) throw new CategoryValidationError(file, 'Filmfotos braucht einen Film mit "stills"');
   const forSort = games.includes('sort');
   const forTopX = games.includes('topx');
 
@@ -572,4 +597,34 @@ function validateFaces(raw: Record<string, unknown>, file: string): FacesCategor
 
   const source = typeof raw.source === 'string' && raw.source.trim() ? raw.source : undefined;
   return { kind: 'faces', id, title, question, games, faces, ...(source !== undefined ? { source } : {}) };
+}
+
+function validateStills(raw: Record<string, unknown>, file: string): StillsCategory {
+  const id = readId(raw, file);
+  const title = requireString(raw, 'title', file);
+  const question = requireString(raw, 'question', file);
+  const answer = requireString(raw, 'answer', file).trim();
+  const games = readGames(raw, file, ['stills']);
+  if (!games.includes('stills')) throw new CategoryValidationError(file, 'Filme gehören zu "stills"');
+  if (games.some((g) => g !== 'stills')) throw new CategoryValidationError(file, 'Filme taugen nur für "stills"');
+  if (raw.aliases !== undefined && (!Array.isArray(raw.aliases) || !raw.aliases.every((a) => typeof a === 'string'))) {
+    throw new CategoryValidationError(file, 'aliases muss eine Liste von Strings sein');
+  }
+  const aliases = Array.isArray(raw.aliases) ? (raw.aliases as string[]).map((a) => a.trim()).filter(Boolean) : [];
+
+  const stillsRaw = raw.stills;
+  if (!Array.isArray(stillsRaw)) throw new CategoryValidationError(file, 'stills fehlt');
+  if (stillsRaw.length !== STILLS_COUNT) throw new CategoryValidationError(file, `genau ${STILLS_COUNT} Fotos nötig, ${stillsRaw.length} vorhanden`);
+  const stills: Still[] = stillsRaw.map((s, idx) => {
+    if (!isRecord(s)) throw new CategoryValidationError(file, `stills[${idx}] ist kein Objekt`);
+    if (!isImageRef(s.image)) throw new CategoryValidationError(file, `stills[${idx}]: image fehlt oder ist kein Dateiname bzw. keine http-Adresse`);
+    const points = s.points ?? STILLS_DEFAULT_POINTS[idx];
+    if (typeof points !== 'number' || !Number.isInteger(points) || points < SCORE_MIN || points > SCORE_MAX) {
+      throw new CategoryValidationError(file, `stills[${idx}]: points muss eine ganze Zahl von ${SCORE_MIN} bis ${SCORE_MAX} sein`);
+    }
+    return { image: s.image, points };
+  });
+
+  const source = typeof raw.source === 'string' && raw.source.trim() ? raw.source : undefined;
+  return { kind: 'stills', id, title, question, games, answer, ...(aliases.length ? { aliases } : {}), stills, ...(source !== undefined ? { source } : {}) };
 }

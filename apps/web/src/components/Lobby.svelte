@@ -154,6 +154,11 @@
     <p>Beim Buzzern drückt einer, sagt den Namen laut und der Host wertet in der Bedenkzeit. Ein Versuch je Promi, 1 Punkt je Treffer, Fehlbuzzer nach Wahl mit Abzug.</p>
   </div>
   <div class="card space-y-2 text-sm text-slate-400">
+    <h3 class="font-semibold text-slate-200">Filmfotos</h3>
+    <p>Fünf Fotos aus einem Film, vom schwersten zum leichtesten. Der Host schaltet weiter, wer den Film früher erkennt, bekommt mehr Punkte.</p>
+    <p>Tippen: ein Tipp pro Foto, der Host prüft nach jedem Foto. Buzzern: wer zuerst drückt, sagt den Film laut. Sobald jemand richtig liegt, ist das Raten vorbei.</p>
+  </div>
+  <div class="card space-y-2 text-sm text-slate-400">
     <h3 class="font-semibold text-slate-200">Dabeibleiben und Beenden</h3>
     <p>Wer kurz in eine andere App wechselt, bleibt im Spiel und in der Zugreihenfolge. Ist er am Zug, läuft der Timer oder der Host überspringt den Zug.</p>
     <p>Bei Sortieren, Top X und Zuordnen kann der Host eine Kategorie jederzeit beenden: Alle Werte werden aufgedeckt, Punkte gibt es wie gewohnt.</p>

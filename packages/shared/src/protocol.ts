@@ -1,4 +1,4 @@
-import type { FaceEffect, GameId, KidsMode, KidsPenalty, KidsThinkSeconds, MorseSpeed, PictureMode, RevealMode, Role, RoomView, Selection, TimerSeconds } from './types.ts';
+import type { FaceEffect, GameId, KidsMode, KidsPenalty, MorseSpeed, PictureMode, RevealMode, Role, RoomView, Selection, TimerSeconds } from './types.ts';
 import type { RiskDuplicates, RiskMissPoints } from './rules/risk.ts';
 
 export const PROTOCOL_VERSION = 2;
@@ -50,12 +50,13 @@ export type ClientMsg =
       effect?: FaceEffect;
       level?: number;
       cols?: number;
-      /** Bilderrätsel: reihum oder alle gleichzeitig. Kinderpromis: Tippen oder Buzzern. */
+      /** Bilderrätsel: reihum oder alle gleichzeitig. Kinderpromis und Filmfotos: Tippen oder Buzzern. */
       mode?: PictureMode | KidsMode;
-      /** Kinderpromis: Promis je Runde, Bedenkzeit und Fehlbuzzer-Regel. */
+      /** Kinderpromis: Promis je Runde und Fehlbuzzer-Regel. */
       count?: number;
-      thinkSeconds?: KidsThinkSeconds;
       penalty?: KidsPenalty;
+      /** Bedenkzeit nach dem Buzzern in Sekunden: Kinderpromis feste Stufen, Filmfotos frei. */
+      thinkSeconds?: number;
     }
   | ({ type: 'select'; turnNo: number; targetId?: string } & Selection)
   | { type: 'confirm'; turnNo: number }
@@ -71,6 +72,13 @@ export type ClientMsg =
   | { type: 'picture_verdict'; playerId: string; fieldId: string; correct: boolean }
   /** Wer ist das?: Tipp, Prüfung durch den Host, neuer Effektzustand vom Host. */
   | { type: 'face_guess'; text: string }
+  /** Filmfotos: Tipp zum aktuellen Foto, Eingabe schließen, Prüfung, Buzzer mit Urteil, nächstes Foto. */
+  | { type: 'still_guess'; text: string }
+  | { type: 'still_close' }
+  | { type: 'still_judge'; playerId: string; correct: boolean }
+  | { type: 'still_buzz' }
+  | { type: 'still_verdict'; correct: boolean }
+  | { type: 'still_next' }
   | { type: 'face_judge'; playerId: string; index: number; correct: boolean }
   | { type: 'face_effect'; level?: number; cols?: number; revealed?: number[] }
   /** Kinderpromis: Host zeigt den Promi, löst ihn auf und geht weiter; Tippen mit Prüfung, Buzzern mit Urteil. */
