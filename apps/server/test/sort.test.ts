@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { LIVES_DEFAULT } from '@quiz/shared';
 import { toView } from '../src/rooms/view.ts';
 import { expectOk, makeHarness, place, resolve, startRound } from './fixtures.ts';
 import type { SortRound } from '../src/rooms/state.ts';
@@ -303,6 +304,86 @@ describe('Timer und Überspringen', () => {
     expect(r.eliminated).toEqual([h.ids[0]!]);
     expect(r.activePlayerId).toBe(h.ids[1]!);
     expect(h.act(h.host, { type: 'skip_turn', turnNo: 1 })).toMatchObject({ ok: false });
+  });
+});
+
+describe('Leben', () => {
+  test('ohne Angabe gilt die Vorgabe des Raums, jeder startet mit vollen Leben und ohne Treffer', () => {
+    const h = makeHarness(['A', 'B']);
+    const [a, b] = h.ids as [string, string];
+    expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId: 'cities' }));
+    const r = sr(h);
+    expect(r.maxLives).toBe(LIVES_DEFAULT);
+    expect(r.lives).toEqual({ [a]: LIVES_DEFAULT, [b]: LIVES_DEFAULT });
+    expect(r.hits).toEqual({ [a]: 0, [b]: 0 });
+  });
+
+  test('gewählte Leben gelten und bleiben als Vorgabe im Raum', () => {
+    const h = makeHarness(['A', 'B']);
+    startRound(h, 'cities', 4);
+    expect(sr(h).maxLives).toBe(4);
+    expect(sr(h).lives[h.ids[0]!]).toBe(4);
+    expect(h.room.defaultLives).toBe(4);
+    expect(toView(h.room, null).defaultLives).toBe(4);
+  });
+
+  test('Fehler kostet ein Leben, erst ohne Leben ist man raus, Treffer zählen je Spieler', () => {
+    const h = makeHarness(['A', 'B', 'C']);
+    const [a, b, c] = h.ids as [string, string, string];
+    startRound(h, 'cities', 2);
+    const r = sr(h);
+    const poolBefore = [...r.pool];
+
+    place(h, false);
+    resolve(h);
+    expect(r.lives[a]).toBe(1);
+    expect(r.eliminated).toEqual([]);
+    expect(r.pool).toEqual(poolBefore);
+    expect(r.chain).toEqual([r.startCardId]);
+    expect(r.activePlayerId).toBe(b);
+
+    place(h, true);
+    resolve(h);
+    place(h, true);
+    resolve(h);
+    expect(r.hits).toEqual({ [a]: 0, [b]: 1, [c]: 1 });
+    expect(r.lives).toEqual({ [a]: 1, [b]: 2, [c]: 2 });
+    expect(r.activePlayerId).toBe(a);
+
+    place(h, false);
+    resolve(h);
+    expect(r.lives[a]).toBe(0);
+    expect(r.eliminated).toEqual([a]);
+    expect(r.activePlayerId).toBe(b);
+    expect(h.room.phase).toBe('playing');
+  });
+
+  test('Zeitablauf und Überspringen kosten je ein Leben', () => {
+    const h = makeHarness(['A', 'B', 'C'], { timer: 30 });
+    const [a, b] = h.ids as [string, string, string];
+    startRound(h, 'cities', 3);
+    const r = sr(h);
+    h.scheduler.advance(30_000);
+    expect(r.lives[a]).toBe(2);
+    expect(r.eliminated).toEqual([]);
+    expect(r.activePlayerId).toBe(b);
+    expectOk(h.act(h.host, { type: 'skip_turn', turnNo: r.turnNo }));
+    expect(r.lives[b]).toBe(2);
+    expect(r.eliminated).toEqual([]);
+  });
+
+  test('Sicht zeigt Leben und Treffer für alle', () => {
+    const h = makeHarness(['A', 'B']);
+    const [a, b] = h.ids as [string, string];
+    startRound(h, 'cities', 3);
+    place(h, true);
+    resolve(h);
+    const round = toView(h.room, null).round;
+    if (round?.game !== 'sort') throw new Error('keine Sortieren-Runde');
+    expect(round.maxLives).toBe(3);
+    expect(round.lives).toEqual({ [a]: 3, [b]: 3 });
+    expect(round.hits).toEqual({ [a]: 1, [b]: 0 });
   });
 });
 

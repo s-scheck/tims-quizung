@@ -12,7 +12,7 @@
   import TurnTimer from './TurnTimer.svelte';
   import HostDecision from './HostDecision.svelte';
   import EndCategoryButton from './EndCategoryButton.svelte';
-  import PlayerList from './PlayerList.svelte';
+  import LivesList from './LivesList.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: SortRoundView; readonly?: boolean } = $props();
 
@@ -200,7 +200,7 @@
       if (selection.gapIndex === undefined) return 'Zieh sie an die richtige Stelle oder tippe eine Lücke an.';
       return 'Passt? Dann bestätigen. Zum Verschieben einfach noch einmal ziehen.';
     }
-    if (client.isEliminated) return 'Du bist raus. Schau zu, wie es weitergeht.';
+    if (client.isEliminated) return 'Keine Leben mehr. Schau zu, wie es weitergeht.';
     if (client.isModerator) return 'Du moderierst diese Runde.';
     if (!client.inRound) return 'Du bist ab der nächsten Runde dabei.';
     return '';
@@ -323,8 +323,8 @@
     </div>
 
     <div class="card">
-      <h3 class="mb-3 font-bold">Spieler</h3>
-      <PlayerList {view} showScores large={readonly} />
+      <h3 class="mb-3 font-bold">Leben</h3>
+      <LivesList {view} {round} {readonly} />
     </div>
   </aside>
 </div>

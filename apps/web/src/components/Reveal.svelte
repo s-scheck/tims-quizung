@@ -2,6 +2,7 @@
   import { fly } from 'svelte/transition';
   import type { RoomView, SortRoundView } from '@quiz/shared';
   import { formatValue, playerName } from '../lib/format.ts';
+  import LivesList from './LivesList.svelte';
   import ScoringHandoff from './ScoringHandoff.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: SortRoundView; readonly?: boolean } = $props();
@@ -12,7 +13,6 @@
       return { rank: i + 1, card, placed: round.chain.includes(id), isStart: id === round.startCardId };
     }),
   );
-  const survivors = $derived(round.turnOrder.filter((id) => !round.eliminated.includes(id)));
 </script>
 
 <div class="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
@@ -42,15 +42,12 @@
   <aside class="space-y-4">
     <div class="card space-y-3">
       <h3 class="font-bold">Rundenergebnis</h3>
-      <div>
-        <p class="text-xs uppercase tracking-wider text-emerald-300">Durchgekommen</p>
-        <p class="{readonly ? 'text-xl' : ''}">{survivors.length > 0 ? survivors.map((id) => playerName(view, id)).join(', ') : 'niemand'}</p>
-      </div>
+      <p class="text-sm text-slate-400">{round.chain.length} von {round.cards.length} Karten liegen richtig.</p>
+      <LivesList {view} {round} {readonly} />
       <div>
         <p class="text-xs uppercase tracking-wider text-rose-300">Ausgeschieden (in Reihenfolge)</p>
         <p class="{readonly ? 'text-xl' : ''}">{round.eliminated.length > 0 ? round.eliminated.map((id, i) => `${i + 1}. ${playerName(view, id)}`).join(' · ') : 'niemand'}</p>
       </div>
-      <p class="text-xs text-slate-500">{round.chain.length} von {round.cards.length} Karten liegen richtig.</p>
     </div>
 
     {#if !readonly}

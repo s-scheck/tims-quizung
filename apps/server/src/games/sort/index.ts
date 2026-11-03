@@ -5,10 +5,10 @@ import { sortRoundView } from './view.ts';
 export const sortGame: GameModule = {
   id: 'sort',
   name: 'Sortieren',
-  description: 'Karten reihum in eine Kette einsortieren. Wer falsch legt, ist raus.',
+  description: 'Karten reihum in eine Kette einsortieren. Wer falsch legt, verliert ein Leben.',
   turnBased: true,
   needsCategory: true,
-  startRound: (room, category) => startSortRound(room, category),
+  startRound: startSortRound,
   handle: handleSortMessage,
   onHostChanged: () => {},
   roundView: (room, revealed) => sortRoundView(room, revealed),

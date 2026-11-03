@@ -34,6 +34,9 @@ export function sortRoundView(room: Room, revealed: boolean): RoundView | null {
       : null,
     turnDeadline: r.turnDeadline,
     soloMode: r.soloMode,
+    lives: { ...r.lives },
+    maxLives: r.maxLives,
+    hits: { ...r.hits },
     ...(revealed ? { solution: sortCards(r.cards, r.category.order).map((c) => c.id) } : {}),
   };
 }

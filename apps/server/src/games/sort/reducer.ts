@@ -3,6 +3,7 @@ import type { Category } from '@quiz/content';
 import type { Room } from '../../rooms/room.ts';
 import type { SortCard, SortRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
+import type { StartRoundOptions } from '../registry.ts';
 import { baseRound, buildTurnOrder, scheduleTurnTimer, settleTurn } from '../common.ts';
 
 export const RESOLVE_DELAY_MS = 2000;
@@ -14,10 +15,12 @@ export function sortRound(room: Room): SortRound | null {
   return room.round?.game === 'sort' ? room.round : null;
 }
 
-export function startSortRound(room: Room, category: Category | null): Result {
+export function startSortRound(room: Room, category: Category | null, opts: StartRoundOptions): Result {
   if (!category || category.kind !== 'ranked') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
   const turnOrder = buildTurnOrder(room);
   if (turnOrder.length === 0) return fail('invalid_action', 'Ohne Mitspieler geht es nicht los');
+  const lives = opts.lives ?? room.defaultLives;
+  room.defaultLives = lives;
 
   const cards: SortCard[] = shuffle(category.items, room.random).map((item, i) => ({
     id: `c${i + 1}`,
@@ -37,6 +40,9 @@ export function startSortRound(room: Room, category: Category | null): Result {
     pool: cards.filter((c) => c.id !== startCard.id).map((c) => c.id),
     selection: {},
     placement: null,
+    lives: Object.fromEntries(turnOrder.map((id) => [id, lives])),
+    maxLives: lives,
+    hits: Object.fromEntries(turnOrder.map((id) => [id, 0])),
   };
   room.phase = 'playing';
   scheduleTurnTimer(room);
@@ -128,10 +134,12 @@ function applyPlacement(room: Room): void {
   const round = sortRound(room);
   const placement = round?.placement;
   if (!round || !placement || placement.status === 'pending') return;
-  if (placement.status === 'wrong') {
+  if (placement.status === 'correct') {
+    round.hits[placement.by] = (round.hits[placement.by] ?? 0) + 1;
+  } else {
     round.chain = round.chain.filter((id) => id !== placement.cardId);
     round.pool.splice(Math.min(placement.poolIndex, round.pool.length), 0, placement.cardId);
-    eliminate(round, placement.by);
+    loseLife(round, placement.by);
   }
   round.placement = null;
   round.selection = {};
@@ -139,8 +147,10 @@ function applyPlacement(room: Room): void {
   room.emit();
 }
 
-function eliminate(round: SortRound, playerId: string): void {
-  if (round.turnOrder.includes(playerId) && !round.eliminated.includes(playerId)) {
+function loseLife(round: SortRound, playerId: string): void {
+  const left = Math.max(0, (round.lives[playerId] ?? 0) - 1);
+  round.lives[playerId] = left;
+  if (left === 0 && round.turnOrder.includes(playerId) && !round.eliminated.includes(playerId)) {
     round.eliminated.push(playerId);
   }
 }
@@ -159,7 +169,7 @@ export function isRoundComplete(room: Room): boolean {
 export function penalizeActive(room: Room): void {
   const round = sortRound(room);
   if (!round) return;
-  if (round.activePlayerId) eliminate(round, round.activePlayerId);
+  if (round.activePlayerId) loseLife(round, round.activePlayerId);
   round.selection = {};
 }
 

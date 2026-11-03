@@ -79,14 +79,11 @@
       const time = res.doneAt === null ? 'nicht fertig gemeldet' : `fertig nach ${((res.doneAt - (r.startedAt ?? 0)) / 1000).toFixed(1)} s`;
       return `${rank}. Platz · ${res.hits} von ${r.fields.length} richtig · ${time}`;
     }
-    if (r.game === 'topx' || r.game === 'match' || r.game === 'picture') {
-      const hits = r.hits[id] ?? 0;
-      const lives = r.lives[id] ?? 0;
-      const hitText = `${hits} Treffer`;
-      return lives === 0 ? `${hitText}, keine Leben mehr` : `${hitText}, ${lives} Leben übrig`;
-    }
-    if (r.eliminated.includes(id)) return `raus als ${r.eliminated.indexOf(id) + 1}.`;
-    return 'durchgekommen';
+    // Reihum mit Leben: Sortieren, Top X, Zuordnen, Bilderrätsel reihum.
+    const hits = r.hits[id] ?? 0;
+    const lives = r.lives[id] ?? 0;
+    const hitText = `${hits} Treffer`;
+    return lives === 0 ? `${hitText}, keine Leben mehr` : `${hitText}, ${lives} Leben übrig`;
   }
 
   function submit() {

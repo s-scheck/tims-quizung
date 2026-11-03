@@ -6,9 +6,8 @@
   let {
     view,
     large = false,
-    showScores = false,
     canKick = false,
-  }: { view: RoomView; large?: boolean; showScores?: boolean; canKick?: boolean } = $props();
+  }: { view: RoomView; large?: boolean; canKick?: boolean } = $props();
 
   const round = $derived(view.round);
 </script>
@@ -34,7 +33,6 @@
       {#if eliminated}<span class="badge bg-rose-500/20 text-rose-300">raus</span>{/if}
       {#if spectating}<span class="badge">schaut zu</span>{/if}
       {#if !p.connected}<span class="badge">getrennt</span>{/if}
-      {#if showScores && !moderator}<span class="w-10 text-right font-mono font-bold">{view.scores[p.id] ?? 0}</span>{/if}
       {#if canKick && p.id !== client.myId}
         <button class="btn-ghost px-2 py-1 text-xs text-rose-300" onclick={() => client.send({ type: 'kick', playerId: p.id })}>Entfernen</button>
       {/if}

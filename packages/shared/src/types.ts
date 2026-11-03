@@ -167,6 +167,9 @@ export interface SortRoundView extends BaseRoundView {
   startCardId: string;
   selection: Selection;
   placement: PlacementView | null;
+  lives: Record<string, number>;
+  maxLives: number;
+  hits: Record<string, number>;
   /** Karten-IDs in der richtigen Reihenfolge, nur ab der Auflösung. */
   solution?: string[];
 }

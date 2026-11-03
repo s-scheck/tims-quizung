@@ -61,7 +61,7 @@
     { mode: 'turns', label: 'Reihum', hint: 'Einer nach dem anderen nennt ein Feld und tippt. Falsch kostet ein Leben, du prüfst jeden Tipp sofort.' },
     { mode: 'all', label: 'Alle gleichzeitig', hint: 'Alle füllen jedes Feld aus und melden sich fertig. Du prüfst am Ende Feld für Feld als Show, Punkte nach Treffern und Tempo.' },
   ];
-  const usesLives = $derived(gameId === 'topx' || gameId === 'match' || (isPicture && pictureMode === 'turns'));
+  const usesLives = $derived(gameId === 'sort' || gameId === 'topx' || gameId === 'match' || (isPicture && pictureMode === 'turns'));
   const isMap = $derived(gameId === 'map');
   const isRisk = $derived(gameId === 'risk');
   /** Show-Auflösung gibt es nur bei den gleichzeitigen Spielen und nur, wenn der Host moderiert. */

@@ -65,6 +65,9 @@ export interface SortRound extends BaseRound {
   pool: string[];
   selection: Selection;
   placement: Placement | null;
+  lives: Record<string, number>;
+  maxLives: number;
+  hits: Record<string, number>;
 }
 
 // -------------------------------------------------------------------- Top X

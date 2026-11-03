@@ -6,10 +6,11 @@ Multiplayer-Quiz-Suite für Freunde. Jeder spielt am eigenen Handy oder Laptop, 
 
 - Alle Karten einer Kategorie liegen offen, nur die Werte sind versteckt. Eine zufällige Karte startet die Kette.
 - Wer dran ist, zieht eine Karte in eine Lücke der Kette (Maus, oder am Handy kurz halten und ziehen) oder tippt Karte und Lücke nacheinander an. Die Karte liegt dann als Vorschau in der Kette und lässt sich noch verschieben, mit „Bestätigen“ wird gelegt. Nach zwei Sekunden Spannung wird sie grün oder fliegt zurück. Alle anderen Geräte und der Screen scrollen dabei automatisch zur gelegten Karte, falls sie nicht im Bild ist.
-- Richtig heißt: Die Karte passt zwischen ihre Nachbarn. Falsch heißt: raus für diese Runde.
+- Vor der Runde legt der Host die Leben pro Spieler fest (1 bis 5, die letzte Wahl gilt auch für Top X und Zuordnen).
+- Richtig heißt: Die Karte passt zwischen ihre Nachbarn und zählt als Treffer. Falsch kostet ein Leben, ohne Leben ist man raus für diese Runde.
 - Bleibt nur ein Spieler übrig, entscheidet der Host, ob die Runde endet oder der Letzte allein weiterlegt.
 - Am Rundenende werden alle Werte aufgedeckt, der Host trägt Punkte pro Spieler ein. Danach nächste Runde oder Spiel beenden.
-- Optionales Zeitlimit pro Zug (30 s / 60 s), bei Ablauf scheidet der Spieler aus.
+- Optionales Zeitlimit pro Zug (30 s / 60 s), Ablauf kostet ein Leben.
 - Der Host entscheidet in der Lobby, ob er mitspielt oder nur moderiert. Ein moderierender Host wählt Kategorien und vergibt Punkte, steht aber nicht in der Wertung.
 - Der Host kann eine laufende Kategorie jederzeit beenden („Kategorie beenden“, zweimal tippen): Alle Werte werden aufgedeckt, nicht gelegte Karten bleiben markiert, Punkte wie gewohnt. Gilt auch für Top X und Zuordnen.
 - Wer kurz in eine andere App wechselt, bleibt im Spiel: Alle Mitspieler stehen bei jedem Rundenstart in der Zugreihenfolge, verbunden oder nicht. Beim Zurückkehren prüft die App die Verbindung sofort und verbindet bei Bedarf neu.

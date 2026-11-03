@@ -111,7 +111,7 @@
   <div class="card space-y-2 text-sm text-slate-400">
     <h3 class="font-semibold text-slate-200">Sortieren</h3>
     <p>Alle Karten einer Kategorie liegen offen. Eine zufällige Karte startet die Kette. Wer dran ist, wählt eine Karte und eine Lücke in der Kette und bestätigt.</p>
-    <p>Liegt die Karte richtig zwischen ihren Nachbarn, bleibt sie. Liegt sie falsch, fliegt sie zurück und du bist für diese Runde raus. Die Werte siehst du erst am Ende.</p>
+    <p>Liegt die Karte richtig zwischen ihren Nachbarn, bleibt sie. Liegt sie falsch, fliegt sie zurück und kostet ein Leben. Ohne Leben bist du für diese Runde raus. Die Werte siehst du erst am Ende.</p>
   </div>
   <div class="card space-y-2 text-sm text-slate-400">
     <h3 class="font-semibold text-slate-200">Top X</h3>

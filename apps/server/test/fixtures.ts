@@ -273,10 +273,13 @@ export function makeHarness(names: string[], opts: { timer?: TimerSeconds; seed?
   };
 }
 
-/** Startet Spiel und Sortieren-Runde, damit Tests direkt in `playing` beginnen. */
-export function startRound(h: Harness, categoryId = 'cities'): void {
+/**
+ * Startet Spiel und Sortieren-Runde, damit Tests direkt in `playing` beginnen.
+ * Standard ist ein Leben, dann scheidet man beim ersten Fehler aus. Die Wahl bleibt als Vorgabe im Raum.
+ */
+export function startRound(h: Harness, categoryId = 'cities', lives = 1): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
-  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId, lives }));
 }
 
 /** Startet Spiel und Zuordnen-Runde. */
