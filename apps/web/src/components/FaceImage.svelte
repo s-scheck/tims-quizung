@@ -86,8 +86,8 @@
 <div
   bind:clientWidth={width}
   bind:clientHeight={height}
-  class="relative mx-auto select-none overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 {className}"
-  style="aspect-ratio: {ratio}; width: min(100%, calc({maxH}dvh * {ratio}))"
+  class="fit-media relative mx-auto select-none overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 {className}"
+  style="aspect-ratio: {ratio}; width: min(100%, calc({maxH}dvh * var(--fit-media, 1) * {ratio}))"
 >
   <img
     bind:this={imgEl}

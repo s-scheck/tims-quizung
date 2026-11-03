@@ -119,7 +119,7 @@
         <p class="text-center text-xs text-amber-300/80">Das Foto siehst nur du schon. Die Spieler sehen es nach „Zeigen“.</p>
       {/if}
     {:else}
-      <div class="card flex aspect-[4/3] max-h-[60dvh] flex-col items-center justify-center gap-2 text-center">
+      <div class="fit-media card flex aspect-[4/3] flex-col items-center justify-center gap-2 text-center" style="max-height: calc(60dvh * var(--fit-media, 1))">
         <span class="text-6xl font-black text-slate-700 {readonly ? 'text-8xl' : ''}">?</span>
         <p class="text-slate-400 {readonly ? 'text-2xl' : ''}">{round.total === 0 ? 'Diese Runde wurde ohne gezeigten Promi beendet.' : 'Der Host zeigt gleich das Foto.'}</p>
       </div>

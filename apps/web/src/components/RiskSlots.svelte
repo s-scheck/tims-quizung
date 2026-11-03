@@ -17,7 +17,7 @@
   }
 </script>
 
-<ol class="space-y-1">
+<ol class="space-y-1 {large ? 'fit-cols' : ''}">
   {#each rows as { rank, slot } (rank)}
     {#if !slot}
       <li class="flex items-center gap-3 rounded-lg px-3 py-0.5 text-slate-600 {large ? 'text-xl' : ''}" aria-label="Platz {rank} offen">

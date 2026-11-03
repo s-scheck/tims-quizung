@@ -26,7 +26,8 @@
     <img
       src={images[shownIndex]}
       alt="Foto {shownIndex + 1}"
-      class="mx-auto block w-auto max-w-full rounded-2xl border border-slate-800 bg-slate-900 object-contain {large ? 'max-h-[70vh]' : 'max-h-[60vh]'}"
+      class="fit-media mx-auto block w-auto max-w-full rounded-2xl border border-slate-800 bg-slate-900 object-contain"
+      style="max-height: calc({large ? 70 : 60}vh * var(--fit-media, 1))"
       draggable="false"
     />
     {#if overlay}

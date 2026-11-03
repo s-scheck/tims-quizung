@@ -19,7 +19,7 @@
       <h2 class="text-xl font-bold sm:text-2xl {readonly ? 'text-3xl' : ''}">{round.category.question}</h2>
       {#if round.category.source}<p class="mt-1 text-xs text-slate-500">Quelle: {round.category.source}</p>{/if}
     </header>
-    <ol class="card space-y-1">
+    <ol class="card space-y-1 {readonly ? 'fit-cols' : ''}">
       {#each round.targets as target, i (target.id)}
         {@const solution = target.solutionCardId ? cardsById.get(target.solutionCardId)?.text : null}
         <li
