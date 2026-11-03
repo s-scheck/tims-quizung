@@ -35,6 +35,8 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'reveal_all' })).toBe(true);
     expect(isClientMsg({ type: 'picture_guess', turnNo: 2, fieldId: 'f3', text: 'Eiffelturm' })).toBe(true);
     expect(isClientMsg({ type: 'picture_judge', turnNo: 2, correct: false })).toBe(true);
+    expect(isClientMsg({ type: 'picture_release', turnNo: 2, uncover: true })).toBe(true);
+    expect(isClientMsg({ type: 'picture_open' })).toBe(true);
     expect(isClientMsg({ type: 'choose_category', gameId: 'picture', categoryId: 'x', mode: 'all' })).toBe(true);
     expect(isClientMsg({ type: 'picture_fill', fieldId: 'f1', text: '' })).toBe(true);
     expect(isClientMsg({ type: 'picture_done' })).toBe(true);
@@ -88,6 +90,7 @@ describe('isClientMsg', () => {
     expect(isClientMsg({ type: 'reveal_player' })).toBe(false);
     expect(isClientMsg({ type: 'picture_guess', turnNo: 2, fieldId: 'f3', text: '' })).toBe(false);
     expect(isClientMsg({ type: 'picture_judge', turnNo: 2 })).toBe(false);
+    expect(isClientMsg({ type: 'picture_release', turnNo: 2 })).toBe(false);
     expect(isClientMsg({ type: 'choose_category', gameId: 'picture', categoryId: 'x', mode: 'race' })).toBe(false);
     expect(isClientMsg({ type: 'picture_fill', fieldId: 'f1', text: 'x'.repeat(61) })).toBe(false);
     expect(isClientMsg({ type: 'picture_step', index: -1 })).toBe(false);

@@ -5,20 +5,25 @@
   import { playerName } from '../lib/format.ts';
   import PictureView from './PictureView.svelte';
 
-  /** Auflösung im Modus „Alle gleichzeitig“: Der Host ruft Feld für Feld auf und setzt die Urteile, alle sehen zu. */
+  /**
+   * Auflösung im Modus „Alle gleichzeitig“: Der Host ruft Feld für Feld auf, alle sehen die Antworten der Spieler.
+   * Lösung, Bildausschnitt und Urteile sehen die anderen erst, wenn der Host das Feld freigibt.
+   */
   let { view, round, readonly = false }: { view: RoomView; round: PictureRoundView; readonly?: boolean } = $props();
 
-  const judge = $derived(round.judge ?? { index: 0, shown: 0, complete: false });
+  const judge = $derived(round.judge ?? { index: 0, shown: 0, released: 0, complete: false });
   const host = $derived(!readonly && client.isHost && view.phase === 'reveal');
   const fields = $derived(round.fields);
   const current = $derived(fields[judge.index] ?? null);
-  /** Aufgerufene Felder gelten im Bild als gelöst, die anderen bleiben verdeckt. */
-  const shown = $derived(fields.map((f, i) => ({ ...f, solved: i < judge.shown })));
+  const isReleased = (f: PictureFieldView) => f.number - 1 < judge.released;
+  const currentReleased = $derived(!!current && isReleased(current));
+  /** Freigegebene Felder gelten im Bild als gelöst, die anderen bleiben verdeckt. */
+  const shown = $derived(fields.map((f, i) => ({ ...f, solved: i < judge.released })));
   const earlier = $derived(fields.slice(0, judge.shown).filter((f) => f.id !== current?.id));
   const results = $derived(round.results ?? []);
   const startedAt = $derived(round.startedAt ?? 0);
   const seconds = (at: number) => ((at - startedAt) / 1000).toFixed(1);
-  const remaining = $derived(fields.length - judge.shown);
+  const remaining = $derived(fields.length - judge.released);
 
   const answerOf = (pid: string, fieldId: string) => round.answers?.[pid]?.[fieldId] ?? '';
   const verdictOf = (pid: string, fieldId: string) => round.verdicts?.[pid]?.[fieldId] === true;
@@ -32,14 +37,23 @@
     if (!host) return;
     client.send({ type: 'picture_step', index });
   }
+
+  function release() {
+    if (!host) return;
+    client.send({ type: 'picture_open' });
+  }
 </script>
 
 {#snippet earlierRow(f: PictureFieldView)}
   <span class="w-6 shrink-0 text-right font-mono text-sm text-slate-500">{f.number}</span>
-  <span class="font-semibold">{f.answer}</span>
-  {#each round.turnOrder as pid (pid)}
-    <span class="text-sm {verdictOf(pid, f.id) ? 'text-emerald-300' : 'text-slate-500'}">{playerName(view, pid)} {verdictOf(pid, f.id) ? '✓' : '✗'}</span>
-  {/each}
+  {#if isReleased(f)}
+    <span class="font-semibold">{f.answer}</span>
+    {#each round.turnOrder as pid (pid)}
+      <span class="text-sm {verdictOf(pid, f.id) ? 'text-emerald-300' : 'text-slate-500'}">{playerName(view, pid)} {verdictOf(pid, f.id) ? '✓' : '✗'}</span>
+    {/each}
+  {:else}
+    <span class="text-sm italic text-slate-500">noch nicht freigegeben</span>
+  {/if}
 {/snippet}
 
 <div class="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
@@ -57,7 +71,13 @@
         <div class="card space-y-3 border-indigo-500/40" in:fly={{ y: 8, duration: 250 }}>
           <div class="flex items-baseline justify-between gap-3">
             <p class="text-xs font-semibold uppercase tracking-widest text-sky-300">Feld {current.number} von {fields.length}</p>
-            <p class="break-words text-right text-lg font-bold text-emerald-300 {readonly ? 'text-2xl' : ''}">{current.answer ?? '?'}</p>
+            {#if currentReleased}
+              <p class="break-words text-right text-lg font-bold text-emerald-300 {readonly ? 'text-2xl' : ''}">{current.answer ?? '?'}</p>
+            {:else if host}
+              <p class="break-words text-right text-lg font-bold text-amber-300/80">{current.answer ?? '?'} 🔒</p>
+            {:else}
+              <p class="text-right text-lg font-bold text-slate-500 {readonly ? 'text-2xl' : ''}">?</p>
+            {/if}
           </div>
           <ul class="divide-y divide-slate-800">
             {#each round.turnOrder as pid (pid)}
@@ -66,7 +86,7 @@
               <li class="flex items-center gap-3 py-2 {readonly ? 'text-xl' : ''}">
                 <span class="min-w-0 flex-1">
                   <span class="block break-words font-semibold">{playerName(view, pid)}</span>
-                  <span class="block break-words {text ? (ok ? 'text-emerald-200' : 'text-rose-200') : 'italic text-slate-500'}">{text || 'keine Antwort'}</span>
+                  <span class="block break-words {!text ? 'italic text-slate-500' : !currentReleased && !host ? 'text-slate-200' : ok ? 'text-emerald-200' : 'text-rose-200'}">{text || 'keine Antwort'}</span>
                 </span>
                 {#if host}
                   <div class="flex shrink-0 gap-1">
@@ -89,7 +109,7 @@
                       Falsch
                     </button>
                   </div>
-                {:else}
+                {:else if currentReleased}
                   <span class="shrink-0 text-xl {ok ? 'text-emerald-400' : 'text-rose-400'}" aria-label={ok ? 'richtig' : 'falsch'}>{ok ? '✓' : '✗'}</span>
                 {/if}
               </li>
@@ -98,13 +118,19 @@
           {#if host}
             <div class="flex flex-wrap gap-2">
               <button class="btn-secondary" disabled={judge.index === 0} onclick={() => step(judge.index - 1)}>Zurück</button>
-              {#if judge.index + 1 < fields.length}
+              {#if !currentReleased}
+                <button class="btn-primary flex-1" onclick={release}>Feld {current.number} freigeben</button>
+              {:else if judge.index + 1 < fields.length}
                 <button class="btn-primary flex-1" onclick={() => step(judge.index + 1)}>Weiter zu Feld {judge.index + 2}</button>
               {:else}
                 <button class="btn-primary flex-1" disabled={!judge.complete} onclick={() => client.send({ type: 'to_scoring' })}>Prüfung abschließen</button>
               {/if}
             </div>
-            <p class="text-xs text-slate-500">Passende Antworten sind schon als richtig markiert. Alle sehen deine Urteile sofort.</p>
+            <p class="text-xs text-slate-500">
+              {currentReleased
+                ? 'Alle sehen Lösung und Urteile. Änderungen sind sofort sichtbar.'
+                : 'Passende Antworten sind schon als richtig markiert. Lösung und Urteile sieht erst nach der Freigabe jemand.'}
+            </p>
           {/if}
         </div>
       {/key}
@@ -136,18 +162,18 @@
           <li class="flex items-center gap-3 py-2 {readonly ? 'text-xl' : ''} {r.playerId === client.myId ? 'text-indigo-200' : ''}">
             <span class="w-6 text-right font-mono text-slate-500">{i + 1}.</span>
             <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, r.playerId)}</span>
-            <span class="shrink-0 text-sm text-slate-300">{r.hits} von {judge.shown}</span>
+            <span class="shrink-0 text-sm text-slate-300">{r.hits} von {judge.released}</span>
             <span class="shrink-0 text-xs text-slate-500">{r.doneAt === null ? 'nicht fertig' : `${seconds(r.doneAt)} s`}</span>
           </li>
         {/each}
       </ol>
-      <p class="mt-2 text-xs text-slate-500">Treffer unter den aufgerufenen Feldern, bei Gleichstand die frühere Fertig-Zeit. Die Punkte trägt der Host ein.</p>
+      <p class="mt-2 text-xs text-slate-500">Treffer unter den freigegebenen Feldern, bei Gleichstand die frühere Fertig-Zeit. Die Punkte trägt der Host ein.</p>
     </div>
 
     {#if !readonly}
       {#if client.isHost && view.phase === 'reveal'}
         <p class="card text-center text-sm text-slate-400">
-          {judge.complete ? 'Alle Felder aufgerufen. Schließe die Prüfung ab, um Punkte einzutragen.' : `Noch ${remaining} ${remaining === 1 ? 'Feld' : 'Felder'} aufrufen.`}
+          {judge.complete ? 'Alle Felder freigegeben. Schließe die Prüfung ab, um Punkte einzutragen.' : `Noch ${remaining} ${remaining === 1 ? 'Feld' : 'Felder'} freigeben.`}
         </p>
       {:else if view.phase === 'scoring'}
         <p class="card text-center text-sm text-slate-400">{playerName(view, view.hostId)} trägt gerade die Punkte ein…</p>

@@ -16,6 +16,13 @@ function viewRound(h: Harness, viewerId: string | null) {
   return round;
 }
 
+/** Host urteilt und gibt frei (Reihum). */
+function decide(h: Harness, judge: string, correct: boolean, uncover = false): void {
+  const turnNo = pr(h).turnNo;
+  expectOk(h.act(judge, { type: 'picture_judge', turnNo, correct }));
+  expectOk(h.act(judge, { type: 'picture_release', turnNo, uncover }));
+}
+
 function moderated(names: string[]): Harness {
   const h = makeHarness(names);
   expectOk(h.act(h.host, { type: 'set_settings', hostPlays: false }));
@@ -86,13 +93,34 @@ describe('Bilderrätsel: Tipp und Prüfung', () => {
     expect(seenByHost.privileged).toBe(true);
     expect(viewRound(h, null).fields[1]!.answer).toBeUndefined();
 
+    // Ohne Urteil gibt es nichts freizugeben; das Urteil sieht bis zur Freigabe nur der Host und kann es umschalten.
+    expect(h.act(h.host, { type: 'picture_release', turnNo: 1, uncover: false })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expectOk(h.act(h.host, { type: 'picture_judge', turnNo: 1, correct: false }));
     expectOk(h.act(h.host, { type: 'picture_judge', turnNo: 1, correct: true }));
+    expect(pr(h).guess).toMatchObject({ status: 'judging', draft: true });
+    expect(pr(h).solved).toEqual({});
+    expect(pr(h).hits[b]).toBe(0);
+    expect(h.room.timers.placement).toBeNull();
+    for (const viewer of [b, c, null]) {
+      const v = viewRound(h, viewer);
+      expect(v.guess?.status).toBe('judging');
+      expect(v.guess).not.toHaveProperty('draft');
+      expect(v.fields[0]).toMatchObject({ solved: false });
+      expect(v.fields[0]!.answer).toBeUndefined();
+    }
+    expect(viewRound(h, h.host).guess?.draft).toBe(true);
+    expect(h.act(b, { type: 'picture_release', turnNo: 1, uncover: false })).toMatchObject({ ok: false, code: 'not_host' });
+    expect(h.act(h.host, { type: 'picture_release', turnNo: 2, uncover: false })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expect(h.act(h.host, { type: 'picture_release', turnNo: 1, uncover: true })).toMatchObject({ ok: false, code: 'invalid_action' });
+
+    expectOk(h.act(h.host, { type: 'picture_release', turnNo: 1, uncover: false }));
     const r = pr(h);
     expect(r.solved).toEqual({ f1: b });
     expect(r.hits[b]).toBe(1);
     expect(r.guess?.status).toBe('correct');
     expect(viewRound(h, c).fields[0]).toMatchObject({ solved: true, solvedBy: b, answer: 'Lampe' });
-    expect(h.act(h.host, { type: 'picture_judge', turnNo: 1, correct: true })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expect(h.act(h.host, { type: 'picture_judge', turnNo: 1, correct: false })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expect(h.act(h.host, { type: 'picture_release', turnNo: 1, uncover: false })).toMatchObject({ ok: false, code: 'invalid_action' });
 
     h.scheduler.advance(RESULT_MS);
     expect(pr(h).guess).toBeNull();
@@ -107,6 +135,10 @@ describe('Bilderrätsel: Tipp und Prüfung', () => {
     const [, b, c] = h.ids as [string, string, string];
     expectOk(h.act(b, { type: 'picture_guess', turnNo: 1, fieldId: 'f2', text: 'Hund' }));
     expectOk(h.act(h.host, { type: 'picture_judge', turnNo: 1, correct: false }));
+    // Vor der Freigabe ist nichts passiert.
+    expect(pr(h).lives[b]).toBe(1);
+    expect(pr(h).wrongGuesses).toEqual([]);
+    expectOk(h.act(h.host, { type: 'picture_release', turnNo: 1, uncover: false }));
     const r = pr(h);
     expect(r.lives[b]).toBe(0);
     expect(r.eliminated).toEqual([b]);
@@ -118,7 +150,7 @@ describe('Bilderrätsel: Tipp und Prüfung', () => {
     expectOk(h.act(h.host, { type: 'host_decision', continue: true }));
     expect(pr(h).activePlayerId).toBe(c);
     expectOk(h.act(c, { type: 'picture_guess', turnNo: pr(h).turnNo, fieldId: 'f2', text: 'Katze' }));
-    expectOk(h.act(h.host, { type: 'picture_judge', turnNo: pr(h).turnNo, correct: true }));
+    decide(h, h.host, true);
     expect(pr(h).solved).toEqual({ f2: c });
   });
 
@@ -131,14 +163,14 @@ describe('Bilderrätsel: Tipp und Prüfung', () => {
       ['f2', 'Katze'],
     ] as const) {
       expectOk(h.act(b, { type: 'picture_guess', turnNo: pr(h).turnNo, fieldId: field, text: answer }));
-      expectOk(h.act(h.host, { type: 'picture_judge', turnNo: pr(h).turnNo, correct: true }));
+      decide(h, h.host, true);
       h.scheduler.advance(RESULT_MS);
     }
     expect(h.room.phase).toBe('playing');
     h.scheduler.advance(30_000);
     expect(pr(h).lives[b]).toBe(2);
     expectOk(h.act(b, { type: 'picture_guess', turnNo: pr(h).turnNo, fieldId: 'f3', text: 'Uhr' }));
-    expectOk(h.act(h.host, { type: 'picture_judge', turnNo: pr(h).turnNo, correct: true }));
+    decide(h, h.host, true);
     h.scheduler.advance(RESULT_MS);
     expect(h.room.phase).toBe('reveal');
     expect(viewRound(h, b).fields.every((f) => f.solved && f.answer !== undefined)).toBe(true);
@@ -168,7 +200,53 @@ describe('Bilderrätsel: Tipp und Prüfung', () => {
     expectOk(h.act(b, { type: 'host_decision', continue: true }));
     expect(pr(h).activePlayerId).toBe(c);
     expectOk(h.act(c, { type: 'picture_guess', turnNo: pr(h).turnNo, fieldId: 'f1', text: 'Lampe' }));
-    expectOk(h.act(b, { type: 'picture_judge', turnNo: pr(h).turnNo, correct: true }));
+    decide(h, b, true);
+    expect(pr(h).solved).toEqual({ f1: c });
+  });
+
+  test('Host-Wechsel mit offenem Urteil: der neue Host sieht es und gibt frei', () => {
+    const h = makeHarness(['Host', 'B', 'C', 'D']);
+    startPicture(h);
+    const [a, b, c] = h.ids as [string, string, string];
+    expectOk(h.act(b, { type: 'picture_guess', turnNo: 1, fieldId: 'f1', text: 'Vase' }));
+    decide(h, a, false);
+    h.scheduler.advance(RESULT_MS);
+    expectOk(h.act(c, { type: 'picture_guess', turnNo: pr(h).turnNo, fieldId: 'f1', text: 'Lampe' }));
+    expectOk(h.act(a, { type: 'picture_judge', turnNo: pr(h).turnNo, correct: true }));
+    expect(h.room.leave(a).ok).toBe(true);
+    expect(h.room.hostId).toBe(b);
+    expect(viewRound(h, b).guess).toMatchObject({ by: c, status: 'judging', draft: true });
+    expectOk(h.act(b, { type: 'picture_release', turnNo: pr(h).turnNo, uncover: false }));
+    expect(pr(h).solved).toEqual({ f1: c });
+  });
+
+  test('falsch und aufdecken: Feld ist ohne Löser erledigt, zählt für das Rundenende', () => {
+    const h = makeHarness(['Host', 'B', 'C']);
+    startPicture(h, { lives: 3 });
+    const [, b, c] = h.ids as [string, string, string];
+    expectOk(h.act(b, { type: 'picture_guess', turnNo: 1, fieldId: 'f2', text: 'Hund' }));
+    decide(h, h.host, false, true);
+    const r = pr(h);
+    expect(r.lives[b]).toBe(2);
+    expect(r.wrongGuesses).toEqual([{ by: b, fieldId: 'f2', text: 'Hund' }]);
+    expect(r.uncovered).toEqual(['f2']);
+    expect(r.solved).toEqual({});
+    expect(r.hits[b]).toBe(0);
+    const seen = viewRound(h, c).fields[1]!;
+    expect(seen).toMatchObject({ solved: false, uncovered: true, answer: 'Katze' });
+    expect(seen.solvedBy).toBeUndefined();
+    expect(viewRound(h, c).fields[0]).not.toHaveProperty('uncovered');
+
+    h.scheduler.advance(RESULT_MS);
+    expect(pr(h).activePlayerId).toBe(c);
+    expect(h.act(c, { type: 'picture_guess', turnNo: pr(h).turnNo, fieldId: 'f2', text: 'Katze' })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expectOk(h.act(c, { type: 'picture_guess', turnNo: pr(h).turnNo, fieldId: 'f1', text: 'Lampe' }));
+    decide(h, h.host, true);
+    h.scheduler.advance(RESULT_MS);
+    expectOk(h.act(b, { type: 'picture_guess', turnNo: pr(h).turnNo, fieldId: 'f3', text: 'Wecker' }));
+    decide(h, h.host, false, true);
+    h.scheduler.advance(RESULT_MS);
+    expect(h.room.phase).toBe('reveal');
     expect(pr(h).solved).toEqual({ f1: c });
   });
 });
@@ -248,7 +326,7 @@ describe('Bilderrätsel: Alle gleichzeitig', () => {
     expect(r.judgeShown).toBe(1);
   });
 
-  test('Auflösung: nur aufgerufene Felder sichtbar, Host schaltet vor und zurück, Urteile live, Punkte erst nach dem letzten Feld', () => {
+  test('Auflösung: Texte aufgerufener Felder sichtbar, Lösung und Urteile erst nach Freigabe, Punkte erst nach dem letzten Feld', () => {
     const h = makeHarness(['Host', 'B', 'C']);
     startPicture(h, { mode: 'all' });
     const [, b, c] = h.ids as [string, string, string];
@@ -263,18 +341,29 @@ describe('Bilderrätsel: Alle gleichzeitig', () => {
     expect(h.room.phase).toBe('reveal');
     const start = pr(h).startedAt;
 
+    // Feld 1 ist aufgerufen, aber nicht freigegeben: Texte ja, Lösung und Urteile nein.
     let v = viewRound(h, null);
-    expect(v.judge).toEqual({ index: 0, shown: 1, complete: false });
-    expect(v.fields.map((f) => f.answer)).toEqual(['Lampe', undefined, undefined]);
+    expect(v.judge).toEqual({ index: 0, shown: 1, released: 0, complete: false });
+    expect(v.fields.map((f) => f.answer)).toEqual([undefined, undefined, undefined]);
     expect(v.answers).toEqual({ [b]: { f1: 'Lampe' }, [c]: {} });
+    expect(v.verdicts).toEqual({ [b]: {}, [c]: {} });
+    expect(v.results?.map((x) => x.hits)).toEqual([0, 0]);
+    expect(JSON.stringify(v)).not.toContain('Kater');
+    expect(viewRound(h, h.host).fields.map((f) => f.answer)).toEqual(['Lampe', 'Katze', 'Uhr']);
+    expect(viewRound(h, h.host).answers?.[b]).toEqual({ f1: 'Lampe' });
+    expect(viewRound(h, h.host).verdicts).toEqual({ [b]: { f1: true }, [c]: { f1: false } });
+
+    expect(h.act(h.host, { type: 'picture_step', index: 1 })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expect(h.act(b, { type: 'picture_open' })).toMatchObject({ ok: false, code: 'not_host' });
+    expectOk(h.act(h.host, { type: 'picture_open' }));
+    v = viewRound(h, null);
+    expect(v.judge).toEqual({ index: 0, shown: 1, released: 1, complete: false });
+    expect(v.fields.map((f) => f.answer)).toEqual(['Lampe', undefined, undefined]);
     expect(v.verdicts).toEqual({ [b]: { f1: true }, [c]: { f1: false } });
     expect(v.results).toEqual([
       { playerId: b, hits: 1, doneAt: start + 4000 },
       { playerId: c, hits: 0, doneAt: start + 2000 },
     ]);
-    expect(JSON.stringify(v)).not.toContain('Kater');
-    expect(viewRound(h, h.host).fields.map((f) => f.answer)).toEqual(['Lampe', 'Katze', 'Uhr']);
-    expect(viewRound(h, h.host).answers?.[b]).toEqual({ f1: 'Lampe' });
 
     expect(h.act(h.host, { type: 'to_scoring' })).toMatchObject({ ok: false, code: 'invalid_action' });
     expect(h.act(b, { type: 'picture_step', index: 1 })).toMatchObject({ ok: false, code: 'not_host' });
@@ -285,18 +374,34 @@ describe('Bilderrätsel: Alle gleichzeitig', () => {
     expect(h.act(h.host, { type: 'picture_verdict', playerId: h.host, fieldId: 'f2', correct: true })).toMatchObject({ ok: false, code: 'invalid_action' });
     expect(h.act(c, { type: 'picture_verdict', playerId: b, fieldId: 'f2', correct: false })).toMatchObject({ ok: false, code: 'not_host' });
     v = viewRound(h, c);
-    expect(v.verdicts?.[b]).toEqual({ f1: true, f2: true });
+    expect(v.verdicts?.[b]).toEqual({ f1: true });
     expect(v.answers?.[b]).toEqual({ f1: 'Lampe', f2: 'Kater' });
+    expect(v.fields[1]!.answer).toBeUndefined();
+    expect(v.results?.map((x) => [x.playerId, x.hits])).toEqual([
+      [b, 1],
+      [c, 0],
+    ]);
+    expectOk(h.act(h.host, { type: 'picture_open' }));
+    v = viewRound(h, c);
+    expect(v.verdicts?.[b]).toEqual({ f1: true, f2: true });
+    expect(v.fields[1]!.answer).toBe('Katze');
     expect(v.results?.map((x) => [x.playerId, x.hits])).toEqual([
       [b, 2],
       [c, 1],
     ]);
 
+    // Zurück zu einem freigegebenen Feld: Urteile bleiben änderbar und sofort sichtbar.
     expectOk(h.act(h.host, { type: 'picture_step', index: 0 }));
-    expect(viewRound(h, null).judge).toEqual({ index: 0, shown: 2, complete: false });
+    expect(viewRound(h, null).judge).toEqual({ index: 0, shown: 2, released: 2, complete: false });
     expect(viewRound(h, null).answers?.[c]).toEqual({ f2: 'Katze' });
+    expectOk(h.act(h.host, { type: 'picture_verdict', playerId: c, fieldId: 'f1', correct: true }));
+    expect(viewRound(h, null).verdicts?.[c]).toEqual({ f1: true, f2: true });
+    expectOk(h.act(h.host, { type: 'picture_verdict', playerId: c, fieldId: 'f1', correct: false }));
     expectOk(h.act(h.host, { type: 'picture_step', index: 2 }));
-    expect(viewRound(h, null).judge).toEqual({ index: 2, shown: 3, complete: true });
+    expect(viewRound(h, null).judge).toEqual({ index: 2, shown: 3, released: 2, complete: false });
+    expect(h.act(h.host, { type: 'to_scoring' })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expectOk(h.act(h.host, { type: 'picture_open' }));
+    expect(viewRound(h, null).judge).toEqual({ index: 2, shown: 3, released: 3, complete: true });
     // Gleichstand bei den Treffern: die frühere Fertig-Zeit steht vorn.
     expectOk(h.act(h.host, { type: 'picture_verdict', playerId: b, fieldId: 'f2', correct: false }));
     expect(viewRound(h, null).results?.map((x) => [x.playerId, x.hits])).toEqual([
@@ -320,6 +425,7 @@ describe('Bilderrätsel: Alle gleichzeitig', () => {
     h.scheduler.advance(30_000);
     expect(h.room.phase).toBe('reveal');
     expect(pr(h).doneAt[b]).toBeUndefined();
+    expectOk(h.act(h.host, { type: 'picture_open' }));
     expect(viewRound(h, null).results).toEqual([
       { playerId: c, hits: 1, doneAt: expect.any(Number) },
       { playerId: b, hits: 1, doneAt: null },
@@ -357,6 +463,7 @@ describe('Bilderrätsel: Alle gleichzeitig', () => {
     expect(g.act(gb, { type: 'picture_fill', fieldId: 'f1', text: 'x' })).toMatchObject({ ok: false, code: 'invalid_action' });
     expectOk(g.act(gc, { type: 'picture_done' }));
     expect(g.room.phase).toBe('reveal');
+    expectOk(g.act(gb, { type: 'picture_open' }));
     expectOk(g.act(gb, { type: 'picture_step', index: 1 }));
   });
 });

@@ -1,12 +1,12 @@
 import { isValidGuess, normalizeGuess, type ClientMsg, type PictureMode } from '@quiz/shared';
 import type { Category } from '@quiz/content';
 import type { Room } from '../../rooms/room.ts';
-import type { PictureRound } from '../../rooms/state.ts';
+import type { PictureGuess, PictureRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
 import type { StartRoundOptions } from '../registry.ts';
 import { baseRound, buildTurnOrder, removePlayerFromRound, scheduleRoundTimer, scheduleTurnTimer, settleTurn, toReveal } from '../common.ts';
 
-/** Anzeige des Ergebnisses, bis der Zug wechselt. */
+/** Anzeige des freigegebenen Ergebnisses, bis der Zug wechselt. */
 export const RESULT_MS = 1500;
 
 export function pictureRound(room: Room): PictureRound | null {
@@ -29,6 +29,7 @@ export function startPictureRound(room: Room, category: Category | null, opts: S
     category,
     mode,
     solved: {},
+    uncovered: [],
     lives: all ? {} : Object.fromEntries(turnOrder.map((id) => [id, lives])),
     maxLives: lives,
     hits: all ? {} : Object.fromEntries(turnOrder.map((id) => [id, 0])),
@@ -40,6 +41,7 @@ export function startPictureRound(room: Room, category: Category | null, opts: S
     verdicts: {},
     judgeIndex: 0,
     judgeShown: 0,
+    judgeReleased: 0,
   };
   room.phase = 'playing';
   if (all) {
@@ -58,6 +60,8 @@ export function handlePictureMessage(room: Room, playerId: string, msg: ClientMs
       return guess(room, playerId, msg.turnNo, msg.fieldId, msg.text);
     case 'picture_judge':
       return judge(room, playerId, msg.turnNo, msg.correct);
+    case 'picture_release':
+      return release(room, playerId, msg.turnNo, msg.uncover);
     case 'picture_fill':
       return fill(room, playerId, msg.fieldId, msg.text);
     case 'picture_done':
@@ -66,6 +70,8 @@ export function handlePictureMessage(room: Room, playerId: string, msg: ClientMs
       return step(room, playerId, msg.index);
     case 'picture_verdict':
       return verdict(room, playerId, msg.playerId, msg.fieldId, msg.correct);
+    case 'picture_open':
+      return openField(room, playerId);
     case 'end_round':
       // Reihum beendet `games/common.ts`; hier landet nur „Alle gleichzeitig“.
       return endRound(room, playerId);
@@ -84,31 +90,51 @@ function guess(room: Room, playerId: string, turnNo: number, fieldId: string, te
   if (round.turnNo !== turnNo) return fail('invalid_action', 'Zug ist schon vorbei');
   if (round.guess) return fail('invalid_action', 'Ein Tipp wird gerade geprüft');
   if (!round.category.fields.some((f) => f.id === fieldId)) return fail('invalid_action', 'Dieses Feld gibt es nicht');
-  if (round.solved[fieldId] !== undefined) return fail('invalid_action', 'Dieses Feld ist schon gelöst');
+  if (round.solved[fieldId] !== undefined || round.uncovered.includes(fieldId)) return fail('invalid_action', 'Dieses Feld ist schon gelöst');
   const trimmed = text.trim();
   if (!isValidGuess(trimmed)) return fail('bad_message', 'Tipp muss 1 bis 60 Zeichen haben');
 
   round.turnDeadline = null;
   room.cancelTimer('turn');
-  round.guess = { by: playerId, fieldId, text: trimmed, status: 'judging', resolveAt: null, applyAt: null };
+  round.guess = { by: playerId, fieldId, text: trimmed, status: 'judging', draft: null, resolveAt: null, applyAt: null };
   return OK;
 }
 
-function judge(room: Room, playerId: string, turnNo: number, correct: boolean): Result {
-  if (!room.isHost(playerId)) return fail('not_host', 'Nur der Host prüft Tipps');
+/** Offener Tipp, den der Host gerade prüft (Reihum). */
+function judgingGuess(room: Room, playerId: string, turnNo: number): { round: PictureRound; g: PictureGuess } | { error: Result } {
+  if (!room.isHost(playerId)) return { error: fail('not_host', 'Nur der Host prüft Tipps') };
   const round = pictureRound(room);
-  if (room.phase !== 'playing' || !round) return fail('invalid_action', 'Gerade wird nicht gespielt');
-  if (round.mode === 'all') return fail('invalid_action', 'In dieser Runde prüfst du erst am Ende');
+  if (room.phase !== 'playing' || !round) return { error: fail('invalid_action', 'Gerade wird nicht gespielt') };
+  if (round.mode === 'all') return { error: fail('invalid_action', 'In dieser Runde prüfst du erst am Ende') };
   const g = round.guess;
-  if (!g || g.status !== 'judging') return fail('invalid_action', 'Kein Tipp zu prüfen');
-  if (round.turnNo !== turnNo) return fail('invalid_action', 'Zug ist schon vorbei');
-  if (correct) {
+  if (!g || g.status !== 'judging') return { error: fail('invalid_action', 'Kein Tipp zu prüfen') };
+  if (round.turnNo !== turnNo) return { error: fail('invalid_action', 'Zug ist schon vorbei') };
+  return { round, g };
+}
+
+/** Urteil des Hosts, bis zur Freigabe nur für ihn sichtbar und beliebig umschaltbar. */
+function judge(room: Room, playerId: string, turnNo: number, correct: boolean): Result {
+  const res = judgingGuess(room, playerId, turnNo);
+  if ('error' in res) return res.error;
+  res.g.draft = correct;
+  return OK;
+}
+
+/** Freigabe: Erst jetzt sehen alle das Ergebnis. Bei falsch kann der Host das Feld aufdecken, dann ist es ohne Löser erledigt. */
+function release(room: Room, playerId: string, turnNo: number, uncover: boolean): Result {
+  const res = judgingGuess(room, playerId, turnNo);
+  if ('error' in res) return res.error;
+  const { round, g } = res;
+  if (g.draft === null) return fail('invalid_action', 'Erst richtig oder falsch wählen');
+  if (uncover && g.draft) return fail('invalid_action', 'Aufdecken geht nur bei einem falschen Tipp');
+  if (g.draft) {
     round.solved[g.fieldId] = g.by;
     round.hits[g.by] = (round.hits[g.by] ?? 0) + 1;
     g.status = 'correct';
   } else {
     round.wrongGuesses.push({ by: g.by, fieldId: g.fieldId, text: g.text });
     loseLife(round, g.by);
+    if (uncover) round.uncovered.push(g.fieldId);
     g.status = 'wrong';
   }
   g.resolveAt = room.now;
@@ -189,12 +215,16 @@ function judgingRound(room: Room, playerId: string): { round: PictureRound } | {
   return { round };
 }
 
-/** Der Host ruft ein Feld auf. Vorwärts geht nur Schritt für Schritt, zurück zu jedem schon aufgerufenen. */
+/**
+ * Der Host ruft ein Feld auf. Vorwärts geht nur Schritt für Schritt und erst, wenn das zuletzt aufgerufene Feld freigegeben ist,
+ * zurück zu jedem schon aufgerufenen.
+ */
 function step(room: Room, playerId: string, index: number): Result {
   const res = judgingRound(room, playerId);
   if ('error' in res) return res.error;
   const { round } = res;
   if (index >= round.category.fields.length || index > round.judgeShown) return fail('invalid_action', 'Dieses Feld ist noch nicht dran');
+  if (index === round.judgeShown && round.judgeReleased < round.judgeShown) return fail('invalid_action', 'Gib erst das aktuelle Feld frei');
   round.judgeIndex = index;
   round.judgeShown = Math.max(round.judgeShown, index + 1);
   return OK;
@@ -209,6 +239,14 @@ function verdict(room: Room, playerId: string, targetId: string, fieldId: string
   if (idx === -1) return fail('invalid_action', 'Dieses Feld gibt es nicht');
   if (idx >= round.judgeShown) return fail('invalid_action', 'Dieses Feld ist noch nicht aufgerufen');
   (round.verdicts[targetId] ??= {})[fieldId] = correct;
+  return OK;
+}
+
+/** Gibt das zuletzt aufgerufene Feld frei: Lösung, Ausschnitt und Urteile werden für alle sichtbar. */
+function openField(room: Room, playerId: string): Result {
+  const res = judgingRound(room, playerId);
+  if ('error' in res) return res.error;
+  res.round.judgeReleased = res.round.judgeShown;
   return OK;
 }
 
@@ -234,13 +272,13 @@ export function isRoundComplete(room: Room): boolean {
   const round = pictureRound(room);
   if (!round) return false;
   if (round.mode === 'all') return allDone(round);
-  return round.category.fields.every((f) => round.solved[f.id] !== undefined);
+  return round.category.fields.every((f) => round.solved[f.id] !== undefined || round.uncovered.includes(f.id));
 }
 
-/** Punkte erst, wenn der Host in „Alle gleichzeitig“ jedes Feld aufgerufen hat. */
+/** Punkte erst, wenn der Host in „Alle gleichzeitig“ jedes Feld freigegeben hat. */
 export function isRevealComplete(room: Room): boolean {
   const round = pictureRound(room);
-  return !round || round.mode !== 'all' || round.judgeShown >= round.category.fields.length;
+  return !round || round.mode !== 'all' || round.judgeReleased >= round.category.fields.length;
 }
 
 export function penalizeActive(room: Room): void {
@@ -262,6 +300,7 @@ export function onReveal(room: Room): void {
   }
   round.judgeIndex = 0;
   round.judgeShown = Math.min(1, round.category.fields.length);
+  round.judgeReleased = 0;
 }
 
 /** Ein Teilnehmer ist weg: Seine Antworten verfallen. Sind die übrigen schon fertig, geht es zur Auflösung. */

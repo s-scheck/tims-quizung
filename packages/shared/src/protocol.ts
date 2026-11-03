@@ -62,14 +62,17 @@ export type ClientMsg =
   | { type: 'confirm'; turnNo: number }
   | { type: 'guess'; turnNo: number; text: string }
   | { type: 'judge'; turnNo: number; correct: boolean; rank?: number }
-  /** Bilderrätsel: Feld wählen und Lösung tippen, der Host prüft. */
+  /** Bilderrätsel: Feld wählen und Lösung tippen, der Host urteilt (nur für ihn sichtbar) und gibt dann frei, bei falsch auf Wunsch mit Aufdecken. */
   | { type: 'picture_guess'; turnNo: number; fieldId: string; text: string }
   | { type: 'picture_judge'; turnNo: number; correct: boolean }
+  | { type: 'picture_release'; turnNo: number; uncover: boolean }
   /** Bilderrätsel „Alle gleichzeitig“: eigene Antwort je Feld (leer löscht), Fertigmeldung, Prüfung durch den Host. */
   | { type: 'picture_fill'; fieldId: string; text: string }
   | { type: 'picture_done' }
   | { type: 'picture_step'; index: number }
   | { type: 'picture_verdict'; playerId: string; fieldId: string; correct: boolean }
+  /** Gibt das zuletzt aufgerufene Feld frei: Lösung und Urteile werden für alle sichtbar. */
+  | { type: 'picture_open' }
   /** Wer ist das?: Tipp, Prüfung durch den Host, neuer Effektzustand vom Host. */
   | { type: 'face_guess'; text: string }
   | { type: 'face_judge'; playerId: string; index: number; correct: boolean }

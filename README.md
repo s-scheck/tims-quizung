@@ -74,12 +74,12 @@ Die Kartendaten stammen von [Natural Earth](https://www.naturalearthdata.com/) (
 
 - Alle sehen ein gemeinsames Bild mit nummerierten Stellen, die verdeckt sind oder fehlen. Das Bild lässt sich mit zwei Fingern oder dem Mausrad zoomen und verschieben.
 - Wer dran ist, tippt ein Feld im Bild oder seine Nummer an und schreibt, was dort fehlt. Alle sehen Nummer und Text sofort.
-- Der Host moderiert bei diesem Spiel immer, auch wenn er laut Lobby mitspielt: Er sieht die Antworten und entscheidet richtig oder falsch.
-- Richtig deckt die Stelle auf, die Antwort steht am Feld, der Nächste ist dran. Falsch kostet ein Leben, die Stelle bleibt verdeckt und der Nächste darf sie versuchen. Leben legt der Host vor der Runde fest.
-- Die Runde endet, wenn alle Felder gelöst sind, keine Leben mehr da sind (Host-Entscheidung) oder der Host die Kategorie beendet. Die Auflösung zeigt alle Antworten, Treffer je Spieler stehen in der Punkteeingabe.
+- Der Host moderiert bei diesem Spiel immer, auch wenn er laut Lobby mitspielt: Er sieht die Antworten und entscheidet richtig oder falsch. Sein Urteil sieht nur er, er kann es noch umschalten. Erst mit „Freigeben“ sehen alle das Ergebnis.
+- Richtig deckt die Stelle auf, die Antwort steht am Feld, der Nächste ist dran. Falsch kostet ein Leben, die Stelle bleibt verdeckt und der Nächste darf sie versuchen. Mit „Freigeben und aufdecken“ zeigt der Host die Stelle trotzdem: Sie ist dann erledigt, ohne dass jemand sie erraten hat. Leben legt der Host vor der Runde fest.
+- Die Runde endet, wenn alle Felder gelöst oder aufgedeckt sind, keine Leben mehr da sind (Host-Entscheidung) oder der Host die Kategorie beendet. Die Auflösung zeigt alle Antworten, Treffer je Spieler stehen in der Punkteeingabe.
 - Zwei Darstellungen aus demselben Format: Nur ein Bild → die App legt nummerierte Kästchen über die Felder. Bearbeitetes Bild plus Original → gestrichelte Rahmen mit Nummer, Aufdecken zeigt den Originalausschnitt.
 - Modus „Alle gleichzeitig“ (Wahl im Picker je Runde, sonst „Reihum“ wie oben): Niemand ist dran, jeder füllt jedes Feld per Text aus und tippt auf „Fertig“ (endgültig, bei leeren Feldern mit Rückfrage). Alle sehen nur, wie viele Felder jeder ausgefüllt hat und wer fertig ist; auch der Host sieht keine Texte. Keine Leben. Die Runde endet, wenn alle fertig sind, der Host auflöst oder der Rundentimer abläuft.
-- Prüfung danach als Show: Der Host ruft Feld für Feld auf, Lösung und Antworten aller erscheinen bei allen, passende Antworten sind per Textvergleich vorbelegt, der Host dreht Urteile um und geht vor und zurück. Punkte gibt es erst nach dem letzten Feld; die Eingabe ordnet nach Treffern, dann Fertig-Zeit, ohne Vorschlag.
+- Prüfung danach als Show: Der Host ruft Feld für Feld auf, die Antworten aller erscheinen bei allen. Passende Antworten sind per Textvergleich vorbelegt, der Host dreht Urteile um. Lösung, Ausschnitt und Urteile sehen alle erst, wenn er das Feld freigibt; erst dann geht es zum nächsten Feld. Zurück geht immer, Urteile bleiben änderbar. Punkte gibt es erst nach der Freigabe des letzten Felds; die Eingabe ordnet nach Treffern, dann Fertig-Zeit, ohne Vorschlag.
 
 ## Spielregeln „Wer ist das?"
 

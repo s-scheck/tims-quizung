@@ -33,7 +33,7 @@
             <span class="hidden text-xs text-slate-400 sm:inline">{playerName(view, f.solvedBy)}</span>
             <span class="text-emerald-400">✓</span>
           {:else}
-            <span class="text-xs">nicht erraten</span>
+            <span class="text-xs">{f.uncovered ? 'aufgedeckt, nicht erraten' : 'nicht erraten'}</span>
           {/if}
         </li>
       {/each}

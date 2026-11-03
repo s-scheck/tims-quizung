@@ -214,9 +214,12 @@ export function isClientMsg(x: unknown): x is ClientMsg {
       return isInt(x.turnNo) && isStr(x.fieldId, 20) && isStr(x.text, GUESS_MAX_LENGTH) && x.text.trim().length > 0;
     case 'picture_judge':
       return isInt(x.turnNo) && typeof x.correct === 'boolean';
+    case 'picture_release':
+      return isInt(x.turnNo) && typeof x.uncover === 'boolean';
     case 'picture_fill':
       return isStr(x.fieldId, 20) && typeof x.text === 'string' && x.text.length <= GUESS_MAX_LENGTH;
     case 'picture_done':
+    case 'picture_open':
       return true;
     case 'picture_step':
       return isInt(x.index) && x.index >= 0;

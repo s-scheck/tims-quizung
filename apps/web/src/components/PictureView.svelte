@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  /** Ein Feld im Bild, Lage in Prozent. Mit `answer` wird es als gelöst beschriftet. */
+  /** Ein Feld im Bild, Lage in Prozent. Gelöst oder aufgedeckt zeigt es, was dahinter steckt, mit `answer` beschriftet. */
   export interface PictureFieldState {
     id: string;
     number: number;
@@ -8,6 +8,8 @@
     w: number;
     h: number;
     solved: boolean;
+    /** Nach einem Fehltipp aufgedeckt: offen wie gelöst, aber neutral statt grün. */
+    uncovered?: boolean;
     answer?: string;
   }
 </script>
@@ -139,7 +141,7 @@
     pointers.delete(e.pointerId);
     if (wasTap && !cancelled && interactive && target && onPick) {
       const field = fields.find((f) => f.id === target);
-      if (field && !field.solved) onPick(target);
+      if (field && !field.solved && !field.uncovered) onPick(target);
     }
     const rest = [...pointers.values()][0];
     if (rest) gesture = { kind: 'pan', startX: rest.x, startY: rest.y, startTx: tx, startTy: ty, moved: true, target: null };
@@ -195,6 +197,7 @@
       {@const selected = f.id === selectedId}
       {@const pending = f.id === pendingId}
       {@const flash = f.id === flashId}
+      {@const open = f.solved || f.uncovered}
       <div
         data-field={f.id}
         class="absolute flex items-start justify-start overflow-visible transition-colors
@@ -202,24 +205,28 @@
           ? original
             ? 'rounded-sm ring-2 ring-emerald-400/90'
             : 'rounded-sm border-2 border-emerald-400/90 bg-transparent'
+          : f.uncovered
+            ? original
+              ? 'rounded-sm ring-2 ring-slate-300/90'
+              : 'rounded-sm border-2 border-slate-300/90 bg-transparent'
           : original
             ? 'rounded-sm border-2 border-dashed border-amber-300/90 bg-amber-300/10'
             : 'rounded-sm border-2 border-slate-600 bg-slate-800'}
           {selected ? 'ring-4 ring-indigo-400' : ''}
           {pending ? (peek ? 'animate-pulse ring-4 ring-amber-400' : 'animate-ring') : ''}
           {flash ? 'animate-flash' : ''}
-          {interactive && !f.solved ? 'cursor-pointer' : ''}"
-        style="left:{f.x}%; top:{f.y}%; width:{f.w}%; height:{f.h}%; {f.solved ? cropStyle(f) : ''}"
+          {interactive && !open ? 'cursor-pointer' : ''}"
+        style="left:{f.x}%; top:{f.y}%; width:{f.w}%; height:{f.h}%; {open ? cropStyle(f) : ''}"
       >
         <span
           class="pointer-events-none absolute -left-1 -top-1 rounded-md px-1.5 font-black leading-tight text-ink shadow
-            {f.solved ? 'bg-emerald-400' : selected ? 'bg-indigo-400' : pending ? 'bg-amber-400' : 'bg-white'}
+            {f.solved ? 'bg-emerald-400' : f.uncovered ? 'bg-slate-300' : selected ? 'bg-indigo-400' : pending ? 'bg-amber-400' : 'bg-white'}
             {large ? 'text-base' : 'text-xs'}"
         >
           {f.number}
         </span>
-        {#if f.solved && f.answer}
-          <span class="pointer-events-none absolute left-0 top-full mt-0.5 max-w-[14rem] whitespace-nowrap rounded-md bg-emerald-400 px-1.5 font-bold leading-tight text-ink shadow {large ? 'text-sm' : 'text-[10px]'}">
+        {#if open && f.answer}
+          <span class="pointer-events-none absolute left-0 top-full mt-0.5 max-w-[14rem] whitespace-nowrap rounded-md {f.solved ? 'bg-emerald-400' : 'bg-slate-300'} px-1.5 font-bold leading-tight text-ink shadow {large ? 'text-sm' : 'text-[10px]'}">
             {f.answer}
           </span>
         {/if}

@@ -19,17 +19,20 @@
   const canSkip = $derived(
     !readonly && client.isHost && !client.isActive && view.phase === 'playing' && !guess && view.settings.timerSeconds === 0,
   );
-  const open = $derived(round.fields.filter((f) => !f.solved));
-  const solvedCount = $derived(round.fields.length - open.length);
+  const solvedCount = $derived(round.fields.filter((f) => f.solved).length);
+  const uncoveredCount = $derived(round.fields.filter((f) => f.uncovered).length);
+  /** Urteil des Hosts vor der Freigabe, nur in seiner Sicht gesetzt. */
+  const draft = $derived(guess?.draft ?? null);
   const fieldById = (id: string | null | undefined) => round.fields.find((f) => f.id === id);
   const numberOf = (id: string | null | undefined) => fieldById(id)?.number ?? '?';
 
   let selectedId = $state<string | null>(null);
   let text = $state('');
 
-  // Nach dem eigenen Zug die Auswahl vergessen, gelöste Felder sind nicht mehr wählbar.
+  // Nach dem eigenen Zug die Auswahl vergessen, gelöste und aufgedeckte Felder sind nicht mehr wählbar.
   $effect(() => {
-    if (!canGuess || (selectedId && fieldById(selectedId)?.solved)) selectedId = null;
+    const f = fieldById(selectedId);
+    if (!canGuess || f?.solved || f?.uncovered) selectedId = null;
   });
 
   function pick(id: string) {
@@ -49,12 +52,19 @@
     client.send({ type: 'picture_judge', turnNo: round.turnNo, correct });
   }
 
+  function release(uncover: boolean) {
+    if (!canJudge || draft === null) return;
+    client.send({ type: 'picture_release', turnNo: round.turnNo, uncover });
+  }
+
   const statusText = $derived.by(() => {
     if (view.phase === 'host_decision') return null;
     if (guess) {
       const who = guess.by === client.myId && !readonly ? 'Du' : playerName(view, guess.by);
       if (guess.status === 'judging') return `${who} tippt bei Nr. ${numberOf(guess.fieldId)}: „${guess.text}“`;
       if (guess.status === 'correct') return `Richtig! Nr. ${numberOf(guess.fieldId)} ist „${guess.text}“`;
+      const f = fieldById(guess.fieldId);
+      if (f?.uncovered && f.answer) return `Falsch: „${guess.text}“. Nr. ${f.number} ist „${f.answer}“`;
       return `Falsch: „${guess.text}“ bei Nr. ${numberOf(guess.fieldId)}`;
     }
     if (!readonly && client.isActive) return 'Du bist dran';
@@ -63,7 +73,10 @@
 
   const hint = $derived.by(() => {
     if (view.phase !== 'playing' || readonly) return '';
-    if (guess?.status === 'judging') return client.isHost ? 'Prüfe den Tipp.' : `${playerName(view, view.hostId)} prüft den Tipp…`;
+    if (guess?.status === 'judging') {
+      if (!client.isHost) return `${playerName(view, view.hostId)} prüft den Tipp…`;
+      return draft === null ? 'Wähle richtig oder falsch, dann gib das Ergebnis frei.' : 'Erst mit der Freigabe sehen alle das Ergebnis.';
+    }
     if (guess) return '';
     if (client.isActive) return selectedId ? 'Schreib unten, was dort fehlt.' : 'Tippe ein Feld im Bild oder eine Nummer an.';
     if (client.isEliminated) return 'Keine Leben mehr. Schau zu, wie es weitergeht.';
@@ -111,9 +124,38 @@
           Richtige Antwort: <span class="font-semibold text-slate-50">{fieldById(guess.fieldId)?.answer ?? '?'}</span>
         </p>
         <div class="flex flex-wrap gap-2">
-          <button class="btn-primary flex-1 bg-emerald-600 hover:bg-emerald-500" onclick={() => judge(true)}>Richtig</button>
-          <button class="btn-danger flex-1" onclick={() => judge(false)}>Falsch</button>
+          <button
+            type="button"
+            class="flex-1 rounded-xl border-2 px-3 py-2 font-semibold transition {draft === true
+              ? 'border-emerald-500 bg-emerald-500/20 text-emerald-200'
+              : 'border-slate-700 text-slate-300 hover:border-emerald-500/60'}"
+            aria-pressed={draft === true}
+            onclick={() => judge(true)}
+          >
+            Richtig
+          </button>
+          <button
+            type="button"
+            class="flex-1 rounded-xl border-2 px-3 py-2 font-semibold transition {draft === false
+              ? 'border-rose-500 bg-rose-500/20 text-rose-200'
+              : 'border-slate-700 text-slate-300 hover:border-rose-500/60'}"
+            aria-pressed={draft === false}
+            onclick={() => judge(false)}
+          >
+            Falsch
+          </button>
         </div>
+        {#if draft !== null}
+          <div class="flex flex-wrap gap-2" in:fly={{ y: 4, duration: 150 }}>
+            <button class="btn-primary flex-1" onclick={() => release(false)}>Freigeben</button>
+            {#if draft === false}
+              <button class="btn-secondary flex-1" onclick={() => release(true)}>Freigeben und aufdecken</button>
+            {/if}
+          </div>
+          {#if draft === false}
+            <p class="text-xs text-slate-400">„Aufdecken“ zeigt allen das Feld, danach kann es niemand mehr erraten.</p>
+          {/if}
+        {/if}
       </div>
     {/if}
 
@@ -123,7 +165,7 @@
       fields={round.fields}
       {selectedId}
       pendingId={guess?.status === 'judging' ? guess.fieldId : null}
-      flashId={guess?.status === 'correct' ? guess.fieldId : null}
+      flashId={guess && (guess.status === 'correct' || fieldById(guess.fieldId)?.uncovered) ? guess.fieldId : null}
       interactive={canGuess}
       large={readonly}
       peek={!!round.privileged}
@@ -133,7 +175,9 @@
     <div class="card">
       <div class="mb-2 flex items-baseline justify-between">
         <p class="text-xs font-semibold uppercase tracking-widest text-sky-300">Felder</p>
-        <span class="text-xs text-slate-500">{solvedCount} von {round.fields.length} gelöst</span>
+        <span class="text-xs text-slate-500">
+          {solvedCount} von {round.fields.length} gelöst{uncoveredCount > 0 ? ` · ${uncoveredCount} aufgedeckt` : ''}
+        </span>
       </div>
       <div class="flex flex-wrap gap-2">
         {#each round.fields as f (f.id)}
@@ -141,6 +185,12 @@
             <span class="inline-flex items-center gap-1 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-sm {readonly ? 'text-lg' : ''}">
               <span class="font-mono font-bold">{f.number}</span>
               <span class="break-words">{f.answer}</span>
+            </span>
+          {:else if f.uncovered}
+            <span class="inline-flex items-center gap-1 rounded-xl border border-slate-600 bg-slate-800/60 px-2.5 py-1 text-sm text-slate-300 {readonly ? 'text-lg' : ''}">
+              <span class="font-mono font-bold">{f.number}</span>
+              <span class="break-words">{f.answer}</span>
+              <span class="text-xs text-slate-500">aufgedeckt</span>
             </span>
           {:else}
             <button

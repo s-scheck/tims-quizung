@@ -483,15 +483,17 @@ export interface PictureProgressView {
 export interface PictureJudgeView {
   /** Feld, das der Host gerade prüft (Index in `fields`). */
   index: number;
-  /** So viele Felder von vorn sind aufgerufen und für alle sichtbar. */
+  /** So viele Felder von vorn sind aufgerufen, die Texte der Spieler dazu sind für alle sichtbar. */
   shown: number;
-  /** Alle Felder aufgerufen, Punkte dürfen eingetragen werden. */
+  /** So viele Felder von vorn hat der Host freigegeben: Lösung und Urteile sind für alle sichtbar. */
+  released: number;
+  /** Alle Felder freigegeben, Punkte dürfen eingetragen werden. */
   complete: boolean;
 }
 
 export interface PictureResultView {
   playerId: string;
-  /** Richtige Antworten unter den aufgerufenen Feldern. */
+  /** Richtige Antworten unter den freigegebenen Feldern. */
   hits: number;
   doneAt: number | null;
 }
@@ -515,7 +517,9 @@ export interface PictureFieldView {
   h: number;
   solved: boolean;
   solvedBy?: string;
-  /** Nur gelöst, in der Sicht des Moderators oder ab der Auflösung. */
+  /** Nach einem Fehltipp vom Host aufgedeckt: erledigt, aber von niemandem erraten. */
+  uncovered?: boolean;
+  /** Nur gelöst, aufgedeckt, in der Sicht des Moderators oder ab der Auflösung. */
   answer?: string;
 }
 
@@ -523,7 +527,10 @@ export interface PictureGuessView {
   by: string;
   fieldId: string;
   text: string;
+  /** Bis zur Freigabe `judging`, auch wenn der Host schon geurteilt hat. */
   status: GuessStatus;
+  /** Nur in der Sicht des Hosts: sein Urteil vor der Freigabe, null solange keins gesetzt ist. */
+  draft?: boolean | null;
   resolveAt: number | null;
   applyAt: number | null;
 }
@@ -549,7 +556,7 @@ export interface PictureRoundView extends BaseRoundView {
   progress?: Record<string, PictureProgressView>;
   /** Eigene Antworten des Betrachters je Feld. */
   myAnswers?: Record<string, string>;
-  /** Antworten und Urteile aller Teilnehmer, nur aufgerufene Felder, ab der Auflösung. */
+  /** Ab der Auflösung: Antworten aller Teilnehmer zu aufgerufenen Feldern, Urteile nur zu freigegebenen (der Host sieht alle). */
   answers?: Record<string, Record<string, string>>;
   verdicts?: Record<string, Record<string, boolean>>;
   judge?: PictureJudgeView;

@@ -247,6 +247,8 @@ export interface PictureGuess {
   fieldId: string;
   text: string;
   status: 'judging' | 'correct' | 'wrong';
+  /** Urteil des Hosts vor der Freigabe, nur er sieht es. */
+  draft: boolean | null;
   resolveAt: number | null;
   applyAt: number | null;
 }
@@ -256,6 +258,8 @@ export interface PictureRound extends BaseRound {
   category: PictureCategory;
   /** Feld-ID → Spieler, der es gelöst hat. */
   solved: Record<string, string>;
+  /** Felder, die der Host nach einem Fehltipp aufgedeckt hat: erledigt, ohne Löser. */
+  uncovered: string[];
   lives: Record<string, number>;
   maxLives: number;
   hits: Record<string, number>;
@@ -270,9 +274,10 @@ export interface PictureRound extends BaseRound {
   doneAt: Record<string, number>;
   /** Spieler → Feld → Urteil, ab der Auflösung. */
   verdicts: Record<string, Record<string, boolean>>;
-  /** Gerade geprüftes Feld und Zahl der aufgerufenen Felder, ab der Auflösung. */
+  /** Gerade geprüftes Feld, Zahl der aufgerufenen und der freigegebenen Felder, ab der Auflösung. */
   judgeIndex: number;
   judgeShown: number;
+  judgeReleased: number;
 }
 
 // ------------------------------------------------------------ Wer ist das?
