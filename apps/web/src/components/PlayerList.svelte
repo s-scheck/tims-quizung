@@ -12,7 +12,7 @@
   const round = $derived(view.round);
 </script>
 
-<ul class="space-y-2">
+<ul class="space-y-2 {large ? 'fit-cols' : ''}">
   {#each view.players as p (p.id)}
     {@const eliminated = round?.eliminated.includes(p.id) ?? false}
     {@const active = round?.activePlayerId === p.id && (view.phase === 'playing' || view.phase === 'host_decision')}

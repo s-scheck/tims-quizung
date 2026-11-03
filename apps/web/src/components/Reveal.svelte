@@ -22,7 +22,7 @@
       <h2 class="text-xl font-bold sm:text-2xl {readonly ? 'text-3xl' : ''}">{round.category.question}</h2>
       {#if round.category.source}<p class="mt-1 text-xs text-slate-500">Quelle: {round.category.source}</p>{/if}
     </header>
-    <ol class="card space-y-1">
+    <ol class="card space-y-1 {readonly ? 'fit-cols' : ''}">
       <p class="mb-1 text-center text-xs font-semibold uppercase tracking-widest text-emerald-300">▲ {round.category.topLabel}</p>
       {#each rows as row, i (row.card.id)}
         <li

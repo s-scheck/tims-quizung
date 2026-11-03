@@ -34,6 +34,7 @@
     fitAll = false,
     focus = null,
     class: className = '',
+    style = undefined,
   }: {
     borders?: boolean;
     bounds?: LatLngBounds;
@@ -47,6 +48,8 @@
     /** Show-Auflösung: zum aufgedeckten Pin fliegen und danach wieder alles zeigen. */
     focus?: MapFocus | null;
     class?: string;
+    /** Fernsehansicht: Höhe mit dem Einpass-Faktor (lib/fit.ts) */
+    style?: string;
   } = $props();
 
   let el: HTMLDivElement;
@@ -190,7 +193,7 @@
   });
 </script>
 
-<div class="relative {className}">
+<div class="relative {className}" {style}>
   <div bind:this={el} class="map-water absolute inset-0 rounded-2xl"></div>
   {#if !ready && !failed}
     <div class="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-slate-400">Karte wird geladen…</div>

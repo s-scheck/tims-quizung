@@ -85,7 +85,8 @@
   {#if hint && !canPlace}<p class="text-sm text-slate-400">{hint}</p>{/if}
 
   <WorldMap
-    class="overflow-hidden rounded-2xl border border-slate-800 {readonly ? 'h-[70dvh]' : 'min-h-[240px] flex-1'}"
+    class="overflow-hidden rounded-2xl border border-slate-800 {readonly ? 'fit-media' : 'min-h-[240px] flex-1'}"
+    style={readonly ? 'height: calc(70dvh * var(--fit-media, 1))' : undefined}
     borders={round.borders}
     bounds={round.category.bounds}
     interactive={canPlace}

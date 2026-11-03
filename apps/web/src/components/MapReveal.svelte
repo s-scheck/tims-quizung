@@ -64,7 +64,8 @@
       {/if}
     </header>
     <WorldMap
-      class="h-[52dvh] min-h-[320px] overflow-hidden rounded-2xl border border-slate-800 {readonly ? 'h-[65dvh]' : ''}"
+      class="overflow-hidden rounded-2xl border border-slate-800 {readonly ? 'fit-media' : 'h-[52dvh] min-h-[320px]'}"
+      style={readonly ? 'height: calc(65dvh * var(--fit-media, 1))' : undefined}
       borders={round.borders}
       {target}
       {markers}

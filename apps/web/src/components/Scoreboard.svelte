@@ -16,7 +16,7 @@
     <span class="text-sm text-slate-400">{view.rounds.length} {view.rounds.length === 1 ? 'Runde' : 'Runden'} gespielt</span>
   </header>
 
-  <ol class="card divide-y divide-slate-800 p-0">
+  <ol class="card divide-y divide-slate-800 p-0 {readonly ? 'fit-cols' : ''}">
     {#each rows as row (row.player.id)}
       {@const delta = lastRound?.scores[row.player.id]}
       <li class="flex items-center gap-3 px-4 py-3 {readonly && !compact ? 'text-2xl' : ''} {row.player.id === client.myId ? 'bg-indigo-500/10' : ''}">

@@ -29,7 +29,7 @@
     {#if round.history.length === 0}
       <p class="card text-sm text-slate-500">Die Runde wurde beendet, bevor ein Promi gezeigt wurde.</p>
     {:else}
-      <div class="grid gap-3 sm:grid-cols-2 {readonly ? 'lg:grid-cols-3' : ''}">
+      <div class="grid gap-3 sm:grid-cols-2 {readonly ? 'fit-grid lg:grid-cols-3' : ''}" style={readonly ? '--fit-base: 3; --fit-gap: 0.75rem' : undefined}>
         {#each round.history as item, i (item.id)}
           <div class="card space-y-2 p-3">
             <img src={item.image} alt="" draggable="false" class="aspect-[4/3] w-full rounded-xl object-cover" />

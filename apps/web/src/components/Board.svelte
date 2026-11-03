@@ -176,7 +176,8 @@
     const key = `${p.cardId}:${round.turnNo}`;
     if (key === scrolledFor) return;
     scrolledFor = key;
-    if (!readonly && client.isActive) return;
+    // Der Fernseher scrollt nicht, dort passt alles auf den Bildschirm (lib/fit.ts).
+    if (readonly || client.isActive) return;
     const el = list.querySelector<HTMLElement>(`[data-card-id="${CSS.escape(p.cardId)}"]`);
     if (el) scrollIntoViewIfHidden(el);
   });
@@ -256,7 +257,7 @@
 
     <div class="card">
       <p class="mb-2 text-center text-xs font-semibold uppercase tracking-widest text-emerald-300">▲ {category.topLabel}</p>
-      <ol class="space-y-1" bind:this={chainEl}>
+      <ol class="space-y-1 {readonly ? 'fit-cols' : ''}" bind:this={chainEl}>
         {#each rows as row (row.cardId)}
           {@const card = cardsById.get(row.cardId)}
           {@const status = row.preview ? null : statusFor(row.cardId)}
@@ -303,7 +304,7 @@
         <h3 class="font-bold">Offene Karten</h3>
         <span class="text-xs text-slate-500">{round.pool.length} übrig</span>
       </div>
-      <div class="grid gap-2 {readonly ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-2'}">
+      <div class="grid gap-2 {readonly ? 'fit-grid grid-cols-2' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-2'}">
         {#each poolIds as cardId (cardId)}
           {@const card = cardsById.get(cardId)}
           <div

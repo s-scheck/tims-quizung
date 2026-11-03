@@ -137,7 +137,8 @@
     const key = `${a.cardId}:${a.targetId}:${round.turnNo}`;
     if (key === scrolledFor) return;
     scrolledFor = key;
-    if (!readonly && client.isActive) return;
+    // Der Fernseher scrollt nicht, dort passt alles auf den Bildschirm (lib/fit.ts).
+    if (readonly || client.isActive) return;
     const el = list.querySelector<HTMLElement>(`[data-target-id="${CSS.escape(a.targetId)}"]`);
     if (el) scrollIntoViewIfHidden(el);
   });
@@ -201,7 +202,7 @@
         <p class="text-xs font-semibold uppercase tracking-widest text-sky-300">{round.category.rightLabel}</p>
         <span class="text-xs text-slate-500">{matchedCount} von {round.cards.length} zugeordnet</span>
       </div>
-      <ol class="space-y-1.5" bind:this={targetsEl}>
+      <ol class="space-y-1.5 {readonly ? 'fit-cols' : ''}" bind:this={targetsEl}>
         {#each round.targets as target (target.id)}
           {@const inSlot = cardIn(target)}
           {@const free = isFree(target)}
@@ -280,7 +281,7 @@
         <h3 class="font-bold">{round.category.leftLabel}</h3>
         <span class="text-xs text-slate-500">{round.pool.length} übrig</span>
       </div>
-      <div class="grid gap-2 {readonly ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-2'}">
+      <div class="grid gap-2 {readonly ? 'fit-grid grid-cols-2' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-2'}">
         {#each poolIds as cardId (cardId)}
           <div
             class="transition-opacity {drag?.cardId === cardId ? 'opacity-30' : ''}"
