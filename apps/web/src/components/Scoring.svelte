@@ -58,6 +58,11 @@
       return r.mode === 'buzz' ? `${base} · ${misses} Fehlbuzzer` : base;
     }
     if (r.game === 'stills') {
+      if (r.allGuess) {
+        const res = r.results.find((x) => x.playerId === id);
+        if (!res) return 'nicht geraten';
+        return res.correct ? `bei Foto ${res.index + 1} erkannt, ${r.stagePoints[res.index] ?? 0} Punkte` : `falsch bei Foto ${res.index + 1}`;
+      }
       if (!r.solved?.winners.includes(id)) return 'nicht erkannt';
       return `bei Foto ${r.solved.index + 1} erkannt, ${r.stagePoints[r.solved.index] ?? 0} Punkte`;
     }

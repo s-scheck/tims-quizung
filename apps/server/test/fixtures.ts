@@ -331,7 +331,7 @@ export function startKids(h: Harness, opts: { mode?: 'type' | 'buzz'; count?: nu
 }
 
 /** Startet Spiel und Filmfotos-Runde. */
-export function startStills(h: Harness, opts: { mode?: 'type' | 'buzz'; thinkSeconds?: number } = {}): void {
+export function startStills(h: Harness, opts: { mode?: 'type' | 'buzz'; thinkSeconds?: number; allGuess?: boolean } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'stills', categoryId: 'film-pate', ...opts }));
 }

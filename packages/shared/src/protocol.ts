@@ -57,6 +57,8 @@ export type ClientMsg =
       penalty?: KidsPenalty;
       /** Bedenkzeit nach dem Buzzern in Sekunden: Kinderpromis feste Stufen, Filmfotos frei. */
       thinkSeconds?: number;
+      /** Filmfotos: Alle raten bis zum Schluss, jeder hat einen Versuch pro Film. */
+      allGuess?: boolean;
     }
   | ({ type: 'select'; turnNo: number; targetId?: string } & Selection)
   | { type: 'confirm'; turnNo: number }
@@ -92,6 +94,8 @@ export type ClientMsg =
   | { type: 'still_buzz' }
   | { type: 'still_verdict'; correct: boolean }
   | { type: 'still_next' }
+  /** Filmfotos „Alle raten bis zum Schluss“: beim aktuellen Foto passen oder das Passen zurücknehmen. */
+  | { type: 'still_pass'; pass: boolean }
   | { type: 'place_pin'; lat: number; lng: number }
   | { type: 'place_year'; year: number }
   | { type: 'confirm_pin' }

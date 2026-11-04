@@ -24,6 +24,8 @@ export interface StartRoundOptions {
   penalty?: KidsPenalty;
   /** Bedenkzeit in Sekunden, beim Kinderpromis nur die festen Stufen. */
   thinkSeconds?: number;
+  /** Filmfotos: Alle raten bis zum Schluss. */
+  allGuess?: boolean;
 }
 
 /**

@@ -173,7 +173,8 @@ export function isClientMsg(x: unknown): x is ClientMsg {
         (x.mode === undefined || isPictureMode(x.mode) || isGuessMode(x.mode)) &&
         (x.count === undefined || isKidsCount(x.count)) &&
         (x.thinkSeconds === undefined || isThinkSeconds(x.thinkSeconds)) &&
-        (x.penalty === undefined || isKidsPenalty(x.penalty))
+        (x.penalty === undefined || isKidsPenalty(x.penalty)) &&
+        (x.allGuess === undefined || typeof x.allGuess === 'boolean')
       );
     case 'kids_show':
     case 'kids_buzz':
@@ -192,6 +193,8 @@ export function isClientMsg(x: unknown): x is ClientMsg {
       return isStr(x.playerId, 100) && typeof x.correct === 'boolean';
     case 'still_verdict':
       return typeof x.correct === 'boolean';
+    case 'still_pass':
+      return typeof x.pass === 'boolean';
     case 'still_close':
     case 'still_buzz':
     case 'still_next':

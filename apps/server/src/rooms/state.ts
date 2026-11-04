@@ -1,4 +1,4 @@
-import type { BluffStage, FaceEffectState, GuessMode, GuessStatus, JudgeStatus, KidsPenalty, KidsStage, KidsThinkSeconds, MatchSelection, PictureMode, PlacementStatus, RiskRules, Selection, StillsStage } from '@quiz/shared';
+import type { BluffStage, FaceEffectState, GuessMode, GuessStatus, JudgeStatus, KidsPenalty, KidsStage, KidsThinkSeconds, MatchSelection, PictureMode, PlacementStatus, RiskRules, Selection, StillsResultView, StillsStage } from '@quiz/shared';
 import type { Category, EventsCategory, Face, FacesCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, RankedCategory, StillsCategory, TimelineEvent } from '@quiz/content';
 
 export interface Player {
@@ -345,18 +345,22 @@ export interface StillsRound extends BaseRound {
   mode: GuessMode;
   /** Bedenkzeit beim Buzzern, nur als Anzeige über `turnDeadline`. */
   thinkSeconds: number;
+  /** Alle raten bis zum Schluss: ein Versuch pro Film, ein Treffer beendet das Raten nur für den Treffer. */
+  allGuess: boolean;
   /** Index des aktuellen Fotos, freigegeben sind `index + 1`. */
   index: number;
   /** Tippen: Eingabe offen oder Host prüft das aktuelle Foto. */
   stage: StillsStage;
-  /** Tippen: höchstens ein Tipp je Spieler und Foto. */
+  /** Tippen: höchstens ein Tipp je Spieler und Foto, mit `allGuess` höchstens einer je Film. */
   attempts: Record<string, StillAttempt[]>;
+  /** Tippen mit `allGuess`: wer beim aktuellen Foto gepasst hat. */
+  passed: string[];
   /** Buzzern: wer gerade antwortet. */
   holder: string | null;
-  /** Buzzern: wer beim aktuellen Foto schon verbraucht ist. */
+  /** Buzzern: wer beim aktuellen Foto schon verbraucht ist, mit `allGuess` für den ganzen Film. */
   used: string[];
-  /** Buzzern: der Erste mit richtiger Antwort. */
-  buzzWinner: { playerId: string; index: number } | null;
+  /** Buzzern: alle Urteile in Reihenfolge, mit Foto. Ohne `allGuess` beendet das erste richtige das Raten. */
+  buzzVerdicts: StillsResultView[];
 }
 
 export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound | FacesRound | KidsRound | StillsRound;

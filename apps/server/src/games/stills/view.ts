@@ -3,12 +3,14 @@ import type { Room } from '../../rooms/room.ts';
 import type { StillAttempt } from '../../rooms/state.ts';
 import { suggestionFor } from '../common.ts';
 import { imageUrl } from '../picture/view.ts';
-import { attemptsAt, STILLS_NAME, stillsOver, stillsPoints, stillsRound, stillsSolved } from './reducer.ts';
+import { attemptsAt, STILLS_NAME, stillsOver, stillsPoints, stillsResults, stillsRound, stillsSolved } from './reducer.ts';
 
 /**
  * Sicht auf die Runde. Lösung, alle Fotos und die Tipps des aktuellen Fotos ab „Tipps schließen“ sieht nur der Host (`privileged`).
  * Spieler sehen die freigegebenen Fotos und ihre eigenen Tipps mit Urteil; Lösung und Gewinner, sobald das Raten vorbei ist.
  * Den Kategorie-Titel („Film 7“) sehen Spieler erst in der Auflösung.
+ * Mit `allGuess` sehen alle, wer fertig ist und ob richtig, aber keine Texte: beim Tippen erst nach dem Weiterschalten,
+ * weil der Host Urteile bis dahin ändern kann; beim Buzzern sofort. Wer richtig lag, sieht die Lösung.
  */
 export function stillsRoundView(room: Room, revealed: boolean, viewerId: string | null): RoundView | null {
   const r = stillsRound(room);
@@ -25,6 +27,9 @@ export function stillsRoundView(room: Room, revealed: boolean, viewerId: string 
   });
 
   const allImages = revealed || privileged;
+  const results = stillsResults(r);
+  const seesAll = privileged || revealed || over || r.mode === 'buzz';
+  const iHit = viewerId !== null && results.some((x) => x.playerId === viewerId && x.correct);
   const view: RoundView = {
     game: 'stills',
     category: privileged || revealed ? category : { ...category, title: STILLS_NAME },
@@ -36,6 +41,8 @@ export function stillsRoundView(room: Room, revealed: boolean, viewerId: string 
     soloMode: false,
     mode: r.mode,
     thinkSeconds: r.thinkSeconds,
+    allGuess: r.allGuess,
+    results: results.filter((x) => seesAll || x.index < r.index || x.playerId === viewerId),
     stagePoints: stills.map((s) => s.points),
     images: stills.slice(0, allImages ? stills.length : r.index + 1).map((s) => imageUrl(s.image)),
     index: r.index,
@@ -46,8 +53,12 @@ export function stillsRoundView(room: Room, revealed: boolean, viewerId: string 
   };
   if (r.mode === 'buzz') view.buzzer = { holder: r.holder, deadline: r.turnDeadline, used: [...r.used] };
   // Wer schon getippt hat, sehen Host und Screen, Spieler nur sich selbst.
-  if (r.mode === 'type' && (privileged || viewerId === null)) view.typed = attemptsAt(r, r.index).map((a) => a.playerId);
-  if (privileged || over || revealed) view.answer = answer;
+  if (r.mode === 'type' && (privileged || viewerId === null)) {
+    view.typed = attemptsAt(r, r.index).map((a) => a.playerId);
+    if (r.allGuess) view.passed = [...r.passed];
+  }
+  if (r.mode === 'type' && r.allGuess && viewerId !== null && r.passed.includes(viewerId)) view.iPassed = true;
+  if (privileged || over || revealed || iHit) view.answer = answer;
   if (privileged) view.privileged = true;
   const mine = viewerId !== null ? r.attempts[viewerId] : undefined;
   if (mine) view.myAttempts = mine.map((a) => toView(a, false));

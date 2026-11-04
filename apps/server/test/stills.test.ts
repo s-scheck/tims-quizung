@@ -265,3 +265,154 @@ describe('Filmfotos: Auflösung und Wertung', () => {
     expect(h.room.scores[b]).toBe(3);
   });
 });
+
+describe('Filmfotos: Alle raten bis zum Schluss', () => {
+  test('Tippen: ein Tipp pro Film, ein Treffer beendet das Raten nur für den Treffer, Punkte je Foto', () => {
+    const h = makeHarness(['Host', 'B', 'C', 'D']);
+    startStills(h, { allGuess: true });
+    const [, b, c, d] = h.ids as [string, string, string, string];
+    expect(sr(h).allGuess).toBe(true);
+
+    expectOk(h.act(b, { type: 'still_guess', text: 'Der Pate' }));
+    expectOk(h.act(c, { type: 'still_guess', text: 'Scarface' }));
+    closeAndJudge(h, { [b]: true, [c]: false });
+    expect(viewRound(h, d)).toMatchObject({ over: false, solved: null });
+    expectOk(h.act(h.host, { type: 'still_next' }));
+
+    // B hat getroffen, C lag falsch: Beide sind für den Film fertig.
+    expect(h.act(b, { type: 'still_guess', text: 'Noch mal' })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expect(h.act(c, { type: 'still_guess', text: 'Der Pate' })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expectOk(h.act(d, { type: 'still_guess', text: 'Pate' }));
+    closeAndJudge(h, { [d]: true });
+
+    const seen = viewRound(h, h.host);
+    expect(seen.over).toBe(true);
+    expect(seen.points).toEqual({ [b]: 5, [c]: 0, [d]: 4 });
+    expect(seen.results).toEqual([
+      { playerId: b, index: 0, correct: true },
+      { playerId: d, index: 1, correct: true },
+      { playerId: c, index: 0, correct: false },
+    ]);
+  });
+
+  test('Passen: zurücknehmbar bis zum Schließen, Tippen hebt es auf, das nächste Foto setzt es zurück', () => {
+    const h = makeHarness(['Host', 'B', 'C']);
+    startStills(h, { allGuess: true });
+    const [, b, c] = h.ids as [string, string, string];
+
+    expectOk(h.act(b, { type: 'still_pass', pass: true }));
+    expectOk(h.act(c, { type: 'still_pass', pass: true }));
+    expect(viewRound(h, h.host).passed).toEqual([b, c]);
+    expect(viewRound(h, null).passed).toEqual([b, c]);
+    expect(viewRound(h, b)).toMatchObject({ iPassed: true });
+    expect(viewRound(h, b).passed).toBeUndefined();
+
+    expectOk(h.act(b, { type: 'still_pass', pass: false }));
+    expect(viewRound(h, b).iPassed).toBeUndefined();
+    expectOk(h.act(c, { type: 'still_guess', text: 'Scarface' }));
+    expect(sr(h).passed).toEqual([]);
+    expect(h.act(c, { type: 'still_pass', pass: true })).toMatchObject({ ok: false, code: 'invalid_action' });
+
+    expectOk(h.act(b, { type: 'still_pass', pass: true }));
+    expectOk(h.act(h.host, { type: 'still_close' }));
+    expect(h.act(b, { type: 'still_pass', pass: false })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expectOk(h.act(h.host, { type: 'still_judge', playerId: c, correct: false }));
+    expectOk(h.act(h.host, { type: 'still_next' }));
+
+    // Passen verbraucht nichts: B tippt beim zweiten Foto.
+    expect(sr(h).passed).toEqual([]);
+    expectOk(h.act(b, { type: 'still_guess', text: 'Der Pate' }));
+  });
+
+  test('Passen gibt es nur beim Tippen mit „Alle raten bis zum Schluss“', () => {
+    const h = makeHarness(['Host', 'B']);
+    startStills(h);
+    expect(h.act(h.ids[1]!, { type: 'still_pass', pass: true })).toMatchObject({ ok: false, code: 'invalid_action' });
+  });
+
+  test('Sichtbarkeit: fremde Urteile ohne Text erst nach dem Weiterschalten, die Lösung nur für Treffer', () => {
+    const h = makeHarness(['Host', 'B', 'C', 'D']);
+    startStills(h, { allGuess: true });
+    const [, b, c, d] = h.ids as [string, string, string, string];
+    expectOk(h.act(b, { type: 'still_guess', text: 'Der Pate' }));
+    expectOk(h.act(c, { type: 'still_guess', text: 'Scarface' }));
+    closeAndJudge(h, { [b]: true, [c]: false });
+
+    expect(viewRound(h, d).results).toEqual([]);
+    expect(viewRound(h, b).results).toEqual([{ playerId: b, index: 0, correct: true }]);
+    expect(viewRound(h, h.host).results).toHaveLength(2);
+    expect(viewRound(h, b).answer).toBe('Der Pate');
+    expect(viewRound(h, c).answer).toBeUndefined();
+    expect(viewRound(h, d).answer).toBeUndefined();
+
+    expectOk(h.act(h.host, { type: 'still_next' }));
+    const seenByD = viewRound(h, d);
+    expect(seenByD.results).toEqual([
+      { playerId: b, index: 0, correct: true },
+      { playerId: c, index: 0, correct: false },
+    ]);
+    expect(seenByD.attempts).toBeUndefined();
+    expect(seenByD.answer).toBeUndefined();
+  });
+
+  test('Tippen: nach dem letzten geprüften Foto ist das Raten vorbei, auch wenn nicht alle getippt haben', () => {
+    const h = makeHarness(['Host', 'B', 'C']);
+    startStills(h, { allGuess: true });
+    const [, b, c] = h.ids as [string, string, string];
+    for (let i = 0; i < 4; i++) {
+      expectOk(h.act(h.host, { type: 'still_close' }));
+      expectOk(h.act(h.host, { type: 'still_next' }));
+    }
+    expectOk(h.act(b, { type: 'still_guess', text: 'Der Pate' }));
+    expectOk(h.act(h.host, { type: 'still_close' }));
+    expect(viewRound(h, c).over).toBe(false);
+    expectOk(h.act(h.host, { type: 'still_judge', playerId: b, correct: true }));
+    const seen = viewRound(h, c);
+    expect(seen.over).toBe(true);
+    expect(seen.points).toEqual({ [b]: 10, [c]: 0 });
+    expect(seen.answer).toBe('Der Pate');
+  });
+
+  test('Buzzern: ein Buzz pro Film, Fehlbuzzer bleiben gesperrt, Treffer beenden das Raten nur für sich', () => {
+    const h = makeHarness(['Host', 'B', 'C', 'D']);
+    startStills(h, { mode: 'buzz', allGuess: true });
+    const [, b, c, d] = h.ids as [string, string, string, string];
+    expect(h.act(b, { type: 'still_pass', pass: true })).toMatchObject({ ok: false });
+
+    expectOk(h.act(b, { type: 'still_buzz' }));
+    expectOk(h.act(h.host, { type: 'still_verdict', correct: false }));
+    expectOk(h.act(c, { type: 'still_buzz' }));
+    expectOk(h.act(h.host, { type: 'still_verdict', correct: true }));
+    expect(viewRound(h, d)).toMatchObject({ over: false, solved: null });
+    // Beim Buzzern ist das Urteil endgültig und sofort für alle sichtbar.
+    expect(viewRound(h, d).results).toEqual([
+      { playerId: c, index: 0, correct: true },
+      { playerId: b, index: 0, correct: false },
+    ]);
+    expect(viewRound(h, c).answer).toBe('Der Pate');
+    expect(viewRound(h, b).answer).toBeUndefined();
+    expect(h.act(c, { type: 'still_buzz' })).toMatchObject({ ok: false, code: 'invalid_action' });
+
+    expectOk(h.act(h.host, { type: 'still_next' }));
+    expect(sr(h).used).toEqual([b]);
+    expect(h.act(b, { type: 'still_buzz' })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expectOk(h.act(d, { type: 'still_buzz' }));
+    expectOk(h.act(h.host, { type: 'still_verdict', correct: true }));
+
+    const seen = viewRound(h, b);
+    expect(seen.over).toBe(true);
+    expect(seen.points).toEqual({ [b]: 0, [c]: 5, [d]: 4 });
+    expect(seen.answer).toBe('Der Pate');
+  });
+
+  test('wer den Raum verlässt, verschwindet aus den Urteilen', () => {
+    const h = makeHarness(['Host', 'B', 'C']);
+    startStills(h, { mode: 'buzz', allGuess: true });
+    const [, b, c] = h.ids as [string, string, string];
+    expectOk(h.act(b, { type: 'still_buzz' }));
+    expectOk(h.act(h.host, { type: 'still_verdict', correct: true }));
+    h.room.leave(b);
+    expect(sr(h).buzzVerdicts).toEqual([]);
+    expect(viewRound(h, c).over).toBe(false);
+  });
+});

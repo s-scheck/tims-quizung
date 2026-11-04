@@ -104,6 +104,8 @@
     { mode: 'type', label: 'Tippen', hint: 'Jeder tippt einmal pro Foto. Du schließt die Tipps, prüfst sie und schaltest weiter. Alle Richtigen bei einem Foto bekommen dessen Punkte.' },
     { mode: 'buzz', label: 'Buzzern', hint: 'Wer zuerst buzzert, sagt den Film laut. Falsch sperrt für dieses Foto, der Erste mit der richtigen Antwort gewinnt.' },
   ];
+  /** Alle raten bis zum Schluss: ein Versuch pro Film, ein Treffer beendet das Raten nur für den Treffer. */
+  let stillsAllGuess = $state(false);
   /** Die Bedenkzeit, sofern sie im erlaubten Rahmen liegt; das Zahlenfeld lässt auch Unsinn zu. */
   const stillsThinkValid = $derived(isThinkSeconds(stillsThink) ? stillsThink : null);
   const isMorse = $derived(gameId === 'morse');
@@ -139,7 +141,7 @@
       ...(hasShow ? { reveal } : {}),
       ...(isFaces ? { effect: faceEffect, ...(faceEffect === 'tiles' ? { cols: faceCols } : { level: faceLevel }) } : {}),
       ...(isKids ? { mode: kidsMode, count: kidsCount, ...(kidsMode === 'buzz' ? { thinkSeconds: kidsThink, penalty: kidsPenalty } : {}) } : {}),
-      ...(isStills ? { mode: stillsMode, ...(stillsMode === 'buzz' && stillsThinkValid !== null ? { thinkSeconds: stillsThinkValid } : {}) } : {}),
+      ...(isStills ? { mode: stillsMode, allGuess: stillsAllGuess, ...(stillsMode === 'buzz' && stillsThinkValid !== null ? { thinkSeconds: stillsThinkValid } : {}) } : {}),
       ...(targetId ? { targetId } : {}),
     });
   }
@@ -235,6 +237,27 @@
           <p class="text-xs text-slate-500">Gilt für diese Runde.</p>
         </div>
         <ModeChoice options={STILLS_MODE_OPTIONS} value={stillsMode} onChange={(m) => (stillsMode = m)} />
+        <div class="space-y-2">
+          <div>
+            <p class="font-semibold">Nach einem Treffer</p>
+            <p class="text-xs text-slate-500">
+              {stillsAllGuess
+                ? `Jeder rät einmal pro Film${stillsMode === 'type' ? ' und darf bei einem Foto passen' : ''}. Wer später erkennt, bekommt weniger.`
+                : 'Der erste Treffer beendet das Raten für alle.'}
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            {#each [false, true] as allGuess (allGuess)}
+              <button
+                class="rounded-xl border px-3 py-2 text-sm font-semibold transition
+                  {stillsAllGuess === allGuess ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+                onclick={() => (stillsAllGuess = allGuess)}
+              >
+                {allGuess ? 'Alle raten bis zum Schluss' : 'Erster Treffer gewinnt'}
+              </button>
+            {/each}
+          </div>
+        </div>
         {#if stillsMode === 'buzz'}
           <label class="flex flex-wrap items-center justify-between gap-3 text-sm">
             <span>

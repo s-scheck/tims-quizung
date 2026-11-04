@@ -737,12 +737,27 @@ export interface StillAttemptView {
 /** Tippen: Eingabe zum aktuellen Foto offen oder der Host prüft. */
 export type StillsStage = 'guessing' | 'judging';
 
+/** „Alle raten bis zum Schluss“: Wer mit seinem einen Versuch fertig ist, bei welchem Foto und ob richtig. Ohne Tipptext. */
+export interface StillsResultView {
+  playerId: string;
+  index: number;
+  correct: boolean;
+}
+
 export interface StillsRoundView extends BaseRoundView {
   game: 'stills';
   category: StillsCategoryInfo;
   /** Gleiche Modi wie Kinderpromis: Tippen je Foto oder Buzzern. */
   mode: GuessMode;
   thinkSeconds: number;
+  /** Alle raten bis zum Schluss: ein Versuch pro Film, ein Treffer beendet das Raten nur für den Treffer. */
+  allGuess: boolean;
+  /** Nur mit `allGuess`: Fertige, die der Betrachter sehen darf, nach Foto sortiert, Treffer vor Fehlern. */
+  results: StillsResultView[];
+  /** Nur Tippen mit `allGuess`: wer beim aktuellen Foto gepasst hat, für Host und Screen. */
+  passed?: string[];
+  /** Nur Tippen mit `allGuess`: Der Betrachter hat beim aktuellen Foto gepasst. */
+  iPassed?: boolean;
   /** Punkte je Foto, für alle sichtbar. */
   stagePoints: number[];
   /** Bildadressen: Spieler bekommen nur die freigegebenen, der Host und die Auflösung alle. */
@@ -754,17 +769,17 @@ export interface StillsRoundView extends BaseRoundView {
   typed?: string[];
   /** Nur Buzzern. Die Bedenkzeit ist nur eine Anzeige. */
   buzzer?: BuzzerView;
-  /** Gelöst bei Foto `index`, alle Gewinner. */
+  /** Gelöst bei Foto `index`, alle Gewinner. Mit `allGuess` immer null, dort zählen `results`. */
   solved: { index: number; winners: string[] } | null;
-  /** Raten ist vorbei, gelöst oder nach dem letzten Foto. */
+  /** Raten ist vorbei: gelöst, alle fertig oder nach dem letzten Foto. */
   over: boolean;
-  /** Lösung, für den Host immer, für alle sobald das Raten vorbei ist. */
+  /** Lösung, für den Host immer, für alle sobald das Raten vorbei ist, mit `allGuess` auch für den, der richtig lag. */
   answer?: string;
   /** Eigene Tipps des Betrachters. */
   myAttempts?: StillAttemptView[];
   /** Tipps aller: Host ab „Tipps schließen“ für das aktuelle Foto und früher, alle ab der Auflösung. */
   attempts?: Record<string, StillAttemptView[]>;
-  /** Spielpunkte je Spieler aus dem gelösten Foto, Vorbelegung der Wertung. */
+  /** Spielpunkte je Spieler aus dem Foto des Treffers, Vorbelegung der Wertung. */
   points: Record<string, number>;
   privileged?: boolean;
 }

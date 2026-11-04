@@ -318,6 +318,7 @@ export class Room {
           ...(msg.count !== undefined ? { count: msg.count } : {}),
           ...(msg.thinkSeconds !== undefined ? { thinkSeconds: msg.thinkSeconds } : {}),
           ...(msg.penalty !== undefined ? { penalty: msg.penalty } : {}),
+          ...(msg.allGuess !== undefined ? { allGuess: msg.allGuess } : {}),
         });
       case 'back_to_lobby':
         return this.backToLobby(playerId);
