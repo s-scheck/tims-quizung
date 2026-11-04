@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { FIT_DEFAULTS, fitSearch, type FitState } from './fit.ts';
+import { FIT_DEFAULTS, columnsFor, fitSearch, type FitState } from './fit.ts';
 
 /**
  * Modell einer Seite: Text wächst mit der Schrift, eine Liste teilt sich auf Spalten auf,
@@ -17,32 +17,42 @@ function page(opts: { text: number; list?: number; image?: number; height: numbe
 }
 
 describe('Fernsehansicht einpassen', () => {
-  test('passt alles, bleibt alles wie heute', () => {
-    const { fits, calls } = page({ text: 300, list: 300, image: 300, height: 1000 });
-    expect(fitSearch(fits)).toEqual({ font: 16, cols: 1, media: 1 });
-    expect(calls).toHaveLength(1);
+  test('viel Platz: die Schrift wächst bis zum Höchstwert', () => {
+    const { fits } = page({ text: 300, height: 1000 });
+    expect(fitSearch(fits)).toEqual({ font: FIT_DEFAULTS.maxFont, cols: 1, media: 1 });
   });
 
-  test('erst schrumpft das Bild, Schrift und Spalten bleiben', () => {
-    const { fits } = page({ text: 400, image: 800, height: 1000 });
+  test('etwas Platz: die Schrift wächst, das Bild gibt dafür höchstens bis growMinMedia nach', () => {
+    const { fits } = page({ text: 400, image: 300, height: 1000 });
+    expect(fitSearch(fits)).toEqual({ font: 28, cols: 1, media: 1 });
+    const tight = page({ text: 500, image: 600, height: 1000 });
+    const t = fitSearch(tight.fits);
+    expect(t.font).toBeGreaterThan(16);
+    expect(t.media).toBeGreaterThanOrEqual(FIT_DEFAULTS.growMinMedia);
+    expect(tight.fits(t)).toBe(true);
+    expect(tight.fits({ ...t, font: t.font + 0.5, media: FIT_DEFAULTS.growMinMedia })).toBe(false);
+  });
+
+  test('Spalten erlauben größere Schrift', () => {
+    const { fits } = page({ text: 100, list: 2000, height: 1000 });
     const s = fitSearch(fits);
-    expect(s.font).toBe(16);
-    expect(s.cols).toBe(1);
-    expect(s.media).toBeLessThan(1);
-    expect(s.media).toBeGreaterThanOrEqual(0.7);
+    expect(s.cols).toBeGreaterThan(1);
+    expect(s.font).toBeGreaterThan(16);
     expect(fits(s)).toBe(true);
   });
 
-  test('reicht das kleinste Bild nicht, kommen Spalten vor kleinerer Schrift', () => {
-    const { fits } = page({ text: 200, list: 1500, height: 1000 });
+  test('passt es bei Grundschrift nicht, schrumpft zuerst das Bild', () => {
+    const { fits } = page({ text: 600, image: 800, height: 1000 });
     const s = fitSearch(fits);
-    expect(s).toEqual({ font: 16, cols: 2, media: 1 });
+    expect(s.font).toBe(16);
+    expect(s.cols).toBe(1);
+    expect(s.media).toBeLessThan(FIT_DEFAULTS.growMinMedia);
+    expect(s.media).toBeGreaterThanOrEqual(0.45);
   });
 
-  test('reichen auch vier Spalten nicht, sinkt die Schrift auf den größten passenden Wert', () => {
-    const { fits } = page({ text: 900, list: 800, height: 1000 });
+  test('reicht das kleinste Bild nicht, sinkt die Schrift auf den größten passenden Wert', () => {
+    const { fits } = page({ text: 900, image: 500, height: 1000 });
     const s = fitSearch(fits);
-    expect(s.cols).toBe(4);
     expect(s.font).toBeLessThan(16);
     expect(s.font).toBeGreaterThanOrEqual(FIT_DEFAULTS.minFont);
     expect(fits(s)).toBe(true);
@@ -52,7 +62,6 @@ describe('Fernsehansicht einpassen', () => {
   test('unter der Mindestschrift geht es weiter, damit nichts abgeschnitten wird', () => {
     const { fits } = page({ text: 1600, height: 1000 });
     const s = fitSearch(fits);
-    expect(s.font).toBeLessThan(FIT_DEFAULTS.minFont);
     expect(s.font).toBe(10);
     expect(fits(s)).toBe(true);
   });
@@ -66,5 +75,14 @@ describe('Fernsehansicht einpassen', () => {
     const { fits, calls } = page({ text: 1100, height: 1000 });
     fitSearch(fits, { ...FIT_DEFAULTS, maxCols: 1, minMedia: 1 });
     expect(calls.every((c) => c.cols === 1 && c.media === 1)).toBe(true);
+  });
+});
+
+describe('Spalten mit Mindestbreite', () => {
+  test('nie mehr Spalten, als mit Mindestbreite passen', () => {
+    expect(columnsFor(1000, 300, 16, 4)).toBe(3);
+    expect(columnsFor(1000, 300, 16, 2)).toBe(2);
+    expect(columnsFor(200, 300, 16, 4)).toBe(1);
+    expect(columnsFor(632, 300, 16, 4)).toBe(2);
   });
 });

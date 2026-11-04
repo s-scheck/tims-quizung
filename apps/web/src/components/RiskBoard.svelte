@@ -43,7 +43,7 @@
   });
 </script>
 
-<div class="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+<div class="grid gap-6 {readonly ? 'lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]' : 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]'}">
   <section class="space-y-4">
     <header class="flex flex-wrap items-end justify-between gap-3">
       <div class="min-w-0">

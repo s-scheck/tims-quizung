@@ -21,7 +21,7 @@
       {#if round.category.source}<p class="mt-1 text-xs text-slate-500">Quelle: {round.category.source}</p>{/if}
     </header>
     <PictureView image={round.image} original={round.original ?? null} fields={shown} large={readonly} />
-    <ol class="card space-y-1 {readonly ? 'fit-cols' : ''}">
+    <ol class="card space-y-1" data-fit={readonly ? 'cols' : undefined} data-fit-min="18">
       {#each round.fields as f, i (f.id)}
         <li
           class="flex items-center gap-3 rounded-lg px-3 py-2 {f.solved ? 'bg-emerald-500/10' : 'bg-slate-900/40 text-slate-400'} {readonly ? 'text-xl' : ''}"

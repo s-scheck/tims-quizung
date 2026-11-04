@@ -199,7 +199,7 @@
         <p class="text-xs font-semibold uppercase tracking-widest text-sky-300">{round.category.rightLabel}</p>
         <span class="text-xs text-slate-500">{matchedCount} von {round.cards.length} zugeordnet</span>
       </div>
-      <ol class="space-y-1.5 {readonly ? 'fit-cols' : ''}" bind:this={targetsEl}>
+      <ol class="space-y-1.5" data-fit={readonly ? 'cols' : undefined} data-fit-min="22" bind:this={targetsEl}>
         {#each round.targets as target (target.id)}
           {@const inSlot = cardIn(target)}
           {@const free = isFree(target)}
@@ -275,7 +275,7 @@
         <h3 class="font-bold">{round.category.leftLabel}</h3>
         <span class="text-xs text-slate-500">{round.pool.length} übrig</span>
       </div>
-      <div class="grid gap-2 {readonly ? 'fit-grid grid-cols-2' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-2'}">
+      <div class="grid gap-2 grid-cols-2 {readonly ? '' : 'sm:grid-cols-3 lg:grid-cols-2'}" data-fit={readonly ? 'grid' : undefined} data-fit-min="15" data-fit-base="2">
         {#each poolIds as cardId (cardId)}
           <div
             class="transition-opacity {drag?.cardId === cardId ? 'opacity-30' : ''}"

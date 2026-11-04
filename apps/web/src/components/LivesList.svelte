@@ -6,7 +6,7 @@
   const players = $derived(view.players.filter((p) => round.turnOrder.includes(p.id)));
 </script>
 
-<ul class="space-y-2">
+<ul class="space-y-2" data-fit={readonly ? 'cols' : undefined} data-fit-min="13">
   {#each players as p (p.id)}
     {@const lives = round.lives[p.id] ?? 0}
     {@const out = lives === 0}

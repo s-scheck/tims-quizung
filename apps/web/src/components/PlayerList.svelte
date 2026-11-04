@@ -13,7 +13,7 @@
   const round = $derived(view.round);
 </script>
 
-<ul class="space-y-2 {large ? 'fit-cols' : ''}">
+<ul class="space-y-2" data-fit={large ? 'cols' : undefined} data-fit-min="14">
   {#each view.players as p (p.id)}
     {@const eliminated = round?.eliminated.includes(p.id) ?? false}
     {@const active = round?.activePlayerId === p.id && (view.phase === 'playing' || view.phase === 'host_decision')}

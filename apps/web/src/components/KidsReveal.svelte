@@ -18,7 +18,7 @@
   const seconds = (at: number, from: number | null) => ((at - (from ?? at)) / 1000).toFixed(1);
 </script>
 
-<div class="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+<div class="grid gap-6 {readonly ? 'lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]' : 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]'}">
   <section class="space-y-3">
     <header>
       <p class="text-sm text-slate-400">Auflösung · {round.category.title} · {typing ? 'Tippen' : 'Buzzern'}</p>
@@ -29,10 +29,16 @@
     {#if round.history.length === 0}
       <p class="card text-sm text-slate-500">Die Runde wurde beendet, bevor ein Promi gezeigt wurde.</p>
     {:else}
-      <div class="grid gap-3 sm:grid-cols-2 {readonly ? 'fit-grid lg:grid-cols-3' : ''}" style={readonly ? '--fit-base: 3; --fit-gap: 0.75rem' : undefined}>
+      <div class="grid gap-3 sm:grid-cols-2" data-fit={readonly ? 'grid' : undefined} data-fit-min="13" data-fit-base="3">
         {#each round.history as item, i (item.id)}
           <div class="card space-y-2 p-3">
-            <img src={item.image} alt="" draggable="false" class="aspect-[4/3] w-full rounded-xl object-cover" />
+            <img
+              src={item.image}
+              alt=""
+              draggable="false"
+              class="w-full rounded-xl object-cover {readonly ? 'fit-media' : 'aspect-[4/3]'}"
+              style={readonly ? 'height: calc(24dvh * var(--fit-media, 1))' : undefined}
+            />
             <div class="flex items-baseline gap-2">
               <span class="font-mono text-xs text-slate-500">{i + 1}.</span>
               <span class="break-words text-lg font-black {readonly ? 'text-2xl' : ''}">{item.name}</span>
