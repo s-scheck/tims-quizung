@@ -298,6 +298,26 @@ body {
   }
 }
 
+/*
+ * Fernsehansicht (lib/fit.ts): Einträge in Zeitungsspalten nie über zwei Spalten zerreißen.
+ * data-fit ist nur auf dem Screen gesetzt.
+ */
+/*
+ * Auf dem Screen darf kein Text schmaler werden als sein längstes Wort (min-w-0 erlaubt das sonst in Flex-Zeilen).
+ * Wird es eng, bricht die Zeile um: Punkte, Herzen oder Werte rutschen in die nächste Zeile, Wörter bleiben ganz.
+ */
+.fit-screen .min-w-0 {
+  min-width: auto;
+}
+.fit-screen .flex:has(> .min-w-0) {
+  flex-wrap: wrap;
+}
+[data-fit="cols"] > * {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;
+}
+
 /* Stumme Weltkarte (Leaflet) */
 /* Leaflets eigenes Stylesheet lädt nach diesem, deshalb die höhere Spezifität. */
 .map-water .leaflet-container,

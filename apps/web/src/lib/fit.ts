@@ -34,7 +34,7 @@ export interface FitOptions {
   growMinMedia: number;
 }
 
-export const FIT_DEFAULTS: FitOptions = { baseFont: 16, maxFont: 28, minFont: 12, floorFont: 7, maxCols: 4, minMedia: 0.45, growMinMedia: 0.7 };
+export const FIT_DEFAULTS: FitOptions = { baseFont: 16, maxFont: 22, minFont: 12, floorFont: 7, maxCols: 4, minMedia: 0.45, growMinMedia: 0.7 };
 
 const FONT_STEP = 0.5;
 const MEDIA_STEP = 0.05;
@@ -103,10 +103,12 @@ export function fitSearch(fits: (s: FitState) => boolean, opts: FitOptions = FIT
 
 /**
  * Spalten für eine Liste, die mit `data-fit` markiert ist:
- * - `data-fit="cols"`: Zeitungsspalten, oben nach unten, dann die nächste Spalte (Ranglisten, Ketten).
+ * - `data-fit="cols"`: Zeitungsspalten (CSS-Spalten), oben nach unten, dann die nächste Spalte. Jede Spalte läuft für
+ *   sich, leere Plätze bleiben flach, auch wenn daneben ein Eintrag zweizeilig ist. app.css verhindert das Zerreißen.
  * - `data-fit="grid"`: Raster zeilenweise (offene Karten, Galerien), `data-fit-base` Grundspalten (Standard 1).
  * - `data-fit-min`: Mindestbreite einer Spalte in em (Standard 14), damit Wörter nie zerhackt werden.
- * Gesetzt wird ein CSS-Grid per Inline-Style, das zerreißt anders als CSS-Spalten keine Einträge.
+ * - `data-fit-rows`: höchstens so viele Zeilen je Spalte, lange Listen verteilen sich dann auf mehr Spalten
+ *   (soweit die Mindestbreite es erlaubt), statt mit großer Schrift eine Spalte zu füllen.
  */
 export function columnsFor(width: number, minWidth: number, gap: number, wanted: number): number {
   const byWidth = Math.max(1, Math.floor((width + gap) / (minWidth + gap)));
@@ -117,23 +119,22 @@ function applyColumns(list: HTMLElement, maxCols: number): void {
   const flow = list.dataset.fit === 'grid' ? 'grid' : 'cols';
   const base = Number(list.dataset.fitBase ?? 1) || 1;
   const minEm = Number(list.dataset.fitMin ?? 14) || 14;
+  const maxRows = Number(list.dataset.fitRows ?? 0) || 0;
+  const items = list.children.length;
   const style = getComputedStyle(list);
   const fontPx = parseFloat(style.fontSize) || 16;
-  const gap = parseFloat(style.columnGap) || fontPx;
   const width = list.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0);
-  const cols = columnsFor(width, minEm * fontPx, gap, base + maxCols - 1);
-  const items = list.children.length;
-  list.style.display = 'grid';
-  list.style.alignContent = 'start';
-  if (!style.columnGap || style.columnGap === 'normal') list.style.columnGap = '1rem';
-  list.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
-  if (flow === 'cols' && cols > 1) {
-    list.style.gridAutoFlow = 'column';
-    list.style.gridTemplateRows = `repeat(${Math.ceil(items / cols)}, auto)`;
-  } else {
-    list.style.gridAutoFlow = 'row';
-    list.style.gridTemplateRows = '';
+  const wanted = Math.max(base + maxCols - 1, maxRows > 0 ? Math.ceil(items / maxRows) : 1);
+  if (flow === 'grid') {
+    const gap = parseFloat(style.columnGap) || fontPx;
+    const cols = columnsFor(width, minEm * fontPx, gap, wanted);
+    list.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+    return;
   }
+  const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const cols = columnsFor(width, minEm * fontPx, rootPx, wanted);
+  list.style.columnGap = '1rem';
+  list.style.columnCount = cols > 1 ? String(cols) : '';
 }
 
 /** Toleranz gegen Rundung beim Messen */

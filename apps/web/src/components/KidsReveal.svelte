@@ -18,7 +18,7 @@
   const seconds = (at: number, from: number | null) => ((at - (from ?? at)) / 1000).toFixed(1);
 </script>
 
-<div class="grid gap-6 {readonly ? 'lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]' : 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]'}">
+<div class="grid gap-6 {readonly ? 'lg:grid-cols-[minmax(0,4fr)_minmax(17rem,1fr)]' : 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]'}">
   <section class="space-y-3">
     <header>
       <p class="text-sm text-slate-400">Auflösung · {round.category.title} · {typing ? 'Tippen' : 'Buzzern'}</p>

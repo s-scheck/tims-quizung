@@ -17,7 +17,7 @@
   }
 </script>
 
-<ol class="space-y-1" data-fit={large ? 'cols' : undefined} data-fit-min="20">
+<ol class="space-y-1" data-fit={large ? 'cols' : undefined} data-fit-min="20" data-fit-rows="10">
   {#each rows as { rank, slot } (rank)}
     {#if !slot}
       <li class="flex items-center gap-3 rounded-lg px-3 py-0.5 text-slate-600 {large ? 'text-xl' : ''}" aria-label="Platz {rank} offen">
@@ -28,7 +28,7 @@
       {@const hit = slot.passNo !== undefined}
       {@const fresh = hit && slot.passNo === latestPass}
       <!-- Fernseher: Der Name wird nie zusammengedrückt, Spieler und Wert rutschen bei Bedarf in die nächste Zeile. -->
-      <li class="flex items-center gap-x-3 rounded-lg px-3 py-1.5 {hit ? 'bg-emerald-500/10' : 'bg-slate-900/40 text-slate-400'} {fresh ? 'ring-2 ring-amber-400/60' : ''} {large ? 'flex-wrap text-xl' : 'gap-y-3'}">
+      <li class="flex items-center gap-x-3 rounded-lg px-3 py-1.5 {hit ? 'bg-emerald-500/10' : 'bg-slate-900/40 text-slate-400'} {fresh ? `ring-2 ring-amber-400/60 ${large ? 'ring-inset' : ''}` : ''} {large ? 'flex-wrap text-xl' : 'gap-y-3'}">
         <span class="w-7 shrink-0 text-right font-mono text-sm text-slate-500">{slot.rank}</span>
         <span class="break-words {large ? 'flex-[1_0_auto]' : 'min-w-0 flex-1'} {hit ? 'font-semibold' : ''}">{slot.name}</span>
         {#if fresh}

@@ -60,7 +60,7 @@
   </header>
   <ConnectionBanner />
   <!-- Feste Höhe, kein Scrollen: fitScreen verkleinert Bilder, setzt Spalten und senkt die Schrift, bis der Inhalt passt. -->
-  <main class="min-h-0 flex-1 overflow-hidden" use:fitScreen>
+  <main class="fit-screen min-h-0 flex-1 overflow-hidden" use:fitScreen>
     <div class="mx-auto w-full max-w-[1760px] px-8 py-6">
       {#if !view}
         {#if client.terminal}

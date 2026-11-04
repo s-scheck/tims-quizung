@@ -47,12 +47,12 @@
             {@const textOpen = moderator || step >= 1}
             {@const rankOpen = moderator || step >= 2}
             <li class="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 {readonly ? 'text-xl' : ''} {res.playerId === client.myId ? 'text-indigo-100' : ''}">
-              <span class="w-16 shrink-0 break-words font-semibold sm:w-28">{playerName(view, res.playerId)}</span>
+              <span class="shrink-0 break-words font-semibold {readonly ? '' : 'w-16 sm:w-28'}">{playerName(view, res.playerId)}</span>
               {#if !textOpen}
                 <span class="min-w-0 flex-1 italic text-slate-500">verdeckt</span>
                 <span class="w-12 shrink-0 text-right font-mono text-lg text-slate-600">?</span>
               {:else}
-                <span class="min-w-0 flex-1 break-words {res.text === null ? 'italic text-slate-500' : ''} {moderator && step < 1 ? 'text-slate-400' : ''}">{res.text ?? 'kein Tipp'}</span>
+                <span class="break-words {readonly ? 'flex-[1_0_auto]' : 'min-w-0 flex-1'} {res.text === null ? 'italic text-slate-500' : ''} {moderator && step < 1 ? 'text-slate-400' : ''}">{res.text ?? 'kein Tipp'}</span>
                 {#if !rankOpen}
                   <span class="text-sm italic text-slate-500">Platz verdeckt</span>
                   <span class="w-12 shrink-0 text-right font-mono text-lg text-slate-600">?</span>
@@ -98,7 +98,7 @@
 {/snippet}
 
 <!-- Fernseher: Durchgang und Punkte in der schmalen Spalte, die Plätze bekommen die große Fläche. -->
-<div class="grid gap-6 {readonly ? 'lg:grid-cols-[minmax(0,5fr)_minmax(0,2fr)]' : 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]'}">
+<div class="grid gap-6 {readonly ? 'lg:grid-cols-[minmax(0,4fr)_minmax(17rem,1fr)]' : 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]'}">
   <section class="space-y-4">
     <header>
       <p class="text-sm text-slate-400">{listDone ? 'Kategorie beendet' : `Auflösung · Durchgang ${round.passNo}`}</p>

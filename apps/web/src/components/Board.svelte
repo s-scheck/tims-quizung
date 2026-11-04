@@ -257,7 +257,7 @@
 
     <div class="card">
       <p class="mb-2 text-center text-xs font-semibold uppercase tracking-widest text-emerald-300">▲ {category.topLabel}</p>
-      <ol class="space-y-1" data-fit={readonly ? 'cols' : undefined} data-fit-min="15" bind:this={chainEl}>
+      <ol class="space-y-1" data-fit={readonly ? 'cols' : undefined} data-fit-min="15" data-fit-rows="8" bind:this={chainEl}>
         {#each rows as row (row.cardId)}
           {@const card = cardsById.get(row.cardId)}
           {@const status = row.preview ? null : statusFor(row.cardId)}

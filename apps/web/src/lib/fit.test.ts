@@ -24,7 +24,7 @@ describe('Fernsehansicht einpassen', () => {
 
   test('etwas Platz: die Schrift wächst, das Bild gibt dafür höchstens bis growMinMedia nach', () => {
     const { fits } = page({ text: 400, image: 300, height: 1000 });
-    expect(fitSearch(fits)).toEqual({ font: 28, cols: 1, media: 1 });
+    expect(fitSearch(fits)).toEqual({ font: FIT_DEFAULTS.maxFont, cols: 1, media: 1 });
     const tight = page({ text: 500, image: 600, height: 1000 });
     const t = fitSearch(tight.fits);
     expect(t.font).toBeGreaterThan(16);

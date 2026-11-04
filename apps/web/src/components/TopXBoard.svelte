@@ -138,7 +138,7 @@
         <p class="text-xs font-semibold uppercase tracking-widest text-emerald-300">▲ {round.category.topLabel}</p>
         <span class="text-xs text-slate-500">{revealedCount} von {round.slots.length} aufgedeckt</span>
       </div>
-      <ol class="space-y-1.5" data-fit={readonly ? 'cols' : undefined} data-fit-min="16">
+      <ol class="space-y-1.5" data-fit={readonly ? 'cols' : undefined} data-fit-min="16" data-fit-rows="8">
         {#each round.slots as slot (slot.rank)}
           {@const justHit = guess?.status === 'correct' && guess.matchRank === slot.rank}
           <li
