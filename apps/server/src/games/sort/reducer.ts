@@ -7,6 +7,8 @@ import { baseRound, buildTurnOrder, scheduleTurnTimer, settleTurn } from '../com
 
 export const RESOLVE_DELAY_MS = 2000;
 export const APPLY_DELAY_MS = 1500;
+/** Eine falsche Karte blinkt nur kurz rot und geht dann sofort zurück in den Stapel. */
+export const WRONG_APPLY_DELAY_MS = 400;
 
 export function sortRound(room: Room): SortRound | null {
   return room.round?.game === 'sort' ? room.round : null;
@@ -115,7 +117,9 @@ function resolvePlacement(room: Room): void {
     .map((id) => round.cards.find((c) => c.id === id)!.value);
   const valid = isValidPlacement(chainValues, card.value, placement.gapIndex, round.category.order);
   placement.status = valid ? 'correct' : 'wrong';
-  room.timers.placement = room.scheduler.schedule(APPLY_DELAY_MS, () => applyPlacement(room));
+  const delay = placement.status === 'correct' ? APPLY_DELAY_MS : WRONG_APPLY_DELAY_MS;
+  placement.applyAt = room.now + delay;
+  room.timers.placement = room.scheduler.schedule(delay, () => applyPlacement(room));
   room.emit();
 }
 

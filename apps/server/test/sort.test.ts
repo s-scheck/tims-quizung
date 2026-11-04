@@ -154,9 +154,13 @@ describe('Auswahl und Bestätigung', () => {
 
     h.scheduler.advance(2000);
     expect(r.placement?.status).toBe('correct');
+    expect(r.placement!.applyAt).toBe(h.scheduler.now() + 1500);
     expect(h.emits.length).toBe(emitsBefore + 3);
 
-    h.scheduler.advance(1500);
+    // Richtig bleibt länger stehen als falsch.
+    h.scheduler.advance(400);
+    expect(r.placement?.status).toBe('correct');
+    h.scheduler.advance(1100);
     expect(r.placement).toBeNull();
     expect(r.chain).toContain(cardId);
     expect(r.activePlayerId).toBe(h.ids[1]!);
@@ -173,8 +177,13 @@ describe('Auswahl und Bestätigung', () => {
     const { cardId } = place(h, false);
     h.scheduler.advance(2000);
     expect(r.placement?.status).toBe('wrong');
+    expect(r.placement!.applyAt).toBe(h.scheduler.now() + 400);
     expect(r.chain).toContain(cardId);
-    h.scheduler.advance(1500);
+    h.scheduler.advance(399);
+    expect(r.chain).toContain(cardId);
+    h.scheduler.advance(1);
+    expect(r.placement).toBeNull();
+    expect(r.turnNo).toBe(2);
     expect(r.chain).toEqual([r.startCardId]);
     expect(r.pool).toEqual(poolBefore);
     expect(r.eliminated).toEqual([h.ids[0]!]);

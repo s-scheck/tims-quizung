@@ -7,6 +7,7 @@
   import { playerName } from '../lib/format.ts';
   import { draggable, type DragPoint, type DragStart } from '../lib/drag.ts';
   import { scrollIntoViewIfHidden } from '../lib/scroll.ts';
+  import { floating } from '../lib/transitions.ts';
   import Card from './Card.svelte';
   import TurnTimer from './TurnTimer.svelte';
   import HostDecision from './HostDecision.svelte';
@@ -39,6 +40,8 @@
   /** Nach einem Drop landet die Karte sofort, ohne noch einmal aus dem Pool zu fliegen. */
   let instant = false;
   const [send, receive] = crossfade({ duration: () => (reduced || instant ? 0 : 450), easing: cubicOut });
+  /** Karten im Zielfeld schweben beim Wegfliegen, damit das Feld sofort wieder frei aussieht. */
+  const [sendFloating, receiveFloating] = floating(send, receive);
   const flipOpts = { duration: reduced ? 0 : 300 };
 
   /** Welche Karte liegt (fest, im Versuch oder als Vorschau) in diesem Zielfeld? */
@@ -215,27 +218,30 @@
               {target.text}
               {#if round.privileged && target.decoy}<span class="badge ml-1 bg-amber-500/20 text-amber-300">Köder</span>{/if}
             </span>
-            <div class="w-[46%] shrink-0 sm:w-[40%]">
-              {#if inSlot}
+            <div class="relative w-[46%] shrink-0 sm:w-[40%]">
+              <!-- Als #each mit Schlüssel: Svelte liest die Parameter der Abflug-Animation erst nach dem Update,
+                   ein {#if inSlot} hätte dann schon null und würde das ganze Update abbrechen lassen. -->
+              {#each inSlot ? [inSlot] : [] as slot (slot.id)}
                 <div
-                  class="transition-opacity {drag?.cardId === inSlot.id ? 'opacity-30' : ''}"
-                  in:receive|global={{ key: inSlot.id }}
-                  out:send|global={{ key: inSlot.id }}
-                  use:draggable={{ id: inSlot.id, enabled: canAct && inSlot.preview, onStart: onDragStart, onMove: onDragMove, onEnd: onDragEnd }}
+                  class="transition-opacity {drag?.cardId === slot.id ? 'opacity-30' : ''}"
+                  in:receiveFloating|global={{ key: slot.id }}
+                  out:sendFloating|global={{ key: slot.id }}
+                  use:draggable={{ id: slot.id, enabled: canAct && slot.preview, onStart: onDragStart, onMove: onDragMove, onEnd: onDragEnd }}
                 >
                   <Card
-                    name={cardsById.get(inSlot.id)?.text ?? '?'}
-                    status={inSlot.status}
-                    selected={inSlot.preview}
-                    disabled={!inSlot.preview}
+                    name={cardsById.get(slot.id)?.text ?? '?'}
+                    status={slot.status}
+                    selected={slot.preview}
+                    disabled={!slot.preview}
                     large={readonly}
-                    onclick={inSlot.preview ? () => pickCard(inSlot.id) : undefined}
+                    onclick={slot.preview ? () => pickCard(slot.id) : undefined}
                   />
                 </div>
                 {#if target.matchedBy && !readonly}
                   <p class="mt-0.5 text-right text-[10px] text-slate-500">{playerName(view, target.matchedBy)}</p>
                 {/if}
-              {:else}
+              {/each}
+              {#if !inSlot}
                 <button
                   type="button"
                   class="flex min-h-10 w-full items-center justify-center rounded-xl border border-dashed px-2 py-1 text-xs transition

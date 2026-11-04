@@ -110,8 +110,12 @@ describe('Zuordnen: Züge', () => {
     h.scheduler.advance(2000);
     expect(r.attempt?.status).toBe('correct');
     expect(viewRound(h, null).attempt?.status).toBe('correct');
+    expect(r.attempt!.applyAt).toBe(h.scheduler.now() + 1500);
 
-    h.scheduler.advance(1500);
+    // Richtig bleibt länger stehen als falsch.
+    h.scheduler.advance(400);
+    expect(r.attempt?.status).toBe('correct');
+    h.scheduler.advance(1100);
     expect(r.attempt).toBeNull();
     expect(r.matched[target]).toEqual({ cardId: card, by: a });
     expect(r.hits[a]).toBe(1);
@@ -134,7 +138,13 @@ describe('Zuordnen: Züge', () => {
     expectOk(h.act(h.ids[0]!, { type: 'confirm', turnNo: 1 }));
     h.scheduler.advance(2000);
     expect(r.attempt?.status).toBe('wrong');
-    h.scheduler.advance(1500);
+    expect(r.attempt!.applyAt).toBe(h.scheduler.now() + 400);
+    h.scheduler.advance(399);
+    expect(r.attempt?.status).toBe('wrong');
+    expect(r.pool).not.toContain(card);
+    h.scheduler.advance(1);
+    expect(r.attempt).toBeNull();
+    expect(r.turnNo).toBe(2);
     expect(r.pool).toEqual(poolBefore);
     expect(r.matched).toEqual({});
     expect(r.lives[h.ids[0]!]).toBe(2);

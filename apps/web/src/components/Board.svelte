@@ -7,6 +7,7 @@
   import { playerName } from '../lib/format.ts';
   import { draggable, type DragPoint, type DragStart } from '../lib/drag.ts';
   import { scrollIntoViewIfHidden } from '../lib/scroll.ts';
+  import { floating } from '../lib/transitions.ts';
   import Card from './Card.svelte';
   import TurnTimer from './TurnTimer.svelte';
   import HostDecision from './HostDecision.svelte';
@@ -63,6 +64,8 @@
   /** Nach einem Drop landet die Karte sofort, ohne noch einmal aus dem Pool zu fliegen. */
   let instant = false;
   const [send, receive] = crossfade({ duration: () => (reduced || instant ? 0 : 450), easing: cubicOut });
+  /** Karten in der Kette schweben beim Wegfliegen, damit sich die Kette sofort schließt. */
+  const [sendFloating, receiveFloating] = floating(send, receive);
   const flipOpts = { duration: reduced ? 0 : 300 };
 
   // ------------------------------------------------------------ Ziehen
@@ -257,7 +260,7 @@
         {#each rows as row (row.cardId)}
           {@const card = cardsById.get(row.cardId)}
           {@const status = row.preview ? null : statusFor(row.cardId)}
-          <li animate:flip={flipOpts}>
+          <li class="relative [&:has(>[data-floating])>.gap]:hidden" animate:flip={flipOpts}>
             {#if showGap(row.gapAbove)}
               {@render gap(row.gapAbove)}
             {/if}
@@ -265,8 +268,8 @@
               class="relative transition-opacity {drag?.cardId === row.cardId ? 'opacity-30' : ''}"
               data-card-id={row.cardId}
               data-drop="row:{row.gapAbove}:{row.gapBelow}"
-              in:receive|global={{ key: row.cardId }}
-              out:send|global={{ key: row.cardId }}
+              in:receiveFloating|global={{ key: row.cardId }}
+              out:sendFloating|global={{ key: row.cardId }}
               use:draggable={{ id: row.cardId, enabled: canAct && row.preview, onStart: onDragStart, onMove: onDragMove, onEnd: onDragEnd }}
             >
               <Card

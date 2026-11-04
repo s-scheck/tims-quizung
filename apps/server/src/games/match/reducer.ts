@@ -8,6 +8,8 @@ import { baseRound, buildTurnOrder, scheduleTurnTimer, settleTurn } from '../com
 
 export const RESOLVE_DELAY_MS = 2000;
 export const APPLY_DELAY_MS = 1500;
+/** Eine falsche Karte blinkt nur kurz rot und geht dann sofort zurück in den Stapel. */
+export const WRONG_APPLY_DELAY_MS = 400;
 
 export function matchRound(room: Room): MatchRound | null {
   return room.round?.game === 'match' ? room.round : null;
@@ -118,7 +120,9 @@ function resolveAttempt(room: Room): void {
   if (!round || !attempt || attempt.status !== 'pending') return;
   const target = round.targets.find((t) => t.id === attempt.targetId);
   attempt.status = target?.solutionCardId === attempt.cardId ? 'correct' : 'wrong';
-  room.timers.placement = room.scheduler.schedule(APPLY_DELAY_MS, () => applyAttempt(room));
+  const delay = attempt.status === 'correct' ? APPLY_DELAY_MS : WRONG_APPLY_DELAY_MS;
+  attempt.applyAt = room.now + delay;
+  room.timers.placement = room.scheduler.schedule(delay, () => applyAttempt(room));
   room.emit();
 }
 
