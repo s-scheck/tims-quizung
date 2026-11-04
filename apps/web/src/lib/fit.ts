@@ -34,7 +34,7 @@ export interface FitOptions {
   growMinMedia: number;
 }
 
-export const FIT_DEFAULTS: FitOptions = { baseFont: 16, maxFont: 22, minFont: 12, floorFont: 7, maxCols: 4, minMedia: 0.45, growMinMedia: 0.7 };
+export const FIT_DEFAULTS: FitOptions = { baseFont: 16, maxFont: 18, minFont: 12, floorFont: 7, maxCols: 4, minMedia: 0.45, growMinMedia: 0.7 };
 
 const FONT_STEP = 0.5;
 const MEDIA_STEP = 0.05;

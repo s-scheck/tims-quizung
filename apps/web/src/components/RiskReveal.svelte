@@ -98,7 +98,7 @@
 {/snippet}
 
 <!-- Fernseher: Durchgang und Punkte in der schmalen Spalte, die Plätze bekommen die große Fläche. -->
-<div class="grid gap-6 {readonly ? 'lg:grid-cols-[minmax(0,4fr)_minmax(17rem,1fr)]' : 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]'}">
+<div class="grid gap-6 {readonly ? 'lg:grid-cols-[minmax(0,5fr)_minmax(15rem,1fr)]' : 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]'}">
   <section class="space-y-4">
     <header>
       <p class="text-sm text-slate-400">{listDone ? 'Kategorie beendet' : `Auflösung · Durchgang ${round.passNo}`}</p>

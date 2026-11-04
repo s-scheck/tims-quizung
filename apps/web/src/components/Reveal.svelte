@@ -15,14 +15,14 @@
   );
 </script>
 
-<div class="grid gap-6 {readonly ? 'lg:grid-cols-[minmax(0,4fr)_minmax(17rem,1fr)]' : 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]'}">
+<div class="grid gap-6 {readonly ? 'lg:grid-cols-[minmax(0,5fr)_minmax(15rem,1fr)]' : 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]'}">
   <section class="space-y-4">
     <header>
       <p class="text-sm text-slate-400">Auflösung · {round.category.title}</p>
       <h2 class="text-xl font-bold sm:text-2xl {readonly ? 'text-3xl' : ''}">{round.category.question}</h2>
       {#if round.category.source}<p class="mt-1 text-xs text-slate-500">Quelle: {round.category.source}</p>{/if}
     </header>
-    <ol class="card space-y-1" data-fit={readonly ? 'cols' : undefined} data-fit-min="17" data-fit-rows="8">
+    <ol class="card space-y-1" data-fit={readonly ? 'cols' : undefined} data-fit-min="17" data-fit-rows="6">
       <p class="mb-1 text-center text-xs font-semibold uppercase tracking-widest text-emerald-300">▲ {round.category.topLabel}</p>
       {#each rows as row, i (row.card.id)}
         <li

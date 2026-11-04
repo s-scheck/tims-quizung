@@ -61,7 +61,7 @@
   <ConnectionBanner />
   <!-- Feste Höhe, kein Scrollen: fitScreen verkleinert Bilder, setzt Spalten und senkt die Schrift, bis der Inhalt passt. -->
   <main class="fit-screen min-h-0 flex-1 overflow-hidden" use:fitScreen>
-    <div class="mx-auto w-full max-w-[1760px] px-8 py-6">
+    <div class="w-full px-6 py-4">
       {#if !view}
         {#if client.terminal}
           <p class="text-center text-slate-400">Der Raum wurde geschlossen.</p>
@@ -154,7 +154,7 @@
           <Reveal {view} round={view.round} readonly />
         {/if}
       {:else if view.phase === 'scoreboard'}
-        <Scoreboard {view} readonly />
+        <div class="mx-auto max-w-5xl"><Scoreboard {view} readonly /></div>
       {:else if view.phase === 'finished'}
         <FinalStandings {view} readonly />
       {/if}
