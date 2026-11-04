@@ -54,8 +54,14 @@
   const TICK_STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000];
 
   const height = $derived(large ? 260 : 190);
-  const axisY = $derived(height - 70);
-  const rowHeight = $derived(large ? 34 : 28);
+  /**
+   * Fernsehansicht: Die Höhe steht in rem und wächst mit der Schrift (lib/fit.ts).
+   * k rechnet alle senkrechten Pixelwerte und die Schildbreiten auf die echte Größe um.
+   */
+  let boxHeight = $state(0);
+  const k = $derived(large && boxHeight > 0 ? boxHeight / height : 1);
+  const axisY = $derived((height - 70) * k);
+  const rowHeight = $derived((large ? 34 : 28) * k);
 
   let width = $state(0);
   let el = $state<HTMLDivElement>();
@@ -202,10 +208,10 @@
       ...markers.map((m) => ({ ...m, mine: false })),
       ...(guess !== null ? [{ id: '__guess', year: guess, label: formatYear(guess), color: 'var(--color-indigo-500)', mine: true }] : []),
     ]
-      .map((m) => ({ ...m, x: toX(yearToAxis(m.year)), w: m.label.length * (large ? 9 : 7.5) + 18 }))
+      .map((m) => ({ ...m, x: toX(yearToAxis(m.year)), w: (m.label.length * (large ? 9 : 7.5) + 18) * k }))
       .sort((a, b) => a.x - b.x);
     const rowEnds: number[] = [];
-    const maxRows = Math.max(1, Math.floor((axisY - 20) / rowHeight));
+    const maxRows = Math.max(1, Math.floor((axisY - 20 * k) / rowHeight));
     return all.map((m) => {
       const left = m.x - m.w / 2;
       let row = rowEnds.findIndex((end) => end + 4 <= left);
@@ -308,8 +314,9 @@
 <div
   bind:this={el}
   bind:clientWidth={width}
+  bind:clientHeight={boxHeight}
   class="relative select-none overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 {interactive ? 'cursor-crosshair' : 'cursor-grab'} {className}"
-  style="height:{height}px; touch-action: pan-y"
+  style="height:{large ? `${height / 16}rem` : `${height}px`}; touch-action: pan-y"
   role="group"
   aria-label={interactive ? 'Zeitstrahl, antippen setzt ein Jahr' : 'Zeitstrahl'}
   onpointerdown={onPointerDown}
@@ -318,27 +325,27 @@
   onpointercancel={(e) => onPointerUp(e, true)}
 >
   {#if band}
-    <div class="absolute rounded-md bg-emerald-400/25 ring-1 ring-emerald-300/70" style="left:{band.left}px; width:{band.width}px; top:10px; height:{axisY - 2}px"></div>
+    <div class="absolute rounded-md bg-emerald-400/25 ring-1 ring-emerald-300/70" style="left:{band.left}px; width:{band.width}px; top:{10 * k}px; height:{axisY - 2 * k}px"></div>
   {/if}
 
   {#each minorTicks as y (y)}
-    <div class="absolute w-px bg-slate-700" style="left:{toX(yearToAxis(y))}px; top:{axisY - 4}px; height:8px"></div>
+    <div class="absolute w-px bg-slate-700" style="left:{toX(yearToAxis(y))}px; top:{axisY - 4 * k}px; height:{8 * k}px"></div>
   {/each}
 
   <div class="absolute inset-x-0 h-0.5 bg-slate-500" style="top:{axisY}px"></div>
 
   {#if 0.5 >= viewLo && 0.5 <= viewLo + span}
-    <div class="absolute w-px bg-slate-500/60" style="left:{toX(0.5)}px; top:8px; height:{axisY - 8}px"></div>
-    <span class="absolute -translate-x-full whitespace-nowrap pr-1 text-slate-500 {large ? 'text-sm' : 'text-[10px]'}" style="left:{toX(0.5)}px; top:{axisY - (large ? 22 : 16)}px">Chr. Geb.</span>
+    <div class="absolute w-px bg-slate-500/60" style="left:{toX(0.5)}px; top:{8 * k}px; height:{axisY - 8 * k}px"></div>
+    <span class="absolute -translate-x-full whitespace-nowrap pr-1 text-slate-500 {large ? 'text-sm' : 'text-[10px]'}" style="left:{toX(0.5)}px; top:{axisY - (large ? 22 : 16) * k}px">Chr. Geb.</span>
   {/if}
 
   {#each ticks as y (y)}
     {@const x = toX(yearToAxis(y))}
-    <div class="absolute w-px bg-slate-400" style="left:{x}px; top:{axisY - 7}px; height:14px"></div>
+    <div class="absolute w-px bg-slate-400" style="left:{x}px; top:{axisY - 7 * k}px; height:{14 * k}px"></div>
     {#if labeled.has(y)}
       <span
         class="absolute -translate-x-1/2 whitespace-nowrap font-mono text-slate-400 {large ? 'text-base' : 'text-xs'}"
-        style="left:{x}px; top:{axisY + 12}px">{tickLabel(y)}</span
+        style="left:{x}px; top:{axisY + 12 * k}px">{tickLabel(y)}</span
       >
     {/if}
   {/each}
@@ -346,13 +353,13 @@
   {#if band && target}
     <span
       class="absolute -translate-x-1/2 whitespace-nowrap rounded bg-emerald-500/20 px-1.5 font-semibold text-emerald-200 {large ? 'text-lg' : 'text-sm'}"
-      style="left:{Math.min(width - 50, Math.max(50, band.left + band.width / 2))}px; top:{axisY + (large ? 38 : 34)}px">{formatYearSpan(target)}</span
+      style="left:{Math.min(width - 50, Math.max(50, band.left + band.width / 2))}px; top:{axisY + (large ? 38 : 34) * k}px">{formatYearSpan(target)}</span
     >
   {/if}
 
   {#each placed as m (m.id)}
-    {@const top = axisY - (large ? 40 : 34) - m.row * rowHeight}
-    <div class="pointer-events-none absolute w-0.5" style="left:{m.x - 1}px; top:{top + 12}px; height:{axisY - top - 12}px; background:{m.color}"></div>
+    {@const top = axisY - (large ? 40 : 34) * k - m.row * rowHeight}
+    <div class="pointer-events-none absolute w-0.5" style="left:{m.x - 1}px; top:{top + 12 * k}px; height:{axisY - top - 12 * k}px; background:{m.color}"></div>
     <div class="pointer-events-none absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-slate-950" style="left:{m.x}px; top:{axisY + 1}px; background:{m.color}"></div>
     <span
       class="pointer-events-none absolute -translate-x-1/2 whitespace-nowrap rounded-md px-1.5 py-0.5 font-extrabold text-ink shadow {large ? 'text-base' : 'text-xs'} {m.mine ? 'ring-2 ring-white/70' : ''}"

@@ -257,7 +257,7 @@
 
     <div class="card">
       <p class="mb-2 text-center text-xs font-semibold uppercase tracking-widest text-emerald-300">▲ {category.topLabel}</p>
-      <ol class="space-y-1 {readonly ? 'fit-cols' : ''}" bind:this={chainEl}>
+      <ol class="space-y-1" data-fit={readonly ? 'cols' : undefined} data-fit-min="15" bind:this={chainEl}>
         {#each rows as row (row.cardId)}
           {@const card = cardsById.get(row.cardId)}
           {@const status = row.preview ? null : statusFor(row.cardId)}
@@ -304,7 +304,7 @@
         <h3 class="font-bold">Offene Karten</h3>
         <span class="text-xs text-slate-500">{round.pool.length} übrig</span>
       </div>
-      <div class="grid gap-2 {readonly ? 'fit-grid grid-cols-2' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-2'}">
+      <div class="grid gap-2 grid-cols-2 {readonly ? '' : 'sm:grid-cols-3 lg:grid-cols-2'}" data-fit={readonly ? 'grid' : undefined} data-fit-min="10" data-fit-base="2">
         {#each poolIds as cardId (cardId)}
           {@const card = cardsById.get(cardId)}
           <div

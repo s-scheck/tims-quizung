@@ -298,28 +298,6 @@ body {
   }
 }
 
-/*
- * Fernsehansicht (/screen, lib/fit.ts): Lange Listen laufen in Zeitungsspalten, sobald der Platz nicht reicht.
- * Ohne Screen ist --fit-cols nicht gesetzt, dann bleibt es bei einer Spalte bzw. dem eigenen Raster.
- */
-.fit-cols {
-  columns: var(--fit-cols, 1);
-  column-gap: 1rem;
-}
-/* space-y-* setzt in Tailwind v4 den Abstand nach unten (margin-block-end), das trägt auch über Spaltenumbrüche. */
-.fit-cols > * {
-  break-inside: avoid;
-}
-/*
- * Raster-Listen (offene Karten): Grundspalten (--fit-base, Standard 2) plus eine je Stufe.
- * Die Spaltenzahl steckt in der Mindestbreite, weil repeat() keine berechnete Anzahl in allen Browsern kennt.
- * --fit-gap muss zum gap-* der Liste passen.
- */
-.fit-grid.fit-grid {
-  --fit-n: calc(var(--fit-cols, 1) - 1 + var(--fit-base, 2));
-  grid-template-columns: repeat(auto-fill, minmax(calc((100% - (var(--fit-n) - 1) * var(--fit-gap, 0.5rem)) / var(--fit-n) - 0.5px), 1fr));
-}
-
 /* Stumme Weltkarte (Leaflet) */
 /* Leaflets eigenes Stylesheet lädt nach diesem, deshalb die höhere Spezifität. */
 .map-water .leaflet-container,

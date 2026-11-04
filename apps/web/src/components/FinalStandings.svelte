@@ -18,7 +18,7 @@
     <p class="text-slate-400">{view.rounds.length} {view.rounds.length === 1 ? 'Runde' : 'Runden'}</p>
   </header>
 
-  <ol class="card divide-y divide-slate-800 p-0 text-left {readonly ? 'fit-cols' : ''}">
+  <ol class="card divide-y divide-slate-800 p-0 text-left" data-fit={readonly ? 'cols' : undefined} data-fit-min="18">
     {#each rows as row, i (row.player.id)}
       <li class="flex items-center gap-3 px-4 py-3 {readonly ? 'text-2xl' : ''}" in:fly={{ y: 10, delay: i * 120, duration: 300 }}>
         <span class="w-8 text-center text-xl">{row.rank <= 3 ? medals[row.rank - 1] : `${row.rank}.`}</span>

@@ -37,14 +37,7 @@
   }
 </script>
 
-<div class="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-  <section class="space-y-4">
-    <header>
-      <p class="text-sm text-slate-400">{listDone ? 'Kategorie beendet' : `Auflösung · Durchgang ${round.passNo}`}</p>
-      <h2 class="text-2xl font-black sm:text-3xl {readonly ? 'text-4xl' : ''}">{round.category.title}</h2>
-      {#if round.category.source}<p class="text-xs text-slate-500">Quelle: {round.category.source}</p>{/if}
-    </header>
-
+{#snippet passCard()}
     {#if latest && (!listDone || show)}
       <div class="card space-y-2">
         <h3 class="font-bold">Durchgang {latest.passNo}</h3>
@@ -102,6 +95,18 @@
         {/if}
       </div>
     {/if}
+{/snippet}
+
+<!-- Fernseher: Durchgang und Punkte in der schmalen Spalte, die Plätze bekommen die große Fläche. -->
+<div class="grid gap-6 {readonly ? 'lg:grid-cols-[minmax(0,5fr)_minmax(0,2fr)]' : 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]'}">
+  <section class="space-y-4">
+    <header>
+      <p class="text-sm text-slate-400">{listDone ? 'Kategorie beendet' : `Auflösung · Durchgang ${round.passNo}`}</p>
+      <h2 class="text-2xl font-black sm:text-3xl {readonly ? 'text-4xl' : ''}">{round.category.title}</h2>
+      {#if round.category.source}<p class="text-xs text-slate-500">Quelle: {round.category.source}</p>{/if}
+    </header>
+
+    {#if !readonly}{@render passCard()}{/if}
 
     <div class="card">
       <h3 class="mb-2 font-bold">{listDone ? 'Die ganze Liste' : `Plätze 1–${round.size}`}</h3>
@@ -112,7 +117,7 @@
       {/if}
     </div>
 
-    {#if earlier.length > 0 && !listDone}
+    {#if earlier.length > 0 && !listDone && !readonly}
       <details class="card">
         <summary class="cursor-pointer font-bold">Frühere Durchgänge</summary>
         {#each earlier as pass (pass.passNo)}
@@ -142,6 +147,7 @@
         hint="„Tipp zeigen“ zeigt den Tipp, „Platz zeigen“ Platz und Punkte. „Liste aufdecken“ zeigt die ganze Liste und beendet die Kategorie."
       />
     {/if}
+    {#if readonly}{@render passCard()}{/if}
     <RiskTotals {view} {round} large={readonly} />
     {#if !readonly}
       {#if client.isHost && view.phase === 'reveal'}
