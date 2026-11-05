@@ -1,6 +1,6 @@
 import { scoreRiskPass, type RiskPassView, type RiskRoundView, type RiskSlotView, type RoundView } from '@quiz/shared';
 import type { Room } from '../../rooms/room.ts';
-import { riskRound } from './reducer.ts';
+import { passDone, riskRound } from './reducer.ts';
 import { revealView } from '../common.ts';
 
 /**
@@ -68,7 +68,7 @@ export function riskRoundView(room: Room, revealed: boolean, viewerId: string | 
     size: items.length,
     rules: { ...r.rules },
     passNo: r.passes.length,
-    loggedIn: playing ? Object.keys(current.guesses) : [],
+    loggedIn: playing ? r.turnOrder.filter((id) => passDone(r, id)) : [],
     hitSlots: [...hits.values()].sort((a, b) => a.rank - b.rank),
     passes,
     totals,

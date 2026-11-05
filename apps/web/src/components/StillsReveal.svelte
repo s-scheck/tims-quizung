@@ -4,6 +4,7 @@
   import { playerName } from '../lib/format.ts';
   import ScoringHandoff from './ScoringHandoff.svelte';
   import StillsGallery from './StillsGallery.svelte';
+  import JokerTag from './JokerTag.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: StillsRoundView; readonly?: boolean } = $props();
 
@@ -38,7 +39,7 @@
             {#each hits as x (x.playerId)}
               <li class="flex items-center gap-2 {readonly ? 'text-xl' : ''} {x.playerId === client.myId ? 'text-indigo-200' : ''}">
                 <span class="min-w-0 flex-1 break-words">
-                  <span class="font-semibold">{playerName(view, x.playerId)}</span>
+                  <span class="font-semibold">{playerName(view, x.playerId)}</span> <JokerTag {view} {round} playerId={x.playerId} />
                   {#if tipText(x.playerId)}<span class="text-sm text-slate-400"> · {tipText(x.playerId)}</span>{/if}
                 </span>
                 <span class="shrink-0 text-sm text-slate-400">Foto {x.index + 1}</span>
@@ -54,7 +55,7 @@
           <ul class="space-y-1 text-sm">
             {#each misses as x (x.playerId)}
               <li class="break-words {x.playerId === client.myId ? 'text-indigo-200' : ''}">
-                <span class="font-semibold">{playerName(view, x.playerId)}</span>
+                <span class="font-semibold">{playerName(view, x.playerId)}</span> <JokerTag {view} {round} playerId={x.playerId} />
                 <span class="text-rose-300">
                   · {round.mode === 'type' ? `falsch bei Foto ${x.index + 1}${tipText(x.playerId) ? `: „${tipText(x.playerId)}“` : ''}` : `Fehlbuzzer bei Foto ${x.index + 1}`}
                 </span>
@@ -74,7 +75,7 @@
         <ul class="space-y-1">
           {#each round.solved.winners as id (id)}
             <li class="flex items-center gap-2 {readonly ? 'text-xl' : ''} {id === client.myId ? 'text-indigo-200' : ''}">
-              <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, id)}</span>
+              <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, id)} <JokerTag {view} {round} playerId={id} /></span>
               <span class="font-mono font-black">{round.points[id] ?? 0}</span>
             </li>
           {/each}

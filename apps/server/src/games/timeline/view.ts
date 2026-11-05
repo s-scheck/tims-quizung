@@ -2,6 +2,7 @@ import { yearDistance, type RoundView, type TimelineGuessView, type TimelineRoun
 import type { Room } from '../../rooms/room.ts';
 import { timelineRound } from './reducer.ts';
 import { revealView } from '../common.ts';
+import { rankWithJoker } from '../joker.ts';
 
 /**
  * Sicht auf die Runde. Die Lösung nur für den Moderator oder ab der Auflösung,
@@ -27,6 +28,8 @@ export function timelineRoundView(room: Room, revealed: boolean, viewerId: strin
       .filter(([, guess]) => guess.confirmed)
       .map(([id]) => id),
   };
+  // Der Joker-Spieler gilt beim Raten als fertig.
+  if (r.joker && !revealed && !view.confirmed.includes(r.joker.by)) view.confirmed.push(r.joker.by);
 
   // Show-Auflösung: Spieler sehen Lösung und Tipps erst, wenn der Moderator sie aufgedeckt hat.
   const show = r.reveal;
@@ -52,7 +55,7 @@ export function timelineRoundView(room: Room, revealed: boolean, viewerId: strin
       .map((g) => ({ playerId: g.playerId, distanceYears: g.distanceYears }));
     const missing = ids.filter((id) => !r.guesses[id]?.confirmed).map((id) => ({ playerId: id, distanceYears: null }));
     view.guesses = guesses;
-    view.ranking = [...ranked, ...missing];
+    view.ranking = rankWithJoker([...ranked, ...missing], (row) => row.playerId, r.joker);
   }
 
   return view;

@@ -2,6 +2,7 @@ import type { ClientMsg, FaceEffect, GameId, GuessMode, KidsPenalty, PictureMode
 import type { Category } from '@quiz/content';
 import type { Room } from '../rooms/room.ts';
 import type { Result } from '../rooms/result.ts';
+import type { JokerHooks } from './joker.ts';
 
 export interface StartRoundOptions {
   lives?: number;
@@ -66,6 +67,8 @@ export interface GameModule {
   onReveal(room: Room): void;
   /** Ist die Auflösung so weit, dass Punkte eingetragen werden dürfen? Ohne den Hook immer. */
   isRevealComplete?(room: Room): boolean;
+  /** Joker: Ergebnis einer anderen Person kopieren. Fehlt das Feld, gibt es im Spiel keinen Joker. */
+  joker?: JokerHooks;
 }
 
 const games = new Map<GameId, GameModule>();

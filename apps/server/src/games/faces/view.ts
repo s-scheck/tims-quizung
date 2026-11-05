@@ -5,8 +5,8 @@ import { imageUrl } from '../picture/view.ts';
 import { facesPoints, facesRanking, facesRound } from './reducer.ts';
 
 /**
- * Sicht auf die Runde. Den Namen und alle Versuche sieht nur der Host (`privileged`) oder alle ab der Auflösung.
- * Spieler sehen ihre eigenen Versuche und die geprüften Fehltipps aller.
+ * Sicht auf die Runde. Den Namen, alle Versuche und wer schon richtig liegt sieht nur der Host (`privileged`) oder alle
+ * ab der Auflösung, damit ein Joker blind bleibt. Spieler sehen ihre eigenen Versuche und die geprüften Fehltipps aller.
  */
 export function facesRoundView(room: Room, revealed: boolean, viewerId: string | null): RoundView | null {
   const r = facesRound(room);
@@ -15,7 +15,9 @@ export function facesRoundView(room: Room, revealed: boolean, viewerId: string |
   const showAll = revealed || privileged;
   const { faces: _faces, games: _games, kind: _kind, ...category } = r.category;
 
+  // Kopierte Versuche des Joker-Spielers wären doppelt.
   const wrongGuesses = r.turnOrder
+    .filter((id) => id !== r.joker?.by)
     .flatMap((id) => (r.attempts[id] ?? []).filter((a) => a.status === 'wrong').map((a) => ({ by: id, text: a.text, at: a.at })))
     .sort((a, b) => a.at - b.at)
     .map(({ by, text }) => ({ by, text }));
@@ -39,7 +41,7 @@ export function facesRoundView(room: Room, revealed: boolean, viewerId: string |
     soloMode: false,
     startedAt: r.startedAt,
     effect: { ...r.effect, revealed: [...r.effect.revealed] },
-    solved: facesRanking(r),
+    solved: showAll ? facesRanking(r) : [],
     wrongGuesses,
   };
   if (showAll) view.name = r.target.name;

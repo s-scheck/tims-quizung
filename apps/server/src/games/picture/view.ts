@@ -2,6 +2,7 @@ import type { PictureFieldView, PictureGuessView, PictureResultView, PictureRoun
 import type { Room } from '../../rooms/room.ts';
 import type { PictureGuess, PictureRound } from '../../rooms/state.ts';
 import { pictureRound } from './reducer.ts';
+import { rankWithJoker } from '../joker.ts';
 
 /** Dateinamen aus der Bildablage werden unter /images ausgeliefert, Adressen bleiben wie sie sind. */
 export function imageUrl(ref: string): string {
@@ -106,11 +107,12 @@ function allModeView(r: PictureRound, revealed: boolean, viewerId: string | null
   return out;
 }
 
-/** Rangfolge über die freigegebenen Felder: Treffer absteigend, dann frühere Fertig-Zeit, nicht Fertige zuletzt. */
+/** Rangfolge über die freigegebenen Felder: Treffer absteigend, dann frühere Fertig-Zeit, nicht Fertige zuletzt. Der Joker-Spieler teilt den Platz. */
 export function pictureResults(r: PictureRound): PictureResultView[] {
   const called = r.category.fields.slice(0, r.judgeReleased);
   const time = (id: string) => r.doneAt[id] ?? Number.MAX_SAFE_INTEGER;
-  return r.turnOrder
+  const sorted = r.turnOrder
     .map((id) => ({ playerId: id, hits: called.filter((f) => r.verdicts[id]?.[f.id] === true).length, doneAt: r.doneAt[id] ?? null }))
     .sort((a, b) => b.hits - a.hits || time(a.playerId) - time(b.playerId));
+  return rankWithJoker(sorted, (row) => row.playerId, r.joker);
 }

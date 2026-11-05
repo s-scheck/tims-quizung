@@ -193,6 +193,18 @@
   100% { transform: scale(1); }
 }
 
+/* Joker-Karte (JokerOverlay.svelte): dreht sich auf, steht, verschwindet nach oben. */
+@keyframes quiz-joker {
+  0% { transform: perspective(800px) rotateY(90deg) scale(0.4); opacity: 0; }
+  14% { transform: perspective(800px) rotateY(-12deg) scale(1.08); opacity: 1; }
+  22% { transform: perspective(800px) rotateY(0deg) scale(1); }
+  30% { transform: perspective(800px) rotate(-3deg) scale(1.02); }
+  38% { transform: perspective(800px) rotate(2deg) scale(1); }
+  46% { transform: perspective(800px) rotate(0deg) scale(1); }
+  84% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-3rem) scale(0.9); opacity: 0; }
+}
+
 /* Farbpunkte, die bei einem Treffer aus der Mitte fliegen (siehe Burst.svelte) */
 @keyframes quiz-burst {
   0% { transform: translate(-50%, -50%) rotate(var(--a)) translateY(0) scale(1); opacity: 1; }
@@ -240,6 +252,10 @@ body {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+  /* Die Joker-Karte bleibt dann still stehen, bis sie verschwindet. */
+  .joker-pop {
+    animation-name: none !important;
   }
 }
 

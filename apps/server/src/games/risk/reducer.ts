@@ -4,6 +4,7 @@ import type { Room } from '../../rooms/room.ts';
 import type { RiskPass, RiskRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
 import type { StartRoundOptions } from '../registry.ts';
+import { copiesWithJoker, JOKER_LOCKED, mirrorEntry, type JokerHooks } from '../joker.ts';
 import { baseRound, buildTurnOrder, revealComplete, scheduleRoundTimer, toReveal } from '../common.ts';
 
 export function riskRound(room: Room): RiskRound | null {
@@ -12,6 +13,16 @@ export function riskRound(room: Room): RiskRound | null {
 
 export function currentPass(round: RiskRound): RiskPass {
   return round.passes[round.passes.length - 1]!;
+}
+
+/** Index des laufenden Durchgangs, zugleich der Abschnitt für den Joker. */
+function currentIndex(round: RiskRound): number {
+  return round.passes.length - 1;
+}
+
+/** Hat der Spieler im laufenden Durchgang eingeloggt oder kopiert er per Joker? */
+export function passDone(round: RiskRound, playerId: string): boolean {
+  return currentPass(round).guesses[playerId] !== undefined || copiesWithJoker(round, playerId, currentIndex(round));
 }
 
 /** In früheren Durchgängen getroffene Plätze, die sind gesperrt. */
@@ -67,14 +78,14 @@ export function handleRiskMessage(room: Room, playerId: string, msg: ClientMsg):
 
 /** Alle Teilnehmer haben eingeloggt: Durchgang direkt auflösen. */
 function revealIfComplete(room: Room, round: RiskRound): void {
-  const guesses = currentPass(round).guesses;
-  if (round.turnOrder.length > 0 && round.turnOrder.every((id) => guesses[id])) toReveal(room);
+  if (round.turnOrder.length > 0 && round.turnOrder.every((id) => passDone(round, id))) toReveal(room);
 }
 
 function logIn(room: Room, playerId: string, rawText: string): Result {
   const round = riskRound(room);
   if (room.phase !== 'playing' || !round) return fail('invalid_action', 'Gerade wird nicht gespielt');
   if (!round.turnOrder.includes(playerId)) return fail('not_allowed', 'Du bist in dieser Runde nicht dabei');
+  if (copiesWithJoker(round, playerId, currentIndex(round))) return fail('invalid_action', JOKER_LOCKED);
   const pass = currentPass(round);
   if (pass.guesses[playerId]) return fail('invalid_action', 'Du hast schon eingeloggt');
   const text = rawText.trim();
@@ -99,6 +110,7 @@ function correct(room: Room, playerId: string, targetId: string, rank: number | 
   if (!room.isHost(playerId)) return fail('not_host', 'Nur der Host korrigiert');
   const round = riskRound(room);
   if (room.phase !== 'reveal' || !round) return fail('invalid_action', 'Korrigieren geht nur in der Auflösung');
+  if (copiesWithJoker(round, targetId, currentIndex(round))) return fail('invalid_action', 'Der Joker übernimmt das Urteil der kopierten Person');
   const guess = currentPass(round).guesses[targetId];
   if (!guess) return fail('invalid_action', 'Dieser Spieler hat keinen Tipp abgegeben');
   if (rank !== null && rank > round.category.items.length) return fail('invalid_action', 'Diesen Platz gibt es nicht');
@@ -130,3 +142,27 @@ export function onPlayerRemoved(room: Room, playerId: string): void {
   delete currentPass(round).guesses[playerId];
   if (room.phase === 'playing') revealIfComplete(room, round);
 }
+
+/** Joker: nur wenn gleiche Treffer beide punkten, bis zum Einloggen. Gilt ab dem laufenden Durchgang, gespiegelt wird je aufgelöstem Durchgang. */
+export const riskJoker: JokerHooks = {
+  blocked: (room, playerId) => {
+    const round = riskRound(room);
+    if (!round) return 'Gerade gibt es keinen Joker';
+    if (round.rules.duplicates !== 'both') return 'Wenn gleiche Treffer leer ausgehen, gibt es keinen Joker';
+    return currentPass(round).guesses[playerId] ? 'Du hast schon eingeloggt' : null;
+  },
+  from: (room) => {
+    const round = riskRound(room);
+    return round ? currentIndex(round) : 0;
+  },
+  apply: (room) => {
+    const round = riskRound(room);
+    if (round) revealIfComplete(room, round);
+  },
+  sync: (room, joker) => {
+    const round = riskRound(room);
+    if (!round) return;
+    const open = room.phase === 'playing' ? currentIndex(round) : round.passes.length;
+    for (let i = joker.from; i < open; i++) mirrorEntry(round.passes[i]!.guesses, joker);
+  },
+};

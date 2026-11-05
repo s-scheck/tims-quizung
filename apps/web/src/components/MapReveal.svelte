@@ -7,6 +7,7 @@
   import WorldMap, { type MapFocus, type MapMarker } from './WorldMap.svelte';
   import RevealControls from './RevealControls.svelte';
   import ScoringHandoff from './ScoringHandoff.svelte';
+  import JokerTag from './JokerTag.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: MapRoundView; readonly?: boolean } = $props();
 
@@ -81,12 +82,12 @@
     {/if}
 
     <ol class="card divide-y divide-slate-800 p-0">
-      {#each ranking as row, i (row.playerId)}
+      {#each ranking as row (row.playerId)}
         {@const open = revealStep(show, row.playerId) >= 1}
         <li class="flex items-center gap-3 px-4 py-3 {readonly ? 'text-xl' : ''} {row.playerId === client.myId ? 'bg-indigo-500/10' : ''}">
-          <span class="w-6 text-right font-mono text-slate-500">{row.distanceKm === null || !showRanks ? '–' : `${i + 1}.`}</span>
+          <span class="w-6 text-right font-mono text-slate-500">{row.distanceKm === null || !showRanks ? '–' : `${row.rank}.`}</span>
           <span class="h-3 w-3 shrink-0 rounded-full" style="background:{colorOf(row.playerId)}"></span>
-          <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, row.playerId)}</span>
+          <span class="flex min-w-0 flex-1 flex-wrap items-center gap-2 break-words font-semibold">{playerName(view, row.playerId)} <JokerTag {view} {round} playerId={row.playerId} /></span>
           <span class="font-mono {row.distanceKm === null ? 'text-sm text-slate-500' : 'text-lg font-bold'} {moderator && !open ? 'text-slate-400' : ''}">
             {row.distanceKm === null ? 'kein Pin' : formatKm(row.distanceKm)}
           </span>

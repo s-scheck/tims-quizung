@@ -121,10 +121,10 @@ describe('Zeitstrahl: Tipps und Sichtbarkeit', () => {
     const pub = viewRound(h, null);
     expect(pub.target).toEqual({ from: 1939, to: 1945 });
     expect(pub.ranking).toEqual([
-      { playerId: c, distanceYears: 0 },
-      { playerId: b, distanceYears: 5 },
-      { playerId: d, distanceYears: 9 },
-      { playerId: e, distanceYears: null },
+      { playerId: c, distanceYears: 0, rank: 1 },
+      { playerId: b, distanceYears: 5, rank: 2 },
+      { playerId: d, distanceYears: 9, rank: 3 },
+      { playerId: e, distanceYears: null, rank: 4 },
     ]);
     expect(pub.guesses?.find((g) => g.playerId === c)).toEqual({ playerId: c, year: 1942, distanceYears: 0 });
     expect(pub.guesses?.some((g) => g.playerId === e)).toBe(false);
@@ -137,7 +137,7 @@ describe('Zeitstrahl: Tipps und Sichtbarkeit', () => {
     expectOk(h.act(b, { type: 'place_year', year: 10 }));
     expectOk(h.act(b, { type: 'confirm_pin' }));
     expectOk(h.act(h.host, { type: 'end_round' }));
-    expect(viewRound(h, null).ranking).toEqual([{ playerId: b, distanceYears: 53 }]);
+    expect(viewRound(h, null).ranking).toEqual([{ playerId: b, distanceYears: 53, rank: 1 }]);
   });
 
   test('Verlassen entfernt den Tipp, letzter Teilnehmer weg beendet die Runde', () => {
@@ -170,7 +170,7 @@ describe('Zeitstrahl: Zeitlimit', () => {
     expect(h.emits.length).toBe(emitsBefore + 1);
     const pub = viewRound(h, null);
     expect(pub.guesses?.map((g) => g.playerId).sort()).toEqual([a, b].sort());
-    expect(pub.ranking?.at(-1)).toEqual({ playerId: c, distanceYears: null });
+    expect(pub.ranking?.at(-1)).toEqual({ playerId: c, distanceYears: null, rank: 3 });
   });
 
   test('Host beendet vorher: Timer ist weg', () => {

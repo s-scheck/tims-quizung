@@ -1,5 +1,5 @@
 import type { GameModule } from '../registry.ts';
-import { handleRiskMessage, onPlayerRemoved, startRiskRound } from './reducer.ts';
+import { riskJoker, handleRiskMessage, onPlayerRemoved, startRiskRound } from './reducer.ts';
 import { riskRoundView } from './view.ts';
 
 export const riskGame: GameModule = {
@@ -19,4 +19,5 @@ export const riskGame: GameModule = {
   penalizeActive: () => {},
   clearTurn: () => {},
   onReveal: () => {},
+  joker: riskJoker,
 };

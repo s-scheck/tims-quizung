@@ -148,6 +148,17 @@ export interface ShowRevealView {
   complete: boolean;
 }
 
+/**
+ * Joker der Runde: `by` kopiert das Ergebnis von `target`, ab Abschnitt `from`
+ * (No-Risk-Durchgang oder Kinderpromi, sonst 0). Wen er kopiert, sehen nur der Host, er selbst und alle ab der Auflösung.
+ */
+export interface JokerView {
+  by: string;
+  target?: string;
+  from: number;
+  at: number;
+}
+
 export interface BaseRoundView {
   turnOrder: string[];
   turnNo: number;
@@ -156,6 +167,10 @@ export interface BaseRoundView {
   turnDeadline: number | null;
   soloMode: boolean;
   reveal?: ShowRevealView;
+  /** Gesetzter Joker der Runde, höchstens einer. */
+  joker?: JokerView;
+  /** Der Betrachter darf gerade seinen Joker setzen. */
+  jokerAvailable?: boolean;
 }
 
 export interface SortRoundView extends BaseRoundView {
@@ -285,8 +300,8 @@ export interface MapRoundView extends BaseRoundView {
   myPin?: { lat: number; lng: number; confirmed: boolean };
   /** Ab der Auflösung: alle bestätigten Pins mit Entfernung. */
   pins?: MapPinView[];
-  /** Ab der Auflösung: Teilnehmer nach Entfernung, ohne Pin hinten mit null. */
-  ranking?: { playerId: string; distanceKm: number | null }[];
+  /** Ab der Auflösung: Teilnehmer nach Entfernung, ohne Pin hinten mit null. Joker-Spieler teilen den Platz. */
+  ranking?: { playerId: string; distanceKm: number | null; rank: number }[];
   privileged?: boolean;
 }
 
@@ -322,8 +337,8 @@ export interface TimelineRoundView extends BaseRoundView {
   myGuess?: { year: number; confirmed: boolean };
   /** Ab der Auflösung: alle bestätigten Tipps mit Abstand. */
   guesses?: TimelineGuessView[];
-  /** Ab der Auflösung: Teilnehmer nach Abstand, ohne Tipp hinten mit null. */
-  ranking?: { playerId: string; distanceYears: number | null }[];
+  /** Ab der Auflösung: Teilnehmer nach Abstand, ohne Tipp hinten mit null. Joker-Spieler teilen den Platz. */
+  ranking?: { playerId: string; distanceYears: number | null; rank: number }[];
   privileged?: boolean;
 }
 
@@ -499,6 +514,8 @@ export interface PictureResultView {
   /** Richtige Antworten unter den freigegebenen Feldern. */
   hits: number;
   doneAt: number | null;
+  /** Platz ab 1, Joker-Spieler teilen ihn mit der kopierten Person. */
+  rank: number;
 }
 
 /** Kategorie eines Bilderrätsels: ein Bild mit verdeckten Stellen. */
@@ -825,6 +842,8 @@ export interface RoomView {
   riskRules: RiskRules;
   /** Zuletzt gewählte Art der Auflösung. */
   revealMode: RevealMode;
+  /** Wer seinen Joker in diesem Spiel schon gesetzt hat. */
+  jokersUsed: string[];
   /** Nur in `choosing_category` enthalten. */
   categories?: CategorySummary[];
   /** Nur in `choosing_category` enthalten. */

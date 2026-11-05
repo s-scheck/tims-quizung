@@ -212,6 +212,7 @@ export function isClientMsg(x: unknown): x is ClientMsg {
           (Array.isArray(x.revealed) && x.revealed.length <= 1000 && x.revealed.every((i) => isInt(i) && i >= 0)))
       );
     case 'reveal_player':
+    case 'joker':
       return isStr(x.playerId, 100);
     case 'picture_guess':
       return isInt(x.turnNo) && isStr(x.fieldId, 20) && isStr(x.text, GUESS_MAX_LENGTH) && x.text.trim().length > 0;

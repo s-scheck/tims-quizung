@@ -9,8 +9,8 @@ import { attemptsAt, STILLS_NAME, stillsOver, stillsPoints, stillsResults, still
  * Sicht auf die Runde. Lösung, alle Fotos und die Tipps des aktuellen Fotos ab „Tipps schließen“ sieht nur der Host (`privileged`).
  * Spieler sehen die freigegebenen Fotos und ihre eigenen Tipps mit Urteil; Lösung und Gewinner, sobald das Raten vorbei ist.
  * Den Kategorie-Titel („Film 7“) sehen Spieler erst in der Auflösung.
- * Mit `allGuess` sehen alle, wer fertig ist und ob richtig, aber keine Texte: beim Tippen erst nach dem Weiterschalten,
- * weil der Host Urteile bis dahin ändern kann; beim Buzzern sofort. Wer richtig lag, sieht die Lösung.
+ * Mit `allGuess` sehen alle, wer fertig ist und ob richtig, aber keine Texte: beim Tippen erst, wenn das Raten vorbei ist,
+ * damit ein Joker blind bleibt; beim Buzzern sofort. Wer richtig lag, sieht die Lösung.
  */
 export function stillsRoundView(room: Room, revealed: boolean, viewerId: string | null): RoundView | null {
   const r = stillsRound(room);
@@ -42,14 +42,14 @@ export function stillsRoundView(room: Room, revealed: boolean, viewerId: string 
     mode: r.mode,
     thinkSeconds: r.thinkSeconds,
     allGuess: r.allGuess,
-    results: results.filter((x) => seesAll || x.index < r.index || x.playerId === viewerId),
+    results: results.filter((x) => seesAll || x.playerId === viewerId),
     stagePoints: stills.map((s) => s.points),
     images: stills.slice(0, allImages ? stills.length : r.index + 1).map((s) => imageUrl(s.image)),
     index: r.index,
     stage: r.stage,
     solved: stillsSolved(r),
     over,
-    points: stillsPoints(r),
+    points: seesAll ? stillsPoints(r) : ownPoints(stillsPoints(r), viewerId),
   };
   if (r.mode === 'buzz') view.buzzer = { holder: r.holder, deadline: r.turnDeadline, used: [...r.used] };
   // Wer schon getippt hat, sehen Host und Screen, Spieler nur sich selbst.
@@ -71,4 +71,9 @@ export function stillsRoundView(room: Room, revealed: boolean, viewerId: string 
     );
   }
   return view;
+}
+
+/** Punkte nur des Betrachters, alle anderen mit 0, solange fremde Ergebnisse verborgen sind. */
+function ownPoints(points: Record<string, number>, viewerId: string | null): Record<string, number> {
+  return Object.fromEntries(Object.keys(points).map((id) => [id, id === viewerId ? points[id]! : 0]));
 }

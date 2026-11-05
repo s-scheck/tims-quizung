@@ -4,6 +4,7 @@ import type { Room } from '../../rooms/room.ts';
 import type { FacesRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
 import type { StartRoundOptions } from '../registry.ts';
+import { copiesWithJoker, JOKER_LOCKED, mirrorEntry, rankWithJoker, roundClosed, type JokerHooks } from '../joker.ts';
 import { baseRound, buildTurnOrder, rememberTarget, scheduleRoundTimer, toReveal } from '../common.ts';
 
 /** Mehr Versuche braucht niemand, das bremst höchstens Spam. */
@@ -78,6 +79,7 @@ function guess(room: Room, playerId: string, text: string): Result {
   const round = facesRound(room);
   if (room.phase !== 'playing' || !round) return fail('invalid_action', 'Gerade wird nicht gespielt');
   if (!round.turnOrder.includes(playerId)) return fail('not_allowed', 'Du bist in dieser Runde nicht dabei');
+  if (copiesWithJoker(round, playerId)) return fail('invalid_action', JOKER_LOCKED);
   if (round.solved[playerId] !== undefined) return fail('invalid_action', 'Du hast es schon');
   const trimmed = text.trim();
   if (!isValidGuess(trimmed)) return fail('bad_message', 'Tipp muss 1 bis 60 Zeichen haben');
@@ -130,12 +132,13 @@ function endRound(room: Room, playerId: string): Result {
   return OK;
 }
 
-/** Richtige nach Versuchszeit, bei Gleichstand nach Reihenfolge im Raum. */
+/** Richtige nach Versuchszeit, bei Gleichstand nach Reihenfolge im Raum. Der Joker-Spieler teilt den Platz der kopierten Person. */
 export function facesRanking(round: FacesRound): { playerId: string; at: number; rank: number }[] {
-  return Object.entries(round.solved)
+  const sorted = Object.entries(round.solved)
     .filter(([id]) => round.turnOrder.includes(id))
     .sort((a, b) => a[1] - b[1] || round.turnOrder.indexOf(a[0]) - round.turnOrder.indexOf(b[0]))
-    .map(([playerId, at], i) => ({ playerId, at, rank: i + 1 }));
+    .map(([playerId, at]) => ({ playerId, at }));
+  return rankWithJoker(sorted, (row) => row.playerId, round.joker);
 }
 
 /** Spielpunkte 3/2/1 für die ersten drei Richtigen. */
@@ -153,3 +156,18 @@ export function onPlayerRemoved(room: Room, playerId: string): void {
   delete round.attempts[playerId];
   delete round.solved[playerId];
 }
+
+/** Joker: erlaubt, solange man nicht richtig lag, eigene Tipps verfallen. Gespiegelt wird ab der Auflösung. */
+export const facesJoker: JokerHooks = {
+  blocked: (room, playerId) => (facesRound(room)?.solved[playerId] !== undefined ? 'Du hast es schon' : null),
+  apply: (room, playerId) => {
+    const round = facesRound(room);
+    if (round) delete round.attempts[playerId];
+  },
+  sync: (room, joker) => {
+    const round = facesRound(room);
+    if (!round || !roundClosed(room)) return;
+    mirrorEntry(round.attempts, joker);
+    mirrorEntry(round.solved, joker);
+  },
+};

@@ -7,6 +7,7 @@
   import Timeline, { type TimelineFocus, type TimelineMarker } from './Timeline.svelte';
   import RevealControls from './RevealControls.svelte';
   import ScoringHandoff from './ScoringHandoff.svelte';
+  import JokerTag from './JokerTag.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: TimelineRoundView; readonly?: boolean } = $props();
 
@@ -70,15 +71,16 @@
     {/if}
 
     <ol class="card divide-y divide-slate-800 p-0">
-      {#each ranking as row, i (row.playerId)}
+      {#each ranking as row (row.playerId)}
         {@const open = revealStep(show, row.playerId) >= 1}
         {@const year = yearOf.get(row.playerId)}
         <li class="flex items-center gap-3 px-4 py-3 {readonly ? 'text-xl' : ''} {row.playerId === client.myId ? 'bg-indigo-500/10' : ''}">
-          <span class="w-6 text-right font-mono text-slate-500">{row.distanceYears === null || !showRanks ? '–' : `${i + 1}.`}</span>
+          <span class="w-6 text-right font-mono text-slate-500">{row.distanceYears === null || !showRanks ? '–' : `${row.rank}.`}</span>
           <span class="h-3 w-3 shrink-0 rounded-full" style="background:{colorOf(row.playerId)}"></span>
           <span class="min-w-0 flex-1 break-words">
             <span class="font-semibold">{playerName(view, row.playerId)}</span>
             {#if year !== undefined}<span class="ml-1 text-sm text-slate-400">{formatYear(year)}</span>{/if}
+            <JokerTag {view} {round} playerId={row.playerId} />
           </span>
           <span class="font-mono {row.distanceYears === null ? 'text-sm text-slate-500' : row.distanceYears === 0 ? 'text-lg font-bold text-emerald-300' : 'text-lg font-bold'} {moderator && !open ? 'text-slate-400' : ''}">
             {row.distanceYears === null ? 'kein Tipp' : formatYearDistance(row.distanceYears)}

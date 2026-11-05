@@ -4,13 +4,15 @@
   import { formatYear } from '../lib/format.ts';
   import Timeline from './Timeline.svelte';
   import TurnTimer from './TurnTimer.svelte';
+  import JokerButton from './JokerButton.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: TimelineRoundView; readonly?: boolean } = $props();
 
   const participants = $derived(view.players.filter((p) => round.turnOrder.includes(p.id)));
   const isParticipant = $derived(!readonly && !!client.myId && round.turnOrder.includes(client.myId));
   const myGuess = $derived(round.myGuess ?? null);
-  const canPlace = $derived(isParticipant && view.phase === 'playing' && !myGuess?.confirmed);
+  const copying = $derived(isParticipant && round.joker?.by === client.myId);
+  const canPlace = $derived(isParticipant && view.phase === 'playing' && !myGuess?.confirmed && !copying);
   const allConfirmed = $derived(participants.length > 0 && participants.every((p) => round.confirmed.includes(p.id)));
   const canEnd = $derived(!readonly && client.isHost && view.phase === 'playing');
 
@@ -72,6 +74,7 @@
     if (readonly) return '';
     if (client.isModerator) return 'Du moderierst. Die Lösung siehst nur du.';
     if (!isParticipant) return 'Du bist ab der nächsten Runde dabei.';
+    if (copying) return '';
     if (myGuess?.confirmed) {
       return round.turnDeadline !== null
         ? 'Bestätigt. Warte, bis die Zeit abläuft oder der Host die Runde beendet.'
@@ -106,12 +109,13 @@
     {#each participants as p (p.id)}
       {@const done = round.confirmed.includes(p.id)}
       <span class="rounded-full border px-2.5 py-0.5 text-xs font-semibold {done ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200' : 'border-slate-700 text-slate-400'} {readonly ? 'text-base' : ''}">
-        {done ? '✓ ' : ''}{p.name}{p.id === client.myId ? ' (du)' : ''}
+        {round.joker?.by === p.id ? '🃏 ' : done ? '✓ ' : ''}{p.name}{p.id === client.myId ? ' (du)' : ''}
       </span>
     {/each}
   </div>
 
   {#if hint}<p class="text-sm text-slate-400">{hint}</p>{/if}
+  {#if !readonly}<JokerButton {view} {round} />{/if}
 
   <Timeline guess={isParticipant ? (myGuess?.year ?? null) : null} target={round.target ?? null} interactive={canPlace} large={readonly} onPick={place} />
 

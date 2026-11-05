@@ -97,7 +97,10 @@ describe('Wer ist das?: Tipps und Prüfung', () => {
 
     const v = viewRound(h, c);
     expect(v.wrongGuesses).toEqual([{ by: b, text: 'Obama' }]);
-    expect(v.solved).toEqual([
+    // Wer richtig liegt, sehen beim Raten nur der Host, damit ein Joker blind bleibt.
+    expect(v.solved).toEqual([]);
+    expect(viewRound(h, null).solved).toEqual([]);
+    expect(viewRound(h, h.host).solved).toEqual([
       { playerId: c, at: fr(h).attempts[c]![0]!.at, rank: 1 },
       { playerId: b, at: fr(h).attempts[b]![1]!.at, rank: 2 },
     ]);

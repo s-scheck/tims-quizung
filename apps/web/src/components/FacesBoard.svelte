@@ -6,6 +6,8 @@
   import FaceImage, { tileRows } from './FaceImage.svelte';
   import GuessBar from './GuessBar.svelte';
   import TurnTimer from './TurnTimer.svelte';
+  import JokerButton from './JokerButton.svelte';
+  import JokerTag from './JokerTag.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: FacesRoundView; readonly?: boolean } = $props();
 
@@ -13,8 +15,10 @@
   const participants = $derived(view.players.filter((p) => round.turnOrder.includes(p.id)));
   const isParticipant = $derived(!readonly && !!client.myId && round.turnOrder.includes(client.myId));
   const solvedIds = $derived(new Set(round.solved.map((s) => s.playerId)));
-  const mySolved = $derived(round.solved.find((s) => s.playerId === client.myId) ?? null);
-  const canGuess = $derived(isParticipant && view.phase === 'playing' && !mySolved);
+  // Wer richtig liegt, sieht beim Raten nur der Host; der eigene Treffer steht in den eigenen Versuchen.
+  const mySolved = $derived(round.myAttempts?.find((a) => a.status === 'correct') ?? null);
+  const copying = $derived(isParticipant && round.joker?.by === client.myId);
+  const canGuess = $derived(isParticipant && view.phase === 'playing' && !mySolved && !copying);
   const published = $derived(round.effect);
   const effectName = $derived(published.effect === 'blur' ? 'Verschwommen' : published.effect === 'pixel' ? 'Pixel' : 'Kacheln');
   const seconds = (at: number) => ((at - round.startedAt) / 1000).toFixed(1);
@@ -86,7 +90,8 @@
     if (readonly) return '';
     if (isHost) return 'Du moderierst: Stelle den Effekt ein, übernimm ihn für alle und prüfe die Tipps.';
     if (!isParticipant) return 'Du bist ab der nächsten Runde dabei.';
-    if (mySolved) return `Richtig! Du bist ${mySolved.rank}. nach ${seconds(mySolved.at)} s. Warte auf die Auflösung.`;
+    if (copying) return '';
+    if (mySolved) return `Richtig nach ${seconds(mySolved.at)} s! Deinen Platz siehst du in der Auflösung.`;
     return 'Wer ist das? Tippe unten deinen Tipp ein, so oft du willst.';
   });
 </script>
@@ -109,6 +114,7 @@
     </header>
 
     {#if hint}<p class="text-sm text-slate-400">{hint}</p>{/if}
+    {#if isParticipant}<JokerButton {view} {round} />{/if}
 
     <FaceImage image={round.image} fx={preview} pending={isHost && published.effect === 'tiles' ? pendingTiles : null} onTile={isHost && published.effect === 'tiles' ? toggleTile : undefined} large={readonly} bind:ratio />
 
@@ -155,7 +161,7 @@
           {@const s = round.solved.find((x) => x.playerId === p.id)}
           <div class="rounded-xl border border-slate-800 px-3 py-2">
             <div class="flex items-baseline justify-between gap-2">
-              <span class="font-semibold">{p.name}</span>
+              <span class="flex flex-wrap items-center gap-2 font-semibold">{p.name} <JokerTag {view} {round} playerId={p.id} /></span>
               <span class="text-xs {s ? 'text-emerald-300' : 'text-slate-500'}">{s ? `${s.rank}. Platz nach ${seconds(s.at)} s` : attempts.length === 0 ? 'noch kein Tipp' : `${attempts.length} ${attempts.length === 1 ? 'Tipp' : 'Tipps'}`}</span>
             </div>
             {#if attempts.length > 0}
@@ -183,6 +189,12 @@
   </section>
 
   <aside class="space-y-4">
+    {#if !round.privileged}
+      <div class="card">
+        <h3 class="mb-1 font-bold">Richtig</h3>
+        <p class="text-sm text-slate-500">Wer schon richtig liegt, bleibt bis zur Auflösung geheim.</p>
+      </div>
+    {:else}
     <div class="card">
       <div class="mb-2 flex items-baseline justify-between">
         <h3 class="font-bold">Richtig</h3>
@@ -205,6 +217,7 @@
         <p class="mt-2 text-xs text-slate-500">Noch dran: {participants.filter((p) => !solvedIds.has(p.id)).map((p) => p.name).join(', ')}</p>
       {/if}
     </div>
+    {/if}
 
     {#if !readonly && isParticipant && (round.myAttempts?.length ?? 0) > 0}
       <div class="card">

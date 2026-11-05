@@ -361,8 +361,8 @@ describe('Bilderrätsel: Alle gleichzeitig', () => {
     expect(v.fields.map((f) => f.answer)).toEqual(['Lampe', undefined, undefined]);
     expect(v.verdicts).toEqual({ [b]: { f1: true }, [c]: { f1: false } });
     expect(v.results).toEqual([
-      { playerId: b, hits: 1, doneAt: start + 4000 },
-      { playerId: c, hits: 0, doneAt: start + 2000 },
+      { playerId: b, hits: 1, doneAt: start + 4000, rank: 1 },
+      { playerId: c, hits: 0, doneAt: start + 2000, rank: 2 },
     ]);
 
     expect(h.act(h.host, { type: 'to_scoring' })).toMatchObject({ ok: false, code: 'invalid_action' });
@@ -427,8 +427,8 @@ describe('Bilderrätsel: Alle gleichzeitig', () => {
     expect(pr(h).doneAt[b]).toBeUndefined();
     expectOk(h.act(h.host, { type: 'picture_open' }));
     expect(viewRound(h, null).results).toEqual([
-      { playerId: c, hits: 1, doneAt: expect.any(Number) },
-      { playerId: b, hits: 1, doneAt: null },
+      { playerId: c, hits: 1, doneAt: expect.any(Number), rank: 1 },
+      { playerId: b, hits: 1, doneAt: null, rank: 2 },
     ]);
 
     const early = makeHarness(['Host', 'B']);

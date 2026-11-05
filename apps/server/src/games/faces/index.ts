@@ -1,6 +1,6 @@
 import type { GameModule } from '../registry.ts';
 import { hostLeavesRound } from '../common.ts';
-import { handleFacesMessage, onPlayerRemoved, startFacesRound } from './reducer.ts';
+import { facesJoker, handleFacesMessage, onPlayerRemoved, startFacesRound } from './reducer.ts';
 import { facesRoundView } from './view.ts';
 
 export const facesGame: GameModule = {
@@ -19,4 +19,5 @@ export const facesGame: GameModule = {
   penalizeActive: () => {},
   clearTurn: () => {},
   onReveal: () => {},
+  joker: facesJoker,
 };

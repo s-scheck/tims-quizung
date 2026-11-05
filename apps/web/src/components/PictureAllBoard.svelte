@@ -6,6 +6,7 @@
   import PictureView from './PictureView.svelte';
   import TurnTimer from './TurnTimer.svelte';
   import EndCategoryButton from './EndCategoryButton.svelte';
+  import JokerButton from './JokerButton.svelte';
 
   /** Bilderrätsel „Alle gleichzeitig“: jeder füllt jedes Feld aus, nur der Fortschritt ist öffentlich. */
   let { view, round, readonly = false }: { view: RoomView; round: PictureRoundView; readonly?: boolean } = $props();
@@ -16,9 +17,10 @@
   const me = $derived(client.myId);
   const participant = $derived(!readonly && me !== null && round.turnOrder.includes(me));
   const myDoneAt = $derived(me !== null ? (round.progress?.[me]?.doneAt ?? null) : null);
-  const canFill = $derived(participant && view.phase === 'playing' && myDoneAt === null);
+  const copying = $derived(participant && round.joker?.by === me);
+  const canFill = $derived(participant && view.phase === 'playing' && myDoneAt === null && !copying);
   const total = $derived(round.fields.length);
-  const doneCount = $derived(round.turnOrder.filter((id) => (round.progress?.[id]?.doneAt ?? null) !== null).length);
+  const doneCount = $derived(round.turnOrder.filter((id) => (round.progress?.[id]?.doneAt ?? null) !== null || round.joker?.by === id).length);
   const startedAt = $derived(round.startedAt ?? 0);
   const seconds = (at: number) => ((at - startedAt) / 1000).toFixed(1);
   const players = $derived(
@@ -151,7 +153,8 @@
       onPick={pick}
     />
 
-    {#if participant}
+    {#if participant}<JokerButton {view} {round} />{/if}
+    {#if participant && !copying}
       <form
         class="card space-y-3"
         onsubmit={(e) => {
@@ -227,8 +230,14 @@
               {p.name}
               {#if !p.connected}<span class="ml-2 text-xs font-normal text-amber-300">nicht verbunden</span>{/if}
             </span>
-            <span class="shrink-0 text-sm text-slate-400">{p.filled} von {total}</span>
-            {#if p.doneAt !== null}
+            {#if round.joker?.by === p.id}
+              <span class="badge shrink-0 bg-amber-400/15 text-amber-200">🃏 Joker</span>
+            {:else}
+              <span class="shrink-0 text-sm text-slate-400">{p.filled} von {total}</span>
+            {/if}
+            {#if round.joker?.by === p.id}
+              <!-- Der Joker-Spieler gilt als fertig. -->
+            {:else if p.doneAt !== null}
               <span class="badge shrink-0 bg-emerald-500/20 text-emerald-300">fertig · {seconds(p.doneAt)} s</span>
             {:else}
               <span class="badge shrink-0 bg-slate-800 text-slate-400">tippt…</span>

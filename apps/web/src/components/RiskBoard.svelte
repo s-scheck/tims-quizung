@@ -4,12 +4,15 @@
   import RiskSlots from './RiskSlots.svelte';
   import RiskTotals from './RiskTotals.svelte';
   import TurnTimer from './TurnTimer.svelte';
+  import JokerButton from './JokerButton.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: RiskRoundView; readonly?: boolean } = $props();
 
   const participants = $derived(view.players.filter((p) => round.turnOrder.includes(p.id)));
   const isParticipant = $derived(!readonly && !!client.myId && round.turnOrder.includes(client.myId));
-  const canLogIn = $derived(isParticipant && view.phase === 'playing' && round.myGuess === undefined);
+  /** Der Joker gilt ab seinem Durchgang bis zum Ende der Kategorie. */
+  const copying = $derived(isParticipant && round.joker?.by === client.myId);
+  const canLogIn = $derived(isParticipant && view.phase === 'playing' && round.myGuess === undefined && !copying);
   const canEnd = $derived(!readonly && client.isHost && view.phase === 'playing');
 
   let text = $state('');
@@ -38,6 +41,7 @@
     if (readonly) return '';
     if (client.isModerator) return 'Du moderierst. Die ganze Liste siehst nur du.';
     if (!isParticipant) return 'Du bist ab der nächsten Runde dabei.';
+    if (copying) return '';
     if (round.myGuess !== undefined) return `Eingeloggt: „${round.myGuess}“. Warte auf die anderen.`;
     return `Ein Tipp pro Durchgang. Platz = Punkte, Platz ${round.size} bringt ${round.size}.`;
   });
@@ -67,12 +71,13 @@
       {#each participants as p (p.id)}
         {@const done = round.loggedIn.includes(p.id)}
         <span class="rounded-full border px-2.5 py-0.5 text-xs font-semibold {done ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200' : 'border-slate-700 text-slate-400'} {readonly ? 'text-base' : ''}">
-          {done ? '✓ ' : ''}{p.name}{p.id === client.myId ? ' (du)' : ''}
+          {round.joker?.by === p.id ? '🃏 ' : done ? '✓ ' : ''}{p.name}{p.id === client.myId ? ' (du)' : ''}
         </span>
       {/each}
     </div>
 
     {#if hint}<p class="text-sm text-slate-400">{hint}</p>{/if}
+    {#if !readonly}<JokerButton {view} {round} />{/if}
 
     {#if canLogIn}
       <form class="card flex gap-2" onsubmit={(e) => { e.preventDefault(); logIn(); }}>

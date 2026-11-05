@@ -2,6 +2,7 @@ import { haversineKm, type MapPinView, type MapRoundView, type RoundView } from 
 import type { Room } from '../../rooms/room.ts';
 import { mapRound } from './reducer.ts';
 import { revealView } from '../common.ts';
+import { rankWithJoker } from '../joker.ts';
 
 /**
  * Sicht auf die Runde. Zielkoordinaten nur für den Moderator oder ab der Auflösung,
@@ -28,6 +29,8 @@ export function mapRoundView(room: Room, revealed: boolean, viewerId: string | n
       .filter(([, pin]) => pin.confirmed)
       .map(([id]) => id),
   };
+  // Der Joker-Spieler gilt beim Raten als fertig.
+  if (r.joker && !revealed && !view.confirmed.includes(r.joker.by)) view.confirmed.push(r.joker.by);
 
   // Show-Auflösung: Spieler sehen Ziel und Pins erst, wenn der Moderator sie aufgedeckt hat.
   const show = r.reveal;
@@ -51,7 +54,7 @@ export function mapRoundView(room: Room, revealed: boolean, viewerId: string | n
     const ranked = [...pins].sort((a, b) => a.distanceKm - b.distanceKm).map((p) => ({ playerId: p.playerId, distanceKm: p.distanceKm }));
     const missing = ids.filter((id) => !r.pins[id]?.confirmed).map((id) => ({ playerId: id, distanceKm: null }));
     view.pins = pins;
-    view.ranking = [...ranked, ...missing];
+    view.ranking = rankWithJoker([...ranked, ...missing], (row) => row.playerId, r.joker);
   }
 
   return view;

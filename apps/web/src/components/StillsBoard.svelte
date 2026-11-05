@@ -8,6 +8,7 @@
   import GuessBar from './GuessBar.svelte';
   import StillsGallery from './StillsGallery.svelte';
   import TurnTimer from './TurnTimer.svelte';
+  import JokerButton from './JokerButton.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: StillsRoundView; readonly?: boolean } = $props();
 
@@ -40,7 +41,8 @@
   const myAttempt = $derived(round.myAttempts?.find((a) => a.index === round.index) ?? null);
   /** Mit `allGuess` der eine Tipp im Film, egal zu welchem Foto. */
   const myFilmAttempt = $derived(allGuess ? (round.myAttempts?.[0] ?? null) : null);
-  const guessOpen = $derived(isParticipant && playing && isType && !round.over && round.stage === 'guessing' && !myAttempt && !myFilmAttempt);
+  const copying = $derived(isParticipant && round.joker?.by === client.myId);
+  const guessOpen = $derived(isParticipant && playing && isType && !round.over && round.stage === 'guessing' && !myAttempt && !myFilmAttempt && !copying);
   const canGuess = $derived(guessOpen && !round.iPassed);
   const attemptsNow = $derived(
     participants
@@ -108,7 +110,7 @@
       return buzzer.holder !== null ? 'Hör dir die Antwort an und urteile.' : 'Warte auf den ersten Buzzer oder zeig das nächste Foto.';
     }
     if (!isParticipant) return 'Du bist ab der nächsten Runde dabei.';
-    if (round.over) return '';
+    if (round.over || copying) return '';
     if (allGuess && isType) {
       if (myFilmAttempt?.status === 'correct') return 'Richtig! Du bist für diesen Film fertig, die anderen raten noch.';
       if (myFilmAttempt?.status === 'wrong') return 'Leider falsch. Das war dein einziger Tipp für diesen Film.';
@@ -141,7 +143,9 @@
     {#each participants as p (p.id)}
       {@const done = round.typed?.includes(p.id)}
       {@const passed = round.passed?.includes(p.id)}
-      {#if allGuess && doneBefore(p.id)}
+      {#if round.joker?.by === p.id}
+        <li class="rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-amber-200">🃏 {p.name}</li>
+      {:else if allGuess && doneBefore(p.id)}
         <li class="rounded-full border border-slate-800 px-3 py-1 text-slate-600">fertig · {p.name}</li>
       {:else if passed}
         <li class="rounded-full border border-sky-500/40 bg-sky-500/10 px-3 py-1 text-sky-200">gepasst · {p.name}</li>
@@ -179,6 +183,7 @@
     </header>
 
     {#if hint}<p class="text-sm text-slate-400">{hint}</p>{/if}
+    {#if isParticipant && isType && playing && !round.over}<JokerButton {view} {round} />{/if}
 
     {#if round.over}
       <div class="card border-emerald-500/40 bg-emerald-500/10 {readonly ? 'text-2xl' : ''}">

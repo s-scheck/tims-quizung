@@ -1,6 +1,6 @@
 import type { GameModule } from '../registry.ts';
 import { hostLeavesRound } from '../common.ts';
-import { handleStillsMessage, onPlayerRemoved, startStillsRound, STILLS_NAME } from './reducer.ts';
+import { stillsJoker, handleStillsMessage, onPlayerRemoved, startStillsRound, STILLS_NAME } from './reducer.ts';
 import { stillsRoundView } from './view.ts';
 
 export const stillsGame: GameModule = {
@@ -19,4 +19,5 @@ export const stillsGame: GameModule = {
   penalizeActive: () => {},
   clearTurn: () => {},
   onReveal: () => {},
+  joker: stillsJoker,
 };

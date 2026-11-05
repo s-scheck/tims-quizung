@@ -1,6 +1,6 @@
 import type { GameModule } from '../registry.ts';
 import { hostLeavesRound } from '../common.ts';
-import { handleKidsMessage, onPlayerRemoved, startKidsRound } from './reducer.ts';
+import { kidsJoker, handleKidsMessage, onPlayerRemoved, startKidsRound } from './reducer.ts';
 import { kidsRoundView } from './view.ts';
 
 export const kidsGame: GameModule = {
@@ -19,4 +19,5 @@ export const kidsGame: GameModule = {
   penalizeActive: () => {},
   clearTurn: () => {},
   onReveal: () => {},
+  joker: kidsJoker,
 };

@@ -1,5 +1,5 @@
 import type { GameModule } from '../registry.ts';
-import { handleMapMessage, onPlayerRemoved, startMapRound } from './reducer.ts';
+import { mapJoker, handleMapMessage, onPlayerRemoved, startMapRound } from './reducer.ts';
 import { mapRoundView } from './view.ts';
 
 export const mapGame: GameModule = {
@@ -19,4 +19,5 @@ export const mapGame: GameModule = {
   penalizeActive: () => {},
   clearTurn: () => {},
   onReveal: () => {},
+  joker: mapJoker,
 };

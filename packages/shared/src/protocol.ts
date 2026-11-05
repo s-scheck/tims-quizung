@@ -120,6 +120,8 @@ export type ClientMsg =
   | { type: 'reveal_player'; playerId: string }
   | { type: 'reveal_solution' }
   | { type: 'reveal_all' }
+  /** Joker: das Ergebnis dieses Spielers kopieren, einmal pro Spiel, einer pro Runde. */
+  | { type: 'joker'; playerId: string }
   | { type: 'submit_scores'; scores: Record<string, number> }
   | { type: 'next_round' }
   | { type: 'end_game' }

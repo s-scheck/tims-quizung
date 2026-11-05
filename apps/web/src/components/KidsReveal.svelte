@@ -3,6 +3,7 @@
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
   import ScoringHandoff from './ScoringHandoff.svelte';
+  import JokerTag from './JokerTag.svelte';
 
   /** Auflösung der Runde: alle gezeigten Promis mit Gewinnern, dazu die Rangliste der Spielpunkte. */
   let { view, round, readonly = false }: { view: RoomView; round: KidsRoundView; readonly?: boolean } = $props();
@@ -50,7 +51,7 @@
                 {#each item.winners as w (w.playerId)}
                   <li class="flex items-center gap-2 {w.playerId === me ? 'text-indigo-200' : ''}">
                     {#if typing}<span class="w-5 text-right font-mono text-slate-500">{w.rank}.</span>{:else}<span class="text-emerald-400">✓</span>{/if}
-                    <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, w.playerId)}</span>
+                    <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, w.playerId)} <JokerTag {view} {round} playerId={w.playerId} section={i} /></span>
                     <span class="font-mono text-xs text-slate-400">{seconds(w.at, item.shownAt)} s</span>
                   </li>
                 {/each}
@@ -69,7 +70,7 @@
         {#each ranking as p, i (p.id)}
           <li class="flex items-center gap-3 py-1.5 {readonly ? 'text-xl' : ''} {p.id === me ? 'text-indigo-200' : ''}">
             <span class="w-6 text-right font-mono text-slate-500">{i + 1}.</span>
-            <span class="min-w-0 flex-1 break-words font-semibold">{p.name}</span>
+            <span class="min-w-0 flex-1 break-words font-semibold">{p.name} <JokerTag {view} {round} playerId={p.id} /></span>
             <span class="shrink-0 text-xs text-slate-500">{p.hits} Treffer{#if !typing && p.misses > 0} · {p.misses} daneben{/if}</span>
             <span class="shrink-0 font-mono font-black">{p.points}</span>
           </li>

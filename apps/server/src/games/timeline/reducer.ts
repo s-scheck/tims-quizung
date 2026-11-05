@@ -4,6 +4,7 @@ import type { Room } from '../../rooms/room.ts';
 import type { TimelineRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
 import type { StartRoundOptions } from '../registry.ts';
+import { copiesWithJoker, JOKER_LOCKED, mirrorEntry, roundClosed, type JokerHooks } from '../joker.ts';
 import { baseRound, buildTurnOrder, pickTarget, rememberTarget, scheduleRoundTimer, toReveal } from '../common.ts';
 
 export function timelineRound(room: Room): TimelineRound | null {
@@ -57,6 +58,7 @@ function participantRound(room: Room, playerId: string): { round: TimelineRound 
   const round = timelineRound(room);
   if (room.phase !== 'playing' || !round) return { error: fail('invalid_action', 'Gerade wird nicht gespielt') };
   if (!round.turnOrder.includes(playerId)) return { error: fail('not_allowed', 'Du bist in dieser Runde nicht dabei') };
+  if (copiesWithJoker(round, playerId)) return { error: fail('invalid_action', JOKER_LOCKED) };
   return { round };
 }
 
@@ -92,3 +94,16 @@ export function onPlayerRemoved(room: Room, playerId: string): void {
   const round = timelineRound(room);
   if (round) delete round.guesses[playerId];
 }
+
+/** Joker: erlaubt bis zum Bestätigen, ein unbestätigter Tipp verfällt. Gespiegelt wird ab der Auflösung. */
+export const timelineJoker: JokerHooks = {
+  blocked: (room, playerId) => (timelineRound(room)?.guesses[playerId]?.confirmed ? 'Dein Tipp ist schon bestätigt' : null),
+  apply: (room, playerId) => {
+    const round = timelineRound(room);
+    if (round) delete round.guesses[playerId];
+  },
+  sync: (room, joker) => {
+    const round = timelineRound(room);
+    if (round && roundClosed(room)) mirrorEntry(round.guesses, joker);
+  },
+};

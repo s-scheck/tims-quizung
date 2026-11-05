@@ -330,7 +330,7 @@ describe('Filmfotos: Alle raten bis zum Schluss', () => {
     expect(h.act(h.ids[1]!, { type: 'still_pass', pass: true })).toMatchObject({ ok: false, code: 'invalid_action' });
   });
 
-  test('Sichtbarkeit: fremde Urteile ohne Text erst nach dem Weiterschalten, die Lösung nur für Treffer', () => {
+  test('Sichtbarkeit: fremde Urteile ohne Text erst, wenn das Raten vorbei ist, die Lösung nur für Treffer', () => {
     const h = makeHarness(['Host', 'B', 'C', 'D']);
     startStills(h, { allGuess: true });
     const [, b, c, d] = h.ids as [string, string, string, string];
@@ -345,14 +345,18 @@ describe('Filmfotos: Alle raten bis zum Schluss', () => {
     expect(viewRound(h, c).answer).toBeUndefined();
     expect(viewRound(h, d).answer).toBeUndefined();
 
+    // Auch nach dem Weiterschalten bleibt verborgen, wer richtig lag, damit ein Joker blind bleibt.
     expectOk(h.act(h.host, { type: 'still_next' }));
     const seenByD = viewRound(h, d);
-    expect(seenByD.results).toEqual([
+    expect(seenByD.results).toEqual([]);
+    expect(seenByD.points[b]).toBe(0);
+    expect(seenByD.attempts).toBeUndefined();
+    expect(seenByD.answer).toBeUndefined();
+    expectOk(h.act(h.host, { type: 'end_round' }));
+    expect(viewRound(h, d).results).toEqual([
       { playerId: b, index: 0, correct: true },
       { playerId: c, index: 0, correct: false },
     ]);
-    expect(seenByD.attempts).toBeUndefined();
-    expect(seenByD.answer).toBeUndefined();
   });
 
   test('Tippen: nach dem letzten geprüften Foto ist das Raten vorbei, auch wenn nicht alle getippt haben', () => {

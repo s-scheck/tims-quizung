@@ -6,6 +6,7 @@
   import RiskSlots from './RiskSlots.svelte';
   import RiskTotals from './RiskTotals.svelte';
   import RevealControls from './RevealControls.svelte';
+  import JokerTag from './JokerTag.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: RiskRoundView; readonly?: boolean } = $props();
 
@@ -17,6 +18,8 @@
   /** In früheren Durchgängen getroffene Plätze lassen sich nicht noch einmal vergeben. */
   const blocked = $derived(new Set(round.passes.slice(0, -1).flatMap((p) => p.results.map((r) => r.rank).filter((r) => r !== null))));
   const ranks = $derived(Array.from({ length: round.size }, (_, i) => i + 1));
+  /** Kopiert der Spieler in diesem Durchgang per Joker? Dann übernimmt er Tipp und Korrekturen der Person. */
+  const copies = (playerId: string, passNo: number) => round.joker?.by === playerId && passNo - 1 >= round.joker.from;
   const nameOf = $derived(new Map((round.solution ?? round.hitSlots).map((s) => [s.rank, s.name])));
   /** Die Kategorie ist zu: nach der Punkteeingabe oder wenn der Moderator die ganze Liste aufgedeckt hat. */
   const listDone = $derived(view.phase !== 'reveal' || !!show?.solution);
@@ -48,6 +51,7 @@
             {@const rankOpen = moderator || step >= 2}
             <li class="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 {readonly ? 'text-xl' : ''} {res.playerId === client.myId ? 'text-indigo-100' : ''}">
               <span class="shrink-0 break-words font-semibold {readonly ? '' : 'w-16 sm:w-28'}">{playerName(view, res.playerId)}</span>
+              <JokerTag {view} {round} playerId={res.playerId} section={latest.passNo - 1} />
               {#if !textOpen}
                 <span class="min-w-0 flex-1 italic text-slate-500">verdeckt</span>
                 <span class="w-12 shrink-0 text-right font-mono text-lg text-slate-600">?</span>
@@ -57,7 +61,7 @@
                   <span class="text-sm italic text-slate-500">Platz verdeckt</span>
                   <span class="w-12 shrink-0 text-right font-mono text-lg text-slate-600">?</span>
                 {:else}
-                  {#if canCorrect && res.text !== null}
+                  {#if canCorrect && res.text !== null && !copies(res.playerId, latest.passNo)}
                     <select
                       class="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-sm"
                       value={res.rank === null ? '' : String(res.rank)}
@@ -126,7 +130,7 @@
             {#each pass.results as res (res.playerId)}
               <li class="flex gap-3 py-0.5">
                 <span class="w-16 break-words font-semibold sm:w-28">{playerName(view, res.playerId)}</span>
-                <span class="min-w-0 flex-1 break-words text-slate-400">{res.text ?? 'kein Tipp'}{res.rank !== null ? ` · Platz ${res.rank}` : ''}</span>
+                <span class="min-w-0 flex-1 break-words text-slate-400">{res.text ?? 'kein Tipp'}{res.rank !== null ? ` · Platz ${res.rank}` : ''} <JokerTag {view} {round} playerId={res.playerId} section={pass.passNo - 1} /></span>
                 <span class="font-mono">{res.points}</span>
               </li>
             {/each}

@@ -4,6 +4,7 @@
   import { playerName } from '../lib/format.ts';
   import FaceImage from './FaceImage.svelte';
   import ScoringHandoff from './ScoringHandoff.svelte';
+  import JokerTag from './JokerTag.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: FacesRoundView; readonly?: boolean } = $props();
 
@@ -31,7 +32,7 @@
           {#each round.solved as s (s.playerId)}
             <li class="flex items-center gap-2 {readonly ? 'text-xl' : ''} {s.playerId === client.myId ? 'text-indigo-200' : ''}">
               <span class="w-6 text-right font-mono text-slate-500">{s.rank}.</span>
-              <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, s.playerId)}</span>
+              <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, s.playerId)} <JokerTag {view} {round} playerId={s.playerId} /></span>
               <span class="font-mono text-xs text-slate-400">{seconds(s.at)} s</span>
               <span class="font-mono font-black">{round.points?.[s.playerId] ?? 0}</span>
             </li>
@@ -48,6 +49,7 @@
           {@const attempts = round.attempts?.[p.id] ?? []}
           <li>
             <span class="font-semibold">{p.name}</span>
+            <JokerTag {view} {round} playerId={p.id} />
             {#if attempts.length === 0}
               <span class="text-slate-500"> · kein Tipp</span>
             {:else}

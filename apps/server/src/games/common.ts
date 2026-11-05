@@ -13,6 +13,7 @@ import type { Category } from '@quiz/content';
 import type { Room } from '../rooms/room.ts';
 import type { BaseRound } from '../rooms/state.ts';
 import { fail, OK, type Result } from '../rooms/result.ts';
+import { syncJoker, useJoker } from './joker.ts';
 
 /** Läuft die aktuelle Runde mit Zugreihenfolge? Das Bilderrätsel entscheidet das je Runde. */
 export function isTurnBased(room: Room): boolean {
@@ -55,6 +56,7 @@ export function baseRound(category: BaseRound['category'], turnOrder: string[]):
     turnDeadline: null,
     soloMode: turnOrder.length === 1,
     reveal: null,
+    joker: null,
   };
 }
 
@@ -173,6 +175,7 @@ export function toReveal(room: Room): void {
   round.activePlayerId = null;
   round.turnDeadline = null;
   room.game?.onReveal(room);
+  syncJoker(room);
 }
 
 /** Passt ein Tipp zu Name, Alias oder eindeutigem Nachnamen? Vorschlag für die Prüfung durch den Host. */
@@ -201,6 +204,7 @@ export function removePlayerFromRound(room: Room, playerId: string): void {
   round.turnOrder = round.turnOrder.filter((id) => id !== playerId);
   round.eliminated = round.eliminated.filter((id) => id !== playerId);
   game.onPlayerRemoved?.(room, playerId);
+  syncJoker(room);
 
   if (!isTurnBased(room)) {
     if (round.turnOrder.length === 0) toReveal(room);
@@ -244,6 +248,8 @@ export function handleCommon(room: Room, playerId: string, msg: ClientMsg): Resu
       return revealSolution(room, playerId);
     case 'reveal_all':
       return revealAll(room, playerId);
+    case 'joker':
+      return useJoker(room, playerId, msg.playerId);
     case 'submit_scores':
       return submitScores(room, playerId, msg.scores);
     case 'next_round':

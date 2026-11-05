@@ -4,6 +4,7 @@ import type { Room } from '../../rooms/room.ts';
 import type { MapRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
 import type { StartRoundOptions } from '../registry.ts';
+import { copiesWithJoker, JOKER_LOCKED, mirrorEntry, roundClosed, type JokerHooks } from '../joker.ts';
 import { baseRound, buildTurnOrder, pickTarget, rememberTarget, scheduleRoundTimer, toReveal } from '../common.ts';
 
 export function mapRound(room: Room): MapRound | null {
@@ -62,6 +63,7 @@ function participantRound(room: Room, playerId: string): { round: MapRound } | {
   const round = mapRound(room);
   if (room.phase !== 'playing' || !round) return { error: fail('invalid_action', 'Gerade wird nicht gespielt') };
   if (!round.turnOrder.includes(playerId)) return { error: fail('not_allowed', 'Du bist in dieser Runde nicht dabei') };
+  if (copiesWithJoker(round, playerId)) return { error: fail('invalid_action', JOKER_LOCKED) };
   return { round };
 }
 
@@ -97,3 +99,16 @@ export function onPlayerRemoved(room: Room, playerId: string): void {
   const round = mapRound(room);
   if (round) delete round.pins[playerId];
 }
+
+/** Joker: erlaubt bis zum Bestätigen, ein unbestätigter Tipp verfällt. Gespiegelt wird ab der Auflösung. */
+export const mapJoker: JokerHooks = {
+  blocked: (room, playerId) => (mapRound(room)?.pins[playerId]?.confirmed ? 'Dein Pin ist schon bestätigt' : null),
+  apply: (room, playerId) => {
+    const round = mapRound(room);
+    if (round) delete round.pins[playerId];
+  },
+  sync: (room, joker) => {
+    const round = mapRound(room);
+    if (round && roundClosed(room)) mirrorEntry(round.pins, joker);
+  },
+};

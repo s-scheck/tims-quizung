@@ -4,6 +4,7 @@ import type { Room } from '../../rooms/room.ts';
 import type { PictureGuess, PictureRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
 import type { StartRoundOptions } from '../registry.ts';
+import { copiesWithJoker, JOKER_LOCKED, mirrorEntry, roundClosed, type JokerHooks } from '../joker.ts';
 import { baseRound, buildTurnOrder, removePlayerFromRound, scheduleRoundTimer, scheduleTurnTimer, settleTurn, toReveal } from '../common.ts';
 
 /** Anzeige des freigegebenen Ergebnisses, bis der Zug wechselt. */
@@ -170,6 +171,7 @@ function fillingRound(room: Room, playerId: string): { round: PictureRound } | {
   if (room.phase !== 'playing' || !round) return { error: fail('invalid_action', 'Gerade wird nicht gespielt') };
   if (round.mode !== 'all') return { error: fail('invalid_action', 'In dieser Runde ist immer einer dran') };
   if (!round.turnOrder.includes(playerId)) return { error: fail('invalid_action', 'Du bist in dieser Runde nicht dabei') };
+  if (copiesWithJoker(round, playerId)) return { error: fail('invalid_action', JOKER_LOCKED) };
   if (round.doneAt[playerId] !== undefined) return { error: fail('invalid_action', 'Du bist schon fertig') };
   return { round };
 }
@@ -194,8 +196,9 @@ function done(room: Room, playerId: string): Result {
   return OK;
 }
 
+/** Alle haben „Fertig“ gedrückt, der Joker-Spieler gilt als fertig. */
 function allDone(round: PictureRound): boolean {
-  return round.turnOrder.every((id) => round.doneAt[id] !== undefined);
+  return round.turnOrder.every((id) => round.doneAt[id] !== undefined || copiesWithJoker(round, id));
 }
 
 function endRound(room: Room, playerId: string): Result {
@@ -235,6 +238,7 @@ function verdict(room: Room, playerId: string, targetId: string, fieldId: string
   if ('error' in res) return res.error;
   const { round } = res;
   if (!round.turnOrder.includes(targetId)) return fail('invalid_action', 'Dieser Spieler ist nicht dabei');
+  if (copiesWithJoker(round, targetId)) return fail('invalid_action', 'Der Joker übernimmt die Urteile der kopierten Person');
   const idx = round.category.fields.findIndex((f) => f.id === fieldId);
   if (idx === -1) return fail('invalid_action', 'Dieses Feld gibt es nicht');
   if (idx >= round.judgeShown) return fail('invalid_action', 'Dieses Feld ist noch nicht aufgerufen');
@@ -324,3 +328,25 @@ export function onHostChanged(room: Room): void {
   }
   removePlayerFromRound(room, host);
 }
+
+/** Joker: nur bei „Alle gleichzeitig“, bis „Fertig“. Eigene Einträge verfallen, ab der Auflösung gelten Antworten und Urteile der kopierten Person. */
+export const pictureJoker: JokerHooks = {
+  blocked: (room, playerId) => {
+    const round = pictureRound(room);
+    if (round?.mode !== 'all') return 'Den Joker gibt es nur, wenn alle gleichzeitig raten';
+    return round.doneAt[playerId] !== undefined ? 'Du bist schon fertig' : null;
+  },
+  apply: (room, playerId) => {
+    const round = pictureRound(room);
+    if (!round) return;
+    delete round.answers[playerId];
+    if (allDone(round)) toReveal(room);
+  },
+  sync: (room, joker) => {
+    const round = pictureRound(room);
+    if (!round || !roundClosed(room)) return;
+    mirrorEntry(round.answers, joker);
+    mirrorEntry(round.doneAt, joker);
+    mirrorEntry(round.verdicts, joker);
+  },
+};

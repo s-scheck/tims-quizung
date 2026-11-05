@@ -147,8 +147,8 @@ describe('Show-Auflösung: Karte', () => {
     expect(v.reveal).toEqual({ players: { [h.ids[1]!]: 1, [h.ids[2]!]: 1 }, steps: 1, solution: true, complete: true });
     expect(v.target).toBeDefined();
     expect(v.ranking).toEqual([
-      { playerId: h.ids[1]!, distanceKm: expect.any(Number) },
-      { playerId: h.ids[2]!, distanceKm: null },
+      { playerId: h.ids[1]!, distanceKm: expect.any(Number), rank: 1 },
+      { playerId: h.ids[2]!, distanceKm: null, rank: 2 },
     ]);
   });
 });

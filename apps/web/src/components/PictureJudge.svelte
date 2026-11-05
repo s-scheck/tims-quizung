@@ -4,6 +4,7 @@
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
   import PictureView from './PictureView.svelte';
+  import JokerTag from './JokerTag.svelte';
 
   /**
    * Auflösung im Modus „Alle gleichzeitig“: Der Host ruft Feld für Feld auf, alle sehen die Antworten der Spieler.
@@ -85,10 +86,13 @@
               {@const ok = verdictOf(pid, current.id)}
               <li class="flex items-center gap-3 py-2 {readonly ? 'text-xl' : ''}">
                 <span class="min-w-0 flex-1">
-                  <span class="block break-words font-semibold">{playerName(view, pid)}</span>
+                  <span class="flex flex-wrap items-center gap-2 break-words font-semibold">{playerName(view, pid)} <JokerTag {view} {round} playerId={pid} /></span>
                   <span class="block break-words {!text ? 'italic text-slate-500' : !currentReleased && !host ? 'text-slate-200' : ok ? 'text-emerald-200' : 'text-rose-200'}">{text || 'keine Antwort'}</span>
                 </span>
-                {#if host}
+                {#if host && round.joker?.by === pid}
+                  <!-- Der Joker-Spieler übernimmt das Urteil der kopierten Person. -->
+                  <span class="shrink-0 text-xl {ok ? 'text-emerald-400' : 'text-rose-400'}" aria-label={ok ? 'richtig' : 'falsch'}>{ok ? '✓' : '✗'}</span>
+                {:else if host}
                   <div class="flex shrink-0 gap-1">
                     <button
                       type="button"
@@ -158,10 +162,10 @@
     <div class="card">
       <h3 class="mb-3 font-bold">Rangfolge</h3>
       <ol class="divide-y divide-slate-800">
-        {#each results as r, i (r.playerId)}
+        {#each results as r (r.playerId)}
           <li class="flex items-center gap-3 py-2 {readonly ? 'text-xl' : ''} {r.playerId === client.myId ? 'text-indigo-200' : ''}">
-            <span class="w-6 text-right font-mono text-slate-500">{i + 1}.</span>
-            <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, r.playerId)}</span>
+            <span class="w-6 text-right font-mono text-slate-500">{r.rank}.</span>
+            <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, r.playerId)} <JokerTag {view} {round} playerId={r.playerId} /></span>
             <span class="shrink-0 text-sm text-slate-300">{r.hits} von {judge.released}</span>
             <span class="shrink-0 text-xs text-slate-500">{r.doneAt === null ? 'nicht fertig' : `${seconds(r.doneAt)} s`}</span>
           </li>

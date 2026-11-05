@@ -107,7 +107,12 @@ describe('Kinderpromis: Tippen', () => {
     expectOk(h.act(b, { type: 'kids_guess', text: (face.aliases?.[0] ?? face.name).toUpperCase() }));
     expect(cur(h).attempts[b]).toEqual([{ text: (face.aliases?.[0] ?? face.name).toUpperCase(), at: h.room.now, status: 'correct' }]);
     expect(cur(h).solved[b]).toBe(h.room.now);
-    expect(viewRound(h, b).solved).toEqual([{ playerId: b, at: h.room.now, rank: 1 }]);
+    expect(viewRound(h, h.host).solved).toEqual([{ playerId: b, at: h.room.now, rank: 1 }]);
+    // Beim offenen Promi sehen Spieler und Screen keine Treffer, auch nicht in den Zählern.
+    expect(viewRound(h, b).solved).toEqual([]);
+    expect(viewRound(h, null).solved).toEqual([]);
+    expect(viewRound(h, c).hits[b]).toBe(0);
+    expect(viewRound(h, h.host).hits[b]).toBe(1);
     expect(viewRound(h, b).myAttempts).toEqual([{ text: (face.aliases?.[0] ?? face.name).toUpperCase(), at: h.room.now, status: 'correct' }]);
     expect(h.act(b, { type: 'kids_guess', text: 'Nochmal' })).toMatchObject({ ok: false, code: 'invalid_action' });
 

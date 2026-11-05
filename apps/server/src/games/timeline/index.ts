@@ -1,5 +1,5 @@
 import type { GameModule } from '../registry.ts';
-import { handleTimelineMessage, onPlayerRemoved, startTimelineRound } from './reducer.ts';
+import { timelineJoker, handleTimelineMessage, onPlayerRemoved, startTimelineRound } from './reducer.ts';
 import { timelineRoundView } from './view.ts';
 
 export const timelineGame: GameModule = {
@@ -19,4 +19,5 @@ export const timelineGame: GameModule = {
   penalizeActive: () => {},
   clearTurn: () => {},
   onReveal: () => {},
+  joker: timelineJoker,
 };

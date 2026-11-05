@@ -5,6 +5,7 @@ import type { StillAttempt, StillsRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
 import type { StartRoundOptions } from '../registry.ts';
 import { baseRound, buildTurnOrder, toReveal } from '../common.ts';
+import { copiesWithJoker, JOKER_LOCKED, mirrorEntry, roundClosed, type JokerHooks } from '../joker.ts';
 
 /** Anzeigename des Spiels; Spieler sehen ihn statt des Kategorie-Titels, bis der Film aufgelöst ist. */
 export const STILLS_NAME = 'Filmfotos';
@@ -115,9 +116,12 @@ export function stillsResults(r: StillsRound): StillsResultView[] {
   return list.sort((a, b) => Number(b.correct) - Number(a.correct) || a.index - b.index);
 }
 
-/** Mit `allGuess`: Der Spieler hat seinen einen Versuch im Film verbraucht (beim Tippen auch, wenn das Urteil noch aussteht). */
+/**
+ * Mit `allGuess`: Der Spieler hat seinen einen Versuch im Film verbraucht (beim Tippen auch, wenn das Urteil noch aussteht)
+ * oder kopiert per Joker.
+ */
 export function stillsFinished(r: StillsRound, playerId: string): boolean {
-  if (r.mode === 'type') return (r.attempts[playerId]?.length ?? 0) > 0;
+  if (r.mode === 'type') return (r.attempts[playerId]?.length ?? 0) > 0 || copiesWithJoker(r, playerId);
   return r.buzzVerdicts.some((v) => v.playerId === playerId);
 }
 
@@ -125,7 +129,7 @@ export function stillsFinished(r: StillsRound, playerId: string): boolean {
 export function stillsOver(r: StillsRound): boolean {
   if (r.allGuess) {
     if (r.mode === 'buzz') return r.holder === null && r.turnOrder.every((id) => stillsFinished(r, id));
-    if (r.turnOrder.every((id) => (r.attempts[id] ?? []).some((a) => a.status !== 'judging'))) return true;
+    if (r.turnOrder.every((id) => (r.attempts[id] ?? []).some((a) => a.status !== 'judging') || copiesWithJoker(r, id))) return true;
     return r.index >= lastIndex(r) && r.stage === 'judging' && judgedAt(r, r.index);
   }
   if (stillsSolved(r)) return true;
@@ -158,6 +162,7 @@ function guess(room: Room, playerId: string, text: string): Result {
   if (!r) return fail('invalid_action', 'Gerade wird nicht gespielt');
   if (r.mode !== 'type') return fail('invalid_action', 'In dieser Runde wird gebuzzert');
   if (!r.turnOrder.includes(playerId)) return fail('not_allowed', 'Du bist in dieser Runde nicht dabei');
+  if (copiesWithJoker(r, playerId)) return fail('invalid_action', JOKER_LOCKED);
   if (stillsOver(r)) return fail('invalid_action', 'Das Raten ist vorbei');
   if (r.stage !== 'guessing') return fail('invalid_action', 'Die Tipps zu diesem Foto sind geschlossen');
   const list = (r.attempts[playerId] ??= []);
@@ -176,6 +181,7 @@ function pass(room: Room, playerId: string, on: boolean): Result {
   if (!r) return fail('invalid_action', 'Gerade wird nicht gespielt');
   if (r.mode !== 'type' || !r.allGuess) return fail('invalid_action', 'Passen gibt es nur beim Tippen, wenn alle bis zum Schluss raten');
   if (!r.turnOrder.includes(playerId)) return fail('not_allowed', 'Du bist in dieser Runde nicht dabei');
+  if (copiesWithJoker(r, playerId)) return fail('invalid_action', JOKER_LOCKED);
   if (stillsOver(r)) return fail('invalid_action', 'Das Raten ist vorbei');
   if (r.stage !== 'guessing') return fail('invalid_action', 'Die Tipps zu diesem Foto sind geschlossen');
   if (stillsFinished(r, playerId)) return fail('invalid_action', 'Du hast für diesen Film schon getippt');
@@ -286,3 +292,22 @@ export function onPlayerRemoved(room: Room, playerId: string): void {
   r.buzzVerdicts = r.buzzVerdicts.filter((v) => v.playerId !== playerId);
   if (r.holder === playerId) releaseBuzzer(r);
 }
+
+/** Joker: nur beim Tippen, solange man im Film noch gar nicht getippt hat und das Raten läuft. Gespiegelt wird ab der Auflösung. */
+export const stillsJoker: JokerHooks = {
+  blocked: (room, playerId) => {
+    const r = stillsRound(room);
+    if (!r) return 'Gerade gibt es keinen Joker';
+    if (r.mode !== 'type') return 'Beim Buzzern gibt es keinen Joker';
+    if (stillsOver(r)) return 'Das Raten ist vorbei';
+    return (r.attempts[playerId]?.length ?? 0) > 0 ? 'Du hast in diesem Film schon getippt' : null;
+  },
+  apply: (room, playerId) => {
+    const r = stillsRound(room);
+    if (r) r.passed = r.passed.filter((id) => id !== playerId);
+  },
+  sync: (room, joker) => {
+    const r = stillsRound(room);
+    if (r && roundClosed(room)) mirrorEntry(r.attempts, joker);
+  },
+};

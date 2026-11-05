@@ -37,6 +37,7 @@
   import Scoreboard from '../components/Scoreboard.svelte';
   import FinalStandings from '../components/FinalStandings.svelte';
   import Toast from '../components/Toast.svelte';
+  import JokerOverlay from '../components/JokerOverlay.svelte';
   import ConnectionBanner from '../components/ConnectionBanner.svelte';
 
   let { code }: { code: string } = $props();
@@ -190,3 +191,4 @@
   </div>
 {/if}
 <Toast />
+<JokerOverlay />

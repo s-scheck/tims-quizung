@@ -170,8 +170,8 @@ describe('Karte: Pins und Sichtbarkeit', () => {
     expectOk(h.act(h.host, { type: 'end_round' }));
     expect(h.room.phase).toBe('reveal');
     expect(viewRound(h, null).ranking).toEqual([
-      { playerId: h.ids[0]!, distanceKm: null },
-      { playerId: h.ids[1]!, distanceKm: null },
+      { playerId: h.ids[0]!, distanceKm: null, rank: 1 },
+      { playerId: h.ids[1]!, distanceKm: null, rank: 2 },
     ]);
     expect(h.act(h.host, { type: 'end_round' })).toMatchObject({ ok: false });
   });
@@ -223,7 +223,7 @@ describe('Karte: Zeitlimit', () => {
     expect(r.turnDeadline).toBeNull();
     const pub = viewRound(h, null);
     expect(pub.pins?.map((p) => p.playerId).sort()).toEqual([a, b].sort());
-    expect(pub.ranking?.at(-1)).toEqual({ playerId: c, distanceKm: null });
+    expect(pub.ranking?.at(-1)).toEqual({ playerId: c, distanceKm: null, rank: 3 });
   });
 
   test('Host beendet vorher: Timer ist weg', () => {

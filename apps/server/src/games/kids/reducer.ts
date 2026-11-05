@@ -15,6 +15,7 @@ import type { KidsItem, KidsRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
 import type { StartRoundOptions } from '../registry.ts';
 import { baseRound, buildTurnOrder, rememberTarget, suggestionFor, toReveal } from '../common.ts';
+import { copiesWithJoker, JOKER_LOCKED, mirrorEntry, rankWithJoker, type JokerHooks } from '../joker.ts';
 import { MAX_ATTEMPTS } from '../faces/reducer.ts';
 
 export function kidsRound(room: Room): KidsRound | null {
@@ -124,6 +125,7 @@ function guess(room: Room, playerId: string, text: string): Result {
   const { round, item } = p;
   if (round.mode !== 'type') return fail('invalid_action', 'In dieser Runde wird gebuzzert');
   if (!round.turnOrder.includes(playerId)) return fail('not_allowed', 'Du bist in dieser Runde nicht dabei');
+  if (copiesWithJoker(round, playerId, round.index)) return fail('invalid_action', JOKER_LOCKED);
   if (item.stage !== 'open') return fail('invalid_action', item.stage === 'hidden' ? 'Der Host hat den Promi noch nicht gezeigt' : 'Dieser Promi ist schon aufgelöst');
   if (item.solved[playerId] !== undefined) return fail('invalid_action', 'Du hast es schon');
   const trimmed = text.trim();
@@ -146,6 +148,7 @@ function judge(room: Room, playerId: string, targetId: string, index: number, co
   if (isResult(p)) return p;
   const { round, item } = p;
   if (round.mode !== 'type') return fail('invalid_action', 'In dieser Runde wird gebuzzert');
+  if (copiesWithJoker(round, targetId, round.index)) return fail('invalid_action', 'Der Joker übernimmt die Urteile der kopierten Person');
   const attempt = item.attempts[targetId]?.[index];
   if (!attempt) return fail('invalid_action', 'Diesen Versuch gibt es nicht');
   if (attempt.status !== 'judging') return fail('invalid_action', 'Dieser Versuch ist schon geprüft');
@@ -219,8 +222,12 @@ function endRound(room: Room, playerId: string): Result {
 
 // --------------------------------------------------------- Ablauf je Promi
 
+/** Tippen: Haben alle den Promi, ist er durch. Der Joker-Spieler gilt als fertig. */
 function settleIfDone(round: KidsRound, item: KidsItem): void {
-  if (item.stage === 'open' && round.turnOrder.every((id) => item.solved[id] !== undefined)) item.stage = 'solved';
+  const index = round.items.indexOf(item);
+  if (item.stage === 'open' && round.turnOrder.every((id) => item.solved[id] !== undefined || copiesWithJoker(round, id, index))) {
+    item.stage = 'solved';
+  }
 }
 
 function closeItem(room: Room, round: KidsRound, item: KidsItem): void {
@@ -263,22 +270,27 @@ function settleBuzz(room: Room, round: KidsRound, item: KidsItem, correct: boole
 
 // ----------------------------------------------------------------- Punkte
 
-/** Richtige bei einem Promi nach Zeit, bei Gleichstand nach Reihenfolge im Raum. */
+/** Richtige bei einem Promi nach Zeit, bei Gleichstand nach Reihenfolge im Raum. Ein Joker-Spieler teilt den Platz der kopierten Person. */
 export function kidsRanking(round: KidsRound, item: KidsItem): FaceSolvedView[] {
-  return Object.entries(item.solved)
+  const sorted = Object.entries(item.solved)
     .filter(([id]) => round.turnOrder.includes(id))
     .sort((a, b) => a[1] - b[1] || round.turnOrder.indexOf(a[0]) - round.turnOrder.indexOf(b[0]))
-    .map(([playerId, at], i) => ({ playerId, at, rank: i + 1 }));
+    .map(([playerId, at]) => ({ playerId, at }));
+  const index = round.items.indexOf(item);
+  return rankWithJoker(sorted, (row) => row.playerId, round.joker, round.joker !== null && index >= round.joker.from);
 }
 
-/** Spielpunkte über die Runde: Tippen 3/2/1 je Promi, Buzzern 1 je Treffer, Fehlbuzzer je nach Regel −1. */
-export function kidsPoints(round: KidsRound): { points: Record<string, number>; hits: Record<string, number>; misses: Record<string, number> } {
+/**
+ * Spielpunkte über die Runde: Tippen 3/2/1 je Promi, Buzzern 1 je Treffer, Fehlbuzzer je nach Regel −1.
+ * `skipOpen`: Der offene Promi zählt noch nicht, damit Spieler beim Raten keine fremden Treffer sehen.
+ */
+export function kidsPoints(round: KidsRound, skipOpen = false): { points: Record<string, number>; hits: Record<string, number>; misses: Record<string, number> } {
   const zero = () => Object.fromEntries(round.turnOrder.map((id) => [id, 0]));
   const points = zero();
   const hits = zero();
   const misses = zero();
   for (const item of round.items) {
-    if (item.stage === 'hidden') continue;
+    if (item.stage === 'hidden' || (skipOpen && item.stage === 'open')) continue;
     for (const entry of kidsRanking(round, item)) {
       hits[entry.playerId] = (hits[entry.playerId] ?? 0) + 1;
       points[entry.playerId] = (points[entry.playerId] ?? 0) + (round.mode === 'type' ? (KIDS_POINTS[entry.rank - 1] ?? 0) : 1);
@@ -313,3 +325,32 @@ export function onPlayerRemoved(room: Room, playerId: string): void {
   if (round.mode === 'type') settleIfDone(round, item);
   else if (round.turnOrder.every((id) => item.used.includes(id))) item.stage = 'solved';
 }
+
+/** Joker: nur beim Tippen, solange man den aktuellen Promi nicht hat. Gilt ab diesem Promi bis zum Ende, gespiegelt wird je aufgelöstem Promi. */
+export const kidsJoker: JokerHooks = {
+  blocked: (room, playerId) => {
+    const round = kidsRound(room);
+    const item = round ? currentItem(round) : null;
+    if (!round || !item) return 'Kein Promi mehr übrig';
+    if (round.mode !== 'type') return 'Beim Buzzern gibt es keinen Joker';
+    if (item.stage === 'solved') return 'Dieser Promi ist schon aufgelöst';
+    return item.solved[playerId] !== undefined ? 'Du hast es schon' : null;
+  },
+  from: (room) => kidsRound(room)?.index ?? 0,
+  apply: (room, playerId) => {
+    const round = kidsRound(room);
+    const item = round ? currentItem(round) : null;
+    if (!round || !item) return;
+    delete item.attempts[playerId];
+    settleIfDone(round, item);
+  },
+  sync: (room, joker) => {
+    const round = kidsRound(room);
+    if (!round) return;
+    round.items.forEach((item, i) => {
+      if (i < joker.from || item.stage !== 'solved') return;
+      mirrorEntry(item.attempts, joker);
+      mirrorEntry(item.solved, joker);
+    });
+  },
+};

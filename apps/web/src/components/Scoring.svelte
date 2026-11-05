@@ -3,6 +3,7 @@
   import { SCORE_MAX, SCORE_MIN, type RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { formatKm, formatYearDistance, scoredPlayers } from '../lib/format.ts';
+  import JokerTag from './JokerTag.svelte';
 
   let { view }: { view: RoomView } = $props();
 
@@ -41,8 +42,7 @@
     if (r.game === 'map') {
       const entry = r.ranking?.find((x) => x.playerId === id);
       if (!entry || entry.distanceKm === null) return 'kein Pin';
-      const rank = (r.ranking ?? []).indexOf(entry) + 1;
-      return `${rank}. Platz, ${formatKm(entry.distanceKm)}`;
+      return `${entry.rank}. Platz, ${formatKm(entry.distanceKm)}`;
     }
     if (r.game === 'risk') return `${r.totals[id] ?? 0} Kategorie-Punkte`;
     if (r.game === 'bluff') return `${r.points?.[id] ?? 0} Spielpunkte`;
@@ -74,15 +74,13 @@
     if (r.game === 'timeline') {
       const entry = r.ranking?.find((x) => x.playerId === id);
       if (!entry || entry.distanceYears === null) return 'kein Tipp';
-      const rank = (r.ranking ?? []).indexOf(entry) + 1;
-      return `${rank}. Platz, ${entry.distanceYears === 0 ? 'Treffer' : `${formatYearDistance(entry.distanceYears)} daneben`}`;
+      return `${entry.rank}. Platz, ${entry.distanceYears === 0 ? 'Treffer' : `${formatYearDistance(entry.distanceYears)} daneben`}`;
     }
     if (r.game === 'picture' && r.mode === 'all') {
       const res = r.results?.find((x) => x.playerId === id);
       if (!res) return 'nicht dabei';
-      const rank = (r.results ?? []).indexOf(res) + 1;
       const time = res.doneAt === null ? 'nicht fertig gemeldet' : `fertig nach ${((res.doneAt - (r.startedAt ?? 0)) / 1000).toFixed(1)} s`;
-      return `${rank}. Platz · ${res.hits} von ${r.fields.length} richtig · ${time}`;
+      return `${res.rank}. Platz · ${res.hits} von ${r.fields.length} richtig · ${time}`;
     }
     // Reihum mit Leben: Sortieren, Top X, Zuordnen, Bilderrätsel reihum.
     const hits = r.hits[id] ?? 0;
@@ -111,7 +109,7 @@
       {@const eliminated = round.eliminated.includes(p.id)}
       <label class="flex items-center gap-3">
         <span class="min-w-0 flex-1">
-          <span class="block break-words font-semibold">{p.name}</span>
+          <span class="flex flex-wrap items-center gap-2 break-words font-semibold">{p.name} <JokerTag {view} {round} playerId={p.id} /></span>
           <span class="block text-xs {eliminated ? 'text-rose-300' : round.turnOrder.includes(p.id) ? 'text-emerald-300' : 'text-slate-500'}">{statusOf(p.id)}</span>
         </span>
         <span class="text-xs text-slate-500">bisher {view.scores[p.id] ?? 0}</span>

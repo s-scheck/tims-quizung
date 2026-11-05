@@ -24,6 +24,14 @@ export interface ShowRevealState {
   solution: boolean;
 }
 
+/** Joker: `by` kopiert ab Abschnitt `from` (No-Risk-Durchgang, Kinderpromi, sonst 0) das Ergebnis von `target`. */
+export interface RoundJoker {
+  by: string;
+  target: string;
+  from: number;
+  at: number;
+}
+
 export interface BaseRound {
   category: Category | PseudoCategory;
   turnOrder: string[];
@@ -34,6 +42,8 @@ export interface BaseRound {
   soloMode: boolean;
   /** null: Auflösung alles auf einmal. */
   reveal: ShowRevealState | null;
+  /** Höchstens ein Joker je Runde. */
+  joker: RoundJoker | null;
 }
 
 // ---------------------------------------------------------------- Sortieren

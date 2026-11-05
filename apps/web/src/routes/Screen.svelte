@@ -33,6 +33,7 @@
   import PlayerList from '../components/PlayerList.svelte';
   import ConnectionBanner from '../components/ConnectionBanner.svelte';
   import Toast from '../components/Toast.svelte';
+  import JokerOverlay from '../components/JokerOverlay.svelte';
   import { fitScreen } from '../lib/fit.ts';
 
   let { code }: { code: string } = $props();
@@ -162,3 +163,4 @@
   </main>
 </div>
 <Toast />
+<JokerOverlay />

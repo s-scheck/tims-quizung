@@ -5,6 +5,8 @@
   import FaceImage from './FaceImage.svelte';
   import GuessBar from './GuessBar.svelte';
   import TurnTimer from './TurnTimer.svelte';
+  import JokerButton from './JokerButton.svelte';
+  import JokerTag from './JokerTag.svelte';
 
   /** Kinderpromis: Der Host zeigt einen Promi nach dem anderen, alle tippen um die Wette oder buzzern. */
   let { view, round, readonly = false }: { view: RoomView; round: KidsRoundView; readonly?: boolean } = $props();
@@ -21,9 +23,13 @@
   const modeName = $derived(typing ? 'Tippen' : 'Buzzern');
   const shownAt = $derived(round.shownAt ?? 0);
   const seconds = (at: number) => ((at - shownAt) / 1000).toFixed(1);
-  const mySolved = $derived(round.solved.find((s) => s.playerId === me) ?? null);
+  // Beim Tippen sehen Spieler fremde Treffer erst, wenn der Promi aufgelöst ist; der eigene steht in den eigenen Versuchen.
+  const hidden = $derived(typing && round.stage === 'open' && !round.privileged);
+  const mySolved = $derived(round.myAttempts?.find((a) => a.status === 'correct') ?? null);
   const solvedIds = $derived(new Set(round.solved.map((s) => s.playerId)));
-  const canGuess = $derived(isParticipant && playing && typing && round.stage === 'open' && !mySolved);
+  /** Der Joker gilt ab seinem Promi bis zum Ende der Runde. */
+  const copying = $derived(isParticipant && round.joker?.by === me && round.index >= round.joker.from);
+  const canGuess = $derived(isParticipant && playing && typing && round.stage === 'open' && !mySolved && !copying);
   const buzzer = $derived(round.buzzer ?? { holder: null, deadline: null, used: [] });
   const usedByMe = $derived(me !== null && buzzer.used.includes(me));
   const holdsBuzzer = $derived(buzzer.holder !== null && buzzer.holder === me);
@@ -59,6 +65,7 @@
     if (round.stage === 'solved') return round.name ?? 'Aufgelöst';
     if (!typing && buzzer.holder !== null) return `${playerName(view, buzzer.holder)} hat gebuzzert`;
     if (!typing) return 'Buzzer frei';
+    if (hidden) return 'Wer es hat, zeigt sich beim Auflösen';
     return `${round.solved.length} von ${participants.length} haben es`;
   });
 
@@ -72,7 +79,8 @@
     if (!isParticipant) return 'Du bist ab der nächsten Runde dabei.';
     if (round.stage === 'hidden') return 'Gleich zeigt der Host das Foto.';
     if (round.stage === 'solved') return 'Warte, bis der Host weitergeht.';
-    if (typing) return mySolved ? `Richtig! Du bist ${mySolved.rank}. nach ${seconds(mySolved.at)} s.` : 'Wer war das als Kind? Tippe unten, so oft du willst.';
+    if (copying) return '';
+    if (typing) return mySolved ? `Richtig nach ${seconds(mySolved.at)} s! Deinen Platz siehst du beim Auflösen.` : 'Wer war das als Kind? Tippe unten, so oft du willst.';
     if (holdsBuzzer) return 'Sag den Namen laut, der Host wertet.';
     if (usedByMe) return 'Dein Versuch bei diesem Promi ist verbraucht.';
     if (buzzer.holder !== null) return 'Jemand anderes war schneller. Bei Falsch ist der Buzzer wieder frei.';
@@ -112,6 +120,7 @@
         </div>
       {/if}
     </div>
+    {#if isParticipant && typing && playing}<JokerButton {view} {round} />{/if}
 
     {#if round.image}
       <FaceImage image={round.image} fx={CLEAR} large={readonly} />
@@ -173,7 +182,7 @@
           {@const s = round.solved.find((x) => x.playerId === p.id)}
           <div class="rounded-xl border border-slate-800 px-3 py-2">
             <div class="flex items-baseline justify-between gap-2">
-              <span class="font-semibold">{p.name}</span>
+              <span class="flex flex-wrap items-center gap-2 font-semibold">{p.name} <JokerTag {view} {round} playerId={p.id} section={round.index} /></span>
               <span class="text-xs {s ? 'text-emerald-300' : 'text-slate-500'}">{s ? `${s.rank}. Platz nach ${seconds(s.at)} s` : attempts.length === 0 ? 'noch kein Tipp' : `${attempts.length} ${attempts.length === 1 ? 'Tipp' : 'Tipps'}`}</span>
             </div>
             {#if attempts.length > 0}
@@ -200,7 +209,12 @@
   </section>
 
   <aside class="space-y-4">
-    {#if round.stage !== 'hidden' && round.total > 0}
+    {#if round.stage !== 'hidden' && round.total > 0 && hidden}
+      <div class="card">
+        <h3 class="mb-1 font-bold">Richtig</h3>
+        <p class="text-sm text-slate-500">Wer den Promi hat, bleibt geheim, bis der Host auflöst. Punkte zählen ab dann mit.</p>
+      </div>
+    {:else if round.stage !== 'hidden' && round.total > 0}
       <div class="card">
         <div class="mb-2 flex items-baseline justify-between">
           <h3 class="font-bold">{typing ? 'Richtig' : 'Treffer'}</h3>
@@ -214,6 +228,7 @@
               <li class="flex items-center gap-2 {readonly ? 'text-xl' : ''} {s.playerId === me ? 'text-indigo-200' : ''}">
                 {#if typing}<span class="w-6 text-right font-mono text-slate-500">{s.rank}.</span>{:else}<span class="text-emerald-400">✓</span>{/if}
                 <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, s.playerId)}</span>
+                <JokerTag {view} {round} playerId={s.playerId} section={round.index} />
                 <span class="font-mono text-xs text-slate-400">{seconds(s.at)} s</span>
               </li>
             {/each}

@@ -7,7 +7,8 @@ import { currentItem, kidsPoints, kidsRanking, kidsRound } from './reducer.ts';
 
 /**
  * Sicht auf die Runde. Das Foto sieht der Host immer, alle anderen ab „Zeigen“; den Namen der Host immer,
- * alle anderen ab der Auflösung des Promis. Fremde Tipps sieht nur der Host, wer richtig liegt, sehen alle.
+ * alle anderen ab der Auflösung des Promis. Fremde Tipps sieht nur der Host. Wer richtig liegt, sehen beim Tippen
+ * alle erst ab der Auflösung des Promis, damit ein Joker blind bleibt; beim Buzzern sofort.
  */
 export function kidsRoundView(room: Room, revealed: boolean, viewerId: string | null): RoundView | null {
   const r = kidsRound(room);
@@ -16,7 +17,8 @@ export function kidsRoundView(room: Room, revealed: boolean, viewerId: string | 
   const { faces: _faces, games: _games, kind: _kind, ...category } = r.category;
   const item = currentItem(r);
   const stage = item?.stage ?? 'solved';
-  const { points, hits, misses } = kidsPoints(r);
+  const hideOpen = r.mode === 'type' && !privileged && !revealed;
+  const { points, hits, misses } = kidsPoints(r, hideOpen);
   // Abgeschlossene Promis vor dem aktuellen; in der Auflösung alle gezeigten.
   const done = (revealed ? r.items : r.items.slice(0, r.index)).filter((i) => i.stage !== 'hidden');
 
@@ -36,7 +38,7 @@ export function kidsRoundView(room: Room, revealed: boolean, viewerId: string | 
     index: r.index,
     stage,
     shownAt: item?.shownAt ?? null,
-    solved: item ? kidsRanking(r, item) : [],
+    solved: item && !(hideOpen && stage === 'open') ? kidsRanking(r, item) : [],
     points,
     hits,
     misses,

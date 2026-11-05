@@ -10,6 +10,7 @@ import {
   onPlayerRemoved,
   onReveal,
   penalizeActive,
+  pictureJoker,
   startPictureRound,
 } from './reducer.ts';
 import { pictureRoundView } from './view.ts';
@@ -31,4 +32,5 @@ export const pictureGame: GameModule = {
   penalizeActive,
   clearTurn,
   onReveal,
+  joker: pictureJoker,
 };

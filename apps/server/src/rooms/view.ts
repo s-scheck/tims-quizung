@@ -1,6 +1,7 @@
 import type { Phase, RoomView } from '@quiz/shared';
 import type { Room } from './room.ts';
 import { listGames } from '../games/registry.ts';
+import { jokerView } from '../games/joker.ts';
 
 const REVEALED_PHASES: ReadonlySet<Phase> = new Set(['reveal', 'scoring', 'scoreboard', 'finished']);
 
@@ -10,6 +11,8 @@ const REVEALED_PHASES: ReadonlySet<Phase> = new Set(['reveal', 'scoring', 'score
  */
 export function toView(room: Room, viewerId: string | null): RoomView {
   const revealed = REVEALED_PHASES.has(room.phase);
+  const round = room.game?.roundView(room, revealed, viewerId) ?? null;
+  if (round) Object.assign(round, jokerView(room, revealed, viewerId));
   const view: RoomView = {
     code: room.code,
     hostId: room.hostId,
@@ -18,12 +21,13 @@ export function toView(room: Room, viewerId: string | null): RoomView {
     scores: { ...room.scores },
     phase: room.phase,
     gameId: room.gameId,
-    round: room.game?.roundView(room, revealed, viewerId) ?? null,
+    round,
     rounds: room.rounds.map((r) => ({ ...r, scores: { ...r.scores } })),
     defaultLives: room.defaultLives,
     mapBorders: room.mapBorders,
     riskRules: { ...room.riskRules },
     revealMode: room.revealMode,
+    jokersUsed: [...room.jokersUsed],
   };
   if (room.phase === 'choosing_category') {
     view.games = listGames().map((g) => ({ id: g.id, name: g.name, description: g.description }));

@@ -20,6 +20,7 @@ import type { Player, Round } from './state.ts';
 import { fail, OK, type Result } from './result.ts';
 import { getGame, type GameModule, type StartRoundOptions } from '../games/registry.ts';
 import { handleCommon, removePlayerFromRound } from '../games/common.ts';
+import { syncJoker } from '../games/joker.ts';
 
 export interface CategoryProvider {
   list(): Category[];
@@ -71,6 +72,8 @@ export class Room {
   revealMode: RevealMode = 'auto';
   /** Gespielte Ziele je Orts- oder Ereignisliste, damit Zufall nichts wiederholt und der Moderator es sieht. */
   playedTargets: Record<string, string[]> = {};
+  /** Wer seinen einen Joker im laufenden Spiel schon gesetzt hat. */
+  jokersUsed: string[] = [];
   seq = 0;
   lastActivity: number;
   screenCount = 0;
@@ -251,6 +254,7 @@ export class Room {
     this.rounds = [];
     this.playedCategoryIds = [];
     this.playedTargets = {};
+    this.jokersUsed = [];
     this.lastStartPlayerId = null;
     this.phase = 'choosing_category';
     return OK;
@@ -330,11 +334,11 @@ export class Room {
       case 'kick':
         return fail('invalid_action', 'Nachricht hier nicht erlaubt');
       default: {
-        const common = handleCommon(this, playerId, msg);
-        if (common) return common;
         const game = this.game;
-        if (!game) return fail('invalid_action', 'Kein Spiel gestartet');
-        return game.handle(this, playerId, msg);
+        const res = handleCommon(this, playerId, msg) ?? (game ? game.handle(this, playerId, msg) : fail('invalid_action', 'Kein Spiel gestartet'));
+        // Korrekturen an der kopierten Person wandern sofort zum Joker-Spieler.
+        if (res.ok) syncJoker(this);
+        return res;
       }
     }
   }
