@@ -4,6 +4,7 @@ export type Route =
   | { name: 'home' }
   | { name: 'room'; code: string }
   | { name: 'screen'; code: string }
+  | { name: 'devlock' }
   | { name: 'editor' }
   | { name: 'editor-new'; game: GameId }
   | { name: 'editor-edit'; id: string }
@@ -12,6 +13,7 @@ export type Route =
 function parse(path: string): Route {
   const parts = path.split('/').filter(Boolean);
   if (parts.length === 0) return { name: 'home' };
+  if (parts.length === 1 && parts[0] === 'devlock') return { name: 'devlock' };
   if (parts[0] === 'editor') {
     if (parts.length === 1) return { name: 'editor' };
     if (parts.length === 3 && parts[1] === 'neu' && (GAME_IDS as readonly string[]).includes(parts[2]!)) return { name: 'editor-new', game: parts[2] as GameId };

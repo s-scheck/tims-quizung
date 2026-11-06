@@ -14,6 +14,7 @@ import type { Room } from '../rooms/room.ts';
 import type { BaseRound } from '../rooms/state.ts';
 import { fail, OK, type Result } from '../rooms/result.ts';
 import { syncJoker, useJoker } from './joker.ts';
+import { maybeShowDevLock } from '../rooms/devlock.ts';
 
 /** Läuft die aktuelle Runde mit Zugreihenfolge? Das Bilderrätsel entscheidet das je Runde. */
 export function isTurnBased(room: Room): boolean {
@@ -395,6 +396,7 @@ function submitScores(room: Room, playerId: string, scores: Record<string, numbe
   };
   room.rounds.push(result);
   room.phase = 'scoreboard';
+  maybeShowDevLock(room);
   return OK;
 }
 

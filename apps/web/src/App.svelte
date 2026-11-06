@@ -4,6 +4,7 @@
   import Room from './routes/Room.svelte';
   import Screen from './routes/Screen.svelte';
   import Editor from './routes/Editor.svelte';
+  import DevLockPreview from './routes/DevLockPreview.svelte';
   import EditorCategory from './routes/EditorCategory.svelte';
 </script>
 
@@ -13,6 +14,8 @@
   <Room code={router.route.code} />
 {:else if router.route.name === 'screen'}
   <Screen code={router.route.code} />
+{:else if router.route.name === 'devlock'}
+  <DevLockPreview />
 {:else if router.route.name === 'editor'}
   <Editor />
 {:else if router.route.name === 'editor-new'}

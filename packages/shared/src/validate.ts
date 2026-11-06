@@ -145,6 +145,9 @@ export function isClientMsg(x: unknown): x is ClientMsg {
     case 'next_round':
     case 'end_game':
     case 'back_to_lobby':
+    case 'devlock_decline':
+    case 'devlock_pay':
+    case 'devlock_close':
     case 'ping':
       return true;
     case 'kick':

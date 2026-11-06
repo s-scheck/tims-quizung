@@ -3,13 +3,17 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "bun run --parallel --filter './apps/*' dev",
     "build": "bun run --filter '@quiz/web' build",
     "start": "bun run apps/server/src/index.ts",
     "test": "bun test",
-    "check": "bun run --filter '*' check"
+    "check": "bun run --filter '*' check",
+    "devlock": "bun run --parallel --filter './apps/*' devlock"
   },
   "devDependencies": {
     "@types/bun": "^1.2.0",

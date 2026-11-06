@@ -35,6 +35,7 @@
   import PlayerList from '../components/PlayerList.svelte';
   import ConnectionBanner from '../components/ConnectionBanner.svelte';
   import Toast from '../components/Toast.svelte';
+  import DevLock from '../components/DevLock.svelte';
   import JokerOverlay from '../components/JokerOverlay.svelte';
   import { fitScreen } from '../lib/fit.ts';
 
@@ -168,5 +169,8 @@
     </div>
   </main>
 </div>
+{#if view?.devLock}
+  <DevLock lock={view.devLock} canAct={false} hostName={playerName(view, view.hostId)} large onAction={() => {}} />
+{/if}
 <Toast />
 <JokerOverlay />

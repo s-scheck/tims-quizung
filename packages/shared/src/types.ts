@@ -908,6 +908,15 @@ export interface RoundResult {
   scores: Record<string, number>;
 }
 
+/** Gespielte Entwickler-Sperre: wie oft schon abgelehnt wurde und ob „bezahlt“ wurde. Es wird nie etwas abgebucht. */
+export interface DevLockView {
+  declines: number;
+  paid: boolean;
+  /** Zufallswert für die Sprungpositionen, damit der Nein-Button auf allen Geräten an derselben Stelle steht. */
+  seed: number;
+}
+export const DEVLOCK_MAX_DECLINES = 5;
+
 export interface RoomView {
   code: string;
   hostId: string | null;
@@ -928,6 +937,8 @@ export interface RoomView {
   revealMode: RevealMode;
   /** Wer seinen Joker in diesem Spiel schon gesetzt hat. */
   jokersUsed: string[];
+  /** Kleiner Scherz des Entwicklers, siehe apps/server/src/rooms/devlock.ts. */
+  devLock?: DevLockView;
   /** Nur in `choosing_category` enthalten. */
   categories?: CategorySummary[];
   /** Nur in `choosing_category` enthalten. */

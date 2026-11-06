@@ -133,6 +133,9 @@ export type ClientMsg =
   | { type: 'next_round' }
   | { type: 'end_game' }
   | { type: 'back_to_lobby' }
+  | { type: 'devlock_decline' }
+  | { type: 'devlock_pay' }
+  | { type: 'devlock_close' }
   | { type: 'ping' };
 
 export type ClientMsgType = ClientMsg['type'];

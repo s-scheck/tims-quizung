@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { CLOSE_CODES } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
+  import { playerName } from '../lib/format.ts';
   import { router } from '../lib/router.svelte.ts';
   import { loadName, loadSession, saveName } from '../lib/session.ts';
   import Header from '../components/Header.svelte';
@@ -39,6 +40,7 @@
   import Scoreboard from '../components/Scoreboard.svelte';
   import FinalStandings from '../components/FinalStandings.svelte';
   import Toast from '../components/Toast.svelte';
+  import DevLock from '../components/DevLock.svelte';
   import JokerOverlay from '../components/JokerOverlay.svelte';
   import ConnectionBanner from '../components/ConnectionBanner.svelte';
 
@@ -195,6 +197,9 @@
       {/if}
     </main>
   </div>
+{/if}
+{#if view?.devLock}
+  <DevLock lock={view.devLock} canAct={client.isHost} hostName={playerName(view, view.hostId)} onAction={(a) => client.send({ type: a === 'decline' ? 'devlock_decline' : a === 'pay' ? 'devlock_pay' : 'devlock_close' })} />
 {/if}
 <Toast />
 <JokerOverlay />

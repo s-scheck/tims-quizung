@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "start": "bun src/index.ts",
-    "check": "tsc -p tsconfig.json"
+    "check": "tsc -p tsconfig.json",
+    "devlock": "DEVLOCK_PREVIEW=1 bun --watch src/index.ts"
   },
   "dependencies": {
     "@quiz/content": "workspace:*",

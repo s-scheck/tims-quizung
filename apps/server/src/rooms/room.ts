@@ -18,6 +18,7 @@ import type { Category } from '@quiz/content';
 import type { Scheduler, TimerHandle } from './scheduler.ts';
 import type { Player, Round } from './state.ts';
 import { fail, OK, type Result } from './result.ts';
+import { devLockAction } from './devlock.ts';
 import { getGame, type GameModule, type StartRoundOptions } from '../games/registry.ts';
 import { handleCommon, removePlayerFromRound } from '../games/common.ts';
 import { syncJoker } from '../games/joker.ts';
@@ -77,6 +78,9 @@ export class Room {
   seq = 0;
   lastActivity: number;
   screenCount = 0;
+  /** Gespielte Entwickler-Sperre, siehe devlock.ts. */
+  devLock: { declines: number; paid: boolean; seed: number } | null = null;
+  devLockShown = false;
   timers: { turn: TimerHandle | null; placement: TimerHandle | null } = { turn: null, placement: null };
   readonly scheduler: Scheduler;
   readonly categories: CategoryProvider;
@@ -326,6 +330,12 @@ export class Room {
         });
       case 'back_to_lobby':
         return this.backToLobby(playerId);
+      case 'devlock_decline':
+        return devLockAction(this, playerId, 'decline');
+      case 'devlock_pay':
+        return devLockAction(this, playerId, 'pay');
+      case 'devlock_close':
+        return devLockAction(this, playerId, 'close');
       case 'create':
       case 'join':
       case 'watch':
