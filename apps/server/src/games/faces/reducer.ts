@@ -1,10 +1,10 @@
-import { FACE_COLS_MAX, FACE_COLS_MIN, FACE_LEVEL_MAX, FACE_POINTS, isValidGuess, type ClientMsg, type FaceEffectState } from '@quiz/shared';
+import { FACE_AUTO_INTERVAL_MS, FACE_AUTO_STEP, FACE_COLS_MAX, FACE_COLS_MIN, FACE_LEVEL_MAX, FACE_POINTS, isValidGuess, matchPersonName, type ClientMsg, type FaceEffectState } from '@quiz/shared';
 import type { Category, Face } from '@quiz/content';
 import type { Room } from '../../rooms/room.ts';
 import type { FacesRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
 import type { StartRoundOptions } from '../registry.ts';
-import { copiesWithJoker, JOKER_LOCKED, mirrorEntry, rankWithJoker, roundClosed, type JokerHooks } from '../joker.ts';
+import { copiesWithJoker, JOKER_LOCKED, mirrorEntry, rankWithJoker, roundClosed, syncJoker, type JokerHooks } from '../joker.ts';
 import { baseRound, buildTurnOrder, rememberTarget, scheduleRoundTimer, toReveal } from '../common.ts';
 
 /** Mehr Versuche braucht niemand, das bremst höchstens Spam. */
@@ -29,16 +29,24 @@ function pickFace(room: Room, categoryId: string, faces: readonly Face[], target
 
 export function startFacesRound(room: Room, category: Category | null, opts: StartRoundOptions): Result {
   if (!category || category.kind !== 'faces') return fail('unknown_category', 'Diese Kategorie passt nicht zum Spiel');
-  const target = pickFace(room, category.id, category.faces, opts.targetId);
+  const auto = opts.faceAuto === true;
+  // Im automatischen Modus kennt niemand die Antwort, also wird zufällig gewählt.
+  const target = pickFace(room, category.id, category.faces, auto ? undefined : opts.targetId);
   if (!target) return fail('unknown_category', 'Person unbekannt');
-  // Der Host kennt die Antwort und prüft jeden Tipp, also rät er nie mit.
-  const turnOrder = buildTurnOrder(room).filter((id) => id !== room.hostId);
-  if (turnOrder.length === 0) return fail('invalid_action', 'Wer ist das? braucht mindestens einen Mitspieler außer dem Host');
+  let turnOrder = buildTurnOrder(room);
+  if (auto) {
+    // Der Server prüft, also rät der Host mit, auch wenn er laut Lobby moderiert.
+    if (room.hostId !== null && !turnOrder.includes(room.hostId)) turnOrder = [...turnOrder, room.hostId];
+  } else {
+    // Der Host kennt die Antwort und prüft jeden Tipp, also rät er nie mit.
+    turnOrder = turnOrder.filter((id) => id !== room.hostId);
+    if (turnOrder.length === 0) return fail('invalid_action', 'Wer ist das? braucht mindestens einen Mitspieler außer dem Host');
+  }
   rememberTarget(room, category.id, target.id);
 
   const effect: FaceEffectState = {
     effect: opts.effect ?? 'blur',
-    level: clamp(Math.round(opts.level ?? 80), 0, FACE_LEVEL_MAX),
+    level: auto ? FACE_LEVEL_MAX : clamp(Math.round(opts.level ?? 80), 0, FACE_LEVEL_MAX),
     cols: clamp(Math.round(opts.cols ?? 6), FACE_COLS_MIN, FACE_COLS_MAX),
     revealed: [],
   };
@@ -54,10 +62,35 @@ export function startFacesRound(room: Room, category: Category | null, opts: Sta
     effect,
     attempts: {},
     solved: {},
+    auto: auto ? { seed: Math.floor(room.random() * 2 ** 32), nextStepAt: null } : null,
   };
   room.phase = 'playing';
   scheduleRoundTimer(room, () => toReveal(room));
+  scheduleAutoStep(room);
   return OK;
+}
+
+/** Nächste Stufe im automatischen Modus: alle 10 s wird der Effekt um 10 schwächer, bis das Bild klar ist. */
+function scheduleAutoStep(room: Room): void {
+  const round = facesRound(room);
+  if (!round?.auto || room.phase !== 'playing') return;
+  if (round.effect.level <= 0) {
+    round.auto.nextStepAt = null;
+    return;
+  }
+  round.auto.nextStepAt = room.now + FACE_AUTO_INTERVAL_MS;
+  room.timers.placement = room.scheduler.schedule(FACE_AUTO_INTERVAL_MS, () => {
+    room.timers.placement = null;
+    if (room.phase !== 'playing' || room.round !== round) return;
+    round.effect.level = Math.max(0, round.effect.level - FACE_AUTO_STEP);
+    scheduleAutoStep(room);
+    room.emit();
+  });
+}
+
+/** Fertig ist, wer richtig lag oder per Joker kopiert. */
+function everyoneSolved(round: FacesRound): boolean {
+  return round.turnOrder.every((id) => round.solved[id] !== undefined || copiesWithJoker(round, id));
 }
 
 export function handleFacesMessage(room: Room, playerId: string, msg: ClientMsg): Result {
@@ -85,13 +118,23 @@ function guess(room: Room, playerId: string, text: string): Result {
   if (!isValidGuess(trimmed)) return fail('bad_message', 'Tipp muss 1 bis 60 Zeichen haben');
   const list = (round.attempts[playerId] ??= []);
   if (list.length >= MAX_ATTEMPTS) return fail('invalid_action', 'Genug geraten für diese Runde');
-  list.push({ text: trimmed, at: room.now, status: 'judging' });
+  if (!round.auto) {
+    list.push({ text: trimmed, at: room.now, status: 'judging' });
+    return OK;
+  }
+  const correct = matchPersonName(trimmed, round.target.name, round.target.aliases);
+  list.push({ text: trimmed, at: room.now, status: correct ? 'correct' : 'wrong' });
+  if (correct) {
+    round.solved[playerId] = room.now;
+    if (everyoneSolved(round)) toReveal(room);
+  }
   return OK;
 }
 
 function judge(room: Room, playerId: string, targetId: string, index: number, correct: boolean): Result {
   if (!room.isHost(playerId)) return fail('not_host', 'Nur der Host prüft Tipps');
   const round = facesRound(room);
+  if (round?.auto) return correctAuto(room, round, targetId, index, correct);
   if (room.phase !== 'playing' || !round) return fail('invalid_action', 'Gerade wird nicht gespielt');
   const attempt = round.attempts[targetId]?.[index];
   if (!attempt) return fail('invalid_action', 'Diesen Versuch gibt es nicht');
@@ -101,10 +144,29 @@ function judge(room: Room, playerId: string, targetId: string, index: number, co
   return OK;
 }
 
+/**
+ * Automatischer Modus: Der Host korrigiert in der Auflösung, was der Server falsch eingeschätzt hat.
+ * Gewertet wird danach der früheste richtige Versuch.
+ */
+function correctAuto(room: Room, round: FacesRound, targetId: string, index: number, correct: boolean): Result {
+  if (room.phase !== 'reveal') return fail('invalid_action', 'Korrigieren geht erst in der Auflösung');
+  if (round.joker?.by === targetId) return fail('invalid_action', 'Wer per Joker kopiert, übernimmt die Wertung der anderen Person');
+  const list = round.attempts[targetId];
+  const attempt = list?.[index];
+  if (!list || !attempt) return fail('invalid_action', 'Diesen Versuch gibt es nicht');
+  attempt.status = correct ? 'correct' : 'wrong';
+  const first = list.find((a) => a.status === 'correct');
+  if (first) round.solved[targetId] = first.at;
+  else delete round.solved[targetId];
+  syncJoker(room);
+  return OK;
+}
+
 function setEffect(room: Room, playerId: string, level?: number, cols?: number, revealed?: number[]): Result {
   if (!room.isHost(playerId)) return fail('not_host', 'Nur der Host steuert den Effekt');
   const round = facesRound(room);
   if (room.phase !== 'playing' || !round) return fail('invalid_action', 'Gerade wird nicht gespielt');
+  if (round.auto) return fail('invalid_action', 'Im automatischen Modus wird das Bild von selbst schärfer');
   const e = round.effect;
   if (e.effect === 'tiles') {
     if (level !== undefined) return fail('invalid_action', 'Kacheln haben keine Stärke');

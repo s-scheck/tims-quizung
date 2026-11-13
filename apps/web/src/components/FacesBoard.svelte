@@ -1,7 +1,7 @@
 <script lang="ts">
   import PlayerHead from './PlayerHead.svelte';
   import { untrack } from 'svelte';
-  import { FACE_COLS_MAX, FACE_COLS_MIN, FACE_LEVEL_MAX, type FaceEffectState, type FacesRoundView, type RoomView } from '@quiz/shared';
+  import { autoRevealedTiles, FACE_COLS_MAX, FACE_COLS_MIN, FACE_LEVEL_MAX, type FaceEffectState, type FacesRoundView, type RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
   import FaceImage, { tileRows } from './FaceImage.svelte';
@@ -13,6 +13,9 @@
   let { view, round, readonly = false }: { view: RoomView; round: FacesRoundView; readonly?: boolean } = $props();
 
   const isHost = $derived(!readonly && client.isHost);
+  /** Im automatischen Modus rät der Host mit, steuert nichts und prüft erst in der Auflösung. */
+  const auto = $derived(round.auto ?? null);
+  const moderating = $derived(isHost && !auto);
   const participants = $derived(view.players.filter((p) => round.turnOrder.includes(p.id)));
   const isParticipant = $derived(!readonly && !!client.myId && round.turnOrder.includes(client.myId));
   const solvedIds = $derived(new Set(round.solved.map((s) => s.playerId)));
@@ -35,17 +38,36 @@
   const colsLocked = $derived(published.revealed.length > 0);
   /** Zustand, den der Host gerade sieht: übernommener Stand plus Vormerkungen. */
   const preview = $derived<FaceEffectState>(
-    isHost
-      ? { effect: published.effect, level: pendingLevel, cols: colsLocked ? published.cols : pendingCols, revealed: published.revealed }
-      : published,
+    auto
+      ? {
+          ...published,
+          revealed: published.effect === 'tiles' ? autoRevealedTiles(published.cols * tileRows(published.cols, ratio), auto.seed, published.level) : [],
+        }
+      : moderating
+        ? { effect: published.effect, level: pendingLevel, cols: colsLocked ? published.cols : pendingCols, revealed: published.revealed }
+        : published,
   );
+
+  /** Sekunden bis zur nächsten Stufe im automatischen Modus. */
+  let nextIn = $state<number | null>(null);
+  $effect(() => {
+    const at = auto?.nextStepAt ?? null;
+    if (at === null || view.phase !== 'playing') {
+      nextIn = null;
+      return;
+    }
+    const tick = () => (nextIn = Math.max(0, Math.ceil((at - client.serverNow()) / 1000)));
+    tick();
+    const id = setInterval(tick, 250);
+    return () => clearInterval(id);
+  });
   const previewTotal = $derived(preview.cols * tileRows(preview.cols, ratio));
   const dirty = $derived(
     published.effect === 'tiles' ? pendingTiles.length > 0 || (!colsLocked && pendingCols !== published.cols) : pendingLevel !== published.level,
   );
 
   function toggleTile(i: number) {
-    if (!isHost || published.revealed.includes(i)) return;
+    if (!moderating || published.revealed.includes(i)) return;
     pendingTiles = pendingTiles.includes(i) ? pendingTiles.filter((t) => t !== i) : [...pendingTiles, i];
   }
 
@@ -65,7 +87,7 @@
   }
 
   function apply() {
-    if (!isHost || !dirty) return;
+    if (!moderating || !dirty) return;
     if (published.effect === 'tiles') {
       client.send({ type: 'face_effect', ...(!colsLocked && pendingCols !== published.cols ? { cols: pendingCols } : {}), revealed: pendingTiles });
       pendingTiles = [];
@@ -89,10 +111,11 @@
 
   const hint = $derived.by(() => {
     if (readonly) return '';
-    if (isHost) return 'Du moderierst: Stelle den Effekt ein, übernimm ihn für alle und prüfe die Tipps.';
+    if (moderating) return 'Du moderierst: Stelle den Effekt ein, übernimm ihn für alle und prüfe die Tipps.';
     if (!isParticipant) return 'Du bist ab der nächsten Runde dabei.';
     if (copying) return '';
     if (mySolved) return `Richtig nach ${seconds(mySolved.at)} s! Deinen Platz siehst du in der Auflösung.`;
+    if (auto) return 'Wer ist das? Tippe so oft du willst, das Spiel prüft sofort. Je früher du es hast, desto besser.';
     return 'Wer ist das? Tippe unten deinen Tipp ein, so oft du willst.';
   });
 </script>
@@ -117,9 +140,18 @@
     {#if hint}<p class="text-sm text-slate-400">{hint}</p>{/if}
     {#if isParticipant}<JokerButton {view} {round} />{/if}
 
-    <FaceImage image={round.image} fx={preview} pending={isHost && published.effect === 'tiles' ? pendingTiles : null} onTile={isHost && published.effect === 'tiles' ? toggleTile : undefined} large={readonly} bind:ratio />
+    <FaceImage image={round.image} fx={preview} pending={moderating && published.effect === 'tiles' ? pendingTiles : null} onTile={moderating && published.effect === 'tiles' ? toggleTile : undefined} large={readonly} bind:ratio />
 
-    {#if isHost}
+    {#if auto}
+      <div class="flex items-center gap-3 text-sm text-slate-400 {readonly ? 'text-lg' : ''}">
+        <div class="h-2 flex-1 overflow-hidden rounded-full bg-slate-800">
+          <div class="h-full rounded-full bg-indigo-500 transition-all duration-700" style="width:{100 - published.level}%"></div>
+        </div>
+        <span class="shrink-0 font-mono">{nextIn !== null ? `schärfer in ${nextIn} s` : published.level === 0 ? 'ganz klar' : ''}</span>
+      </div>
+    {/if}
+
+    {#if moderating}
       <div class="card space-y-3 border-amber-500/40">
         <div class="flex flex-wrap items-baseline justify-between gap-2">
           <p class="font-bold text-amber-300">{effectName} einstellen</p>

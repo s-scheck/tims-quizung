@@ -18,6 +18,8 @@ export interface StartRoundOptions {
   effect?: FaceEffect;
   level?: number;
   cols?: number;
+  /** Wer ist das?: automatischer Modus, alle raten mit. */
+  faceAuto?: boolean;
   /** Bilderrätsel: reihum oder alle gleichzeitig. Kinderpromis und Filmfotos: Tippen oder Buzzern. */
   mode?: PictureMode | GuessMode;
   /** Kinderpromis: Promis je Runde und Fehlbuzzer-Regel. */

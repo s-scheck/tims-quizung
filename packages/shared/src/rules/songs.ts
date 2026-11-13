@@ -18,7 +18,7 @@ export function songKey(text: string): string {
 }
 
 /** Levenshtein-Abstand, abgebrochen sobald er `max` übersteigt. */
-function distance(a: string, b: string, max: number): number {
+export function editDistance(a: string, b: string, max: number): number {
   if (Math.abs(a.length - b.length) > max) return max + 1;
   let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (let i = 1; i <= a.length; i++) {
@@ -45,7 +45,7 @@ function matchesAny(guess: string, candidates: readonly string[]): boolean {
   if (!g) return false;
   return candidates.some((c) => {
     const k = songKey(c);
-    return k.length > 0 && distance(g, k, tolerance(k)) <= tolerance(k);
+    return k.length > 0 && editDistance(g, k, tolerance(k)) <= tolerance(k);
   });
 }
 

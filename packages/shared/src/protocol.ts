@@ -55,6 +55,8 @@ export type ClientMsg =
       effect?: FaceEffect;
       level?: number;
       cols?: number;
+      /** Wer ist das?: Alle raten mit, auch der Host. Das Bild wird alle 10 s schärfer, Tipps prüft der Server. */
+      faceAuto?: boolean;
       /** Bilderrätsel: reihum oder alle gleichzeitig. Kinderpromis und Filmfotos: Tippen oder Buzzern. */
       mode?: PictureMode | GuessMode;
       /** Kinderpromis: Promis je Runde und Fehlbuzzer-Regel. */

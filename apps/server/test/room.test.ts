@@ -79,7 +79,7 @@ describe('Lobby: Verlassen, Host, Kick, Einstellungen', () => {
     expect(h.room.players.length).toBe(1);
   });
 
-  test('Einstellungen nur vom Host, nur in Lobby oder Kategoriewahl', () => {
+  test('Einstellungen nur vom Host; Zeitlimit jederzeit, Mitspielen nur vor einer Runde', () => {
     const h = makeHarness(['A', 'B']);
     const [a, b] = h.ids as [string, string];
     expect(h.room.setSettings(b, { timerSeconds: 30 })).toMatchObject({ ok: false, code: 'not_host' });
@@ -92,7 +92,34 @@ describe('Lobby: Verlassen, Host, Kick, Einstellungen', () => {
     h.act(a, { type: 'intro_done' });
     expect(h.room.setSettings(a, { timerSeconds: 60 }).ok).toBe(true);
     h.act(a, { type: 'choose_category', gameId: 'sort', categoryId: 'cities' });
-    expect(h.room.setSettings(a, { timerSeconds: 0 })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expect(h.room.phase).toBe('playing');
+    expect(h.room.setSettings(a, { timerSeconds: 0 }).ok).toBe(true);
+    expect(h.room.setSettings(b, { timerSeconds: 30 })).toMatchObject({ ok: false, code: 'not_host' });
+    expect(h.room.setSettings(a, { hostPlays: true })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expect(h.room.settings).toEqual({ timerSeconds: 0, hostPlays: false });
+  });
+
+  test('neues Zeitlimit mitten in der Runde gilt ab dem nächsten Zug', () => {
+    const h = makeHarness(['A', 'B', 'C'], { timer: 30 });
+    h.act(h.host, { type: 'start_game' });
+    h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId: 'cities' });
+    const round = h.room.round!;
+    const start = h.scheduler.now();
+    expect(round.turnDeadline).toBe(start + 30_000);
+
+    // Laufender Countdown bleibt bei 30 Sekunden.
+    expect(h.room.setSettings(h.host, { timerSeconds: 60 }).ok).toBe(true);
+    expect(round.turnDeadline).toBe(start + 30_000);
+    h.scheduler.advance(30_000);
+    expect(round.turnNo).toBe(2);
+    expect(round.turnDeadline).toBe(h.scheduler.now() + 60_000);
+
+    // „Aus“ greift ebenfalls erst beim nächsten Zug.
+    expect(h.room.setSettings(h.host, { timerSeconds: 0 }).ok).toBe(true);
+    expect(round.turnDeadline).toBe(h.scheduler.now() + 60_000);
+    h.scheduler.advance(60_000);
+    expect(round.turnNo).toBe(3);
+    expect(round.turnDeadline).toBeNull();
   });
 
   test('start_game setzt Scores zurück, Kategorie muss zum Spiel passen', () => {

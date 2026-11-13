@@ -253,8 +253,10 @@ export class Room {
 
   setSettings(byId: string, patch: { timerSeconds?: unknown; hostPlays?: unknown }): Result {
     if (!this.isHost(byId)) return fail('not_host', 'Nur der Host darf Einstellungen ändern');
-    if (this.phase !== 'lobby' && this.phase !== 'choosing_category') {
-      return fail('invalid_action', 'Einstellungen nur in der Lobby oder vor einer Runde');
+    // Das Zeitlimit geht jederzeit und gilt ab dem nächsten Zug; ob der Host mitspielt, nur vor einer Runde,
+    // weil sich sonst die Zugreihenfolge mitten in der Runde ändern würde.
+    if (patch.hostPlays !== undefined && this.phase !== 'lobby' && this.phase !== 'choosing_category') {
+      return fail('invalid_action', 'Mitspielen lässt sich nur in der Lobby oder vor einer Runde ändern');
     }
     const next = { ...this.settings };
     if (patch.timerSeconds !== undefined) {
@@ -392,6 +394,7 @@ export class Room {
           ...(msg.effect !== undefined ? { effect: msg.effect } : {}),
           ...(msg.level !== undefined ? { level: msg.level } : {}),
           ...(msg.cols !== undefined ? { cols: msg.cols } : {}),
+          ...(msg.faceAuto !== undefined ? { faceAuto: msg.faceAuto } : {}),
           ...(msg.mode !== undefined ? { mode: msg.mode } : {}),
           ...(msg.count !== undefined ? { count: msg.count } : {}),
           ...(msg.thinkSeconds !== undefined ? { thinkSeconds: msg.thinkSeconds } : {}),

@@ -86,7 +86,8 @@
   const hasTargets = $derived(gameId === 'map' || gameId === 'timeline' || gameId === 'bluff' || isFaces);
   const targetNoun = $derived(gameId === 'map' ? 'Ziel' : gameId === 'timeline' ? 'Ereignis' : isFaces ? 'Promi' : 'Aufgabe');
   // Bei „Wer ist das?“ prüft der Host immer selbst, also wählt er die Person auch als Mitspieler.
-  const picksTarget = $derived(hasTargets && (client.isModerator || (isFaces && client.isHost)));
+  let faceAuto = $state(false);
+  const picksTarget = $derived(hasTargets && (client.isModerator || (isFaces && client.isHost)) && !(isFaces && faceAuto));
   let faceEffect = $state<FaceEffect>('blur');
   let faceLevel = $state(80);
   let faceCols = $state(6);
@@ -183,7 +184,7 @@
       ...(isMap ? { borders } : {}),
       ...(isRisk ? { duplicates, missPoints } : {}),
       ...(hasShow ? { reveal } : {}),
-      ...(isFaces ? { effect: faceEffect, ...(faceEffect === 'tiles' ? { cols: faceCols } : { level: faceLevel }) } : {}),
+      ...(isFaces ? (faceAuto ? { effect: faceEffect, faceAuto: true, ...(faceEffect === 'tiles' ? { cols: faceCols } : {}) } : { effect: faceEffect, ...(faceEffect === 'tiles' ? { cols: faceCols } : { level: faceLevel }) }) : {}),
       ...(isKids ? { mode: kidsMode, count: kidsCount, ...(kidsMode === 'buzz' ? { thinkSeconds: kidsThink, penalty: kidsPenalty } : {}) } : {}),
       ...(isSplash ? { splash: { ...splash } } : {}),
       ...(isStills ? { mode: stillsMode, allGuess: stillsAllGuess, ...(stillsMode === 'buzz' && stillsThinkValid !== null ? { thinkSeconds: stillsThinkValid } : {}) } : {}),
@@ -248,8 +249,26 @@
     {#if isFaces}
       <div class="card space-y-3">
         <div>
+          <p class="font-semibold">Ablauf</p>
+          <div class="mt-2 grid gap-2 sm:grid-cols-2">
+            {#each [{ auto: false, label: 'Du moderierst', hint: 'Du wählst die Person, gibst das Bild frei und prüfst die Tipps. Du rätst nicht mit.' }, { auto: true, label: 'Alle raten, automatisch', hint: 'Auch du rätst mit. Das Bild wird alle 10 Sekunden schärfer, die Tipps prüft das Spiel. Du kannst jederzeit auflösen und danach korrigieren.' }] as opt (opt.label)}
+              <button
+                class="rounded-xl border px-3 py-2 text-left transition {faceAuto === opt.auto ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+                onclick={() => (faceAuto = opt.auto)}
+              >
+                <span class="block text-sm font-semibold">{opt.label}</span>
+                <span class="block text-xs opacity-80">{opt.hint}</span>
+              </button>
+            {/each}
+          </div>
+        </div>
+        <div>
           <p class="font-semibold">Effekt</p>
-          <p class="text-xs text-slate-500">Du moderierst bei diesem Spiel immer, auch wenn du sonst mitspielst: Du siehst den Namen, gibst das Bild frei und prüfst die Tipps.</p>
+          {#if faceAuto}
+            <p class="text-xs text-slate-500">Startet ganz verdeckt und wird alle 10 Sekunden um eine Stufe klarer, nach 100 Sekunden ist das Bild ganz zu sehen. Die Person zieht das Spiel zufällig.</p>
+          {:else}
+            <p class="text-xs text-slate-500">Du moderierst bei diesem Spiel, auch wenn du sonst mitspielst: Du siehst den Namen, gibst das Bild frei und prüfst die Tipps.</p>
+          {/if}
         </div>
         <div class="grid gap-2 sm:grid-cols-3">
           {#each FACE_EFFECT_OPTIONS as opt (opt.effect)}
@@ -258,16 +277,16 @@
               onclick={() => (faceEffect = opt.effect)}
             >
               <span class="block text-sm font-semibold">{opt.label}</span>
-              <span class="block text-xs opacity-80">{opt.hint}</span>
+              {#if !faceAuto}<span class="block text-xs opacity-80">{opt.hint}</span>{/if}
             </button>
           {/each}
         </div>
         {#if faceEffect === 'tiles'}
           <label class="block text-sm">
-            <span class="mb-1 flex justify-between text-slate-400"><span>Spalten zu Beginn</span><span class="font-mono text-slate-200">{faceCols}</span></span>
+            <span class="mb-1 flex justify-between text-slate-400"><span>{faceAuto ? 'Spalten' : 'Spalten zu Beginn'}</span><span class="font-mono text-slate-200">{faceCols}</span></span>
             <input type="range" class="w-full accent-[var(--color-indigo-500)]" min={FACE_COLS_MIN} max={FACE_COLS_MAX} step="1" bind:value={faceCols} />
           </label>
-        {:else}
+        {:else if !faceAuto}
           <label class="block text-sm">
             <span class="mb-1 flex justify-between text-slate-400"><span>Stärke zu Beginn</span><span class="font-mono text-slate-200">{faceLevel}</span></span>
             <input type="range" class="w-full accent-[var(--color-indigo-500)]" min="0" max={FACE_LEVEL_MAX} step="1" bind:value={faceLevel} />
@@ -534,7 +553,7 @@
         </div>
       </div>
     {/if}
-    {#if hasTargets && !picksTarget}
+    {#if hasTargets && !picksTarget && !isFaces}
       <p class="text-xs text-slate-500">Du spielst mit, deshalb zieht der Server {targetNoun === 'Aufgabe' ? 'eine zufällige Aufgabe' : `ein zufälliges ${targetNoun}`}, {targetNoun === 'Aufgabe' ? 'die' : 'das'} du nicht vorher siehst.</p>
     {/if}
 

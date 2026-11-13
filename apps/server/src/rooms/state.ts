@@ -312,6 +312,8 @@ export interface FacesRound extends BaseRound {
   attempts: Record<string, FaceAttempt[]>;
   /** Spieler-ID → Zeit des richtigen Versuchs. */
   solved: Record<string, number>;
+  /** Automatischer Modus: Kachelreihenfolge und Zeitpunkt der nächsten Stufe. */
+  auto: { seed: number; nextStepAt: number | null } | null;
 }
 
 // ------------------------------------------------------------ Kinderpromis

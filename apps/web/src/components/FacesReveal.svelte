@@ -11,6 +11,8 @@
 
   const participants = $derived(view.players.filter((p) => round.turnOrder.includes(p.id)));
   const seconds = (at: number) => ((at - round.startedAt) / 1000).toFixed(1);
+  /** Automatischer Modus: Der Host korrigiert die Prüfung des Spiels, bevor er die Punkte einträgt. */
+  const corrects = $derived(!readonly && client.isHost && !!round.auto && view.phase === 'reveal');
 </script>
 
 <div class="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
@@ -43,6 +45,41 @@
       {/if}
       <p class="text-xs text-slate-500">3, 2 und 1 Spielpunkte für die ersten drei, als Vorschlag. Die Endpunkte trägt der Host ein.</p>
     </div>
+
+    {#if corrects}
+      <div class="card space-y-3">
+        <div>
+          <h3 class="font-bold">Tipps korrigieren</h3>
+          <p class="text-xs text-slate-500">Das Spiel hat automatisch geprüft. Tippe einen Tipp an, um ihn umzuwerten. Gewertet wird der früheste richtige.</p>
+        </div>
+        {#each participants as p (p.id)}
+          {@const attempts = round.attempts?.[p.id] ?? []}
+          <div class="rounded-xl border border-slate-800 px-3 py-2">
+            <p class="flex flex-wrap items-center gap-2 text-sm font-semibold">{p.name} <JokerTag {view} {round} playerId={p.id} /></p>
+            {#if round.joker?.by === p.id}
+              <p class="text-xs text-slate-500">Übernimmt die Wertung der kopierten Person.</p>
+            {:else if attempts.length === 0}
+              <p class="text-xs text-slate-500">kein Tipp</p>
+            {:else}
+              <ul class="mt-1 flex flex-wrap gap-1.5">
+                {#each attempts as a, i (i)}
+                  <li>
+                    <button
+                      class="rounded-full border px-2.5 py-0.5 text-sm transition {a.status === 'correct' ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200' : 'border-rose-500/30 bg-rose-500/10 text-rose-200'}"
+                      title={a.status === 'correct' ? 'als falsch werten' : 'als richtig werten'}
+                      onclick={() => client.send({ type: 'face_judge', playerId: p.id, index: i, correct: a.status !== 'correct' })}
+                    >
+                      <span class={a.status === 'correct' ? '' : 'line-through'}>{a.text}</span>
+                      <span class="ml-1 text-xs opacity-70">{seconds(a.at)} s{a.status !== 'correct' && a.suggested ? ', ähnlich' : ''}</span>
+                    </button>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </div>
+        {/each}
+      </div>
+    {/if}
 
     <div class="card">
       <h3 class="mb-2 font-bold">Alle Tipps</h3>

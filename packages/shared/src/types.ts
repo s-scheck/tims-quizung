@@ -601,6 +601,9 @@ export const FACE_EFFECTS: readonly FaceEffect[] = ['blur', 'tiles', 'pixel'];
 export const FACE_LEVEL_MAX = 100;
 export const FACE_COLS_MIN = 2;
 export const FACE_COLS_MAX = 12;
+/** Automatischer Modus: alle so viele Millisekunden wird das Bild um `FACE_AUTO_STEP` schärfer. */
+export const FACE_AUTO_INTERVAL_MS = 10_000;
+export const FACE_AUTO_STEP = 10;
 /** Spielpunkte für die ersten drei Richtigen. */
 export const FACE_POINTS: readonly number[] = [3, 2, 1];
 
@@ -658,6 +661,11 @@ export interface FacesRoundView extends BaseRoundView {
   /** Spielpunkte 3/2/1, nur Host oder ab der Auflösung. */
   points?: Record<string, number>;
   privileged?: boolean;
+  /**
+   * Automatischer Modus: Alle raten, auch der Host, der Server prüft. `effect.level` sinkt alle 10 s um 10.
+   * Bei Kacheln deckt jedes Gerät aus `seed` dieselbe Reihenfolge auf, offen ist der Anteil `(100 - level) / 100`.
+   */
+  auto?: { seed: number; nextStepAt: number | null };
 }
 
 // ------------------------------------------------------- Tippen und Buzzern

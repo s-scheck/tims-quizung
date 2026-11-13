@@ -183,3 +183,84 @@ describe('Wer ist das?: Auflösung', () => {
     expect(h.room.phase).toBe('reveal');
   });
 });
+
+describe('Wer ist das?: automatischer Modus', () => {
+  test('alle raten mit, auch der Host, Person zufällig, Bild startet bei 100 und wird alle 10 s um 10 schärfer', () => {
+    const h = makeHarness(['Host', 'B']);
+    expectOk(h.act(h.host, { type: 'set_settings', hostPlays: false }));
+    startFaces(h, { faceAuto: true, targetId: 'olaf-scholz', effect: 'pixel', level: 30 });
+    const r = fr(h);
+    expect(r.turnOrder).toContain(h.host);
+    expect(r.turnOrder).toContain(h.ids[1]!);
+    expect(r.effect.level).toBe(100);
+    expect(r.auto?.nextStepAt).toBe(h.room.now + 10_000);
+    // Der Host sieht beim Raten nicht mehr als alle anderen.
+    const hostView = viewRound(h, h.host);
+    expect(hostView.name).toBeUndefined();
+    expect(hostView.privileged).toBeUndefined();
+    expect(hostView.auto?.seed).toBe(r.auto!.seed);
+    expect(h.act(h.host, { type: 'face_effect', level: 0 })).toMatchObject({ ok: false });
+
+    h.scheduler.advance(10_000);
+    expect(r.effect.level).toBe(90);
+    h.scheduler.advance(90_000);
+    expect(r.effect.level).toBe(0);
+    expect(r.auto?.nextStepAt).toBeNull();
+    h.scheduler.advance(30_000);
+    expect(r.effect.level).toBe(0);
+    expect(h.room.phase).toBe('playing');
+  });
+
+  test('der Server prüft mit Tippfehlern und Nachnamen, alle richtig beendet die Runde', () => {
+    const h = makeHarness(['Host', 'B', 'C']);
+    startFaces(h, { faceAuto: true });
+    const r = fr(h);
+    const [, b, c] = h.ids as [string, string, string];
+    const name = r.target.name;
+    const last = name.split(' ').at(-1)!;
+
+    expectOk(h.act(b, { type: 'face_guess', text: 'Helmut Kohl' }));
+    expect(r.attempts[b]![0]!.status).toBe('wrong');
+    expect(viewRound(h, c).wrongGuesses).toEqual([{ by: b, text: 'Helmut Kohl' }]);
+
+    h.scheduler.advance(2000);
+    // Ein Buchstabe vertauscht ist bei langen Namen erlaubt.
+    expectOk(h.act(b, { type: 'face_guess', text: name.slice(0, -1) + 'x' }));
+    expect(r.solved[b]).toBe(h.room.now);
+    expect(h.act(b, { type: 'face_guess', text: name })).toMatchObject({ ok: false });
+
+    h.scheduler.advance(1000);
+    expectOk(h.act(h.host, { type: 'face_guess', text: last.toLowerCase() }));
+    expect(h.room.phase).toBe('playing');
+    // Wer schon richtig liegt, bleibt bis zur Auflösung geheim, auch für den Host.
+    expect(viewRound(h, h.host).solved).toEqual([]);
+    h.scheduler.advance(1000);
+    expectOk(h.act(c, { type: 'face_guess', text: name.toUpperCase() }));
+    expect(h.room.phase).toBe('reveal');
+    expect(viewRound(h, c).solved.map((s) => s.playerId)).toEqual([b, h.host, c]);
+    expect(h.room.timers.placement).toBeNull();
+  });
+
+  test('der Host beendet jederzeit und korrigiert in der Auflösung, Plätze folgen dem frühesten richtigen Versuch', () => {
+    const h = makeHarness(['Host', 'B', 'C']);
+    startFaces(h, { faceAuto: true });
+    const [, b, c] = h.ids as [string, string, string];
+    const name = fr(h).target.name;
+
+    expectOk(h.act(b, { type: 'face_guess', text: 'die Frau aus dem Fernsehen' }));
+    h.scheduler.advance(5000);
+    expectOk(h.act(c, { type: 'face_guess', text: name }));
+    expect(h.act(h.host, { type: 'face_judge', playerId: b, index: 0, correct: true })).toMatchObject({ ok: false, code: 'invalid_action' });
+    expect(h.act(b, { type: 'end_round' })).toMatchObject({ ok: false, code: 'not_host' });
+    expectOk(h.act(h.host, { type: 'end_round' }));
+    expect(h.room.phase).toBe('reveal');
+
+    expect(h.act(b, { type: 'face_judge', playerId: b, index: 0, correct: true })).toMatchObject({ ok: false, code: 'not_host' });
+    expectOk(h.act(h.host, { type: 'face_judge', playerId: b, index: 0, correct: true }));
+    expect(viewRound(h, b).solved.map((s) => s.playerId)).toEqual([b, c]);
+    expect(viewRound(h, b).points).toMatchObject({ [b]: 3, [c]: 2, [h.host]: 0 });
+    expectOk(h.act(h.host, { type: 'face_judge', playerId: c, index: 0, correct: false }));
+    expect(viewRound(h, b).solved.map((s) => s.playerId)).toEqual([b]);
+    expect(viewRound(h, h.host).attempts?.[c]?.[0]).toMatchObject({ status: 'wrong', suggested: true });
+  });
+});

@@ -187,6 +187,7 @@ export function isClientMsg(x: unknown): x is ClientMsg {
         (x.effect === undefined || isFaceEffect(x.effect)) &&
         (x.level === undefined || isFaceLevel(x.level)) &&
         (x.cols === undefined || isFaceCols(x.cols)) &&
+        (x.faceAuto === undefined || typeof x.faceAuto === 'boolean') &&
         (x.mode === undefined || isPictureMode(x.mode) || isGuessMode(x.mode)) &&
         (x.count === undefined || isKidsCount(x.count)) &&
         (x.thinkSeconds === undefined || isThinkSeconds(x.thinkSeconds)) &&

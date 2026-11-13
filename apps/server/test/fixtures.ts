@@ -354,7 +354,7 @@ export function startPicture(h: Harness, opts: { lives?: number; mode?: 'turns' 
 }
 
 /** Startet Spiel und Wer-ist-das-Runde. */
-export function startFaces(h: Harness, opts: { targetId?: string; effect?: 'blur' | 'tiles' | 'pixel'; level?: number; cols?: number } = {}): void {
+export function startFaces(h: Harness, opts: { targetId?: string; effect?: 'blur' | 'tiles' | 'pixel'; level?: number; cols?: number; faceAuto?: boolean } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'faces', categoryId: 'promi-politik', ...opts }));

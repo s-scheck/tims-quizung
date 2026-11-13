@@ -11,7 +11,8 @@ import { facesPoints, facesRanking, facesRound } from './reducer.ts';
 export function facesRoundView(room: Room, revealed: boolean, viewerId: string | null): RoundView | null {
   const r = facesRound(room);
   if (!r) return null;
-  const privileged = viewerId !== null && viewerId === room.hostId;
+  // Im automatischen Modus rät der Host mit und sieht bis zur Auflösung nicht mehr als alle anderen.
+  const privileged = viewerId !== null && viewerId === room.hostId && !r.auto;
   const showAll = revealed || privileged;
   const { faces: _faces, games: _games, kind: _kind, ...category } = r.category;
 
@@ -46,10 +47,11 @@ export function facesRoundView(room: Room, revealed: boolean, viewerId: string |
   };
   if (showAll) view.name = r.target.name;
   if (privileged) view.privileged = true;
+  if (r.auto) view.auto = { ...r.auto };
   const mine = viewerId !== null ? r.attempts[viewerId] : undefined;
   if (mine) view.myAttempts = mine.map((a) => toView(a, false));
   if (showAll) {
-    view.attempts = Object.fromEntries(r.turnOrder.map((id) => [id, (r.attempts[id] ?? []).map((a) => toView(a, privileged))]));
+    view.attempts = Object.fromEntries(r.turnOrder.map((id) => [id, (r.attempts[id] ?? []).map((a) => toView(a, privileged || (revealed && r.auto !== null && viewerId === room.hostId)))]));
     view.points = facesPoints(r);
   }
   return view;

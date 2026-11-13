@@ -1,9 +1,20 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { client } from '../lib/client.svelte.ts';
 
   let { deadline, totalSeconds, size = 48 }: { deadline: number | null; totalSeconds: number; size?: number } = $props();
 
   let remainingMs = $state(0);
+
+  // Gesamtzeit des laufenden Countdowns: Ändert der Host das Zeitlimit mitten im Zug, gilt es erst ab dem nächsten,
+  // der Ring bleibt also bei der Zeit, mit der dieser Countdown gestartet ist.
+  let total = $state(untrack(() => totalSeconds));
+  let totalFor: number | null = untrack(() => deadline);
+  $effect.pre(() => {
+    if (deadline === totalFor) return;
+    totalFor = deadline;
+    total = untrack(() => totalSeconds);
+  });
 
   $effect(() => {
     if (deadline === null) {
@@ -19,7 +30,7 @@
     return () => cancelAnimationFrame(raf);
   });
 
-  const fraction = $derived(totalSeconds > 0 ? Math.min(1, remainingMs / (totalSeconds * 1000)) : 0);
+  const fraction = $derived(total > 0 ? Math.min(1, remainingMs / (total * 1000)) : 0);
   const seconds = $derived(Math.ceil(remainingMs / 1000));
   const r = $derived(size / 2 - 4);
   const circumference = $derived(2 * Math.PI * r);
