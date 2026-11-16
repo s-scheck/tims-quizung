@@ -40,6 +40,7 @@ describe('Filmfotos: Rundenstart', () => {
   test('ohne Mitspieler außer dem Host geht es nicht los', () => {
     const h = makeHarness(['Allein']);
     expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
     expect(h.act(h.host, { type: 'choose_category', gameId: 'stills', categoryId: 'film-pate' })).toMatchObject({ ok: false, code: 'invalid_action' });
   });
 

@@ -1,9 +1,12 @@
 import type { RiskRules } from './rules/risk.ts';
 import type { MorseBeep } from './rules/morse.ts';
+import type { AvatarInfo } from './avatar.ts';
 
 /** Phasen eines Raums. Ein flaches Modell, kein verschachteltes Spiel-Phasenfeld. */
 export type Phase =
   | 'lobby'
+  /** Figuren-Show zum Spielstart, der Host schaltet weiter zur Kategoriewahl. */
+  | 'intro'
   | 'choosing_category'
   | 'playing'
   | 'host_decision'
@@ -54,6 +57,10 @@ export interface PlayerView {
   name: string;
   order: number;
   connected: boolean;
+  /** Hat seine Figur fertig gemalt. Gibt es immer, auch in der Lobby. */
+  avatarReady: boolean;
+  /** Die Figur selbst, erst ab Spielstart. Fehlt sie, zeigt der Client die Standardfigur. */
+  avatar?: AvatarInfo;
 }
 
 /** Karte aus Sicht der Clients. `value` und `label` gibt es erst ab der Auflösung. */
@@ -939,6 +946,8 @@ export interface RoomView {
   jokersUsed: string[];
   /** Kleiner Scherz des Entwicklers, siehe apps/server/src/rooms/devlock.ts. */
   devLock?: DevLockView;
+  /** Nur in `finished`: aufgedeckte Rangstufen vom letzten Platz an, `total` ist die Zahl der Stufen. */
+  finale?: { shown: number; total: number };
   /** Nur in `choosing_category` enthalten. */
   categories?: CategorySummary[];
   /** Nur in `choosing_category` enthalten. */

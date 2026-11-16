@@ -48,6 +48,7 @@ describe('Wer ist das?: Rundenstart', () => {
   test('ohne Mitspieler außer dem Host geht es nicht los, Zielliste nur beim Host', () => {
     const h = makeHarness(['Allein']);
     expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
     expect(h.act(h.host, { type: 'choose_category', gameId: 'faces', categoryId: 'promi-politik', targetId: 'olaf-scholz' })).toMatchObject({ ok: false, code: 'invalid_action' });
     expect(h.act(h.host, { type: 'choose_category', gameId: 'faces', categoryId: 'promi-politik', targetId: 'niemand' })).toMatchObject({ ok: false, code: 'unknown_category' });
     const summary = toView(h.room, h.host).categories?.find((c) => c.id === 'promi-politik');

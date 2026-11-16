@@ -36,12 +36,14 @@ describe('Morse: Rundenstart', () => {
   test('ohne Wort, zu lang oder ohne Mitspieler startet nichts', () => {
     const h = makeHarness(['Host', 'B']);
     expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
     expect(h.act(h.host, { type: 'choose_category', gameId: 'morse', categoryId: 'morse' })).toMatchObject({ ok: false, code: 'bad_message' });
     expect(h.act(h.host, { type: 'choose_category', gameId: 'morse', categoryId: 'morse', word: '???' })).toMatchObject({ ok: false, code: 'bad_message' });
     expect(h.act(h.host, { type: 'choose_category', gameId: 'morse', categoryId: 'morse', word: 'A'.repeat(31) })).toMatchObject({ ok: false, code: 'bad_message' });
     expect(h.room.phase).toBe('choosing_category');
     const solo = makeHarness(['Host']);
     expectOk(solo.act(solo.host, { type: 'start_game' }));
+    expectOk(solo.act(solo.host, { type: 'intro_done' }));
     expect(solo.act(solo.host, { type: 'choose_category', gameId: 'morse', categoryId: 'morse', word: 'SOS' })).toMatchObject({ ok: false, code: 'invalid_action' });
   });
 });

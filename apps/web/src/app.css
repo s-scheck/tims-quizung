@@ -393,6 +393,13 @@ body {
   color: var(--color-ink);
   line-height: 1;
 }
+.quiz-head-pin {
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.4));
+}
+.quiz-head-pin img {
+  pointer-events: none;
+  user-select: none;
+}
 .quiz-target .target {
   width: 24px;
   height: 24px;

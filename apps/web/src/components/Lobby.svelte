@@ -4,6 +4,10 @@
   import { joinUrl, playerName, screenUrl } from '../lib/format.ts';
   import { toasts } from '../lib/toast.svelte.ts';
   import PlayerList from './PlayerList.svelte';
+  import AvatarEditor from './avatar/AvatarEditor.svelte';
+  import Figure from './avatar/Figure.svelte';
+  import { emptyDraft, uploadAvatar, type LocalAvatar } from '../lib/avatar.ts';
+  import { loadAvatar } from '../lib/session.ts';
 
   let { view }: { view: RoomView } = $props();
 
@@ -27,12 +31,59 @@
   const playingCount = $derived(view.players.filter((p) => view.settings.hostPlays || p.id !== view.hostId).length);
   const hostName = $derived(playerName(view, view.hostId));
 
+  // Figur: auf dem Handy gespeichert, in der Lobby einmal hochgeladen, danach fest.
+  const me = $derived(view.players.find((p) => p.id === client.myId));
+  let stored = $state<LocalAvatar | null>(loadAvatar());
+  let draft = $state(emptyDraft());
+  let editing = $state(false);
+  let uploading = $state(false);
+
+  function startDrawing() {
+    draft = emptyDraft();
+    editing = true;
+  }
+
+  async function useStored() {
+    const token = client.me?.token;
+    if (!stored || !token || uploading) return;
+    uploading = true;
+    const res = await uploadAvatar(view.code, token, stored);
+    uploading = false;
+    if (!res.ok) toasts.error(res.message);
+  }
+
   function timerLabel(s: TimerSeconds): string {
     return s === 0 ? 'Aus' : `${s} s`;
   }
 </script>
 
 <div class="grid gap-6 md:grid-cols-2">
+  <section class="card space-y-3 md:col-span-2">
+    <h2 class="text-lg font-bold">Deine Figur</h2>
+    {#if me?.avatarReady}
+      <div class="flex items-center gap-4">
+        {#if stored}<Figure parts={{ ...stored.parts }} size={120} />{/if}
+        <p class="text-sm text-slate-400"><span class="font-semibold text-emerald-300">Fertig ✓</span> Die anderen sehen deine Figur beim Spielstart.</p>
+      </div>
+    {:else if stored}
+      <div class="flex flex-wrap items-center gap-4">
+        <Figure parts={{ ...stored.parts }} size={120} />
+        <div class="flex min-w-0 flex-1 flex-col gap-2">
+          <p class="text-sm text-slate-400">Deine letzte Figur. Ändern geht nicht, aber du kannst neu malen.</p>
+          <div class="flex flex-wrap gap-2">
+            <button class="btn-primary flex-1" disabled={uploading} onclick={useStored}>Letzte Figur nehmen</button>
+            <button class="btn-secondary flex-1" onclick={startDrawing}>Neu malen</button>
+          </div>
+        </div>
+      </div>
+    {:else}
+      <div class="flex flex-wrap items-center gap-3">
+        <button class="btn-primary" onclick={() => (editing = true)}>{draft.step > 0 || Object.keys(draft.drawings).length > 0 ? 'Weitermalen' : 'Figur malen'}</button>
+        <p class="min-w-0 flex-1 text-sm text-slate-400">Kopf, Kopfbedeckung, Oberkörper, Arme und Beine, jedes Teil einzeln. Freiwillig: Wer keine malt, bekommt ein Strichmännchen.</p>
+      </div>
+    {/if}
+  </section>
+
   <section class="card space-y-4">
     <div>
       <p class="text-sm text-slate-400">Raumcode</p>
@@ -106,6 +157,18 @@
     {/if}
   </section>
 </div>
+
+{#if editing && !me?.avatarReady}
+  <AvatarEditor
+    bind:draft
+    onclose={() => (editing = false)}
+    ondone={(avatar) => {
+      stored = avatar;
+      editing = false;
+      draft = emptyDraft();
+    }}
+  />
+{/if}
 
 <section class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
   <div class="card space-y-2 text-sm text-slate-400">

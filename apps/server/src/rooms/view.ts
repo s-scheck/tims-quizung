@@ -1,4 +1,4 @@
-import type { Phase, RoomView } from '@quiz/shared';
+import { AVATAR_PARTS, type Phase, type RoomView } from '@quiz/shared';
 import type { Room } from './room.ts';
 import { listGames } from '../games/registry.ts';
 import { jokerView } from '../games/joker.ts';
@@ -16,7 +16,18 @@ export function toView(room: Room, viewerId: string | null): RoomView {
   const view: RoomView = {
     code: room.code,
     hostId: room.hostId,
-    players: room.playersByOrder().map((p) => ({ id: p.id, name: p.name, order: p.order, connected: p.connected })),
+    players: room.playersByOrder().map((p) => {
+      const avatar = room.avatars.get(p.id);
+      return {
+        id: p.id,
+        name: p.name,
+        order: p.order,
+        connected: p.connected,
+        avatarReady: !!avatar,
+        // Fremde Figuren bleiben bis zum Spielstart geheim; die eigene kennt das Handy selbst.
+        ...(avatar && room.phase !== 'lobby' ? { avatar: { v: avatar.v, shape: avatar.shape, parts: AVATAR_PARTS.filter((part) => avatar.parts[part]) } } : {}),
+      };
+    }),
     settings: { ...room.settings },
     scores: { ...room.scores },
     phase: room.phase,
@@ -30,6 +41,7 @@ export function toView(room: Room, viewerId: string | null): RoomView {
     ...(room.devLock ? { devLock: { ...room.devLock } } : {}),
     jokersUsed: [...room.jokersUsed],
   };
+  if (room.phase === 'finished' && room.finale) view.finale = { shown: room.finale.shown, total: room.finaleTotal() };
   if (room.phase === 'choosing_category') {
     view.games = listGames().map((g) => ({ id: g.id, name: g.name, description: g.description }));
     const summaries: NonNullable<RoomView['categories']> = room.categories.list().map((c) => {

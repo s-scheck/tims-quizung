@@ -30,6 +30,9 @@
         {#if p.id === client.myId}<span class="text-xs font-normal text-slate-500"> (du)</span>{/if}
       </span>
       {#if p.id === view.hostId}<span class="badge bg-indigo-500/20 text-indigo-300">{moderator ? 'Moderator' : 'Host'}</span>{/if}
+      {#if view.phase === 'lobby'}
+        <span class="badge {p.avatarReady ? 'bg-emerald-500/20 text-emerald-300' : ''}">{p.avatarReady ? 'Figur ✓' : 'malt noch…'}</span>
+      {/if}
       {#if eliminated}<span class="badge bg-rose-500/20 text-rose-300">raus</span>{/if}
       {#if spectating}<span class="badge">schaut zu</span>{/if}
       {#if !p.connected}<span class="badge">getrennt</span>{/if}

@@ -13,8 +13,10 @@ function setClock(date: string, uptimeMinutes: number) {
 
 /** Spielt eine Sortieren-Runde bis zur Punktetabelle. */
 function playRound(h: Harness, first = false) {
-  if (first) expectOk(h.act(h.host, { type: 'start_game' }));
-  else expectOk(h.act(h.host, { type: 'next_round' }));
+  if (first) {
+    expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
+  } else expectOk(h.act(h.host, { type: 'next_round' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId: 'cities' }));
   expectOk(h.act(h.host, { type: 'end_round' }));
   if (h.room.phase === 'reveal') expectOk(h.act(h.host, { type: 'to_scoring' }));

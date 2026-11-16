@@ -3,6 +3,7 @@ import type { RoundView } from '@quiz/shared';
 import { toView } from '../src/rooms/view.ts';
 import {
   expectOk,
+  finishGame,
   makeHarness,
   startFaces,
   startKids,
@@ -90,8 +91,7 @@ describe('Joker: Grundregeln', () => {
     expectOk(h.act(h.host, { type: 'end_round' }));
     expectOk(h.act(h.host, { type: 'to_scoring' }));
     expectOk(h.act(h.host, { type: 'submit_scores', scores: {} }));
-    expectOk(h.act(h.host, { type: 'end_game' }));
-    expectOk(h.act(h.host, { type: 'back_to_lobby' }));
+    finishGame(h);
     startMap(h, { targetId: 'paris' });
     expect(h.room.jokersUsed).toEqual([]);
     expectOk(joker(h, b, c));
@@ -100,6 +100,7 @@ describe('Joker: Grundregeln', () => {
   test('Spiele ohne Joker lehnen ab', () => {
     const h = makeHarness(['Host', 'B', 'C']);
     expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
     expectOk(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId: 'cities' }));
     expect(view(h, h.ids[1]!).jokerAvailable).toBeUndefined();
     expect(joker(h, h.ids[1]!, h.ids[2]!)).toMatchObject({ ok: false, code: 'invalid_action' });

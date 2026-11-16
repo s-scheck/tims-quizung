@@ -144,6 +144,8 @@ export function isClientMsg(x: unknown): x is ClientMsg {
     case 'to_scoring':
     case 'next_round':
     case 'end_game':
+    case 'intro_done':
+    case 'finale_step':
     case 'back_to_lobby':
     case 'devlock_decline':
     case 'devlock_pay':

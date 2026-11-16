@@ -37,6 +37,7 @@
   import Toast from '../components/Toast.svelte';
   import DevLock from '../components/DevLock.svelte';
   import JokerOverlay from '../components/JokerOverlay.svelte';
+  import IntroShow from '../components/avatar/IntroShow.svelte';
   import { fitScreen } from '../lib/fit.ts';
 
   let { code }: { code: string } = $props();
@@ -87,6 +88,8 @@
             <p class="mt-6 text-slate-400">Warte auf {playerName(view, view.hostId)}, das Spiel zu starten…</p>
           </div>
         </div>
+      {:else if view.phase === 'intro'}
+        <IntroShow {view} readonly />
       {:else if view.phase === 'choosing_category'}
         <div class="grid gap-10 lg:grid-cols-[1fr_1fr]">
           <div class="space-y-3">

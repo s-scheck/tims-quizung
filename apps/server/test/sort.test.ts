@@ -19,6 +19,7 @@ describe('Rundenstart', () => {
   test('Kategoriewahl nur durch Host, unbekannte Kategorie abgelehnt', () => {
     const h = makeHarness(['A', 'B']);
     expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
     expect(h.act(h.ids[1]!, { type: 'choose_category', gameId: 'sort', categoryId: 'cities' })).toMatchObject({ ok: false, code: 'not_host' });
     expect(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId: 'xyz' })).toMatchObject({ ok: false, code: 'unknown_category' });
   });
@@ -78,6 +79,7 @@ describe('Rundenstart', () => {
     const h = makeHarness(['Host']);
     expectOk(h.act(h.host, { type: 'set_settings', hostPlays: false }));
     expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
     expect(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId: 'cities' })).toMatchObject({ ok: false, code: 'invalid_action' });
     expect(h.room.phase).toBe('choosing_category');
   });
@@ -312,6 +314,7 @@ describe('Leben', () => {
     const h = makeHarness(['A', 'B']);
     const [a, b] = h.ids as [string, string];
     expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
     expectOk(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId: 'cities' }));
     const r = sr(h);
     expect(r.maxLives).toBe(LIVES_DEFAULT);
@@ -423,17 +426,28 @@ describe('Auflösung, Punkte, Rundenwechsel', () => {
     expectOk(h.act(h.host, { type: 'end_game' }));
     expect(h.room.phase).toBe('finished');
     expect(h.act(h.host, { type: 'start_game' })).toMatchObject({ ok: false });
+    // Endstand: zwei Rangstufen, vom letzten Platz an, erst danach zurück in die Lobby.
+    expect(toView(h.room, null).finale).toEqual({ shown: 0, total: 2 });
+    expect(h.act(h.host, { type: 'back_to_lobby' })).toMatchObject({ ok: false });
+    expect(h.act(b, { type: 'finale_step' })).toMatchObject({ ok: false, code: 'not_host' });
+    expectOk(h.act(h.host, { type: 'finale_step' }));
+    expectOk(h.act(h.host, { type: 'finale_step' }));
+    expect(h.act(h.host, { type: 'finale_step' })).toMatchObject({ ok: false });
+    expect(toView(h.room, null).finale).toEqual({ shown: 2, total: 2 });
     expectOk(h.act(h.host, { type: 'back_to_lobby' }));
+    expect(toView(h.room, null).finale).toBeUndefined();
     expect(h.room.phase).toBe('lobby');
     expect(h.room.gameId).toBeNull();
     expect(h.room.scores).toEqual({ [a]: -1, [b]: 5 });
     expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
     expect(h.room.scores).toEqual({ [a]: 0, [b]: 0 });
   });
 
   test('Spiel beenden ist auch bei der Kategoriewahl möglich', () => {
     const h = makeHarness(['A']);
     expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
     expectOk(h.act(h.host, { type: 'end_game' }));
     expect(h.room.phase).toBe('finished');
   });

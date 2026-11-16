@@ -1,10 +1,14 @@
 <script lang="ts" module>
+  import type { FigureParts } from '../lib/avatar.ts';
+
   export interface MapMarker {
     id: string;
     lat: number;
     lng: number;
     label: string;
     color: string;
+    /** Kopf der Figur als Pin, mittig auf dem Ort. Ohne ihn der alte Pin mit Kürzel. */
+    head?: FigureParts;
   }
 
   /** Flug zu einem Punkt, `key` löst bei jedem neuen Wert einen neuen Flug aus. */
@@ -21,12 +25,14 @@
   import 'leaflet/dist/leaflet.css';
   import { normalizeLng, type LatLngBounds } from '@quiz/shared';
   import { loadGeo } from '../lib/geodata.ts';
+  import { headBox, headHtml } from '../lib/avatar.ts';
 
   let {
     borders = false,
     bounds,
     interactive = false,
     pin = null,
+    pinHead = null,
     onPick,
     markers = [],
     target = null,
@@ -40,6 +46,8 @@
     bounds?: LatLngBounds;
     interactive?: boolean;
     pin?: { lat: number; lng: number } | null;
+    /** Eigener Kopf als Pin. */
+    pinHead?: FigureParts | null;
     onPick?: (p: { lat: number; lng: number }) => void;
     markers?: MapMarker[];
     target?: { lat: number; lng: number } | null;
@@ -56,6 +64,7 @@
   let map: L.Map | null = null;
   let borderLayer: L.GeoJSON | null = null;
   let pinMarker: L.Marker | null = null;
+  let pinIconKey = '';
   const overlay = L.layerGroup();
   let ready = $state(false);
   let failed = $state(false);
@@ -73,6 +82,13 @@
       iconSize: [28, 36],
       iconAnchor: [14, 36],
     });
+  }
+
+  /** Kopf mit Kopfbedeckung, die Kopfmitte liegt genau auf dem Ort. */
+  const HEAD_PIN_SIZE = 34;
+  function headIcon(parts: FigureParts): L.DivIcon {
+    const b = headBox(HEAD_PIN_SIZE);
+    return L.divIcon({ className: 'quiz-head-pin', html: headHtml(parts, HEAD_PIN_SIZE), iconSize: [b.w, b.h], iconAnchor: [b.anchorX, b.anchorY] });
   }
 
   const targetIcon = L.divIcon({ className: 'quiz-target', html: '<div class="target"></div>', iconSize: [24, 24], iconAnchor: [12, 12] });
@@ -136,19 +152,24 @@
   $effect(() => {
     const p = pin;
     const draggable = interactive;
+    const iconKey = pinHead ? headHtml(pinHead, HEAD_PIN_SIZE) : '';
     if (!map) return;
+    // Neues Icon nur, wenn sich der Kopf wirklich ändert, sonst bricht ein laufendes Ziehen ab.
+    const icon = iconKey === pinIconKey && pinMarker ? null : pinHead ? headIcon(pinHead) : pinIcon('#58cc02', '●');
+    pinIconKey = iconKey;
     if (!p) {
       pinMarker?.remove();
       pinMarker = null;
       return;
     }
     if (!pinMarker) {
-      pinMarker = L.marker([p.lat, p.lng], { icon: pinIcon('#58cc02', '●'), draggable, zIndexOffset: 1000 }).addTo(map);
+      pinMarker = L.marker([p.lat, p.lng], { icon: icon ?? pinIcon('#58cc02', '●'), draggable, zIndexOffset: 1000 }).addTo(map);
       pinMarker.on('dragend', () => {
         if (pinMarker) emitPick(pinMarker.getLatLng());
       });
     } else {
       pinMarker.setLatLng([p.lat, p.lng]);
+      if (icon) pinMarker.setIcon(icon);
     }
     if (draggable) pinMarker.dragging?.enable();
     else pinMarker.dragging?.disable();
@@ -164,7 +185,7 @@
     overlay.clearLayers();
     if (t) L.marker([t.lat, t.lng], { icon: targetIcon, zIndexOffset: 2000, interactive: false }).addTo(overlay);
     for (const m of ms) {
-      L.marker([m.lat, m.lng], { icon: pinIcon(m.color, m.label), interactive: false }).addTo(overlay);
+      L.marker([m.lat, m.lng], { icon: m.head ? headIcon(m.head) : pinIcon(m.color, m.label), interactive: false }).addTo(overlay);
       if (lines && t) {
         L.polyline(
           [

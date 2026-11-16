@@ -145,6 +145,8 @@ describe('WebSocket-Ablauf', () => {
     anna.send({ type: 'start_game' });
     expect(await anna.nextOfType('error')).toMatchObject({ code: 'not_host' });
     tim2.send({ type: 'start_game' });
+    expect((await tim2.nextOfType('state')).room.phase).toBe('intro');
+    tim2.send({ type: 'intro_done' });
     const started = await tim2.nextOfType('state');
     expect(started.room.phase).toBe('choosing_category');
     expect(started.room.categories?.length).toBe(13);
@@ -195,6 +197,9 @@ describe('WebSocket-Ablauf', () => {
     await a.nextOfType('state');
 
     a.send({ type: 'start_game' });
+    await a.nextOfType('state');
+    await b.nextOfType('state');
+    a.send({ type: 'intro_done' });
     await a.nextOfType('state');
     await b.nextOfType('state');
     a.send({ type: 'choose_category', gameId: 'sort', categoryId: 'cities' });
@@ -266,6 +271,10 @@ describe('WebSocket-Ablauf', () => {
     await b.nextOfType('state');
     await screen.nextOfType('state');
     host.send({ type: 'start_game' });
+    await host.nextOfType('state');
+    await b.nextOfType('state');
+    await screen.nextOfType('state');
+    host.send({ type: 'intro_done' });
     await host.nextOfType('state');
     await b.nextOfType('state');
     await screen.nextOfType('state');

@@ -415,6 +415,7 @@ function endGame(room: Room, playerId: string): Result {
   }
   room.cancelAllTimers();
   room.round = null;
+  room.finale = { shown: 0 };
   room.phase = 'finished';
   return OK;
 }

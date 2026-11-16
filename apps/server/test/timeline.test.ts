@@ -25,6 +25,7 @@ describe('Zeitstrahl: Rundenstart', () => {
   test('Moderator wählt das Ereignis und sieht es in der Kategorieauswahl', () => {
     const h = moderated(['Host', 'B', 'C']);
     expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
     const summary = toView(h.room, h.host).categories?.find((c) => c.id === 'history');
     expect(summary?.count).toBe(4);
     expect(summary?.targets?.map((t) => t.id)).toEqual(['caesar', 'revolution', 'ww2', 'mond']);
@@ -58,6 +59,7 @@ describe('Zeitstrahl: Rundenstart', () => {
   test('Ereignisliste passt nicht zu anderen Spielen und umgekehrt', () => {
     const h = makeHarness(['A']);
     expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
     expect(h.act(h.host, { type: 'choose_category', gameId: 'map', categoryId: 'history' })).toMatchObject({ ok: false, code: 'unknown_category' });
     expect(h.act(h.host, { type: 'choose_category', gameId: 'timeline', categoryId: 'landmarks' })).toMatchObject({ ok: false, code: 'unknown_category' });
   });

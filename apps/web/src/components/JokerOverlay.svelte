@@ -3,6 +3,8 @@
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
   import Burst from './Burst.svelte';
+  import Head from './avatar/Head.svelte';
+  import { figureById, type FigureParts } from '../lib/avatar.ts';
 
   /**
    * Große Joker-Karte für alle Geräte, sobald jemand seinen Joker setzt. Liegt über allem, nimmt aber keine Klicks,
@@ -10,7 +12,7 @@
    */
   const SHOW_MS = 2600;
 
-  let shown = $state<{ key: string; text: string; name: string } | null>(null);
+  let shown = $state<{ key: string; text: string; name: string; head: FigureParts | null } | null>(null);
   let lastKey = '';
   let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -28,6 +30,7 @@
       key,
       name: mine ? 'Du' : playerName(view, joker.by),
       text: mine ? 'Du setzt deinen Joker ein!' : `${playerName(view, joker.by)} setzt den Joker ein!`,
+      head: figureById(view, joker.by),
     };
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => (shown = null), SHOW_MS);
@@ -49,7 +52,11 @@
           <Burst scale={4} ms={900} />
           <span class="absolute left-[2.5vmin] top-[2vmin] text-[4vmin] font-black leading-none">J</span>
           <span class="absolute bottom-[2vmin] right-[2.5vmin] rotate-180 text-[4vmin] font-black leading-none">J</span>
-          <span class="text-[16vmin] leading-none" aria-hidden="true">🃏</span>
+          {#if shown.head}
+            <Head parts={shown.head} size={Math.round(Math.min(window.innerWidth, window.innerHeight) * 0.13)} />
+          {:else}
+            <span class="text-[16vmin] leading-none" aria-hidden="true">🃏</span>
+          {/if}
           <span class="text-[6vmin] font-black uppercase tracking-widest">Joker</span>
           <span class="max-w-full break-words text-center text-[4vmin] font-extrabold">{shown.name}</span>
         </div>

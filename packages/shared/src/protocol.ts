@@ -34,6 +34,8 @@ export type ClientMsg =
   | { type: 'kick'; playerId: string }
   | { type: 'set_settings'; timerSeconds?: TimerSeconds; hostPlays?: boolean }
   | { type: 'start_game' }
+  /** Figuren-Show beenden und zur Kategoriewahl. */
+  | { type: 'intro_done' }
   | {
       type: 'choose_category';
       gameId: GameId;
@@ -132,6 +134,8 @@ export type ClientMsg =
   | { type: 'submit_scores'; scores: Record<string, number> }
   | { type: 'next_round' }
   | { type: 'end_game' }
+  /** Endstand: nächste Rangstufe aufdecken, vom letzten Platz zum ersten. */
+  | { type: 'finale_step' }
   | { type: 'back_to_lobby' }
   | { type: 'devlock_decline' }
   | { type: 'devlock_pay' }

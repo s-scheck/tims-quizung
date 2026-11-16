@@ -5,6 +5,7 @@
   import WorldMap from './WorldMap.svelte';
   import TurnTimer from './TurnTimer.svelte';
   import JokerButton from './JokerButton.svelte';
+  import { figureById } from '../lib/avatar.ts';
 
   let { view, round, readonly = false }: { view: RoomView; round: MapRoundView; readonly?: boolean } = $props();
 
@@ -95,6 +96,7 @@
     bounds={round.category.bounds}
     interactive={canPlace}
     pin={isParticipant ? myPin : null}
+    pinHead={client.myId ? figureById(view, client.myId) : null}
     onPick={place}
     target={round.target ?? null}
   />

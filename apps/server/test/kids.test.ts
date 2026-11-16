@@ -86,9 +86,11 @@ describe('Kinderpromis: Rundenstart', () => {
 
     const alone = makeHarness(['Allein']);
     expectOk(alone.act(alone.host, { type: 'start_game' }));
+    expectOk(alone.act(alone.host, { type: 'intro_done' }));
     expect(alone.act(alone.host, { type: 'choose_category', gameId: 'kids', categoryId: 'kind-stars' })).toMatchObject({ ok: false, code: 'invalid_action' });
     const wrong = makeHarness(['Host', 'B']);
     expectOk(wrong.act(wrong.host, { type: 'start_game' }));
+    expectOk(wrong.act(wrong.host, { type: 'intro_done' }));
     expect(wrong.act(wrong.host, { type: 'choose_category', gameId: 'kids', categoryId: 'promi-politik' })).toMatchObject({ ok: false, code: 'unknown_category' });
     expect(wrong.act(wrong.host, { type: 'choose_category', gameId: 'faces', categoryId: 'kind-stars' })).toMatchObject({ ok: false, code: 'unknown_category' });
   });

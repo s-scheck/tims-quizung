@@ -292,78 +292,98 @@ export function makeHarness(names: string[], opts: { timer?: TimerSeconds; seed?
  */
 export function startRound(h: Harness, categoryId = 'cities', lives = 1): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId, lives }));
 }
 
 /** Startet Spiel und Zuordnen-Runde. */
 export function startMatch(h: Harness, lives?: number): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'match', categoryId: 'capitals', ...(lives !== undefined ? { lives } : {}) }));
 }
 
 /** Startet Spiel und Karten-Runde. */
 export function startMap(h: Harness, opts: { targetId?: string; borders?: boolean; reveal?: RevealMode } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'map', categoryId: 'landmarks', ...opts }));
 }
 
 /** Startet Spiel und Zeitstrahl-Runde. */
 export function startTimeline(h: Harness, opts: { targetId?: string; reveal?: RevealMode } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'timeline', categoryId: 'history', ...opts }));
 }
 
 /** Startet Spiel und No-Risk-Runde. */
 export function startRisk(h: Harness, opts: { duplicates?: 'both' | 'none'; missPoints?: 0 | -10; reveal?: RevealMode } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'risk', categoryId: 'countries', ...opts }));
 }
 
 /** Startet Spiel und Bluff-Runde. */
 export function startBluff(h: Harness, opts: { targetId?: string; reveal?: RevealMode } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'bluff', categoryId: 'taglines', ...opts }));
 }
 
 /** Startet Spiel und Bilderrätsel-Runde. */
 export function startPicture(h: Harness, opts: { lives?: number; mode?: 'turns' | 'all' } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'picture', categoryId: 'bild-zimmer', ...opts }));
 }
 
 /** Startet Spiel und Wer-ist-das-Runde. */
 export function startFaces(h: Harness, opts: { targetId?: string; effect?: 'blur' | 'tiles' | 'pixel'; level?: number; cols?: number } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'faces', categoryId: 'promi-politik', ...opts }));
 }
 
 /** Startet Spiel und Kinderpromis-Runde. */
 export function startKids(h: Harness, opts: { mode?: 'type' | 'buzz'; count?: number; thinkSeconds?: 5 | 10 | 15 | 20; penalty?: 'none' | 'minus' } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'kids', categoryId: 'kind-stars', ...opts }));
 }
 
 /** Startet Spiel und Filmfotos-Runde. */
 export function startStills(h: Harness, opts: { mode?: 'type' | 'buzz'; thinkSeconds?: number; allGuess?: boolean } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'stills', categoryId: 'film-pate', ...opts }));
 }
 
 /** Startet Spiel und Morse-Runde mit dem gegebenen Wort. */
 export function startSongs(h: Harness): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'songs', categoryId: 'hits' }));
 }
 
 export function startMorse(h: Harness, word = 'Hallo Welt'): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'morse', categoryId: 'morse', word }));
 }
 
 /** Startet Spiel und Top-X-Runde. */
 export function startTopX(h: Harness, lives?: number): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'topx', categoryId: 'players', ...(lives !== undefined ? { lives } : {}) }));
+}
+
+/** Spiel beenden, den Endstand komplett aufdecken und zurück in die Lobby. */
+export function finishGame(h: Harness): void {
+  expectOk(h.act(h.host, { type: 'end_game' }));
+  while (h.room.finale && h.room.finale.shown < h.room.finaleTotal()) expectOk(h.act(h.host, { type: 'finale_step' }));
+  expectOk(h.act(h.host, { type: 'back_to_lobby' }));
 }
 
 export function expectOk(res: { ok: boolean; message?: string }): void {

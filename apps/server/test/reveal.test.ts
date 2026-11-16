@@ -50,6 +50,7 @@ describe('Show-Auflösung: Wahl', () => {
   test('nur mit moderierendem Host und nur bei Spielen mit Show', () => {
     const playing = makeHarness(['A', 'B']);
     expectOk(playing.act(playing.host, { type: 'start_game' }));
+    expectOk(playing.act(playing.host, { type: 'intro_done' }));
     expect(playing.act(playing.host, { type: 'choose_category', gameId: 'map', categoryId: 'landmarks', reveal: 'show' })).toMatchObject({
       ok: false,
       code: 'invalid_action',
@@ -58,6 +59,7 @@ describe('Show-Auflösung: Wahl', () => {
 
     const h = moderated(['Host', 'B']);
     expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
     expect(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId: 'cities', reveal: 'show' })).toMatchObject({ ok: false, code: 'invalid_action' });
     expectOk(h.act(h.host, { type: 'choose_category', gameId: 'sort', categoryId: 'cities', reveal: 'auto' }));
     expect(h.room.round?.reveal).toBeNull();

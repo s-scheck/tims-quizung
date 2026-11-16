@@ -13,6 +13,8 @@ import {
   type RevealMode,
   type RiskRules,
   type RoundResult,
+  type AvatarPart,
+  type HeadShape,
 } from '@quiz/shared';
 import type { Category } from '@quiz/content';
 import type { Scheduler, TimerHandle } from './scheduler.ts';
@@ -39,6 +41,13 @@ export interface RoomDeps {
 }
 
 export const MAX_PLAYERS = 12;
+
+/** Gemalte Figur eines Spielers, nur im Arbeitsspeicher. Fehlende Teile wurden leer gelassen. */
+export interface StoredAvatar {
+  v: number;
+  shape: HeadShape;
+  parts: Partial<Record<AvatarPart, Uint8Array<ArrayBuffer>>>;
+}
 
 export type JoinResult =
   | { ok: true; player: Player; reconnected: boolean }
@@ -75,6 +84,10 @@ export class Room {
   playedTargets: Record<string, string[]> = {};
   /** Wer seinen einen Joker im laufenden Spiel schon gesetzt hat. */
   jokersUsed: string[] = [];
+  /** Gemalte Figuren je Spieler. Nach „Fertig“ fest, zurück in der Lobby wieder leer. */
+  avatars = new Map<string, StoredAvatar>();
+  /** Endstand: wie viele Rangstufen der Host schon aufgedeckt hat, nur in `finished`. */
+  finale: { shown: number } | null = null;
   seq = 0;
   lastActivity: number;
   screenCount = 0;
@@ -193,6 +206,7 @@ export class Room {
     this.touch();
     this.players = this.players.filter((p) => p.id !== playerId);
     delete this.scores[playerId];
+    this.avatars.delete(playerId);
     if (this.hostId === playerId) this.transferHost();
     removePlayerFromRound(this, playerId);
     return OK;
@@ -260,7 +274,44 @@ export class Room {
     this.playedTargets = {};
     this.jokersUsed = [];
     this.lastStartPlayerId = null;
+    this.finale = null;
+    this.phase = 'intro';
+    return OK;
+  }
+
+  /** Figuren-Show beenden, weiter zur Kategoriewahl. */
+  introDone(byId: string): Result {
+    if (!this.isHost(byId)) return fail('not_host', 'Nur der Host schaltet weiter');
+    if (this.phase !== 'intro') return fail('invalid_action', 'Gerade läuft keine Figuren-Show');
+    this.touch();
     this.phase = 'choosing_category';
+    return OK;
+  }
+
+  // ---------------------------------------------------------------- Figuren
+
+  /** Figur nach „Fertig“ ablegen. Nur in der Lobby und nur einmal, danach ist sie fest. */
+  setAvatar(playerId: string, shape: HeadShape, parts: Partial<Record<AvatarPart, Uint8Array<ArrayBuffer>>>): Result {
+    if (!this.getPlayer(playerId)) return fail('invalid_action', 'Spieler nicht im Raum');
+    if (this.phase !== 'lobby') return fail('invalid_action', 'Figuren gibt es nur in der Lobby');
+    if (this.avatars.has(playerId)) return fail('invalid_action', 'Deine Figur ist schon fertig');
+    this.touch();
+    this.avatars.set(playerId, { v: this.now, shape, parts });
+    return OK;
+  }
+
+  /** Rangstufen des Endstands: Spieler gleicher Punktzahl bilden eine Stufe. */
+  finaleTotal(): number {
+    return new Set(this.players.filter((p) => !this.isModerator(p.id)).map((p) => this.scores[p.id] ?? 0)).size;
+  }
+
+  /** Endstand: nächste Rangstufe aufdecken, vom letzten Platz zum ersten. */
+  finaleStep(byId: string): Result {
+    if (!this.isHost(byId)) return fail('not_host', 'Nur der Host deckt den Endstand auf');
+    if (this.phase !== 'finished' || !this.finale) return fail('invalid_action', 'Das Spiel ist noch nicht vorbei');
+    if (this.finale.shown >= this.finaleTotal()) return fail('invalid_action', 'Alle Plätze sind schon aufgedeckt');
+    this.touch();
+    this.finale = { shown: this.finale.shown + 1 };
     return OK;
   }
 
@@ -293,8 +344,11 @@ export class Room {
   backToLobby(byId: string): Result {
     if (!this.isHost(byId)) return fail('not_host', 'Nur der Host darf zurück in die Lobby');
     if (this.phase !== 'finished') return fail('invalid_action', 'Erst das Spiel beenden');
+    if (this.finale && this.finale.shown < this.finaleTotal()) return fail('invalid_action', 'Erst alle Plätze aufdecken');
     this.touch();
     this.cancelAllTimers();
+    this.finale = null;
+    this.avatars.clear();
     this.phase = 'lobby';
     this.gameId = null;
     this.round = null;
@@ -310,6 +364,10 @@ export class Room {
         return this.setSettings(playerId, { timerSeconds: msg.timerSeconds, hostPlays: msg.hostPlays });
       case 'start_game':
         return this.startGame(playerId);
+      case 'intro_done':
+        return this.introDone(playerId);
+      case 'finale_step':
+        return this.finaleStep(playerId);
       case 'choose_category':
         return this.chooseCategory(playerId, msg.gameId, msg.categoryId, {
           ...(msg.lives !== undefined ? { lives: msg.lives } : {}),

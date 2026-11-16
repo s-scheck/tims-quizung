@@ -42,6 +42,7 @@
   import Toast from '../components/Toast.svelte';
   import DevLock from '../components/DevLock.svelte';
   import JokerOverlay from '../components/JokerOverlay.svelte';
+  import IntroShow from '../components/avatar/IntroShow.svelte';
   import ConnectionBanner from '../components/ConnectionBanner.svelte';
 
   let { code }: { code: string } = $props();
@@ -122,6 +123,8 @@
     <main class="mx-auto w-full max-w-5xl flex-1 px-4 pb-8 pt-4 {view.round?.game === 'map' && (view.phase === 'playing' || view.phase === 'host_decision') ? 'flex flex-col' : ''}">
       {#if view.phase === 'lobby'}
         <Lobby {view} />
+      {:else if view.phase === 'intro'}
+        <IntroShow {view} />
       {:else if view.phase === 'choosing_category'}
         <CategoryPicker {view} />
       {:else if view.phase === 'playing' || view.phase === 'host_decision'}

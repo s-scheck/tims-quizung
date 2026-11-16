@@ -8,6 +8,7 @@
   import RevealControls from './RevealControls.svelte';
   import ScoringHandoff from './ScoringHandoff.svelte';
   import JokerTag from './JokerTag.svelte';
+  import { figureById } from '../lib/avatar.ts';
 
   let { view, round, readonly = false }: { view: RoomView; round: MapRoundView; readonly?: boolean } = $props();
 
@@ -24,7 +25,14 @@
   const markers = $derived<MapMarker[]>(
     (round.pins ?? [])
       .filter((p) => revealStep(show, p.playerId) >= 1)
-      .map((p) => ({ id: p.playerId, lat: p.lat, lng: p.lng, label: playerName(view, p.playerId).slice(0, 2).toUpperCase(), color: colorOf(p.playerId) })),
+      .map((p) => ({
+        id: p.playerId,
+        lat: p.lat,
+        lng: p.lng,
+        label: playerName(view, p.playerId).slice(0, 2).toUpperCase(),
+        color: colorOf(p.playerId),
+        head: figureById(view, p.playerId) ?? undefined,
+      })),
   );
   const target = $derived(round.target && (!show || show.solution || round.privileged) ? round.target : null);
 

@@ -40,6 +40,7 @@ describe('Karte: Rundenstart', () => {
   test('Moderator ohne Ziel oder mit unbekanntem Ziel startet nicht und verändert nichts', () => {
     const h = moderated(['Host', 'B']);
     expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
     expect(h.act(h.host, { type: 'choose_category', gameId: 'map', categoryId: 'landmarks' })).toMatchObject({ ok: false, code: 'invalid_action' });
     expect(h.act(h.host, { type: 'choose_category', gameId: 'map', categoryId: 'landmarks', targetId: 'atlantis' })).toMatchObject({ ok: false, code: 'unknown_category' });
     expect(h.room.phase).toBe('choosing_category');

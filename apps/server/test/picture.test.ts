@@ -50,6 +50,7 @@ describe('Bilderrätsel: Rundenstart', () => {
   test('ohne Mitspieler außer dem Host startet nichts, Rangliste passt nicht', () => {
     const h = makeHarness(['Allein']);
     expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
     expect(h.act(h.host, { type: 'choose_category', gameId: 'picture', categoryId: 'bild-zimmer' })).toMatchObject({ ok: false, code: 'invalid_action' });
     expect(h.act(h.host, { type: 'choose_category', gameId: 'picture', categoryId: 'cities' })).toMatchObject({ ok: false, code: 'unknown_category' });
     expect(h.room.phase).toBe('choosing_category');
@@ -58,6 +59,7 @@ describe('Bilderrätsel: Rundenstart', () => {
   test('Kategorieauswahl zählt Felder', () => {
     const h = makeHarness(['Host', 'B']);
     expectOk(h.act(h.host, { type: 'start_game' }));
+    expectOk(h.act(h.host, { type: 'intro_done' }));
     const summary = toView(h.room, h.host).categories?.find((c) => c.id === 'bild-zimmer');
     expect(summary).toMatchObject({ count: 3, games: ['picture'] });
   });
