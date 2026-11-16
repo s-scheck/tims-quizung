@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import { untrack } from 'svelte';
   import type { RoomView, TimelineRoundView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
@@ -78,7 +79,7 @@
           <span class="w-6 text-right font-mono text-slate-500">{row.distanceYears === null || !showRanks ? '–' : `${row.rank}.`}</span>
           <span class="h-3 w-3 shrink-0 rounded-full" style="background:{colorOf(row.playerId)}"></span>
           <span class="min-w-0 flex-1 break-words">
-            <span class="font-semibold">{playerName(view, row.playerId)}</span>
+            <span class="inline-flex items-center gap-1.5 font-semibold"><PlayerHead {view} id={row.playerId} />{playerName(view, row.playerId)}</span>
             {#if year !== undefined}<span class="ml-1 text-sm text-slate-400">{formatYear(year)}</span>{/if}
             <JokerTag {view} {round} playerId={row.playerId} />
           </span>
@@ -98,6 +99,7 @@
         <li class="flex items-center gap-3 px-4 py-3 text-slate-500 {readonly ? 'text-xl' : ''} {id === client.myId ? 'bg-indigo-500/10' : ''}">
           <span class="w-6 text-right font-mono">?</span>
           <span class="h-3 w-3 shrink-0 rounded-full bg-slate-800"></span>
+          <PlayerHead {view} id={id} />
           <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, id)}</span>
           <span class="text-sm italic">verdeckt</span>
         </li>

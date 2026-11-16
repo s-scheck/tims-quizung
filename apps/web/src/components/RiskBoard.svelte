@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import { GUESS_MAX_LENGTH, type RiskRoundView, type RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import RiskSlots from './RiskSlots.svelte';
@@ -70,8 +71,8 @@
       <span class="mr-1 text-sm text-slate-400">{round.loggedIn.length} von {participants.length} eingeloggt</span>
       {#each participants as p (p.id)}
         {@const done = round.loggedIn.includes(p.id)}
-        <span class="rounded-full border px-2.5 py-0.5 text-xs font-semibold {done ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200' : 'border-slate-700 text-slate-400'} {readonly ? 'text-base' : ''}">
-          {round.joker?.by === p.id ? '🃏 ' : done ? '✓ ' : ''}{p.name}{p.id === client.myId ? ' (du)' : ''}
+        <span class="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold {done ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200' : 'border-slate-700 text-slate-400'} {readonly ? 'text-base' : ''}">
+          {round.joker?.by === p.id ? '🃏 ' : done ? '✓ ' : ''}<PlayerHead {view} id={p.id} size={16} />{p.name}{p.id === client.myId ? ' (du)' : ''}
         </span>
       {/each}
     </div>

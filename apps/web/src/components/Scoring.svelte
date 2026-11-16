@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import { untrack } from 'svelte';
   import { SCORE_MAX, SCORE_MIN, type RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
@@ -110,7 +111,7 @@
       {@const eliminated = round.eliminated.includes(p.id)}
       <label class="flex items-center gap-3">
         <span class="min-w-0 flex-1">
-          <span class="flex flex-wrap items-center gap-2 break-words font-semibold">{p.name} <JokerTag {view} {round} playerId={p.id} /></span>
+          <span class="flex flex-wrap items-center gap-2 break-words font-semibold"><PlayerHead {view} id={p.id} />{p.name} <JokerTag {view} {round} playerId={p.id} /></span>
           <span class="block text-xs {eliminated ? 'text-rose-300' : round.turnOrder.includes(p.id) ? 'text-emerald-300' : 'text-slate-500'}">{statusOf(p.id)}</span>
         </span>
         <span class="text-xs text-slate-500">bisher {view.scores[p.id] ?? 0}</span>

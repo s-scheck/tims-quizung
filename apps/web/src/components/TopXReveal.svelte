@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import { fly } from 'svelte/transition';
   import type { RoomView, TopXRoundView, TopXSlotView } from '@quiz/shared';
   import { formatValue, playerName } from '../lib/format.ts';
@@ -51,6 +52,7 @@
         {#each players as p (p.id)}
           {@const lives = round.lives[p.id] ?? 0}
           <li class="flex items-center gap-3 {readonly ? 'text-xl' : ''}">
+            <PlayerHead {view} id={p.id} />
             <span class="min-w-0 flex-1 break-words font-semibold {lives === 0 ? 'text-slate-500 line-through' : ''}">{p.name}</span>
             <span class="text-sm text-slate-300">{round.hits[p.id] ?? 0} Treffer</span>
             <span class="font-mono text-rose-400">{'♥'.repeat(lives)}<span class="text-slate-700">{'♥'.repeat(Math.max(0, round.maxLives - lives))}</span></span>

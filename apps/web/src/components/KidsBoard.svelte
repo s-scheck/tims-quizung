@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import type { FaceEffectState, KidsRoundView, RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
@@ -182,7 +183,7 @@
           {@const s = round.solved.find((x) => x.playerId === p.id)}
           <div class="rounded-xl border border-slate-800 px-3 py-2">
             <div class="flex items-baseline justify-between gap-2">
-              <span class="flex flex-wrap items-center gap-2 font-semibold">{p.name} <JokerTag {view} {round} playerId={p.id} section={round.index} /></span>
+              <span class="flex flex-wrap items-center gap-2 font-semibold"><PlayerHead {view} id={p.id} />{p.name} <JokerTag {view} {round} playerId={p.id} section={round.index} /></span>
               <span class="text-xs {s ? 'text-emerald-300' : 'text-slate-500'}">{s ? `${s.rank}. Platz nach ${seconds(s.at)} s` : attempts.length === 0 ? 'noch kein Tipp' : `${attempts.length} ${attempts.length === 1 ? 'Tipp' : 'Tipps'}`}</span>
             </div>
             {#if attempts.length > 0}
@@ -227,6 +228,7 @@
             {#each round.solved as s (s.playerId)}
               <li class="flex items-center gap-2 {readonly ? 'text-xl' : ''} {s.playerId === me ? 'text-indigo-200' : ''}">
                 {#if typing}<span class="w-6 text-right font-mono text-slate-500">{s.rank}.</span>{:else}<span class="text-emerald-400">✓</span>{/if}
+                <PlayerHead {view} id={s.playerId} />
                 <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, s.playerId)}</span>
                 <JokerTag {view} {round} playerId={s.playerId} section={round.index} />
                 <span class="font-mono text-xs text-slate-400">{seconds(s.at)} s</span>
@@ -265,6 +267,7 @@
         {#each ranking as p, i (p.id)}
           <li class="flex items-center gap-3 py-1.5 {readonly ? 'text-xl' : ''} {p.id === me ? 'text-indigo-200' : ''}">
             <span class="w-6 text-right font-mono text-slate-500">{i + 1}.</span>
+            <PlayerHead {view} id={p.id} />
             <span class="min-w-0 flex-1 break-words font-semibold">{p.name}</span>
             <span class="shrink-0 text-xs text-slate-500">{p.hits} {p.hits === 1 ? 'Treffer' : 'Treffer'}{#if !typing && p.misses > 0} · {p.misses} daneben{/if}</span>
             <span class="shrink-0 font-mono font-black">{p.points}</span>

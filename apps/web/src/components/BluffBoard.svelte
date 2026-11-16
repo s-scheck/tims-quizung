@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import { untrack } from 'svelte';
   import { fly } from 'svelte/transition';
   import { BLUFF_TEXT_MAX, type BluffEntryView, type BluffRoundView, type RoomView } from '@quiz/shared';
@@ -83,8 +84,8 @@
       <span class="mr-1 text-sm text-slate-400">{doneIds.length} von {participants.length} {stage === 'writing' ? 'geschrieben' : 'abgestimmt'}</span>
       {#each participants as p (p.id)}
         {@const done = doneIds.includes(p.id)}
-        <span class="rounded-full border px-2.5 py-0.5 text-xs font-semibold {done ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200' : 'border-slate-700 text-slate-400'} {readonly ? 'text-base' : ''}">
-          {done ? '✓ ' : ''}{p.name}{p.id === client.myId ? ' (du)' : ''}
+        <span class="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold {done ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200' : 'border-slate-700 text-slate-400'} {readonly ? 'text-base' : ''}">
+          {done ? '✓ ' : ''}<PlayerHead {view} id={p.id} size={16} />{p.name}{p.id === client.myId ? ' (du)' : ''}
         </span>
       {/each}
     </div>
@@ -140,7 +141,7 @@
             {#each entries as e (e.id)}
               <li class="flex items-baseline justify-between gap-3 rounded-lg bg-slate-900/60 px-3 py-2" in:fly={{ y: 6, duration: 200 }}>
                 <span class="font-semibold">{e.text}</span>
-                <span class="shrink-0 text-xs text-slate-400">{playerName(view, e.authorId)}</span>
+                <span class="inline-flex shrink-0 items-center gap-1 text-xs text-slate-400"><PlayerHead {view} id={e.authorId} size={16} />{playerName(view, e.authorId)}</span>
               </li>
             {/each}
           </ul>
@@ -175,7 +176,7 @@
               <span class="flex flex-wrap items-center gap-1 text-xs text-slate-400">
                 <span class="font-mono font-bold text-slate-200">{voters.length}</span> {voters.length === 1 ? 'Stimme' : 'Stimmen'}
                 {#each voters as v (v)}
-                  <span class="rounded-full bg-slate-800 px-2 py-0.5 text-slate-300">{playerName(view, v)}</span>
+                  <span class="inline-flex items-center gap-1 rounded-full bg-slate-800 px-2 py-0.5 text-slate-300"><PlayerHead {view} id={v} size={16} />{playerName(view, v)}</span>
                 {/each}
               </span>
             {/if}

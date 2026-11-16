@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import { fly } from 'svelte/transition';
   import type { BluffEntryView, BluffRoundView, RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
@@ -142,6 +143,7 @@
           {@const tappable = moderator && !row.open}
           <li class="flex items-center gap-3 py-2 {readonly ? 'text-xl' : ''} {row.id === client.myId ? 'text-indigo-200' : ''} {!row.open && !moderator ? 'text-slate-500' : ''}">
             <span class="w-6 text-right font-mono text-slate-500">{row.open && showRanks ? `${i + 1}.` : row.open ? '–' : '?'}</span>
+            <PlayerHead {view} id={row.id} />
             <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, row.id)}</span>
             {#if row.open || moderator}
               <span class="font-mono text-lg font-black {moderator && !row.open ? 'text-slate-400' : ''}">{row.points}</span>

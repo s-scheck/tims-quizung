@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import type { KidsRoundView, RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
@@ -51,6 +52,7 @@
                 {#each item.winners as w (w.playerId)}
                   <li class="flex items-center gap-2 {w.playerId === me ? 'text-indigo-200' : ''}">
                     {#if typing}<span class="w-5 text-right font-mono text-slate-500">{w.rank}.</span>{:else}<span class="text-emerald-400">✓</span>{/if}
+                    <PlayerHead {view} id={w.playerId} />
                     <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, w.playerId)} <JokerTag {view} {round} playerId={w.playerId} section={i} /></span>
                     <span class="font-mono text-xs text-slate-400">{seconds(w.at, item.shownAt)} s</span>
                   </li>
@@ -70,6 +72,7 @@
         {#each ranking as p, i (p.id)}
           <li class="flex items-center gap-3 py-1.5 {readonly ? 'text-xl' : ''} {p.id === me ? 'text-indigo-200' : ''}">
             <span class="w-6 text-right font-mono text-slate-500">{i + 1}.</span>
+            <PlayerHead {view} id={p.id} />
             <span class="min-w-0 flex-1 break-words font-semibold">{p.name} <JokerTag {view} {round} playerId={p.id} /></span>
             <span class="shrink-0 text-xs text-slate-500">{p.hits} Treffer{#if !typing && p.misses > 0} · {p.misses} daneben{/if}</span>
             <span class="shrink-0 font-mono font-black">{p.points}</span>

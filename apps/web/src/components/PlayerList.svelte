@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import type { RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { isModerator } from '../lib/format.ts';
@@ -25,6 +26,7 @@
         {large ? 'text-2xl' : ''}"
     >
       <span class="h-2.5 w-2.5 shrink-0 rounded-full {p.connected ? 'bg-emerald-400' : 'bg-slate-600'}" title={p.connected ? 'verbunden' : 'getrennt'}></span>
+      <PlayerHead {view} id={p.id} />
       <span class="flex-1 break-words font-semibold {eliminated ? 'line-through' : ''}">
         {p.name}
         {#if p.id === client.myId}<span class="text-xs font-normal text-slate-500"> (du)</span>{/if}

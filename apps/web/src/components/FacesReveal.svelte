@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import type { FacesRoundView, RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
@@ -32,6 +33,7 @@
           {#each round.solved as s (s.playerId)}
             <li class="flex items-center gap-2 {readonly ? 'text-xl' : ''} {s.playerId === client.myId ? 'text-indigo-200' : ''}">
               <span class="w-6 text-right font-mono text-slate-500">{s.rank}.</span>
+              <PlayerHead {view} id={s.playerId} />
               <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, s.playerId)} <JokerTag {view} {round} playerId={s.playerId} /></span>
               <span class="font-mono text-xs text-slate-400">{seconds(s.at)} s</span>
               <span class="font-mono font-black">{round.points?.[s.playerId] ?? 0}</span>
@@ -48,7 +50,7 @@
         {#each participants as p (p.id)}
           {@const attempts = round.attempts?.[p.id] ?? []}
           <li>
-            <span class="font-semibold">{p.name}</span>
+            <span class="inline-flex items-center gap-1.5 font-semibold"><PlayerHead {view} id={p.id} />{p.name}</span>
             <JokerTag {view} {round} playerId={p.id} />
             {#if attempts.length === 0}
               <span class="text-slate-500"> · kein Tipp</span>

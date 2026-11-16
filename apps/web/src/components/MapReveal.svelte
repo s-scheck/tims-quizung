@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import { untrack } from 'svelte';
   import type { MapRoundView, RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
@@ -95,7 +96,7 @@
         <li class="flex items-center gap-3 px-4 py-3 {readonly ? 'text-xl' : ''} {row.playerId === client.myId ? 'bg-indigo-500/10' : ''}">
           <span class="w-6 text-right font-mono text-slate-500">{row.distanceKm === null || !showRanks ? '–' : `${row.rank}.`}</span>
           <span class="h-3 w-3 shrink-0 rounded-full" style="background:{colorOf(row.playerId)}"></span>
-          <span class="flex min-w-0 flex-1 flex-wrap items-center gap-2 break-words font-semibold">{playerName(view, row.playerId)} <JokerTag {view} {round} playerId={row.playerId} /></span>
+          <span class="flex min-w-0 flex-1 flex-wrap items-center gap-2 break-words font-semibold"><PlayerHead {view} id={row.playerId} />{playerName(view, row.playerId)} <JokerTag {view} {round} playerId={row.playerId} /></span>
           <span class="font-mono {row.distanceKm === null ? 'text-sm text-slate-500' : 'text-lg font-bold'} {moderator && !open ? 'text-slate-400' : ''}">
             {row.distanceKm === null ? 'kein Pin' : formatKm(row.distanceKm)}
           </span>
@@ -112,6 +113,7 @@
         <li class="flex items-center gap-3 px-4 py-3 text-slate-500 {readonly ? 'text-xl' : ''} {id === client.myId ? 'bg-indigo-500/10' : ''}">
           <span class="w-6 text-right font-mono">?</span>
           <span class="h-3 w-3 shrink-0 rounded-full bg-slate-800"></span>
+          <PlayerHead {view} id={id} />
           <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, id)}</span>
           <span class="text-sm italic">verdeckt</span>
         </li>

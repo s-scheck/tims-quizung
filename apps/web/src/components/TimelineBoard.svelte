@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import { isTimelineYear, shiftYear, type RoomView, type TimelineRoundView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { formatYear } from '../lib/format.ts';
@@ -108,8 +109,8 @@
     <span class="mr-1 text-sm text-slate-400">{round.confirmed.length} von {participants.length} bestätigt</span>
     {#each participants as p (p.id)}
       {@const done = round.confirmed.includes(p.id)}
-      <span class="rounded-full border px-2.5 py-0.5 text-xs font-semibold {done ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200' : 'border-slate-700 text-slate-400'} {readonly ? 'text-base' : ''}">
-        {round.joker?.by === p.id ? '🃏 ' : done ? '✓ ' : ''}{p.name}{p.id === client.myId ? ' (du)' : ''}
+      <span class="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold {done ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200' : 'border-slate-700 text-slate-400'} {readonly ? 'text-base' : ''}">
+        {round.joker?.by === p.id ? '🃏 ' : done ? '✓ ' : ''}<PlayerHead {view} id={p.id} size={16} />{p.name}{p.id === client.myId ? ' (du)' : ''}
       </span>
     {/each}
   </div>

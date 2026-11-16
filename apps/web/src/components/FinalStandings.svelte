@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import { fly } from 'svelte/transition';
   import type { RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
@@ -40,6 +41,7 @@
       {#each visibleRows as row (row.player.id)}
         <li class="flex items-center gap-3 px-4 py-2" in:fly={{ y: 10, duration: 300 }}>
           <span class="w-8 text-center text-xl">{row.rank <= 3 ? medals[row.rank - 1] : `${row.rank}.`}</span>
+          <PlayerHead {view} id={row.player.id} />
           <span class="min-w-0 flex-1 break-words font-semibold">{row.player.name}</span>
           <span class="font-mono text-2xl font-black">{row.score}</span>
         </li>

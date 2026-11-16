@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import type { BaseRoundView, RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
@@ -55,7 +56,8 @@
         <p class="text-sm font-bold text-amber-100">Wen kopierst du? Du bekommst am Ende genau ihr Ergebnis.</p>
         <div class="flex flex-wrap gap-2">
           {#each others as id (id)}
-            <button class="rounded-full border-2 border-slate-700 px-3 py-1.5 text-sm font-bold text-slate-200 hover:border-amber-400" onclick={() => (picked = id)}>
+            <button class="inline-flex items-center gap-1.5 rounded-full border-2 border-slate-700 px-3 py-1.5 text-sm font-bold text-slate-200 hover:border-amber-400" onclick={() => (picked = id)}>
+              <PlayerHead {view} id={id} />
               {playerName(view, id)}
             </button>
           {/each}

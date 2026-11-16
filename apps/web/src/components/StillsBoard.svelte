@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import { onDestroy } from 'svelte';
   import type { RoomView, StillsRoundView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
@@ -144,13 +145,13 @@
       {@const done = round.typed?.includes(p.id)}
       {@const passed = round.passed?.includes(p.id)}
       {#if round.joker?.by === p.id}
-        <li class="rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-amber-200">🃏 {p.name}</li>
+        <li class="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-amber-200">🃏 <PlayerHead {view} id={p.id} size={16} />{p.name}</li>
       {:else if allGuess && doneBefore(p.id)}
-        <li class="rounded-full border border-slate-800 px-3 py-1 text-slate-600">fertig · {p.name}</li>
+        <li class="inline-flex items-center gap-1 rounded-full border border-slate-800 px-3 py-1 text-slate-600">fertig · <PlayerHead {view} id={p.id} size={16} />{p.name}</li>
       {:else if passed}
-        <li class="rounded-full border border-sky-500/40 bg-sky-500/10 px-3 py-1 text-sky-200">gepasst · {p.name}</li>
+        <li class="inline-flex items-center gap-1 rounded-full border border-sky-500/40 bg-sky-500/10 px-3 py-1 text-sky-200">gepasst · <PlayerHead {view} id={p.id} size={16} />{p.name}</li>
       {:else}
-        <li class="rounded-full border px-3 py-1 {done ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200' : 'border-slate-700 text-slate-400'}">{done ? '✓' : '…'} {p.name}</li>
+        <li class="inline-flex items-center gap-1 rounded-full border px-3 py-1 {done ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200' : 'border-slate-700 text-slate-400'}">{done ? '✓' : '…'} <PlayerHead {view} id={p.id} size={16} />{p.name}</li>
       {/if}
     {/each}
   </ul>
@@ -161,6 +162,7 @@
     {#each round.results as x (x.playerId)}
       <li class="flex items-center gap-2 {x.playerId === client.myId ? 'text-indigo-200' : ''}">
         <span class="w-5 shrink-0 font-bold {x.correct ? 'text-emerald-300' : 'text-rose-300'}">{x.correct ? '✓' : '✗'}</span>
+        <PlayerHead {view} id={x.playerId} />
         <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, x.playerId)}</span>
         <span class="shrink-0 text-xs text-slate-400">Foto {x.index + 1}{x.correct ? ` · ${round.stagePoints[x.index] ?? 0} Punkte` : ''}</span>
       </li>
@@ -272,7 +274,7 @@
             <ul class="space-y-2">
               {#each attemptsNow as { player, attempt } (player.id)}
                 <li class="flex flex-wrap items-center gap-2 rounded-xl border border-slate-800 px-3 py-2 text-sm">
-                  <span class="font-semibold">{player.name}</span>
+                  <span class="inline-flex items-center gap-1.5 font-semibold"><PlayerHead {view} id={player.id} />{player.name}</span>
                   {#if !attempt}
                     <span class="text-slate-500">kein Tipp</span>
                   {:else}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import { onDestroy } from 'svelte';
   import { GUESS_MAX_LENGTH, SONG_PREVIEW_SECONDS, type RoomView, type SongSearchHit, type SongsRoundView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
@@ -175,7 +176,7 @@
       <ul class="flex flex-wrap gap-2 {readonly ? 'text-lg' : 'text-sm'}">
         {#each participants as p (p.id)}
           {@const done = cur.loggedIn.includes(p.id)}
-          <li class="rounded-full border px-3 py-1 font-semibold {done ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200' : 'border-slate-700 text-slate-400'}">{done ? '✓ ' : ''}{p.name}</li>
+          <li class="inline-flex items-center gap-1 rounded-full border px-3 py-1 font-semibold {done ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200' : 'border-slate-700 text-slate-400'}">{done ? '✓ ' : ''}<PlayerHead {view} id={p.id} size={16} />{p.name}</li>
         {/each}
       </ul>
     {/if}
@@ -196,7 +197,7 @@
       <ul class="card divide-y divide-slate-800 p-0">
         {#each cur.results ?? [] as res (res.playerId)}
           <li class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 {readonly ? 'text-xl' : ''} {res.playerId === client.myId ? 'bg-indigo-500/10' : ''}">
-            <span class="w-24 shrink-0 truncate font-bold">{playerName(view, res.playerId)}</span>
+            <span class="inline-flex w-28 shrink-0 items-center gap-1.5 truncate font-bold"><PlayerHead {view} id={res.playerId} /><span class="truncate">{playerName(view, res.playerId)}</span></span>
             {#if res.title === null}
               <span class="flex-1 italic text-slate-500">kein Tipp</span>
             {:else}
@@ -298,6 +299,7 @@
         <ul class="space-y-1">
           {#each [...round.turnOrder].sort((a, b) => (round.totals[b] ?? 0) - (round.totals[a] ?? 0)) as id (id)}
             <li class="flex items-center gap-3 {readonly ? 'text-xl' : ''} {id === client.myId ? 'text-indigo-200' : ''}">
+              <PlayerHead {view} id={id} />
               <span class="min-w-0 flex-1 truncate font-semibold">{playerName(view, id)}</span>
               <span class="font-mono font-bold">{round.totals[id] ?? 0}</span>
             </li>

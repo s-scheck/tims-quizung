@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import type { MatchRoundView, PictureRoundView, RoomView, SortRoundView, TopXRoundView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
 
@@ -16,6 +17,7 @@
         {out ? 'opacity-50' : ''} {readonly ? 'text-xl' : ''}"
     >
       <span class="h-2.5 w-2.5 shrink-0 rounded-full {p.connected ? 'bg-emerald-400' : 'bg-slate-600'}"></span>
+      <PlayerHead {view} id={p.id} />
       <span class="min-w-0 flex-1 break-words font-semibold {out ? 'line-through' : ''}">
         {p.name}{#if p.id === client.myId}<span class="text-xs font-normal text-slate-500"> (du)</span>{/if}
       </span>

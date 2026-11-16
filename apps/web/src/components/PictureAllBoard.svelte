@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import { untrack } from 'svelte';
   import { GUESS_MAX_LENGTH, type PictureRoundView, type RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
@@ -226,6 +227,7 @@
       <ul class="space-y-2">
         {#each players as p (p.id)}
           <li class="flex items-center gap-3 {readonly ? 'text-xl' : ''} {p.id === me ? 'text-indigo-200' : ''}">
+            <PlayerHead {view} id={p.id} />
             <span class="min-w-0 flex-1 break-words font-semibold">
               {p.name}
               {#if !p.connected}<span class="ml-2 text-xs font-normal text-amber-300">nicht verbunden</span>{/if}

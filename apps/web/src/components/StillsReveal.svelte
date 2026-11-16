@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import type { RoomView, StillsRoundView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
@@ -39,7 +40,7 @@
             {#each hits as x (x.playerId)}
               <li class="flex items-center gap-2 {readonly ? 'text-xl' : ''} {x.playerId === client.myId ? 'text-indigo-200' : ''}">
                 <span class="min-w-0 flex-1 break-words">
-                  <span class="font-semibold">{playerName(view, x.playerId)}</span> <JokerTag {view} {round} playerId={x.playerId} />
+                  <span class="inline-flex items-center gap-1.5 font-semibold"><PlayerHead {view} id={x.playerId} />{playerName(view, x.playerId)}</span> <JokerTag {view} {round} playerId={x.playerId} />
                   {#if tipText(x.playerId)}<span class="text-sm text-slate-400"> · {tipText(x.playerId)}</span>{/if}
                 </span>
                 <span class="shrink-0 text-sm text-slate-400">Foto {x.index + 1}</span>
@@ -55,7 +56,7 @@
           <ul class="space-y-1 text-sm">
             {#each misses as x (x.playerId)}
               <li class="break-words {x.playerId === client.myId ? 'text-indigo-200' : ''}">
-                <span class="font-semibold">{playerName(view, x.playerId)}</span> <JokerTag {view} {round} playerId={x.playerId} />
+                <span class="inline-flex items-center gap-1.5 font-semibold"><PlayerHead {view} id={x.playerId} />{playerName(view, x.playerId)}</span> <JokerTag {view} {round} playerId={x.playerId} />
                 <span class="text-rose-300">
                   · {round.mode === 'type' ? `falsch bei Foto ${x.index + 1}${tipText(x.playerId) ? `: „${tipText(x.playerId)}“` : ''}` : `Fehlbuzzer bei Foto ${x.index + 1}`}
                 </span>
@@ -63,7 +64,7 @@
             {/each}
             {#each none as p (p.id)}
               <li class="break-words {p.id === client.myId ? 'text-indigo-200' : ''}">
-                <span class="font-semibold">{p.name}</span>
+                <span class="inline-flex items-center gap-1.5 font-semibold"><PlayerHead {view} id={p.id} />{p.name}</span>
                 <!-- Ein Tipp ohne Urteil bleibt, wenn der Host vor der Prüfung auflöst. -->
                 <span class="text-slate-500"> · {round.mode === 'buzz' ? 'nicht gebuzzert' : tipText(p.id) ? `nicht geprüft: „${tipText(p.id)}“` : 'kein Tipp'}</span>
               </li>
@@ -75,6 +76,7 @@
         <ul class="space-y-1">
           {#each round.solved.winners as id (id)}
             <li class="flex items-center gap-2 {readonly ? 'text-xl' : ''} {id === client.myId ? 'text-indigo-200' : ''}">
+              <PlayerHead {view} id={id} />
               <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, id)} <JokerTag {view} {round} playerId={id} /></span>
               <span class="font-mono font-black">{round.points[id] ?? 0}</span>
             </li>
@@ -93,7 +95,7 @@
           {#each participants as p (p.id)}
             {@const attempts = round.attempts?.[p.id] ?? []}
             <li>
-              <span class="font-semibold">{p.name}</span>
+              <span class="inline-flex items-center gap-1.5 font-semibold"><PlayerHead {view} id={p.id} />{p.name}</span>
               {#if attempts.length === 0}
                 <span class="text-slate-500"> · kein Tipp</span>
               {:else}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import type { RoomView, SongsRoundView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
@@ -25,7 +26,7 @@
             <p class="break-words text-sm font-bold text-slate-400">{p.song.artist}</p>
             <p class="mt-1 flex flex-wrap gap-1.5 text-xs">
               {#each p.results.filter((r) => r.points > 0) as r (r.playerId)}
-                <span class="rounded-full bg-emerald-500/15 px-2 py-0.5 font-bold text-emerald-300">{playerName(view, r.playerId)} +{r.points}</span>
+                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 font-bold text-emerald-300"><PlayerHead {view} id={r.playerId} size={16} />{playerName(view, r.playerId)} +{r.points}</span>
               {:else}
                 <span class="text-slate-500">Niemand hat etwas erkannt.</span>
               {/each}
@@ -43,6 +44,7 @@
       {#each ranking as id, i (id)}
         <li class="flex items-center gap-3 px-4 py-3 {readonly ? 'text-xl' : ''} {id === client.myId ? 'bg-indigo-500/10' : ''}">
           <span class="w-6 text-right font-mono text-slate-500">{i + 1}.</span>
+          <PlayerHead {view} id={id} />
           <span class="min-w-0 flex-1 truncate font-semibold">{playerName(view, id)}</span>
           <span class="font-mono text-lg font-black">{round.totals[id] ?? 0}</span>
         </li>

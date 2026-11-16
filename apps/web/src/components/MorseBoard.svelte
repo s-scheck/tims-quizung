@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import { onDestroy, untrack } from 'svelte';
   import { fly } from 'svelte/transition';
   import { MORSE_SPEEDS, type MorseRoundView, type MorseSpeed, type RoomView } from '@quiz/shared';
@@ -147,8 +148,8 @@
     <span class="mr-1 text-sm text-slate-400">{round.solved.length} von {participants.length} gelöst</span>
     {#each participants as p (p.id)}
       {@const s = solvedBy(p.id)}
-      <span class="rounded-full border px-2.5 py-0.5 text-xs font-semibold {s ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200' : 'border-slate-700 text-slate-400'} {readonly ? 'text-base' : ''}">
-        {s ? `${s.rank}. ✓ ` : ''}{p.name}{p.id === client.myId ? ' (du)' : ''}{s ? ` · ${seconds(s.at)} s` : ''}
+      <span class="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold {s ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200' : 'border-slate-700 text-slate-400'} {readonly ? 'text-base' : ''}">
+        {s ? `${s.rank}. ✓ ` : ''}<PlayerHead {view} id={p.id} size={16} />{p.name}{p.id === client.myId ? ' (du)' : ''}{s ? ` · ${seconds(s.at)} s` : ''}
       </span>
     {/each}
   </div>
@@ -198,7 +199,7 @@
         {@const s = solvedBy(p.id)}
         <div class="rounded-xl border border-slate-800 bg-slate-900/50 px-3 py-2">
           <div class="flex items-center justify-between gap-2">
-            <span class="font-semibold">{p.name}</span>
+            <span class="inline-flex items-center gap-1.5 font-semibold"><PlayerHead {view} id={p.id} />{p.name}</span>
             <span class="text-xs {s ? 'text-emerald-300' : 'text-slate-500'}">{s ? `${s.rank}. Platz nach ${seconds(s.at)} s` : attempts.length === 0 ? 'noch kein Versuch' : `${attempts.length} ${attempts.length === 1 ? 'Versuch' : 'Versuche'}`}</span>
           </div>
           {#if attempts.length > 0}

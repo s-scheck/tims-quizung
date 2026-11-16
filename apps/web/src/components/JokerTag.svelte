@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import type { BaseRoundView, RoomView } from '@quiz/shared';
   import { playerName } from '../lib/format.ts';
 
@@ -10,6 +11,6 @@
 
 {#if joker}
   <span class="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-xs font-bold text-amber-200">
-    🃏 {joker.target ? `kopiert ${playerName(view, joker.target)}` : 'Joker'}
+    🃏 {#if joker.target}kopiert <PlayerHead {view} id={joker.target} size={16} /> {playerName(view, joker.target)}{:else}Joker{/if}
   </span>
 {/if}

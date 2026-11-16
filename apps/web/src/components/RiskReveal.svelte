@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import type { RiskRoundView, RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
@@ -50,7 +51,7 @@
             {@const textOpen = moderator || step >= 1}
             {@const rankOpen = moderator || step >= 2}
             <li class="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 {readonly ? 'text-xl' : ''} {res.playerId === client.myId ? 'text-indigo-100' : ''}">
-              <span class="shrink-0 break-words font-semibold {readonly ? '' : 'w-16 sm:w-28'}">{playerName(view, res.playerId)}</span>
+              <span class="inline-flex shrink-0 items-center gap-1.5 break-words font-semibold {readonly ? '' : 'w-20 sm:w-32'}"><PlayerHead {view} id={res.playerId} />{playerName(view, res.playerId)}</span>
               <JokerTag {view} {round} playerId={res.playerId} section={latest.passNo - 1} />
               {#if !textOpen}
                 <span class="min-w-0 flex-1 italic text-slate-500">verdeckt</span>
@@ -129,7 +130,7 @@
           <ul class="text-sm">
             {#each pass.results as res (res.playerId)}
               <li class="flex gap-3 py-0.5">
-                <span class="w-16 break-words font-semibold sm:w-28">{playerName(view, res.playerId)}</span>
+                <span class="inline-flex w-20 items-center gap-1.5 break-words font-semibold sm:w-32"><PlayerHead {view} id={res.playerId} size={16} />{playerName(view, res.playerId)}</span>
                 <span class="min-w-0 flex-1 break-words text-slate-400">{res.text ?? 'kein Tipp'}{res.rank !== null ? ` · Platz ${res.rank}` : ''} <JokerTag {view} {round} playerId={res.playerId} section={pass.passNo - 1} /></span>
                 <span class="font-mono">{res.points}</span>
               </li>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from './PlayerHead.svelte';
   import type { RiskRoundView, RoomView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
@@ -16,6 +17,7 @@
   <ul class="space-y-1">
     {#each rows as row (row.id)}
       <li class="flex items-center gap-3 {large ? 'text-xl' : ''} {row.id === client.myId ? 'text-indigo-200' : ''}">
+        <PlayerHead {view} id={row.id} />
         <span class="min-w-0 flex-1 break-words font-semibold">{playerName(view, row.id)}</span>
         <span class="font-mono font-bold {row.total < 0 ? 'text-rose-300' : ''}">{row.total}</span>
       </li>
