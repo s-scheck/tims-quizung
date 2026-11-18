@@ -421,6 +421,8 @@ export interface SplashShot {
   shooter: string;
   aimFrom: number;
   wind: Point | null;
+  power: number | null;
+  powerAt: number | null;
   fired: boolean;
 }
 
@@ -446,6 +448,7 @@ export interface SplashBlob {
   seed: number;
   landing: Point;
   path: Point[];
+  aim: number;
   firedAt: number;
   landAt: number;
   bounceAt: number | null;

@@ -139,6 +139,8 @@ export type ClientMsg =
   | { type: 'splash_close' }
   | { type: 'splash_judge'; playerId: string; correct: boolean }
   | { type: 'splash_release' }
+  /** Kraft gestoppt; `at` ist die Serverzeit des Stopps laut Gerät, ab da läuft der Richtungsbalken. */
+  | { type: 'splash_power'; power: number; at: number }
   | { type: 'splash_shoot'; power: number; aim: number }
   | { type: 'splash_skip' }
   | { type: 'splash_next' }

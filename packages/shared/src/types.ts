@@ -920,6 +920,12 @@ export interface SplashShotView {
   shooter: string;
   aimFrom: number;
   wind: Point | null;
+  /**
+   * Gestoppte Kraft und Start des Richtungsbalkens (Serverzeit). Die Balken laufen deterministisch
+   * (`aimBarValue`), so zeigen alle Geräte dasselbe Fadenkreuz, ohne dass laufend gesendet wird.
+   */
+  power: number | null;
+  powerAt: number | null;
   /** Abgefeuert, Kugel unterwegs bzw. gelandet. */
   fired: boolean;
 }
@@ -931,6 +937,8 @@ export interface SplashBlobView {
   seed: number;
   landing: Point;
   path: Point[];
+  /** Gestoppte Richtung 0 bis 1, damit die Kanone nach dem Schuss so stehen bleibt. */
+  aim: number;
   firedAt: number;
   landAt: number;
   bounceAt: number | null;

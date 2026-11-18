@@ -19,6 +19,8 @@ import { baseRound, buildTurnOrder, rememberTarget, suggestionFor, toReveal } fr
 
 /** Kleiner Puffer beim Zielbeginn, falls die Uhr des Geräts minimal vorgeht. */
 const AIM_TOLERANCE_MS = 400;
+/** So weit darf die gemeldete Stoppzeit zurückliegen (Übertragungsweg). */
+const MAX_CLOCK_SKEW_MS = 1500;
 
 export function splashRound(room: Room): SplashRound | null {
   return room.round?.game === 'splash' ? room.round : null;
@@ -128,6 +130,8 @@ export function handleSplashMessage(room: Room, playerId: string, msg: ClientMsg
       return judge(room, playerId, msg.playerId, msg.correct);
     case 'splash_release':
       return hostStep(room, playerId, 'judging', (r) => beginShooting(room, r));
+    case 'splash_power':
+      return lockPower(room, playerId, msg.power, msg.at);
     case 'splash_shoot':
       return shoot(room, playerId, msg.power, msg.aim);
     case 'splash_skip':
@@ -220,6 +224,8 @@ function startShot(room: Room, r: SplashRound, index: number): void {
     shooter,
     aimFrom: room.now + (r.options.countdown ? SPLASH_COUNTDOWN_MS : 0),
     wind: r.options.wind ? windFor(randomSeed(room)) : null,
+    power: null,
+    powerAt: null,
     fired: false,
   };
   r.activePlayerId = shooter;
@@ -237,6 +243,20 @@ function nextShot(room: Room, r: SplashRound): void {
   startShot(room, r, r.step!.shotIndex + 1);
 }
 
+/** Kraft ist gestoppt: ab jetzt läuft für alle sichtbar der Richtungsbalken. */
+function lockPower(room: Room, playerId: string, power: number, at: number): Result {
+  const r = playing(room);
+  const shot = r?.step?.shot;
+  if (!r || r.step?.stage !== 'shooting' || !shot) return fail('invalid_action', 'Gerade wird nicht geschossen');
+  if (shot.shooter !== playerId) return fail('not_your_turn', 'Du bist nicht dran');
+  if (shot.fired || shot.power !== null) return fail('invalid_action', 'Die Kraft steht schon');
+  if (room.now < shot.aimFrom - AIM_TOLERANCE_MS) return fail('invalid_action', 'Der Countdown läuft noch');
+  shot.power = power;
+  // Gerätezeit nur in einem engen Fenster übernehmen.
+  shot.powerAt = Math.min(room.now, Math.max(at, shot.aimFrom, room.now - MAX_CLOCK_SKEW_MS));
+  return OK;
+}
+
 function shoot(room: Room, playerId: string, power: number, aim: number): Result {
   const r = playing(room);
   const step = r?.step;
@@ -246,7 +266,7 @@ function shoot(room: Room, playerId: string, power: number, aim: number): Result
   if (shot.fired) return fail('invalid_action', 'Du hast schon geschossen');
   if (room.now < shot.aimFrom - AIM_TOLERANCE_MS) return fail('invalid_action', 'Der Countdown läuft noch');
 
-  const result = simulateShot({ power, aim, wind: shot.wind, obstacles: r.options.obstacles, firedAt: room.now - r.startedAt });
+  const result = simulateShot({ power: shot.power ?? power, aim, wind: shot.wind, obstacles: r.options.obstacles, firedAt: room.now - r.startedAt });
   const seed = randomSeed(room);
   r.blobs.push({
     id: r.blobs.length + 1,
@@ -254,6 +274,7 @@ function shoot(room: Room, playerId: string, power: number, aim: number): Result
     seed,
     landing: result.landing,
     path: result.path,
+    aim,
     firedAt: room.now,
     landAt: room.now + result.durationMs,
     bounceAt: result.bounceAt,

@@ -200,8 +200,8 @@ describe('Splash!: Ablauf', () => {
     expectOk(wrong(h, c));
     const r = sr(h);
     const [firstShooter, lastShooter] = r.step!.shooters as [string, string];
-    // Volle Kraft fliegt über den oberen Rand.
-    expectOk(fire(h, firstShooter, 1, 0.5));
+    // Volle Kraft ganz nach links fliegt weit neben das Feld.
+    expectOk(fire(h, firstShooter, 1, 0));
     expect(r.blobs[0]!.onField).toBe(false);
     expect(coverageByPlayer(r)[firstShooter] ?? 0).toBe(0);
     land(h);
@@ -209,6 +209,27 @@ describe('Splash!: Ablauf', () => {
     h.room.leave(lastShooter);
     expect(r.step!.stage).toBe('done');
     expect(r.step!.skipped).toEqual([lastShooter]);
+  });
+
+  test('Kraft stoppen: alle sehen sie, der Richtungsbalken startet zur gemeldeten Zeit, die Kraft bleibt', () => {
+    const h = makeHarness(['A', 'B']);
+    const [a, b] = h.ids as [string, string];
+    startSplash(h, { answerSeconds: 0 });
+    expectOk(right(h, a));
+    expectOk(wrong(h, b));
+    const r = sr(h);
+    const shot = r.step!.shot!;
+    expect(h.act(a, { type: 'splash_power', power: 0.4, at: h.room.now })).toMatchObject({ ok: false, message: 'Der Countdown läuft noch' });
+    h.scheduler.advance(SPLASH_COUNTDOWN_MS + 2000);
+    expect(h.act(b, { type: 'splash_power', power: 0.4, at: h.room.now })).toMatchObject({ ok: false, code: 'not_your_turn' });
+    // Uralte Stoppzeit wird auf das Fenster begrenzt, eine aus der Zukunft auf jetzt.
+    expectOk(h.act(a, { type: 'splash_power', power: 0.4, at: 0 }));
+    expect(shot.powerAt).toBe(h.room.now - 1500);
+    expect(viewRound(h, b).step!.shot).toMatchObject({ power: 0.4, powerAt: h.room.now - 1500 });
+    expect(h.act(a, { type: 'splash_power', power: 0.9, at: h.room.now })).toMatchObject({ ok: false });
+    // Der Schuss nimmt die gestoppte Kraft, nicht eine nachträglich andere.
+    expectOk(h.act(a, { type: 'splash_shoot', power: 1, aim: 0.5 }));
+    expect(r.blobs[0]!.onField).toBe(true);
   });
 
   test('Optionen: werden gemerkt, zu wenige Fragen für den Modus nacheinander', () => {

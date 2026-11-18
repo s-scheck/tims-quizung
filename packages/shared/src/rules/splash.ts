@@ -68,8 +68,13 @@ export function aimBarValue(t: number, speed: SplashSpeed): number {
 }
 
 export const SPLASH_COUNTDOWN_MS = 3000;
-export const SPLASH_FLIGHT_MS = 1400;
-export const SPLASH_BOUNCE_MS = 550;
+/** Flugzeit wächst mit der Weite: kurze Schüsse knallen, weite Schüsse fliegen einen Hauch länger. */
+export const SPLASH_FLIGHT_BASE_MS = 300;
+export const SPLASH_FLIGHT_PER_UNIT_MS = 380;
+export const SPLASH_BOUNCE_MS = 320;
+export function flightMs(distance: number): number {
+  return Math.round(SPLASH_FLIGHT_BASE_MS + SPLASH_FLIGHT_PER_UNIT_MS * distance);
+}
 /** Pause nach der Landung, bevor der Nächste zielt (Reaktion der Figur). */
 export const SPLASH_AFTER_LAND_MS = 1600;
 
@@ -92,7 +97,7 @@ export function seededRandom(seed: number): () => number {
 export const CANNON: Point = { x: 0.5, y: 1.06 };
 export const AIM_MAX_DEG = 60;
 export const RANGE_MIN = 0.12;
-export const RANGE_MAX = 1.35;
+export const RANGE_MAX = 1.2;
 
 /** Ziel ohne Wind und Hindernisse: `power` und `aim` jeweils 0 bis 1, aim 0,5 ist geradeaus. */
 export function aimToTarget(power: number, aim: number): Point {
@@ -174,6 +179,7 @@ export function simulateShot(input: ShotInput): ShotResult {
   const target = input.wind ? { x: aimed.x + input.wind.x * dist, y: aimed.y + input.wind.y * dist } : aimed;
   const dx = target.x - CANNON.x;
   const dy = target.y - CANNON.y;
+  const flight = flightMs(Math.hypot(dx, dy));
 
   // Die Kugel kreuzt die Balkenhöhen von unten nach oben, der erste getroffene Balken lenkt ab.
   const rows = obstaclesAt(input.obstacles, 0).map((o, i) => ({ y: o.y, i })).sort((a, b) => b.y - a.y);
@@ -182,7 +188,7 @@ export function simulateShot(input: ShotInput): ShotResult {
     const s = (row.y - CANNON.y) / dy;
     if (s <= 0 || s >= 1) continue;
     const hit = { x: CANNON.x + dx * s, y: row.y };
-    const bar = obstaclesAt(input.obstacles, input.firedAt + s * SPLASH_FLIGHT_MS)[row.i]!;
+    const bar = obstaclesAt(input.obstacles, input.firedAt + s * flight)[row.i]!;
     if (Math.abs(hit.x - bar.x) > bar.w / 2 + BALL_RADIUS) continue;
     // Abprall: zurück nach unten, seitlich je nachdem, wo die Kugel den Balken trifft; halbe Restweite.
     const len = Math.hypot(dx, dy);
@@ -195,12 +201,12 @@ export function simulateShot(input: ShotInput): ShotResult {
     return {
       path: [CANNON, hit, landing],
       landing,
-      durationMs: s * SPLASH_FLIGHT_MS + SPLASH_BOUNCE_MS,
-      bounceAt: (s * SPLASH_FLIGHT_MS) / (s * SPLASH_FLIGHT_MS + SPLASH_BOUNCE_MS),
+      durationMs: Math.round(s * flight) + SPLASH_BOUNCE_MS,
+      bounceAt: Math.round(s * flight) / (Math.round(s * flight) + SPLASH_BOUNCE_MS),
       onField: isOnField(landing),
     };
   }
-  return { path: [CANNON, target], landing: target, durationMs: SPLASH_FLIGHT_MS, bounceAt: null, onField: isOnField(target) };
+  return { path: [CANNON, target], landing: target, durationMs: flight, bounceAt: null, onField: isOnField(target) };
 }
 
 // ------------------------------------------------------------------- Fleck

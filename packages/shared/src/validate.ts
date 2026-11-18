@@ -226,6 +226,8 @@ export function isClientMsg(x: unknown): x is ClientMsg {
       );
     case 'splash_judge':
       return isStr(x.playerId, 100) && typeof x.correct === 'boolean';
+    case 'splash_power':
+      return isUnit(x.power) && typeof x.at === 'number' && Number.isFinite(x.at);
     case 'splash_shoot':
       return isUnit(x.power) && isUnit(x.aim);
     case 'splash_close':

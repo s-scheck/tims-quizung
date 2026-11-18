@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { RoomView, SplashRoundView } from '@quiz/shared';
+  import { aimBarValue, type RoomView, type SplashRoundView } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerColor, playerName } from '../lib/format.ts';
   import { figureById, type Pose } from '../lib/avatar.ts';
@@ -9,7 +9,6 @@
   import EndCategoryButton from './EndCategoryButton.svelte';
   import PlayerHead from './PlayerHead.svelte';
   import SplashField from './visual/SplashField.svelte';
-  import AimBar from './visual/AimBar.svelte';
 
   let { view, round, readonly = false }: { view: RoomView; round: SplashRoundView; readonly?: boolean } = $props();
 
@@ -31,25 +30,49 @@
   const shot = $derived(step?.shot ?? null);
   const myShot = $derived(!!me && !!shot && shot.shooter === me && !shot.fired && playing);
   const ready = $derived(!!shot && clock.now >= shot.aimFrom);
-  let aimPhase = $state<'power' | 'aim' | 'sent'>('power');
-  let power = 0;
-  let liveAim = $state<number | null>(null);
+
+  // Beide Balken laufen deterministisch nach Serverzeit: Kraft ab `aimFrom`, Richtung ab dem Kraft-Stopp.
+  // So sehen alle dasselbe Fadenkreuz. Der Schütze nimmt seine eigenen Werte sofort, ohne auf den Server zu warten.
+  let localPower = $state<{ power: number; at: number } | null>(null);
+  let sentAim = $state<number | null>(null);
   const shotKey = $derived(step && shot ? `${step.no}:${step.shotIndex}` : '');
   $effect(() => {
     void shotKey;
-    aimPhase = 'power';
-    liveAim = null;
+    localPower = null;
+    sentAim = null;
   });
 
-  function stopPower(v: number) {
-    power = v;
-    aimPhase = 'aim';
+  const lockedPower = $derived(
+    myShot && localPower ? localPower : shot?.power != null && shot.powerAt != null ? { power: shot.power, at: shot.powerAt } : null,
+  );
+  const aiming = $derived.by(() => {
+    if (!shot || shot.fired || !playing || !ready) return null;
+    const speed = round.options.speed;
+    if (!lockedPower) return { power: aimBarValue(clock.now - shot.aimFrom, speed), aim: null };
+    return { power: lockedPower.power, aim: myShot && sentAim !== null ? sentAim : aimBarValue(Math.max(0, clock.now - lockedPower.at), speed) };
+  });
+  const aimStage = $derived(!myShot || !ready ? null : !lockedPower ? 'power' : sentAim === null ? 'aim' : 'sent');
+
+  function stop() {
+    if (!shot || !myShot || !ready) return;
+    const t = client.serverNow();
+    const speed = round.options.speed;
+    if (!lockedPower) {
+      const power = aimBarValue(t - shot.aimFrom, speed);
+      localPower = { power, at: t };
+      client.send({ type: 'splash_power', power, at: t });
+    } else if (sentAim === null) {
+      sentAim = aimBarValue(Math.max(0, t - lockedPower.at), speed);
+      client.send({ type: 'splash_shoot', power: lockedPower.power, aim: sentAim });
+    }
   }
 
-  function stopAim(v: number) {
-    liveAim = v;
-    aimPhase = 'sent';
-    client.send({ type: 'splash_shoot', power, aim: v });
+  function onKey(e: KeyboardEvent) {
+    if (!aimStage || aimStage === 'sent') return;
+    if (e.code === 'Space' || e.key === 'Enter') {
+      e.preventDefault();
+      stop();
+    }
   }
 
   // Figur des Schützen an der Kanone: bereit, gespannt beim Flug, dann Jubel oder Enttäuschung.
@@ -66,7 +89,7 @@
     if (!round.options.reactions) return 'idle';
     return b.onField ? 'cheer' : 'sad';
   });
-  const shooterFigure = $derived(shot ? { parts: figureById(view, shot.shooter) ?? {}, pose: shooterPose } : null);
+  const shooterFigure = $derived(shot ? { id: shot.shooter, parts: figureById(view, shot.shooter) ?? {}, pose: shooterPose } : null);
 
   // --------------------------------------------------------------- Texte
 
@@ -93,9 +116,11 @@
   const isLast = $derived(!!step && step.no >= round.totalSteps);
 </script>
 
+<svelte:window onkeydown={onKey} />
+
 <div class="{readonly ? 'grid grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start gap-6' : 'flex flex-col gap-3'}">
   <!-- Feld: am Fernseher links groß, am Handy unter der Frage -->
-  <div class={readonly ? 'fit-media' : 'order-2'}>
+  <div class={readonly ? 'fit-media' : myShot ? 'order-1' : 'order-2'}>
     <SplashField
       class="mx-auto w-full {readonly ? '' : 'max-w-md'}"
       style={readonly ? 'max-height: calc(80dvh * var(--fit-media, 1)); width: auto; height: calc(80dvh * var(--fit-media, 1))' : undefined}
@@ -105,12 +130,31 @@
       obstacles={round.options.obstacles}
       wind={shot?.wind ?? null}
       shooter={shooterFigure}
-      aim={myShot && aimPhase === 'aim' ? liveAim : null}
+      {aiming}
       countdownUntil={shot && !shot.fired && round.options.countdown ? shot.aimFrom : null}
     />
+    <!-- Zielen am eigenen Handy: ein großer Knopf direkt unter dem Feld -->
+    {#if myShot}
+      <div class="mx-auto mt-3 max-w-md">
+        {#if !ready}
+          <p class="py-4 text-center text-lg font-bold text-amber-200">Mach dich bereit …</p>
+        {:else}
+          <button
+            class="btn-primary w-full py-5 text-2xl"
+            disabled={aimStage === 'sent'}
+            onclick={stop}
+          >
+            {aimStage === 'power' ? 'Kraft stoppen' : 'Feuer!'}
+          </button>
+          <p class="mt-1.5 text-center text-xs text-slate-500">
+            {aimStage === 'power' ? 'Der Balken rechts zeigt die Weite.' : aimStage === 'aim' ? 'Stoppt die Richtung. Das Fadenkreuz zeigt das Ziel ohne Wind.' : ''}
+          </p>
+        {/if}
+      </div>
+    {/if}
   </div>
 
-  <div class="space-y-3 {readonly ? 'text-xl' : 'order-1'}">
+  <div class="space-y-3 {readonly ? 'text-xl' : myShot ? 'order-2' : 'order-1'}">
     {#if step}
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
@@ -194,21 +238,6 @@
               <PlayerHead {view} {id} size={16} />{playerName(view, id)}
             </span>
           {/each}
-        </div>
-      {/if}
-
-      <!-- Zielen am eigenen Handy -->
-      {#if myShot}
-        <div class="card space-y-3 border-amber-400/50">
-          {#if !ready}
-            <p class="text-center font-bold text-amber-200">Mach dich bereit …</p>
-          {:else if aimPhase === 'power'}
-            {#key shotKey}<AimBar kind="power" speed={round.options.speed} onStop={stopPower} />{/key}
-          {:else if aimPhase === 'aim'}
-            {#key shotKey}<AimBar kind="aim" speed={round.options.speed} onStop={stopAim} onChange={(v) => (liveAim = v)} />{/key}
-          {:else}
-            <p class="text-center font-bold text-amber-200">Feuer!</p>
-          {/if}
         </div>
       {/if}
 

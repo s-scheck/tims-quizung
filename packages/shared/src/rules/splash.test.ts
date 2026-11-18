@@ -14,7 +14,7 @@ import {
   SPLASH_AREA_JITTER,
   SPLASH_BASE_AREA,
   SPLASH_DEFAULTS,
-  SPLASH_FLIGHT_MS,
+  flightMs,
 } from './splash.ts';
 
 describe('Splash-Regeln', () => {
@@ -35,7 +35,10 @@ describe('Splash-Regeln', () => {
     expect(far.onField).toBe(false);
     const near = simulateShot({ power: 0.5, aim: 0.5, wind: null, obstacles: 0, firedAt: 0 });
     expect(near.onField).toBe(true);
-    expect(near.durationMs).toBe(SPLASH_FLIGHT_MS);
+    expect(near.durationMs).toBe(flightMs(CANNON.y - near.landing.y));
+    // Weite Schüsse fliegen länger, aber nie träge.
+    expect(far.durationMs).toBeGreaterThan(near.durationMs);
+    expect(far.durationMs).toBeLessThan(900);
   });
 
   test('Wind verschiebt die Landung', () => {
@@ -51,7 +54,7 @@ describe('Splash-Regeln', () => {
     const s = (0.5 - CANNON.y) / (target.y - CANNON.y);
     let firedAt = 0;
     for (let t = 0; t < 4000; t += 5) {
-      if (Math.abs(obstaclesAt(1, t + s * SPLASH_FLIGHT_MS)[0]!.x - 0.5) < 0.01) {
+      if (Math.abs(obstaclesAt(1, t + s * flightMs(CANNON.y - target.y))[0]!.x - 0.5) < 0.01) {
         firedAt = t;
         break;
       }
