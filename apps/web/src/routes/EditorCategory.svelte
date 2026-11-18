@@ -395,7 +395,7 @@
       <div class="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 class="text-lg font-black">
-            {draft.kind === 'pairs' ? 'Paare' : draft.kind === 'places' ? 'Orte' : draft.kind === 'events' ? 'Ereignisse' : draft.kind === 'prompts' ? 'Aufgaben' : draft.kind === 'picture' ? 'Felder' : draft.kind === 'faces' ? 'Personen' : draft.kind === 'stills' ? 'Fotos' : 'Einträge'}
+            {draft.kind === 'pairs' ? 'Paare' : draft.kind === 'places' ? 'Orte' : draft.kind === 'events' ? 'Ereignisse' : draft.kind === 'prompts' ? 'Aufgaben' : draft.kind === 'picture' ? 'Felder' : draft.kind === 'faces' ? 'Personen' : draft.kind === 'stills' ? 'Fotos' : draft.kind === 'questions' ? 'Fragen' : 'Einträge'}
             <span class="text-slate-500">{filledRows}</span>
           </h2>
           <p class="text-xs text-slate-500">
@@ -406,6 +406,7 @@
             {:else if draft.kind === 'picture'}Bild hochladen, dann Felder im Bild aufziehen und zu jedem die Antwort eintragen. Die Nummer folgt der Reihenfolge der Liste.
             {:else if draft.kind === 'faces'}Je Person ein Foto. Aliasse (mit Komma) helfen dem Host beim Prüfen der Tipps. Bilder vorher verkleinern, höchstens 8 MB.
             {:else if draft.kind === 'stills'}Genau fünf Fotos, Foto 1 ist das schwerste. Punkte bekommt, wer den Film bei diesem Foto erkennt (leer heißt 5, 4, 3, 2, 1). Dateien nicht nach dem Film benennen, der Name steckt in der Bildadresse. Höchstens 8 MB je Foto.
+            {:else if draft.kind === 'questions'}Ohne Falschantworten ist die Frage frei, Aliasse (mit Komma) helfen beim Prüfen. Mit allen drei Falschantworten wird sie zu a/b/c/d, die Reihenfolge wird im Spiel gemischt.
             {:else if needsSorting}Die Reihenfolge ist der Platz: Platz 1 zuerst. Zahlen wie "17.098.246" oder "1.450,9" gehen.
             {:else}Reihenfolge egal, Werte müssen eindeutig sein. Zahlen wie "17.098.246" oder "1.450,9" gehen.{/if}
           </p>

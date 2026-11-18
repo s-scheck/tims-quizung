@@ -1,4 +1,5 @@
 import type { ClientMsg } from './protocol.ts';
+import { isSplashOptions } from './rules/splash.ts';
 import {
   FACE_COLS_MAX,
   FACE_COLS_MIN,
@@ -125,6 +126,10 @@ function isInt(x: unknown): x is number {
   return typeof x === 'number' && Number.isInteger(x);
 }
 
+function isUnit(x: unknown): x is number {
+  return typeof x === 'number' && Number.isFinite(x) && x >= 0 && x <= 1;
+}
+
 /** Strukturelle Prüfung einer eingehenden Nachricht. Fachliche Prüfungen macht der Raum. */
 export function isClientMsg(x: unknown): x is ClientMsg {
   if (!isRecord(x) || typeof x.type !== 'string') return false;
@@ -180,7 +185,8 @@ export function isClientMsg(x: unknown): x is ClientMsg {
         (x.count === undefined || isKidsCount(x.count)) &&
         (x.thinkSeconds === undefined || isThinkSeconds(x.thinkSeconds)) &&
         (x.penalty === undefined || isKidsPenalty(x.penalty)) &&
-        (x.allGuess === undefined || typeof x.allGuess === 'boolean')
+        (x.allGuess === undefined || typeof x.allGuess === 'boolean') &&
+        (x.splash === undefined || isSplashOptions(x.splash))
       );
     case 'kids_show':
     case 'kids_buzz':
@@ -212,6 +218,21 @@ export function isClientMsg(x: unknown): x is ClientMsg {
       return isInt(x.deezer) && x.deezer > 0 && isStr(x.title, 200) && x.title.trim().length > 0 && isStr(x.artist, 200) && x.artist.trim().length > 0;
     case 'song_play':
       return isInt(x.offset) && x.offset >= 0 && x.offset < SONG_PREVIEW_SECONDS && isInt(x.seconds) && x.seconds >= 1 && x.seconds <= SONG_PREVIEW_SECONDS;
+    case 'splash_answer':
+      return (
+        (x.text === undefined) !== (x.choice === undefined) &&
+        (x.text === undefined || (isStr(x.text, GUESS_MAX_LENGTH) && x.text.trim().length > 0)) &&
+        (x.choice === undefined || (isInt(x.choice) && x.choice >= 0 && x.choice <= 3))
+      );
+    case 'splash_judge':
+      return isStr(x.playerId, 100) && typeof x.correct === 'boolean';
+    case 'splash_shoot':
+      return isUnit(x.power) && isUnit(x.aim);
+    case 'splash_close':
+    case 'splash_release':
+    case 'splash_skip':
+    case 'splash_next':
+      return true;
     case 'song_guess':
       return isStr(x.title, GUESS_MAX_LENGTH) && isStr(x.artist, GUESS_MAX_LENGTH) && (x.title.trim().length > 0 || x.artist.trim().length > 0);
     case 'song_correct':

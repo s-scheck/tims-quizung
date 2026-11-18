@@ -31,6 +31,13 @@
     type RiskDuplicates,
     type RiskMissPoints,
     type RoomView,
+    SPLASH_ANSWER_SECONDS,
+    SPLASH_COUNT_MAX,
+    SPLASH_MAX_OBSTACLES,
+    SPLASH_SPEEDS,
+    type SplashMode,
+    type SplashOptions,
+    type SplashSpeed,
   } from '@quiz/shared';
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
@@ -109,6 +116,14 @@
   /** Die Bedenkzeit, sofern sie im erlaubten Rahmen liegt; das Zahlenfeld lässt auch Unsinn zu. */
   const stillsThinkValid = $derived(isThinkSeconds(stillsThink) ? stillsThink : null);
   const isMorse = $derived(gameId === 'morse');
+  const isSplash = $derived(gameId === 'splash');
+  /** Splash!: zuletzt gewählte Einstellungen als Start, danach gehören sie dem Host. */
+  let splash = $state<SplashOptions>(untrack(() => ({ ...view.splashOptions })));
+  const SPLASH_MODE_OPTIONS: { mode: SplashMode; label: string; hint: string }[] = [
+    { mode: 'together', label: 'Gleichzeitig', hint: 'Alle bekommen dieselbe Frage. Die Richtigen schießen nacheinander, der Schnellste zuletzt.' },
+    { mode: 'turns', label: 'Nacheinander', hint: 'Reihum bekommt jeder eine eigene Frage, alle schauen zu. Richtig heißt schießen.' },
+  ];
+  const SPEED_LABELS: Record<SplashSpeed, string> = { slow: 'Langsam', medium: 'Mittel', fast: 'Schnell' };
   let morseWord = $state('');
   const morseNormalized = $derived(normalizeMorseText(morseWord));
   const morseOk = $derived(morseNormalized.length > 0 && morseNormalized.length <= MORSE_WORD_MAX);
@@ -141,6 +156,7 @@
       ...(hasShow ? { reveal } : {}),
       ...(isFaces ? { effect: faceEffect, ...(faceEffect === 'tiles' ? { cols: faceCols } : { level: faceLevel }) } : {}),
       ...(isKids ? { mode: kidsMode, count: kidsCount, ...(kidsMode === 'buzz' ? { thinkSeconds: kidsThink, penalty: kidsPenalty } : {}) } : {}),
+      ...(isSplash ? { splash: { ...splash } } : {}),
       ...(isStills ? { mode: stillsMode, allGuess: stillsAllGuess, ...(stillsMode === 'buzz' && stillsThinkValid !== null ? { thinkSeconds: stillsThinkValid } : {}) } : {}),
       ...(targetId ? { targetId } : {}),
     });
@@ -228,6 +244,81 @@
             <input type="range" class="w-full accent-[var(--color-indigo-500)]" min="0" max={FACE_LEVEL_MAX} step="1" bind:value={faceLevel} />
           </label>
         {/if}
+      </div>
+    {/if}
+    {#if isSplash}
+      <div class="card space-y-4">
+        <div>
+          <p class="font-semibold">Modus</p>
+          <p class="text-xs text-slate-500">Gilt für diese Runde. Eine Frage ist frei oder a/b/c/d, je nachdem wie sie in der Liste steht.</p>
+        </div>
+        <ModeChoice options={SPLASH_MODE_OPTIONS} value={splash.mode} onChange={(m) => (splash.mode = m)} />
+
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p class="font-semibold">{splash.mode === 'turns' ? 'Fragen je Spieler' : 'Fragen'}</p>
+            <p class="text-xs text-slate-500">Höchstens so viele, wie die Liste hergibt.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="btn-secondary px-3 py-1" disabled={splash.count <= 1} onclick={() => (splash.count = Math.max(1, splash.count - 1))}>−</button>
+            <span class="w-10 text-center font-mono text-xl font-black">{splash.count}</span>
+            <button class="btn-secondary px-3 py-1" disabled={splash.count >= SPLASH_COUNT_MAX} onclick={() => (splash.count = Math.min(SPLASH_COUNT_MAX, splash.count + 1))}>+</button>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p class="font-semibold">Antwortzeit</p>
+            <p class="text-xs text-slate-500">Ohne Limit schließt du die Frage selbst. Haben alle geantwortet, geht es sofort weiter.</p>
+          </div>
+          <div class="flex gap-2">
+            {#each SPLASH_ANSWER_SECONDS as s (s)}
+              <button
+                class="rounded-xl border px-3 py-2 text-sm font-semibold transition {splash.answerSeconds === s ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+                onclick={() => (splash.answerSeconds = s)}>{s === 0 ? 'Aus' : `${s} s`}</button
+              >
+            {/each}
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p class="font-semibold">Tempo der Zielbalken</p>
+            <p class="text-xs text-slate-500">Für Kraft und Richtung. Geschossen wird nie von selbst.</p>
+          </div>
+          <div class="flex gap-2">
+            {#each SPLASH_SPEEDS as sp (sp)}
+              <button
+                class="rounded-xl border px-3 py-2 text-sm font-semibold transition {splash.speed === sp ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+                onclick={() => (splash.speed = sp)}>{SPEED_LABELS[sp]}</button
+              >
+            {/each}
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <p class="font-semibold">Extras</p>
+          <div class="flex flex-wrap gap-2">
+            {#each [['countdown', 'Countdown 3-2-1'], ['wind', 'Wind'], ['reactions', 'Figur reagiert']] as [key, label] (key)}
+              {@const on = splash[key as 'countdown' | 'wind' | 'reactions']}
+              <button
+                class="rounded-xl border px-3 py-2 text-sm font-semibold transition {on ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+                onclick={() => (splash[key as 'countdown' | 'wind' | 'reactions'] = !on)}>{on ? '✓ ' : ''}{label}</button
+              >
+            {/each}
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="text-sm text-slate-400">Bewegliche Hindernisse (Kugeln prallen ab)</p>
+            <div class="flex gap-2">
+              {#each Array.from({ length: SPLASH_MAX_OBSTACLES + 1 }, (_, i) => i) as n (n)}
+                <button
+                  class="rounded-xl border px-3 py-2 text-sm font-semibold transition {splash.obstacles === n ? 'border-indigo-500 bg-indigo-500/15 text-indigo-300' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+                  onclick={() => (splash.obstacles = n)}>{n === 0 ? 'Keine' : n}</button
+                >
+              {/each}
+            </div>
+          </div>
+        </div>
       </div>
     {/if}
     {#if isStills}
@@ -504,7 +595,7 @@
             {#if c.draft}
               <span class="text-xs text-amber-300">Noch nicht spielbar: {c.draft}</span>
             {:else}
-              <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : c.games.includes('bluff') ? 'Aufgaben' : c.games.includes('picture') ? 'Felder' : c.games.includes('faces') || c.games.includes('kids') ? 'Personen' : c.games.includes('stills') ? 'Fotos' : c.games.includes('songs') ? 'Songs' : 'Karten'}</span>
+              <span class="text-xs text-slate-500">{c.count} {c.games.includes('map') ? 'Ziele' : c.games.includes('timeline') ? 'Ereignisse' : c.games.includes('risk') ? 'Plätze' : c.games.includes('bluff') ? 'Aufgaben' : c.games.includes('picture') ? 'Felder' : c.games.includes('faces') || c.games.includes('kids') ? 'Personen' : c.games.includes('stills') ? 'Fotos' : c.games.includes('songs') ? 'Songs' : c.games.includes('splash') ? 'Fragen' : 'Karten'}</span>
             {/if}
           </button>
         {/each}

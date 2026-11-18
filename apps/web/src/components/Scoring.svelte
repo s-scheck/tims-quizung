@@ -22,6 +22,8 @@
   let inputs = $state<Record<string, number | string | null | undefined>>(
     untrack(() => {
       const r = view.round;
+      // Splash!: die sichtbare Fläche in Prozent, gerundet, als Vorschlag.
+      if (r?.game === 'splash') return Object.fromEntries(scoredPlayers(view).filter((p) => r.turnOrder.includes(p.id)).map((p) => [p.id, Math.round(r.coverage?.[p.id] ?? 0)]));
       if (r?.game !== 'stills') return {};
       return Object.fromEntries(scoredPlayers(view).map((p) => [p.id, r.points[p.id] ?? 0]));
     }),
@@ -47,6 +49,7 @@
     }
     if (r.game === 'risk') return `${r.totals[id] ?? 0} Kategorie-Punkte`;
     if (r.game === 'songs') return `${r.totals[id] ?? 0} Punkte in der Playlist`;
+    if (r.game === 'splash') return `${(r.coverage?.[id] ?? 0).toFixed(1)} % Fläche`;
     if (r.game === 'bluff') return `${r.points?.[id] ?? 0} Spielpunkte`;
     if (r.game === 'faces') {
       const s = r.solved.find((x) => x.playerId === id);

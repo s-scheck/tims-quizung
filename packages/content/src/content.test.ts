@@ -439,3 +439,43 @@ describe('validateCategory (Film)', () => {
     expect(() => validateCategory({ id: 'x', title: 'T', question: 'Q', topLabel: 'a', bottomLabel: 'b', order: 'desc', games: ['stills'], items: [] }, 'f')).toThrow(/stills/);
   });
 });
+
+describe('Fragenlisten', () => {
+  const base = { id: 'frage-test', title: 'Test', games: ['splash'] };
+
+  test('Startlisten: mindestens drei, frei und a/b/c/d gemischt', () => {
+    const lists = loadCategories().filter((c) => c.kind === 'questions');
+    expect(lists.length).toBeGreaterThanOrEqual(3);
+    for (const c of lists) {
+      if (c.kind !== 'questions') continue;
+      expect(c.questions.some((q) => q.wrong)).toBe(true);
+      expect(c.questions.some((q) => !q.wrong)).toBe(true);
+    }
+  });
+
+  test('frei ohne Falschantworten, a/b/c/d mit genau drei verschiedenen', () => {
+    const c = validateCategory(
+      {
+        ...base,
+        questions: [
+          { q: 'Frei?', answer: 'Ja', aliases: ['jo', ' '] },
+          { q: 'Wahl?', answer: 'A', wrong: ['B', 'C', 'D'] },
+        ],
+      },
+      'f.json',
+    );
+    if (c.kind !== 'questions') throw new Error('falsche Art');
+    expect(c.question).toBe('Quizfragen');
+    expect(c.questions[0]).toEqual({ q: 'Frei?', answer: 'Ja', aliases: ['jo'] });
+    expect(c.questions[1]!.wrong).toEqual(['B', 'C', 'D']);
+  });
+
+  test('lehnt falsche Anzahl, doppelte Antworten, doppelte Fragen und fremde Spiele ab', () => {
+    const one = { q: 'Eins?', answer: '1' };
+    expect(() => validateCategory({ ...base, questions: [one, { q: 'Zwei?', answer: 'A', wrong: ['B', 'C'] }] }, 'f.json')).toThrow(CategoryValidationError);
+    expect(() => validateCategory({ ...base, questions: [one, { q: 'Zwei?', answer: 'A', wrong: ['B', 'a', 'C'] }] }, 'f.json')).toThrow(/unterscheiden/);
+    expect(() => validateCategory({ ...base, questions: [one, { ...one }] }, 'f.json')).toThrow(/doppelt/);
+    expect(() => validateCategory({ ...base, games: ['sort'], questions: [one, { q: 'Zwei?', answer: '2' }] }, 'f.json')).toThrow(/splash/);
+    expect(() => validateCategory({ id: 'x', title: 'X', order: 'asc', games: ['splash'], items: [] }, 'f.json')).toThrow(/questions/);
+  });
+});

@@ -17,6 +17,7 @@ export const EDITOR_GAMES: { id: GameId; name: string; kind: Kind; hint: string 
   { id: 'faces', name: 'Wer ist das?', kind: 'faces', hint: 'Mindestens eine Person mit Foto, jede Runde zeigt eine. Aliasse helfen beim Prüfen der Tipps. Der Mehrfach-Upload legt Zeilen aus Dateinamen an.' },
   { id: 'kids', name: 'Kinderpromis', kind: 'faces', hint: 'Kinderfotos von Promis, gleiches Format wie bei Wer ist das?. Pro Runde zeigt der Host mehrere Personen nacheinander. Der Mehrfach-Upload legt Zeilen aus Dateinamen an.' },
   { id: 'songs', name: 'Songs erraten', kind: 'songs', hint: 'Eine Playlist mit Titel, Interpret und Deezer-ID je Song. Die ID steht in der Deezer-Adresse eines Songs (deezer.com/track/…). Aliasse helfen beim Erkennen der Tipps.' },
+  { id: 'splash', name: 'Splash!', kind: 'questions', hint: 'Quizfragen. Ohne Falschantworten ist eine Frage frei zu beantworten (Aliasse helfen beim Prüfen), mit genau drei Falschantworten wird sie zu a/b/c/d. Beides darf gemischt sein.' },
   { id: 'stills', name: 'Filmfotos', kind: 'stills', hint: 'Ein Film mit genau fünf Fotos, vom schwersten zum leichtesten, und den Punkten je Foto. Aliasse helfen beim Prüfen der Tipps. Den Titel sieht nur der Host.' },
 ];
 
@@ -86,6 +87,14 @@ export const COLUMNS: Record<Kind, Column[]> = {
     { key: 'titleAliases', label: 'Titel-Aliasse', type: 'list', optional: true, placeholder: 'mit Komma getrennt', width: 'min-w-40' },
     { key: 'artistAliases', label: 'Interpret-Aliasse', type: 'list', optional: true, placeholder: 'mit Komma getrennt', width: 'min-w-40' },
   ],
+  questions: [
+    { key: 'q', label: 'Frage', type: 'text', placeholder: 'z. B. Wie hoch ist die Zugspitze?', width: 'min-w-72' },
+    { key: 'answer', label: 'Richtige Antwort', type: 'text', placeholder: 'z. B. 2962 m', width: 'min-w-36' },
+    { key: 'aliases', label: 'Aliasse', type: 'list', optional: true, placeholder: 'mit Komma getrennt', width: 'min-w-36' },
+    { key: 'wrong1', label: 'Falsch 1', type: 'text', optional: true, placeholder: 'leer = freie Antwort', width: 'min-w-32' },
+    { key: 'wrong2', label: 'Falsch 2', type: 'text', optional: true, placeholder: 'optional', width: 'min-w-32' },
+    { key: 'wrong3', label: 'Falsch 3', type: 'text', optional: true, placeholder: 'optional', width: 'min-w-32' },
+  ],
 };
 
 export const DECOY_COLUMNS: Column[] = [{ key: 'text', label: 'Köder', type: 'text', placeholder: 'z. B. Lettland', width: 'min-w-44' }];
@@ -152,6 +161,11 @@ export const FIELDS: Record<Kind, Field[]> = {
     { key: 'answer', label: 'Filmtitel (Lösung)', type: 'text', placeholder: 'Der Pate' },
     { key: 'aliases', label: 'Aliasse', type: 'text', optional: true, placeholder: 'mit Komma getrennt, z. B. The Godfather' },
     { key: 'source', label: 'Quelle', type: 'text', optional: true, placeholder: 'eigene Screenshots' },
+  ],
+  questions: [
+    { key: 'title', label: 'Titel', type: 'text', placeholder: 'Allgemeinwissen' },
+    { key: 'question', label: 'Untertitel', type: 'text', optional: true, placeholder: 'Quizfragen quer durchs Leben' },
+    { key: 'source', label: 'Quelle', type: 'text', optional: true },
   ],
   songs: [
     { key: 'title', label: 'Titel', type: 'text', placeholder: '80er Hits' },
@@ -227,6 +241,7 @@ export function kindOfRaw(raw: Raw): Kind {
   if ('faces' in raw) return 'faces';
   if ('stills' in raw) return 'stills';
   if ('songs' in raw) return 'songs';
+  if ('questions' in raw) return 'questions';
   return 'ranked';
 }
 
@@ -291,6 +306,19 @@ export function draftFromRaw(raw: Raw): Draft {
         titleAliases: Array.isArray(s.titleAliases) ? s.titleAliases.join(', ') : '',
         artistAliases: Array.isArray(s.artistAliases) ? s.artistAliases.join(', ') : '',
       }));
+      break;
+    case 'questions':
+      rows = arr(raw.questions).map((x) => {
+        const wrong = Array.isArray(x.wrong) ? x.wrong.map(str) : [];
+        return {
+          q: str(x.q),
+          answer: str(x.answer),
+          aliases: Array.isArray(x.aliases) ? x.aliases.join(', ') : '',
+          wrong1: wrong[0] ?? '',
+          wrong2: wrong[1] ?? '',
+          wrong3: wrong[2] ?? '',
+        };
+      });
       break;
   }
   const decoys = kind === 'pairs' && Array.isArray(raw.decoys) ? raw.decoys.map((d) => ({ text: str(d) })) : [];
@@ -423,6 +451,17 @@ export function draftToRaw(draft: Draft, id: string, base: Raw = {}): Raw {
         return song;
       });
       break;
+    case 'questions':
+      raw.games = ['splash'];
+      raw.questions = rows.map((r) => {
+        const item: Raw = { q: (r.q ?? '').trim(), answer: (r.answer ?? '').trim() };
+        const aliases = parseAliases(r.aliases);
+        if (aliases.length) item.aliases = aliases;
+        const wrong = [r.wrong1, r.wrong2, r.wrong3].map((w) => (w ?? '').trim());
+        if (wrong.some(Boolean)) item.wrong = wrong.filter(Boolean);
+        return item;
+      });
+      break;
     case 'stills': {
       raw.games = ['stills'];
       const aliases = parseAliases(draft.meta.aliases);
@@ -462,7 +501,7 @@ export function validate(raw: Raw, id: string): string | null {
 export function humanize(msg: string): string {
   return msg
     .replace(/\bfields\[(\d+)\]/g, (_, n) => `Feld ${Number(n) + 1}`)
-    .replace(/\b(?:items|pairs|places|events|prompts|faces)\[(\d+)\]/g, (_, n) => `Zeile ${Number(n) + 1}`)
+    .replace(/\b(?:items|pairs|places|events|prompts|faces|questions)\[(\d+)\]/g, (_, n) => `Zeile ${Number(n) + 1}`)
     .replace(/\bstills\[(\d+)\]/g, (_, n) => `Foto ${Number(n) + 1}`)
     .replace(/\bvalue ist keine Zahl/, 'Wert ist keine Zahl')
     .replace(/\blat\/lng ungültig/, 'Koordinaten ungültig');
@@ -495,6 +534,11 @@ export function cellIssues(kind: Kind, rows: Row[]): Record<string, string>[] {
         if (!Number.isInteger(y)) out[c.key] = 'kein Jahr';
         else if (y === 0) out[c.key] = 'ein Jahr 0 gibt es nicht';
       }
+    }
+    // a/b/c/d braucht alle drei Falschantworten oder keine.
+    if (kind === 'questions') {
+      const wrong = ['wrong1', 'wrong2', 'wrong3'];
+      if (wrong.some((key) => (r[key] ?? '').trim())) for (const key of wrong) if (!(r[key] ?? '').trim()) out[key] = 'für a/b/c/d alle drei';
     }
     const k = (r[first] ?? '').trim().toLowerCase();
     // Zwei Felder dürfen dieselbe Antwort haben (zwei Fenster), sonst sind Namen eindeutig.
@@ -531,7 +575,7 @@ export function rowsFromCells(cells: string[][], columns: Column[]): Row[] {
 
 // -------------------------------------------------------------------- ids
 
-const PREFIX: Partial<Record<GameId, string>> = { topx: 'topx-', risk: 'risk-', match: 'match-', map: 'map-', timeline: 'zeit-', bluff: 'bluff-', picture: 'bild-', faces: 'promi-', kids: 'kind-', stills: 'film-', songs: 'songs-' };
+const PREFIX: Partial<Record<GameId, string>> = { topx: 'topx-', risk: 'risk-', match: 'match-', map: 'map-', timeline: 'zeit-', bluff: 'bluff-', picture: 'bild-', faces: 'promi-', kids: 'kind-', stills: 'film-', songs: 'songs-', splash: 'frage-' };
 
 /** Neue id aus dem Titel, mit dem üblichen Präfix des Spiels, eindeutig gegenüber `taken`. */
 export function makeId(title: string, game: GameId, taken: Set<string>): string {

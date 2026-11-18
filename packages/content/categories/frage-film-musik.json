@@ -1,0 +1,28 @@
+{
+  "id": "frage-film-musik",
+  "title": "Film & Musik",
+  "question": "Kino, Serien und Songs",
+  "games": ["splash"],
+  "questions": [
+    { "q": "Wie heißt der Zauberschüler mit der Blitznarbe?", "answer": "Harry Potter", "aliases": ["Harry", "Potter"] },
+    { "q": "Welche Band sang „Bohemian Rhapsody“?", "answer": "Queen" },
+    { "q": "Wie heißt der junge Löwe in „Der König der Löwen“?", "answer": "Simba" },
+    { "q": "Welcher Film gewann 2020 den Oscar als bester Film?", "answer": "Parasite", "wrong": ["1917", "Joker", "Once Upon a Time in Hollywood"] },
+    { "q": "Wer spielte Jack in „Titanic“?", "answer": "Leonardo DiCaprio", "aliases": ["DiCaprio", "Leonardo di Caprio"] },
+    { "q": "Aus welchem Land kommt die Band ABBA?", "answer": "Schweden", "wrong": ["Norwegen", "Dänemark", "Finnland"] },
+    { "q": "Wie heißt der Hobbit, der den Ring nach Mordor bringt?", "answer": "Frodo", "aliases": ["Frodo Beutlin", "Frodo Baggins"] },
+    { "q": "Wer komponierte die „Mondscheinsonate“?", "answer": "Beethoven", "aliases": ["Ludwig van Beethoven"], "wrong": ["Mozart", "Bach", "Chopin"] },
+    { "q": "Wie heißt der Schneemann in „Die Eiskönigin“?", "answer": "Olaf" },
+    { "q": "Welcher Sänger wurde „King of Pop“ genannt?", "answer": "Michael Jackson", "aliases": ["Jackson"] },
+    { "q": "In welcher Stadt spielt die Serie „Friends“?", "answer": "New York", "aliases": ["New York City", "NYC"], "wrong": ["Los Angeles", "Chicago", "Boston"] },
+    { "q": "Wie heißt Batmans Erzfeind mit dem Clownsgesicht?", "answer": "Joker", "aliases": ["der Joker"] },
+    { "q": "Wie viele Saiten hat eine gewöhnliche Gitarre?", "answer": "6", "aliases": ["sechs"] },
+    { "q": "Wer führte bei „Jurassic Park“ Regie?", "answer": "Steven Spielberg", "aliases": ["Spielberg"], "wrong": ["James Cameron", "George Lucas", "Ridley Scott"] },
+    { "q": "Welche Sängerin veröffentlichte das Album „1989“?", "answer": "Taylor Swift", "aliases": ["Swift"], "wrong": ["Katy Perry", "Lady Gaga", "Adele"] },
+    { "q": "Wie heißt Nemos Vater in „Findet Nemo“?", "answer": "Marlin", "wrong": ["Dorie", "Gill", "Crush"] },
+    { "q": "Welche deutsche Band sang „Du hast“?", "answer": "Rammstein" },
+    { "q": "Wie heißt das Raumschiff von Han Solo?", "answer": "Millennium Falke", "aliases": ["Millennium Falcon", "Rasender Falke"], "wrong": ["Enterprise", "Sternenzerstörer", "X-Wing"] },
+    { "q": "Wie viele Mitglieder hatten die Beatles in ihrer bekannten Besetzung?", "answer": "4", "aliases": ["vier"] },
+    { "q": "Wie heißt der Hund von Charlie Brown?", "answer": "Snoopy" }
+  ]
+}

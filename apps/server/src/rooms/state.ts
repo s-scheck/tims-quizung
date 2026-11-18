@@ -1,6 +1,6 @@
-import type { SongStage, SongsAudio } from '@quiz/shared';
+import type { Point, SongStage, SongsAudio, SplashOptions, SplashStage } from '@quiz/shared';
 import type { BluffStage, FaceEffectState, GuessMode, GuessStatus, JudgeStatus, KidsPenalty, KidsStage, KidsThinkSeconds, MatchSelection, PictureMode, PlacementStatus, RiskRules, Selection, StillsResultView, StillsStage } from '@quiz/shared';
-import type { Category, EventsCategory, Face, FacesCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, RankedCategory, Song, SongsCategory, StillsCategory, TimelineEvent } from '@quiz/content';
+import type { Category, EventsCategory, Face, FacesCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, Question, QuestionsCategory, RankedCategory, Song, SongsCategory, StillsCategory, TimelineEvent } from '@quiz/content';
 
 export interface Player {
   id: string;
@@ -406,4 +406,66 @@ export interface SongsRound extends BaseRound {
   playNonce: number;
 }
 
-export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound | FacesRound | KidsRound | StillsRound | SongsRound;
+// ------------------------------------------------------------------ Splash!
+
+export interface SplashAnswer {
+  text?: string;
+  choice?: number;
+  /** Eingang in ms ab Fragebeginn. */
+  ms: number;
+  /** Vorschlag bzw. Urteil. */
+  correct: boolean;
+}
+
+export interface SplashShot {
+  shooter: string;
+  aimFrom: number;
+  wind: Point | null;
+  fired: boolean;
+}
+
+export interface SplashStep {
+  no: number;
+  question: Question;
+  /** a/b/c/d: gemischte Optionen und Index der richtigen. */
+  choices: string[] | null;
+  correctChoice: number | null;
+  askedTo: string | null;
+  stage: SplashStage;
+  startedAt: number;
+  answers: Record<string, SplashAnswer>;
+  shooters: string[];
+  shotIndex: number;
+  shot: SplashShot | null;
+  skipped: string[];
+}
+
+export interface SplashBlob {
+  id: number;
+  owner: string;
+  seed: number;
+  landing: Point;
+  path: Point[];
+  firedAt: number;
+  landAt: number;
+  bounceAt: number | null;
+  onField: boolean;
+}
+
+export interface SplashRound extends BaseRound {
+  game: 'splash';
+  category: QuestionsCategory;
+  options: SplashOptions;
+  startedAt: number;
+  /** Fragen in Spielreihenfolge, als Index in `category.questions`. */
+  queue: number[];
+  totalSteps: number;
+  step: SplashStep | null;
+  blobs: SplashBlob[];
+  /** Sichtbare Farbe je Rasterzelle: Index in `owners` plus 1, 0 ist frei. */
+  grid: Uint8Array;
+  /** Besitzer der Rasterfarben in der Reihenfolge ihres ersten Schusses. */
+  owners: string[];
+}
+
+export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound | FacesRound | KidsRound | StillsRound | SongsRound | SplashRound;

@@ -37,6 +37,7 @@ export function toView(room: Room, viewerId: string | null): RoomView {
     defaultLives: room.defaultLives,
     mapBorders: room.mapBorders,
     riskRules: { ...room.riskRules },
+    splashOptions: { ...room.splashOptions },
     revealMode: room.revealMode,
     ...(room.devLock ? { devLock: { ...room.devLock } } : {}),
     jokersUsed: [...room.jokersUsed],
@@ -66,7 +67,9 @@ export function toView(room: Room, viewerId: string | null): RoomView {
                         ? c.stills.length
                         : c.kind === 'songs'
                           ? c.songs.length
-                          : c.items.length,
+                          : c.kind === 'questions'
+                            ? c.questions.length
+                            : c.items.length,
         played: room.playedCategoryIds.includes(c.id),
         games: [...c.games],
       };

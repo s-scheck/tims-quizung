@@ -36,6 +36,8 @@
   import StillsReveal from '../components/StillsReveal.svelte';
   import SongsBoard from '../components/SongsBoard.svelte';
   import SongsReveal from '../components/SongsReveal.svelte';
+  import SplashBoard from '../components/SplashBoard.svelte';
+  import SplashReveal from '../components/SplashReveal.svelte';
   import Scoring from '../components/Scoring.svelte';
   import Scoreboard from '../components/Scoreboard.svelte';
   import FinalStandings from '../components/FinalStandings.svelte';
@@ -156,6 +158,8 @@
           <StillsBoard {view} round={view.round} />
         {:else if view.round?.game === 'songs'}
           <SongsBoard {view} round={view.round} />
+        {:else if view.round?.game === 'splash'}
+          <SplashBoard {view} round={view.round} />
         {:else if view.round?.game === 'sort'}
           <Board {view} round={view.round} />
         {/if}
@@ -190,6 +194,8 @@
           <StillsReveal {view} round={view.round} />
         {:else if view.round?.game === 'songs'}
           <SongsReveal {view} round={view.round} />
+        {:else if view.round?.game === 'splash'}
+          <SplashReveal {view} round={view.round} />
         {:else if view.round?.game === 'sort'}
           <Reveal {view} round={view.round} />
         {/if}

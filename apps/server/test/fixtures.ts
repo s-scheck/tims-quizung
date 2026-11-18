@@ -1,5 +1,5 @@
 import type { Category } from '@quiz/content';
-import type { ClientMsg, TimerSeconds, RevealMode } from '@quiz/shared';
+import { SPLASH_DEFAULTS, type ClientMsg, type TimerSeconds, type RevealMode, type SplashOptions } from '@quiz/shared';
 import { Room, type CategoryProvider } from '../src/rooms/room.ts';
 import { FakeScheduler } from '../src/rooms/scheduler.ts';
 import '../src/games/index.ts';
@@ -213,7 +213,21 @@ export const SONGS: Category = {
   ],
 };
 
-const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES, PROMPTS, PICTURE, FACES, KIDS, STILLS, SONGS];
+export const QUIZ: Category = {
+  kind: 'questions',
+  id: 'quiz',
+  title: 'Quiz',
+  question: 'Quizfragen',
+  games: ['splash'],
+  questions: [
+    { q: 'Hauptstadt von Frankreich?', answer: 'Paris' },
+    { q: 'Wie viele Beine hat eine Spinne?', answer: '8', aliases: ['acht'] },
+    { q: 'Welcher Planet ist der Sonne am nächsten?', answer: 'Merkur', wrong: ['Venus', 'Mars', 'Erde'] },
+    { q: 'Welche Farbe ergeben Blau und Gelb?', answer: 'Grün', wrong: ['Rot', 'Lila', 'Braun'] },
+  ],
+};
+
+const ALL = [CITIES, TIMES, TOPX, PAIRS, PLACES, EVENTS, COUNTRIES, PROMPTS, PICTURE, FACES, KIDS, STILLS, SONGS, QUIZ];
 
 export const provider: CategoryProvider = {
   list: () => ALL,
@@ -364,6 +378,13 @@ export function startSongs(h: Harness): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'songs', categoryId: 'hits' }));
+}
+
+/** Startet Spiel und Splash!-Runde mit den Fragen aus QUIZ. */
+export function startSplash(h: Harness, splash: Partial<SplashOptions> = {}): void {
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'splash', categoryId: 'quiz', splash: { ...SPLASH_DEFAULTS, ...splash } }));
 }
 
 export function startMorse(h: Harness, word = 'Hallo Welt'): void {

@@ -280,3 +280,27 @@ describe('Filmfotos im Editor', () => {
     expect(validate(broken, 'film-pate')).toMatch(/Foto 1/);
   });
 });
+
+describe('Fragenlisten im Editor', () => {
+  test('frei und a/b/c/d hin und zurück, halbe Falschantworten werden markiert', () => {
+    const raw = {
+      id: 'frage-x',
+      title: 'X',
+      question: 'Quiz',
+      games: ['splash'],
+      questions: [
+        { q: 'Frei?', answer: 'Ja', aliases: ['jo'] },
+        { q: 'Wahl?', answer: 'A', wrong: ['B', 'C', 'D'] },
+      ],
+    };
+    const draft = draftFromRaw(raw);
+    expect(draft.kind).toBe('questions');
+    expect(draft.rows[1]).toEqual({ q: 'Wahl?', answer: 'A', aliases: '', wrong1: 'B', wrong2: 'C', wrong3: 'D' });
+    expect(draftToRaw(draft, 'frage-x')).toMatchObject({ games: ['splash'], questions: raw.questions });
+    expect(validate(draftToRaw(draft, 'frage-x'), 'frage-x')).toBeNull();
+    const half = [{ q: 'Halb?', answer: 'A', aliases: '', wrong1: 'B', wrong2: '', wrong3: '' }];
+    expect(cellIssues('questions', half)[0]).toEqual({ wrong2: 'für a/b/c/d alle drei', wrong3: 'für a/b/c/d alle drei' });
+    expect(validate(draftToRaw({ ...draft, rows: [...draft.rows, ...half] }, 'frage-x'), 'frage-x')).toContain('Zeile 3');
+    expect(makeId('Allgemeinwissen', 'splash', new Set())).toBe('frage-allgemeinwissen');
+  });
+});

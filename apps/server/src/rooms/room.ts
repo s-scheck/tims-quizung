@@ -14,6 +14,8 @@ import {
   type RiskRules,
   type RoundResult,
   type AvatarPart,
+  type SplashOptions,
+  SPLASH_DEFAULTS,
   type HeadShape,
 } from '@quiz/shared';
 import type { Category } from '@quiz/content';
@@ -78,6 +80,8 @@ export class Room {
   mapBorders = false;
   /** Zuletzt gewählte Regeln für No Risk No Fun. */
   riskRules: RiskRules = { duplicates: 'both', missPoints: 0 };
+  /** Zuletzt gewählte Einstellungen für Splash!. */
+  splashOptions: SplashOptions = { ...SPLASH_DEFAULTS };
   /** Zuletzt gewählte Art der Auflösung, Vorgabe für den Picker. */
   revealMode: RevealMode = 'auto';
   /** Gespielte Ziele je Orts- oder Ereignisliste, damit Zufall nichts wiederholt und der Moderator es sieht. */
@@ -385,6 +389,7 @@ export class Room {
           ...(msg.thinkSeconds !== undefined ? { thinkSeconds: msg.thinkSeconds } : {}),
           ...(msg.penalty !== undefined ? { penalty: msg.penalty } : {}),
           ...(msg.allGuess !== undefined ? { allGuess: msg.allGuess } : {}),
+          ...(msg.splash !== undefined ? { splash: msg.splash } : {}),
         });
       case 'back_to_lobby':
         return this.backToLobby(playerId);

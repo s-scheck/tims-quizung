@@ -1,0 +1,28 @@
+{
+  "id": "frage-allgemeinwissen",
+  "title": "Allgemeinwissen",
+  "question": "Quizfragen quer durchs Leben",
+  "games": ["splash"],
+  "questions": [
+    { "q": "Wie viele Bundesländer hat Deutschland?", "answer": "16", "aliases": ["sechzehn"] },
+    { "q": "Welches chemische Symbol hat Gold?", "answer": "Au" },
+    { "q": "Wie viele Tasten hat ein klassisches Klavier?", "answer": "88", "wrong": ["76", "92", "64"] },
+    { "q": "Wer malte die „Mona Lisa“?", "answer": "Leonardo da Vinci", "aliases": ["da Vinci", "Leonardo"] },
+    { "q": "Wie viele Minuten hat ein Tag?", "answer": "1440", "wrong": ["1240", "1600", "1360"] },
+    { "q": "In welchem Jahr fiel die Berliner Mauer?", "answer": "1989" },
+    { "q": "Welches ist das größte Organ des Menschen?", "answer": "Haut", "aliases": ["die Haut"] },
+    { "q": "Wie viele Spieler einer Fußballmannschaft stehen gleichzeitig auf dem Feld?", "answer": "11", "aliases": ["elf"] },
+    { "q": "Welche Farbe entsteht, wenn man Blau und Gelb mischt?", "answer": "Grün" },
+    { "q": "Wie heißt der längste Knochen im menschlichen Körper?", "answer": "Oberschenkelknochen", "aliases": ["Femur"], "wrong": ["Schienbein", "Oberarmknochen", "Wadenbein"] },
+    { "q": "Wie viele Herzen hat ein Oktopus?", "answer": "3", "wrong": ["1", "2", "5"] },
+    { "q": "Wer schrieb „Faust“?", "answer": "Goethe", "aliases": ["Johann Wolfgang von Goethe", "Johann Wolfgang Goethe"] },
+    { "q": "Wie viele Ecken hat ein Würfel?", "answer": "8", "aliases": ["acht"] },
+    { "q": "Welches Gas nehmen Pflanzen für die Fotosynthese auf?", "answer": "Kohlendioxid", "aliases": ["CO2", "Kohlenstoffdioxid"], "wrong": ["Sauerstoff", "Stickstoff", "Helium"] },
+    { "q": "Wie heißt die Hauptstadt von Australien?", "answer": "Canberra", "wrong": ["Sydney", "Melbourne", "Perth"] },
+    { "q": "Wie viele Zähne hat ein erwachsener Mensch mit Weisheitszähnen?", "answer": "32", "aliases": ["zweiunddreißig"] },
+    { "q": "Welches ist das größte lebende Tier?", "answer": "Blauwal", "aliases": ["der Blauwal"], "wrong": ["Afrikanischer Elefant", "Pottwal", "Walhai"] },
+    { "q": "In welcher Stadt steht das Brandenburger Tor?", "answer": "Berlin" },
+    { "q": "Wie viele Sekunden hat eine Stunde?", "answer": "3600" },
+    { "q": "Welcher Planet ist der Sonne am nächsten?", "answer": "Merkur", "wrong": ["Venus", "Mars", "Erde"] }
+  ]
+}

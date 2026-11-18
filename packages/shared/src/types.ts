@@ -1,6 +1,7 @@
 import type { RiskRules } from './rules/risk.ts';
 import type { MorseBeep } from './rules/morse.ts';
-import type { AvatarInfo } from './avatar.ts';
+import type { AvatarInfo, Point } from './avatar.ts';
+import type { SplashOptions } from './rules/splash.ts';
 
 /** Phasen eines Raums. Ein flaches Modell, kein verschachteltes Spiel-Phasenfeld. */
 export type Phase =
@@ -15,8 +16,8 @@ export type Phase =
   | 'scoreboard'
   | 'finished';
 
-export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse' | 'picture' | 'faces' | 'kids' | 'stills' | 'songs';
-export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture', 'faces', 'kids', 'stills', 'songs'];
+export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse' | 'picture' | 'faces' | 'kids' | 'stills' | 'songs' | 'splash';
+export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture', 'faces', 'kids', 'stills', 'songs', 'splash'];
 /** Auflösung: alles auf einmal („auto“) oder vom Moderator Stück für Stück aufgedeckt („show“). */
 export type RevealMode = 'auto' | 'show';
 export const REVEAL_MODES: readonly RevealMode[] = ['auto', 'show'];
@@ -891,7 +892,93 @@ export interface SongSearchHit extends SongInfo {
   duration: number;
 }
 
+// ------------------------------------------------------------------- Splash!
+
+export interface SplashCategoryInfo {
+  id: string;
+  title: string;
+  question: string;
+  source?: string;
+}
+
+/** Ablauf je Frage: antworten, (prüfen), schießen, fertig. */
+export type SplashStage = 'answering' | 'judging' | 'shooting' | 'done';
+
+export interface SplashAnswerView {
+  playerId: string;
+  /** Freie Antwort bzw. gewählte Option (Index in `choices`). */
+  text?: string;
+  choice?: number;
+  /** Beim Prüfen der aktuelle Stand (Vorschlag oder Host-Urteil). */
+  correct: boolean;
+  /** Antwortzeit in ms ab Fragebeginn. */
+  ms: number;
+}
+
+/** Ein Schuss in Arbeit: Countdown bis `aimFrom`, dann zielen. Wind gilt für genau diesen Schuss. */
+export interface SplashShotView {
+  shooter: string;
+  aimFrom: number;
+  wind: Point | null;
+  /** Abgefeuert, Kugel unterwegs bzw. gelandet. */
+  fired: boolean;
+}
+
+/** Ein Fleck: Form aus `seed`, Mitte `landing`. Sichtbar ab `landAt` (Serverzeit). */
+export interface SplashBlobView {
+  id: number;
+  owner: string;
+  seed: number;
+  landing: Point;
+  path: Point[];
+  firedAt: number;
+  landAt: number;
+  bounceAt: number | null;
+  onField: boolean;
+}
+
+export interface SplashStepView {
+  /** Laufende Nummer ab 1. */
+  no: number;
+  stage: SplashStage;
+  question: string;
+  /** Nur bei a/b/c/d: gemischte Optionen. */
+  choices?: string[];
+  /** Modus nacheinander: Wer antworten darf. */
+  askedTo: string | null;
+  startedAt: number;
+  /** Wer schon geantwortet hat. */
+  answered: string[];
+  /** Eigene Antwort des Betrachters. */
+  myAnswer?: { text?: string; choice?: number };
+  /** Lösung: für den moderierenden Host sofort, für alle ab `done`. */
+  answer?: string;
+  correctChoice?: number;
+  /** Ab dem Prüfen (Host) bzw. ab dem Schießen (alle). */
+  answers?: SplashAnswerView[];
+  /** Reihenfolge der Schützen, der Schnellste zuletzt. */
+  shooters: string[];
+  shotIndex: number;
+  shot: SplashShotView | null;
+  skipped: string[];
+}
+
+export interface SplashRoundView extends BaseRoundView {
+  game: 'splash';
+  category: SplashCategoryInfo;
+  options: SplashOptions;
+  /** Rundenbeginn (Serverzeit), Uhr der Hindernisse. */
+  startedAt: number;
+  totalSteps: number;
+  step: SplashStepView | null;
+  blobs: SplashBlobView[];
+  /** Ab der Auflösung: sichtbare Fläche in Prozent je Spieler. */
+  coverage?: Record<string, number>;
+  privileged?: boolean;
+}
+
 export type RoundView =
+  | SplashRoundView
   | SortRoundView
   | TopXRoundView
   | MatchRoundView
@@ -946,6 +1033,8 @@ export interface RoomView {
   jokersUsed: string[];
   /** Kleiner Scherz des Entwicklers, siehe apps/server/src/rooms/devlock.ts. */
   devLock?: DevLockView;
+  /** Zuletzt gewählte Einstellungen für Splash!. */
+  splashOptions: SplashOptions;
   /** Nur in `finished`: aufgedeckte Rangstufen vom letzten Platz an, `total` ist die Zahl der Stufen. */
   finale?: { shown: number; total: number };
   /** Nur in `choosing_category` enthalten. */
@@ -957,7 +1046,7 @@ export interface RoomView {
 // ----------------------------------------------------------------- Editor
 
 /** Art einer Liste, erkennbar an ihren Feldern. */
-export type CategoryKind = 'ranked' | 'pairs' | 'places' | 'events' | 'prompts' | 'picture' | 'faces' | 'stills' | 'songs';
+export type CategoryKind = 'ranked' | 'pairs' | 'places' | 'events' | 'prompts' | 'picture' | 'faces' | 'stills' | 'songs' | 'questions';
 
 /** Herkunft einer Kategorie aus Sicht des Editors. */
 export type EditorStatus = 'builtin' | 'modified' | 'custom' | 'hidden';

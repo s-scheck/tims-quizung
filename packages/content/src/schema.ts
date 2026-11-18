@@ -16,6 +16,7 @@ import {
   type PictureCategoryInfo,
   type SortOrder,
   type SongsCategoryInfo,
+  type SplashCategoryInfo,
   type StillsCategoryInfo,
   type TimelineCategoryInfo,
 } from '@quiz/shared';
@@ -172,7 +173,22 @@ export interface SongsCategory extends SongsCategoryInfo {
   songs: Song[];
 }
 
-export type Category = RankedCategory | PairsCategory | PlacesCategory | EventsCategory | PromptsCategory | PictureCategory | FacesCategory | StillsCategory | SongsCategory;
+/** Eine Quizfrage: frei (Antwort plus Alternativen) oder mit genau drei Falschantworten als a/b/c/d. */
+export interface Question {
+  q: string;
+  answer: string;
+  aliases?: string[];
+  wrong?: [string, string, string];
+}
+
+/** Eine Fragenliste, z. B. für Splash!. */
+export interface QuestionsCategory extends SplashCategoryInfo {
+  kind: 'questions';
+  games: GameId[];
+  questions: Question[];
+}
+
+export type Category = RankedCategory | PairsCategory | PlacesCategory | EventsCategory | PromptsCategory | PictureCategory | FacesCategory | StillsCategory | SongsCategory | QuestionsCategory;
 
 /** Dateinamen in der Bildablage: klein, ohne Pfad, mit Bildendung. */
 export const IMAGE_NAME_PATTERN = /^[a-z0-9][a-z0-9._-]{0,119}\.(jpg|jpeg|png|webp|svg)$/;
@@ -254,6 +270,7 @@ export function validateCategory(raw: unknown, file: string): Category {
   if ('faces' in raw) return validateFaces(raw, file);
   if ('stills' in raw) return validateStills(raw, file);
   if ('songs' in raw) return validateSongs(raw, file);
+  if ('questions' in raw) return validateQuestions(raw, file);
   return validateRanked(raw, file);
 }
 
@@ -290,6 +307,7 @@ function validateRanked(raw: Record<string, unknown>, file: string): RankedCateg
   if (games.includes('faces')) throw new CategoryValidationError(file, 'Wer ist das? braucht eine Promi-Sammlung mit "faces"');
   if (games.includes('stills')) throw new CategoryValidationError(file, 'Filmfotos braucht einen Film mit "stills"');
   if (games.includes('songs')) throw new CategoryValidationError(file, 'Songs erraten braucht eine Playlist mit "songs"');
+  if (games.includes('splash')) throw new CategoryValidationError(file, 'Splash! braucht eine Fragenliste mit "questions"');
   const forSort = games.includes('sort');
   const forTopX = games.includes('topx');
 
@@ -697,4 +715,38 @@ function validateSongs(raw: Record<string, unknown>, file: string): SongsCategor
 
   const source = readSource(raw);
   return { kind: 'songs', id, title, question, games, songs, ...(source !== undefined ? { source } : {}) };
+}
+
+function validateQuestions(raw: Record<string, unknown>, file: string): QuestionsCategory {
+  const id = readId(raw, file);
+  const title = requireString(raw, 'title', file);
+  const question = typeof raw.question === 'string' && raw.question.trim() ? raw.question : 'Quizfragen';
+  const games = readGames(raw, file, ['splash']);
+  if (games.length !== 1 || games[0] !== 'splash') throw new CategoryValidationError(file, 'Fragenlisten gehören genau zu "splash"');
+
+  const listRaw = raw.questions;
+  if (!Array.isArray(listRaw)) throw new CategoryValidationError(file, 'questions fehlt');
+  if (listRaw.length < MIN_ENTRIES) throw new CategoryValidationError(file, `mindestens ${MIN_ENTRIES} Fragen nötig, ${listRaw.length} vorhanden`);
+  const seen = new Set<string>();
+  const questions: Question[] = listRaw.map((x, idx) => {
+    if (!isRecord(x)) throw new CategoryValidationError(file, `questions[${idx}] ist kein Objekt`);
+    const q = requireString(x, 'q', file).trim();
+    const key = q.toLowerCase();
+    if (seen.has(key)) throw new CategoryValidationError(file, `questions[${idx}]: Frage doppelt`);
+    seen.add(key);
+    const answer = requireString(x, 'answer', file).trim();
+    const aliases = readAliases(x, file, `questions[${idx}]: `);
+    const item: Question = { q, answer, ...(aliases.length ? { aliases } : {}) };
+    if (x.wrong !== undefined) {
+      const wrong = readStringList(x, 'wrong', file, `questions[${idx}]: `);
+      if (wrong.length !== 3) throw new CategoryValidationError(file, `questions[${idx}]: für a/b/c/d genau drei Falschantworten, ${wrong.length} vorhanden`);
+      const all = [answer, ...wrong].map((w) => w.toLowerCase());
+      if (new Set(all).size !== 4) throw new CategoryValidationError(file, `questions[${idx}]: Antworten müssen sich unterscheiden`);
+      item.wrong = [wrong[0]!, wrong[1]!, wrong[2]!];
+    }
+    return item;
+  });
+
+  const source = readSource(raw);
+  return { kind: 'questions', id, title, question, games, questions, ...(source !== undefined ? { source } : {}) };
 }

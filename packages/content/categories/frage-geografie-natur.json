@@ -1,0 +1,28 @@
+{
+  "id": "frage-geografie-natur",
+  "title": "Geografie & Natur",
+  "question": "Länder, Berge, Tiere",
+  "games": ["splash"],
+  "questions": [
+    { "q": "Welcher Fluss hat die längste Strecke in Deutschland?", "answer": "Rhein", "wrong": ["Donau", "Elbe", "Main"] },
+    { "q": "Wie heißt der höchste Berg Deutschlands?", "answer": "Zugspitze", "aliases": ["die Zugspitze"] },
+    { "q": "Auf welchem Kontinent liegt Ägypten?", "answer": "Afrika" },
+    { "q": "Wie heißt die Hauptstadt von Kanada?", "answer": "Ottawa", "wrong": ["Toronto", "Montreal", "Vancouver"] },
+    { "q": "Welcher Ozean ist der größte?", "answer": "Pazifik", "aliases": ["Pazifischer Ozean", "Stiller Ozean"], "wrong": ["Atlantik", "Indischer Ozean", "Arktischer Ozean"] },
+    { "q": "Wie viele Kontinente zählt man in Deutschland üblicherweise?", "answer": "7", "aliases": ["sieben"] },
+    { "q": "Welches Land hat die meisten Einwohner?", "answer": "Indien", "wrong": ["China", "USA", "Indonesien"] },
+    { "q": "In welchem Land liegt der Kilimandscharo?", "answer": "Tansania", "aliases": ["Tanzania"] },
+    { "q": "Wie heißt die Hauptstadt von Spanien?", "answer": "Madrid" },
+    { "q": "Welcher Vogel legt die größten Eier?", "answer": "Strauß", "aliases": ["Vogelstrauß", "Afrikanischer Strauß"], "wrong": ["Emu", "Albatros", "Kondor"] },
+    { "q": "Wie heißt die größte Insel der Welt?", "answer": "Grönland" },
+    { "q": "Welches Land hat die Form eines Stiefels?", "answer": "Italien" },
+    { "q": "Wie viele Beine hat eine Spinne?", "answer": "8", "aliases": ["acht"] },
+    { "q": "In welchem Gebirge liegt der Mount Everest?", "answer": "Himalaya", "aliases": ["Himalaja"], "wrong": ["Anden", "Alpen", "Rocky Mountains"] },
+    { "q": "Welcher See ist der größte, der komplett in Deutschland liegt?", "answer": "Müritz", "wrong": ["Chiemsee", "Starnberger See", "Ammersee"] },
+    { "q": "Welches ist das schnellste Landtier?", "answer": "Gepard", "wrong": ["Löwe", "Windhund", "Antilope"] },
+    { "q": "Wie heißt die Hauptstadt von Norwegen?", "answer": "Oslo" },
+    { "q": "Durch welche Hauptstadt fließt die Themse?", "answer": "London" },
+    { "q": "Wie lautet die chemische Formel von Wasser?", "answer": "H2O", "aliases": ["H₂O"] },
+    { "q": "Welche ist die größte heiße Wüste der Erde?", "answer": "Sahara", "wrong": ["Gobi", "Kalahari", "Atacama"] }
+  ]
+}

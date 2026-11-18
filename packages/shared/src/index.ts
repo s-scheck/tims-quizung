@@ -11,3 +11,4 @@ export * from './rules/timeline.ts';
 export * from './rules/risk.ts';
 export * from './rules/morse.ts';
 export * from './avatar.ts';
+export * from './rules/splash.ts';

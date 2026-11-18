@@ -1,5 +1,6 @@
 import type { FaceEffect, GameId, GuessMode, KidsPenalty, MorseSpeed, PictureMode, RevealMode, Role, RoomView, Selection, SongsAudio, TimerSeconds } from './types.ts';
 import type { RiskDuplicates, RiskMissPoints } from './rules/risk.ts';
+import type { SplashOptions } from './rules/splash.ts';
 
 export const PROTOCOL_VERSION = 2;
 
@@ -61,6 +62,8 @@ export type ClientMsg =
       thinkSeconds?: number;
       /** Filmfotos: Alle raten bis zum Schluss, jeder hat einen Versuch pro Film. */
       allGuess?: boolean;
+      /** Splash!: Modus, Anzahl, Zeit, Tempo und Extras. */
+      splash?: SplashOptions;
     }
   | ({ type: 'select'; turnNo: number; targetId?: string } & Selection)
   | { type: 'confirm'; turnNo: number }
@@ -131,6 +134,14 @@ export type ClientMsg =
   | { type: 'reveal_all' }
   /** Joker: das Ergebnis dieses Spielers kopieren, einmal pro Spiel, einer pro Runde. */
   | { type: 'joker'; playerId: string }
+  /** Splash!: antworten (frei oder Option), Frage schließen, prüfen, freigeben, schießen, überspringen, weiter. */
+  | { type: 'splash_answer'; text?: string; choice?: number }
+  | { type: 'splash_close' }
+  | { type: 'splash_judge'; playerId: string; correct: boolean }
+  | { type: 'splash_release' }
+  | { type: 'splash_shoot'; power: number; aim: number }
+  | { type: 'splash_skip' }
+  | { type: 'splash_next' }
   | { type: 'submit_scores'; scores: Record<string, number> }
   | { type: 'next_round' }
   | { type: 'end_game' }
