@@ -222,6 +222,11 @@
     <p>Alle schießen auf dasselbe Feld, spätere Flecken übermalen frühere. Am Ende zählt, wie viel Fläche deine Farbe noch bedeckt.</p>
   </div>
   <div class="card space-y-2 text-sm text-slate-400">
+    <h3 class="font-semibold text-slate-200">Dungeon</h3>
+    <p>Alle starten im selben Raum. Jede Tür zeigt ein Wissensgebiet mit Format: a/b/c/d, freie Frage, Karte, Zeitstrahl oder Top X. Tippe eine Tür an, deine Figur läuft hin, dann gehst du hindurch.</p>
+    <p>Erst wenn alle stehen, antworten alle gleichzeitig. Richtig heißt nächster Raum, falsch heißt diese Tür ist für dich zu. Sind alle Türen eines Raums zu, bist du raus. Wer in den wenigsten Runden draußen ist, gewinnt. Es läuft nie etwas nach Zeit.</p>
+  </div>
+  <div class="card space-y-2 text-sm text-slate-400">
     <h3 class="font-semibold text-slate-200">Filmfotos</h3>
     <p>Fünf Fotos aus einem Film, vom schwersten zum leichtesten. Der Host schaltet weiter, wer den Film früher erkennt, bekommt mehr Punkte.</p>
     <p>Tippen: ein Tipp pro Foto, der Host prüft nach jedem Foto. Buzzern: wer zuerst drückt, sagt den Film laut. Sobald jemand richtig liegt, ist das Raten vorbei.</p>

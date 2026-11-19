@@ -1,6 +1,14 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import {
+    DUNGEON_DOORS_MAX,
+    DUNGEON_DOORS_MIN,
+    DUNGEON_FORMATS,
+    DUNGEON_ROOMS_MAX,
+    DUNGEON_ROOMS_MIN,
+    dungeonListsByFormat,
+    type DungeonFormat,
+    type DungeonOptions,
     LIVES_MAX,
     LIVES_MIN,
     MORSE_SUGGESTIONS,
@@ -117,6 +125,26 @@
   const stillsThinkValid = $derived(isThinkSeconds(stillsThink) ? stillsThink : null);
   const isMorse = $derived(gameId === 'morse');
   const isSplash = $derived(gameId === 'splash');
+  const isDungeon = $derived(gameId === 'dungeon');
+  /** Dungeon: zuletzt gewählte Einstellungen als Start. */
+  let dungeon = $state<DungeonOptions>(untrack(() => ({ ...view.dungeonOptions, formats: [...view.dungeonOptions.formats] })));
+  const DUNGEON_FORMAT_LABELS: Record<DungeonFormat, { label: string; hint: string }> = {
+    questions: { label: 'Fragen', hint: 'a/b/c/d oder frei' },
+    map: { label: 'Karte', hint: 'Ort im Umkreis' },
+    timeline: { label: 'Zeitstrahl', hint: 'Jahr ± Jahre' },
+    topx: { label: 'Top X', hint: 'ein Treffer' },
+  };
+  const playableLists = $derived((view.categories ?? []).filter((c) => !c.draft));
+  const dungeonLists = $derived(dungeonListsByFormat(playableLists, DUNGEON_FORMATS));
+  const dungeonDistinct = $derived(new Set(dungeon.formats.flatMap((f) => dungeonLists[f].map((c) => c.id))).size);
+  const dungeonOk = $derived(dungeon.formats.length > 0 && dungeonDistinct >= dungeon.doors);
+  function toggleDungeonFormat(f: DungeonFormat) {
+    dungeon.formats = dungeon.formats.includes(f) ? dungeon.formats.filter((x) => x !== f) : DUNGEON_FORMATS.filter((x) => x === f || dungeon.formats.includes(x));
+  }
+  function startDungeon() {
+    if (!dungeonOk) return;
+    client.send({ type: 'choose_category', gameId: 'dungeon', categoryId: 'dungeon', dungeon: { ...dungeon, formats: [...dungeon.formats] } });
+  }
   /** Splash!: zuletzt gewählte Einstellungen als Start, danach gehören sie dem Host. */
   let splash = $state<SplashOptions>(untrack(() => ({ ...view.splashOptions })));
   const SPLASH_MODE_OPTIONS: { mode: SplashMode; label: string; hint: string }[] = [
@@ -533,6 +561,48 @@
           <button class="btn-secondary" onclick={suggestMorse}>Vorschlag</button>
           <button class="btn-primary flex-1" disabled={!morseOk} onclick={startMorse}>Runde starten</button>
         </div>
+      </div>
+    {:else if isDungeon}
+      <div class="card space-y-4">
+        <div>
+          <p class="font-semibold">Dungeon bauen</p>
+          <p class="text-xs text-slate-500">Die Türen werden aus allen passenden Listen gemischt, im selben Raum ohne Doppelungen. Karte, Zeitstrahl und Top X werden zum Ausgang hin strenger.</p>
+        </div>
+        {#each [['rooms', 'Räume', DUNGEON_ROOMS_MIN, DUNGEON_ROOMS_MAX, 'Wer aus dem letzten Raum herauskommt, ist draußen.'], ['doors', 'Türen je Raum', DUNGEON_DOORS_MIN, DUNGEON_DOORS_MAX, 'Sind alle Türen eines Raums zu, scheidet man aus.']] as [key, label, min, max, hint] (key)}
+          {@const k = key as 'rooms' | 'doors'}
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p class="font-semibold">{label}</p>
+              <p class="text-xs text-slate-500">{hint}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="btn-secondary px-3 py-1" disabled={dungeon[k] <= (min as number)} onclick={() => (dungeon[k] = Math.max(min as number, dungeon[k] - 1))}>−</button>
+              <span class="w-10 text-center font-mono text-xl font-black">{dungeon[k]}</span>
+              <button class="btn-secondary px-3 py-1" disabled={dungeon[k] >= (max as number)} onclick={() => (dungeon[k] = Math.min(max as number, dungeon[k] + 1))}>+</button>
+            </div>
+          </div>
+        {/each}
+        <div class="space-y-2">
+          <p class="font-semibold">Formate</p>
+          <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {#each DUNGEON_FORMATS as f (f)}
+              {@const on = dungeon.formats.includes(f)}
+              {@const n = dungeonLists[f].length}
+              <button
+                class="rounded-xl border px-3 py-2 text-left text-sm transition {on ? 'border-indigo-500 bg-indigo-500/15 text-indigo-200' : 'border-slate-700 text-slate-400 hover:border-slate-500'}"
+                disabled={n === 0}
+                onclick={() => toggleDungeonFormat(f)}
+              >
+                <span class="block font-semibold">{on ? '✓ ' : ''}{DUNGEON_FORMAT_LABELS[f].label}</span>
+                <span class="block text-xs opacity-75">{DUNGEON_FORMAT_LABELS[f].hint} · {n} {n === 1 ? 'Liste' : 'Listen'}</span>
+              </button>
+            {/each}
+          </div>
+        </div>
+        {#if !dungeonOk}
+          <p class="text-sm text-rose-300">{dungeon.formats.length === 0 ? 'Mindestens ein Format wählen.' : `Nur ${dungeonDistinct} passende Listen für ${dungeon.doors} Türen je Raum. Weniger Türen oder mehr Formate wählen.`}</p>
+        {/if}
+        <button class="btn-primary w-full text-lg" disabled={!dungeonOk} onclick={startDungeon}>Dungeon betreten</button>
       </div>
     {:else if kidsCategory && isKids}
       <div class="card space-y-4">

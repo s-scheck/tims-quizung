@@ -16,6 +16,8 @@ import {
   type AvatarPart,
   type SplashOptions,
   SPLASH_DEFAULTS,
+  DUNGEON_DEFAULTS,
+  type DungeonOptions,
   type HeadShape,
 } from '@quiz/shared';
 import type { Category } from '@quiz/content';
@@ -82,6 +84,8 @@ export class Room {
   riskRules: RiskRules = { duplicates: 'both', missPoints: 0 };
   /** Zuletzt gewählte Einstellungen für Splash!. */
   splashOptions: SplashOptions = { ...SPLASH_DEFAULTS };
+  /** Zuletzt gewählte Einstellungen für Dungeon. */
+  dungeonOptions: DungeonOptions = { ...DUNGEON_DEFAULTS, formats: [...DUNGEON_DEFAULTS.formats] };
   /** Zuletzt gewählte Art der Auflösung, Vorgabe für den Picker. */
   revealMode: RevealMode = 'auto';
   /** Gespielte Ziele je Orts- oder Ereignisliste, damit Zufall nichts wiederholt und der Moderator es sieht. */
@@ -390,6 +394,7 @@ export class Room {
           ...(msg.penalty !== undefined ? { penalty: msg.penalty } : {}),
           ...(msg.allGuess !== undefined ? { allGuess: msg.allGuess } : {}),
           ...(msg.splash !== undefined ? { splash: msg.splash } : {}),
+          ...(msg.dungeon !== undefined ? { dungeon: msg.dungeon } : {}),
         });
       case 'back_to_lobby':
         return this.backToLobby(playerId);

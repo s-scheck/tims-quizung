@@ -1,5 +1,5 @@
 import type { Category } from '@quiz/content';
-import { SPLASH_DEFAULTS, type ClientMsg, type TimerSeconds, type RevealMode, type SplashOptions } from '@quiz/shared';
+import { DUNGEON_DEFAULTS, SPLASH_DEFAULTS, type ClientMsg, type DungeonOptions, type TimerSeconds, type RevealMode, type SplashOptions } from '@quiz/shared';
 import { Room, type CategoryProvider } from '../src/rooms/room.ts';
 import { FakeScheduler } from '../src/rooms/scheduler.ts';
 import '../src/games/index.ts';
@@ -385,6 +385,12 @@ export function startSplash(h: Harness, splash: Partial<SplashOptions> = {}): vo
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'splash', categoryId: 'quiz', splash: { ...SPLASH_DEFAULTS, ...splash } }));
+}
+
+export function startDungeon(h: Harness, dungeon: Partial<DungeonOptions> = {}): void {
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'dungeon', categoryId: 'dungeon', dungeon: { ...DUNGEON_DEFAULTS, ...dungeon } }));
 }
 
 export function startMorse(h: Harness, word = 'Hallo Welt'): void {

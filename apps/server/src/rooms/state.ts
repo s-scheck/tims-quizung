@@ -1,6 +1,6 @@
-import type { Point, SongStage, SongsAudio, SplashOptions, SplashStage } from '@quiz/shared';
+import type { DungeonDoorKind, DungeonOptions, DungeonStatus, LatLngBounds, Point, SongStage, SongsAudio, SplashOptions, SplashStage } from '@quiz/shared';
 import type { BluffStage, FaceEffectState, GuessMode, GuessStatus, JudgeStatus, KidsPenalty, KidsStage, KidsThinkSeconds, MatchSelection, PictureMode, PlacementStatus, RiskRules, Selection, StillsResultView, StillsStage } from '@quiz/shared';
-import type { Category, EventsCategory, Face, FacesCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, Question, QuestionsCategory, RankedCategory, Song, SongsCategory, StillsCategory, TimelineEvent } from '@quiz/content';
+import type { Category, CategoryItem, Place, EventsCategory, Face, FacesCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, Question, QuestionsCategory, RankedCategory, Song, SongsCategory, StillsCategory, TimelineEvent } from '@quiz/content';
 
 export interface Player {
   id: string;
@@ -471,4 +471,61 @@ export interface SplashRound extends BaseRound {
   owners: string[];
 }
 
-export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound | FacesRound | KidsRound | StillsRound | SongsRound | SplashRound;
+// ------------------------------------------------------------------ Dungeon
+
+/** Was hinter einer Tür steht; einmal beim Start gewürfelt, für alle gleich. */
+export type DungeonPayload =
+  | { kind: 'choice'; question: Question; choices: string[]; correctChoice: number }
+  | { kind: 'free'; question: Question }
+  | { kind: 'map'; prompt: string; place: Place; bounds?: LatLngBounds }
+  | { kind: 'timeline'; prompt: string; event: TimelineEvent }
+  | { kind: 'topx'; prompt: string; items: CategoryItem[] };
+
+export interface DungeonDoor {
+  id: string;
+  categoryId: string;
+  title: string;
+  kind: DungeonDoorKind;
+  /** km, ±Jahre oder Top N; bei Fragen null. */
+  tolerance: number | null;
+  payload: DungeonPayload;
+}
+
+export interface DungeonPlayer {
+  room: number;
+  locked: string[];
+  wrong: number;
+  status: DungeonStatus;
+  exitRound: number | null;
+}
+
+export interface DungeonAnswer {
+  doorId: string;
+  /** Anzeige der Antwort, z. B. „B: Venus“ oder „1792“. */
+  text: string;
+  correct: boolean;
+  detail?: string;
+}
+
+export interface DungeonAttempt extends DungeonAnswer {
+  roundNo: number;
+  room: number;
+  playerId: string;
+}
+
+export interface DungeonRound extends BaseRound {
+  game: 'dungeon';
+  category: PseudoCategory;
+  options: DungeonOptions;
+  rooms: DungeonDoor[][];
+  stage: 'choosing' | 'answering' | 'result';
+  roundNo: number;
+  players: Record<string, DungeonPlayer>;
+  walk: Record<string, { doorId: string | null; confirmed: boolean }>;
+  answers: Record<string, DungeonAnswer>;
+  skipped: string[];
+  results: Record<string, { doorId: string; room: number; correct: boolean }>;
+  attempts: DungeonAttempt[];
+}
+
+export type Round = DungeonRound | SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound | FacesRound | KidsRound | StillsRound | SongsRound | SplashRound;

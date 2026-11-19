@@ -1,5 +1,6 @@
 import type { ClientMsg } from './protocol.ts';
 import { isSplashOptions } from './rules/splash.ts';
+import { isDungeonOptions } from './rules/dungeon.ts';
 import {
   FACE_COLS_MAX,
   FACE_COLS_MIN,
@@ -186,7 +187,8 @@ export function isClientMsg(x: unknown): x is ClientMsg {
         (x.thinkSeconds === undefined || isThinkSeconds(x.thinkSeconds)) &&
         (x.penalty === undefined || isKidsPenalty(x.penalty)) &&
         (x.allGuess === undefined || typeof x.allGuess === 'boolean') &&
-        (x.splash === undefined || isSplashOptions(x.splash))
+        (x.splash === undefined || isSplashOptions(x.splash)) &&
+        (x.dungeon === undefined || isDungeonOptions(x.dungeon))
       );
     case 'kids_show':
     case 'kids_buzz':
@@ -230,6 +232,23 @@ export function isClientMsg(x: unknown): x is ClientMsg {
       return isUnit(x.power) && typeof x.at === 'number' && Number.isFinite(x.at);
     case 'splash_shoot':
       return isUnit(x.power) && isUnit(x.aim);
+    case 'dungeon_walk':
+      return x.doorId === null || isStr(x.doorId, 100);
+    case 'dungeon_answer': {
+      const given = [x.choice, x.text, x.pin, x.year].filter((v) => v !== undefined).length;
+      if (given !== 1) return false;
+      if (x.choice !== undefined) return isInt(x.choice) && x.choice >= 0 && x.choice <= 3;
+      if (x.text !== undefined) return isStr(x.text, GUESS_MAX_LENGTH) && x.text.trim().length > 0;
+      if (x.pin !== undefined) {
+        const pin = x.pin as Record<string, unknown> | null;
+        return !!pin && typeof pin === 'object' && isValidLatLng(pin.lat, pin.lng);
+      }
+      return isTimelineYear(x.year);
+    }
+    case 'dungeon_skip':
+      return isStr(x.playerId, 100);
+    case 'dungeon_enter':
+    case 'dungeon_next':
     case 'splash_close':
     case 'splash_release':
     case 'splash_skip':

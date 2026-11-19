@@ -2,6 +2,7 @@ import type { RiskRules } from './rules/risk.ts';
 import type { MorseBeep } from './rules/morse.ts';
 import type { AvatarInfo, Point } from './avatar.ts';
 import type { SplashOptions } from './rules/splash.ts';
+import type { DungeonDoorKind, DungeonOptions, DungeonRankEntry, DungeonStanding } from './rules/dungeon.ts';
 
 /** Phasen eines Raums. Ein flaches Modell, kein verschachteltes Spiel-Phasenfeld. */
 export type Phase =
@@ -16,8 +17,8 @@ export type Phase =
   | 'scoreboard'
   | 'finished';
 
-export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse' | 'picture' | 'faces' | 'kids' | 'stills' | 'songs' | 'splash';
-export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture', 'faces', 'kids', 'stills', 'songs', 'splash'];
+export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse' | 'picture' | 'faces' | 'kids' | 'stills' | 'songs' | 'splash' | 'dungeon';
+export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture', 'faces', 'kids', 'stills', 'songs', 'splash', 'dungeon'];
 /** Auflösung: alles auf einmal („auto“) oder vom Moderator Stück für Stück aufgedeckt („show“). */
 export type RevealMode = 'auto' | 'show';
 export const REVEAL_MODES: readonly RevealMode[] = ['auto', 'show'];
@@ -985,7 +986,87 @@ export interface SplashRoundView extends BaseRoundView {
   privileged?: boolean;
 }
 
+// ------------------------------------------------------------------- Dungeon
+
+/** Eine Tür mit Schild: Listentitel, Format und Grenze (km, ±Jahre oder Top N). */
+export interface DungeonDoorView {
+  id: string;
+  categoryId: string;
+  title: string;
+  kind: DungeonDoorKind;
+  tolerance: number | null;
+}
+
+export interface DungeonPlayerView extends DungeonStanding {
+  /** Verriegelte Türen im aktuellen Raum. */
+  locked: string[];
+}
+
+/** Zu welcher Tür jemand läuft; nach dem Bestätigen steht er in der Tür. */
+export interface DungeonWalkView {
+  doorId: string | null;
+  confirmed: boolean;
+}
+
+/** Die Frage hinter der eigenen Tür, nur für den Spieler selbst. */
+export type DungeonQuestionView = { doorId: string } & (
+  | { kind: 'choice'; prompt: string; choices: string[] }
+  | { kind: 'free'; prompt: string }
+  | { kind: 'map'; prompt: string; name: string; bounds?: LatLngBounds; km: number }
+  | { kind: 'timeline'; prompt: string; name: string; years: number }
+  | { kind: 'topx'; prompt: string; title: string; n: number }
+);
+
+export interface DungeonResultView {
+  doorId: string;
+  /** Raum, in dem die Tür war (ab 0). */
+  room: number;
+  correct: boolean;
+}
+
+/** Ein Versuch an einer Tür, für die Auswertung. */
+export interface DungeonAttemptView {
+  roundNo: number;
+  room: number;
+  doorId: string;
+  playerId: string;
+  answer: string;
+  correct: boolean;
+  /** Zusatz wie „230 km daneben“ oder „Platz 3“. */
+  detail?: string;
+}
+
+/** Frage und Lösung einer Tür, erst in der Auswertung. */
+export interface DungeonSolutionView {
+  prompt: string;
+  solution: string;
+}
+
+export interface DungeonRoundView extends BaseRoundView {
+  game: 'dungeon';
+  category: { id: string; title: string };
+  options: DungeonOptions;
+  stage: 'choosing' | 'answering' | 'result';
+  roundNo: number;
+  rooms: DungeonDoorView[][];
+  players: Record<string, DungeonPlayerView>;
+  walk: Record<string, DungeonWalkView>;
+  /** Wer in dieser Fragerunde schon geantwortet hat. */
+  answered: string[];
+  /** Vom Host übersprungen, setzt diese Runde aus. */
+  skipped: string[];
+  /** Nur in `result`: richtig oder falsch je Spieler, ohne Lösung. */
+  results?: Record<string, DungeonResultView>;
+  myQuestion?: DungeonQuestionView;
+  myAnswer?: string;
+  ranking: DungeonRankEntry[];
+  /** Erst in der Auswertung. */
+  attempts?: DungeonAttemptView[];
+  solutions?: Record<string, DungeonSolutionView>;
+}
+
 export type RoundView =
+  | DungeonRoundView
   | SplashRoundView
   | SortRoundView
   | TopXRoundView
@@ -1043,6 +1124,8 @@ export interface RoomView {
   devLock?: DevLockView;
   /** Zuletzt gewählte Einstellungen für Splash!. */
   splashOptions: SplashOptions;
+  /** Zuletzt gewählte Einstellungen für Dungeon. */
+  dungeonOptions: DungeonOptions;
   /** Nur in `finished`: aufgedeckte Rangstufen vom letzten Platz an, `total` ist die Zahl der Stufen. */
   finale?: { shown: number; total: number };
   /** Nur in `choosing_category` enthalten. */
