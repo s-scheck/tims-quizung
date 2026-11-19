@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { RoomView } from '@quiz/shared';
+  import { playerName } from '../../lib/format.ts';
   import PlayerHead from '../PlayerHead.svelte';
   import { GOLD, meters } from './towerStyle.ts';
 
@@ -16,15 +17,20 @@
     leader = null,
     vertical = false,
     head = 22,
+    armed = false,
+    onPick = undefined,
   }: {
     view: RoomView;
     goal: number;
     marks: number[];
-    entries: { id: string; height: number; color: string; holding?: boolean }[];
+    entries: { id: string; height: number; color: string; holding?: boolean; shielded?: boolean }[];
     me?: string | null;
     leader?: string | null;
     vertical?: boolean;
     head?: number;
+    /** Senkrecht: Dunkle Magie liegt bereit, ein Tipp auf einen Kopf setzt sie gegen diese Person ein. */
+    armed?: boolean;
+    onPick?: (id: string) => void;
   } = $props();
 
   const pos = (h: number) => Math.min(1.04, Math.max(0, h / goal));
@@ -50,23 +56,33 @@
 </script>
 
 {#if vertical}
-  <div class="rail-v relative h-full w-full" aria-label="Höhenrennen">
-    <div class="absolute bottom-0 left-1/2 top-0 w-[3px] -translate-x-1/2 rounded-full bg-white/30 shadow-[0_0_0_1px_rgba(10,16,30,0.25)]"></div>
+  <!-- Schmaler Strich am Rand: ich als Punkt, die anderen als kleine Köpfe. Mit dunkler Magie werden die Köpfe zu Zielen. -->
+  <div class="relative h-full w-full" aria-label="Höhenrennen">
+    <div class="absolute bottom-0 left-1/2 top-0 w-[2px] -translate-x-1/2 rounded-full bg-white/55 shadow-[0_0_0_1px_rgba(10,16,30,0.18)]"></div>
     {#each marks as m (m)}
-      <div class="absolute left-1/2 h-[2px] w-2.5 -translate-x-1/2 rounded-full bg-white/50" style="bottom:{pos(m) * 100}%"></div>
+      <div class="absolute left-1/2 h-[2px] w-2 -translate-x-1/2 rounded-full bg-white/70 shadow-[0_0_0_1px_rgba(10,16,30,0.12)]" style="bottom:{pos(m) * 100}%"></div>
     {/each}
-    <div class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
-      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 21V4m0 0h11l-2.5 3.5L17 11H6" fill={GOLD} stroke="#8a5d00" stroke-width="1.4" stroke-linejoin="round" /></svg>
+    <div class="absolute left-1/2 top-0 -translate-x-[3px] -translate-y-full">
+      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 21V4m0 0h11l-2.5 3.5L17 11H6" fill={GOLD} stroke="#8a5d00" stroke-width="1.6" stroke-linejoin="round" /></svg>
     </div>
     {#each entries as e (e.id)}
-      <div
-        class="rail-item absolute left-1/2 -translate-x-1/2 translate-y-1/2 rounded-full"
-        style="bottom:{pos(e.height) * 100}%; z-index:{e.id === me ? 3 : 2}; box-shadow: 0 0 0 2px {e.id === me ? '#ffffff' : e.color}, 0 3px 8px -2px rgba(0,0,0,0.5)"
-      >
+      {@const target = armed && e.id !== me && onPick}
+      <div class="rail-item absolute left-1/2 -translate-x-1/2 translate-y-1/2" style="bottom:{pos(e.height) * 100}%; z-index:{e.id === me ? 3 : 2}">
         {#if e.id === me}
-          <span class="grid place-items-center rounded-full text-[0.55rem] font-black text-white" style="width:{head}px; height:{head}px; background:{e.color}">DU</span>
+          <span class="block rounded-full" style="width:{Math.round(head * 0.7)}px; height:{Math.round(head * 0.7)}px; background:{e.color}; box-shadow: 0 0 0 2px #ffffff, 0 2px 6px -1px rgba(0,0,0,0.5)" title="Du"></span>
+        {:else if target}
+          <button
+            class="pick pointer-events-auto relative grid place-items-center rounded-full"
+            style="width:{head + 16}px; height:{head + 16}px"
+            aria-label="Dunkle Magie auf {playerName(view, e.id)}"
+            onpointerdown={(ev) => ev.stopPropagation()}
+            onclick={() => onPick?.(e.id)}
+          >
+            <span class="pick-ring block rounded-full" style="box-shadow: 0 0 0 2px #b9a2ff, 0 0 12px 2px rgba(124, 88, 245, 0.7)"><PlayerHead {view} id={e.id} size={head} /></span>
+            {#if e.shielded}<span class="absolute -right-0.5 top-0.5 text-[#ffe29a]"><svg viewBox="0 0 24 24" class="h-3 w-3" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6z" fill="currentColor" /></svg></span>{/if}
+          </button>
         {:else}
-          <PlayerHead {view} id={e.id} size={head} />
+          <span class="block rounded-full {e.holding ? 'holding' : ''}" style="box-shadow: 0 0 0 1.5px {e.color}, 0 2px 6px -1px rgba(0,0,0,0.5)"><PlayerHead {view} id={e.id} size={head} /></span>
         {/if}
       </div>
     {/each}
@@ -121,6 +137,20 @@
   }
   .holding {
     animation: hold-pulse 900ms ease-in-out infinite;
+  }
+  .pick {
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pick:active .pick-ring {
+    transform: scale(0.9);
+  }
+  .pick-ring {
+    animation: pick 1.2s ease-in-out infinite;
+  }
+  @keyframes pick {
+    50% {
+      transform: scale(1.12);
+    }
   }
   @keyframes hold-pulse {
     50% {

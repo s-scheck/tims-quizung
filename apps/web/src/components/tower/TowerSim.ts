@@ -1,4 +1,4 @@
-import { Box, Circle, testOverlap, Transform, Vec2, WeldJoint, World, type Body, type Contact, type Fixture, type Shape } from 'planck';
+import { AABB, Box, Circle, Polygon, testOverlap, Transform, Vec2, WeldJoint, World, type Body, type Contact, type Fixture, type Shape } from 'planck';
 import {
   formCells,
   packFrame,
@@ -64,6 +64,36 @@ const TURN_ACCEL = 600;
 const TURN_BRAKE = 340;
 const TURN_MAX = 24;
 
+/**
+ * Hitbox der Steine. planck legt um jedes Polygon eine Haut von 0,01 (`polygonRadius`); zwei Polygone berühren
+ * sich schon, wenn sich die Häute überlappen, und ruhen mit 0,005 Überlappung (`linearSlop`) aufeinander. Mit
+ * Zellen von genau 1 Breite war ein Stein darum physikalisch 1,02 breit: Er passte nicht in eine gleich breite
+ * Lücke, und wer bündig neben einem anderen Stein aufsetzte, blieb mit der Unterkante auf dessen Ecke hängen und
+ * kippte. Die Hitbox ist deshalb kleiner als die gezeichnete Form, und zwar je nach Richtung in der Welt:
+ * - waagrecht um `HIT_INSET_SIDE`: Bündig nebeneinander bleiben 2 · (0,03 − 0,01) = 0,04 Luft zwischen den Häuten,
+ *   eine Lücke darf also um so viel zu schmal sein (liegende Steine stehen oft ein paar Hundertstel daneben).
+ *   Gedrückt aneinander überlappen sich die gezeichneten Steine dafür um höchstens 0,045, gut ein Pixel;
+ * - senkrecht um `HIT_INSET_STACK`: genau so viel, dass aufeinander liegende Steine wie gezeichnet bündig ruhen
+ *   (2 · 0,0075 = 0,015 = Hautdicke minus Überlappung). Sonst säße ein L, das über zwei Ebenen greift, schief.
+ * Welche Achse des Steins waagrecht liegt, folgt aus seiner Vierteldrehung (siehe `reshape`).
+ */
+const HIT_INSET_SIDE = 0.03;
+const HIT_INSET_STACK = 0.0075;
+/**
+ * Fase an den äußeren Ecken (wie die gezeichnete Rundung): Eine Ecke, die knapp auf eine andere trifft, gleitet
+ * daran ab und rutscht in die Lücke, statt darauf zu ruhen.
+ */
+const HIT_CHAMFER = 0.05;
+/**
+ * Kantenhilfe: Würde der fallende Stein im nächsten Schritt etwas streifen, und reicht ein seitliches Ausweichen
+ * um höchstens so viel, um frei zu bleiben, rückt er so weit zur Seite und fällt weiter. Liegende Steine stehen oft
+ * ein paar Hundertstel neben dem Raster; ohne die Hilfe bliebe ein sauber gezielter Stein auf deren Ecke hängen.
+ * Ein echtes Aufsetzen lässt sich so nicht wegschieben, und ein Stein, der weniger als das auf einer Kante liegen
+ * würde, hielte dort ohnehin nicht.
+ */
+const EDGE_ASSIST = 0.08;
+const EDGE_ASSIST_STEP = 0.005;
+
 const FRICTION = 0.72;
 const ICE_FRICTION = 0.02;
 const DENSITY = 1;
@@ -88,6 +118,8 @@ const GIANT = 1.5;
 const VINE_DEPTH = 3;
 /** Versteinern erfasst alles, was ganz unterhalb von Spitze minus diesem Abstand liegt. */
 const PETRIFY_DEPTH = 2;
+/** Steine liegen genau auf dem Raster; Grenzfälle bei Ranken und Versteinern nicht dem Rundungsfehler überlassen. */
+const DEPTH_TOLERANCE = 0.05;
 /** Rundsteine rollen, also kaum Drehdämpfung. */
 const ROUND_ANGULAR_DAMPING = 0.05;
 /** Steine unterhalb davon oder seitlich weit draußen sind heruntergefallen und verschwinden. */
@@ -144,6 +176,8 @@ interface Piece {
   scale: number;
   /** Vom Spieler verschoben oder gedreht. */
   steered: boolean;
+  /** Hitbox für gerade Vierteldrehung (x-Achse waagrecht) gebaut, sonst für ungerade. */
+  upright: boolean;
 }
 
 export interface StreamPiece {
@@ -165,6 +199,98 @@ export interface TowerSimOptions {
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
+/** Rechteck einer Hitbox in Zelleinheiten (ungedreht, unskaliert) mit gefasten Ecken: unten links, unten rechts, oben rechts, oben links. */
+interface HitRect {
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+  /** Verbindungsstück zweier Blöcke: liegt innen, wird nur seitlich eingerückt und nie gefast. */
+  joint: boolean;
+  fase: [boolean, boolean, boolean, boolean];
+}
+
+const hitCache = new Map<number, HitRect[]>();
+
+/** Liegt ein Stein mit diesem Winkel in gerader Vierteldrehung (x-Achse waagrecht)? */
+const isUpright = (angle: number) => Math.abs(Math.round(angle / (Math.PI / 2))) % 2 === 0;
+
+/**
+ * Zerlegt eine Form in wenige konvexe Rechtecke: waagrechte Zellreihen, gleich breite übereinander zu Blöcken
+ * zusammengefasst, plus je ein schmales Verbindungsstück über jeder inneren Fuge. So hat ein Stein keine inneren
+ * Kanten, an denen andere hängen bleiben, und die eingerückte Hitbox bleibt lückenlos.
+ */
+function formHitRects(form: number): HitRect[] {
+  const cached = hitCache.get(form);
+  if (cached) return cached;
+  const cells = formCells(form);
+  const key = (x: number, y: number) => `${Math.round(x * 2)},${Math.round(y * 2)}`;
+  const filled = new Set(cells.map((c) => key(c.x, c.y)));
+  const has = (x: number, y: number) => filled.has(key(x, y));
+  // Zellreihen zu Läufen
+  const rows = new Map<number, number[]>();
+  for (const c of cells) rows.set(c.y, [...(rows.get(c.y) ?? []), c.x]);
+  let blocks: { x0: number; x1: number; y0: number; y1: number }[] = [];
+  for (const [y, xs] of [...rows].sort((a, b) => a[0] - b[0])) {
+    xs.sort((a, b) => a - b);
+    let start = xs[0]!;
+    for (let i = 1; i <= xs.length; i++) {
+      if (i < xs.length && xs[i]! - xs[i - 1]! < 1.01) continue;
+      const run = { x0: start - 0.5, x1: xs[i - 1]! + 0.5, y0: y - 0.5, y1: y + 0.5 };
+      // Gleich breiter Lauf direkt darunter: zu einem Block verlängern.
+      const below = blocks.find((b) => Math.abs(b.y1 - run.y0) < 1e-6 && Math.abs(b.x0 - run.x0) < 1e-6 && Math.abs(b.x1 - run.x1) < 1e-6);
+      if (below) below.y1 = run.y1;
+      else blocks.push(run);
+      if (i < xs.length) start = xs[i]!;
+    }
+  }
+  blocks = blocks.sort((a, b) => a.y0 - b.y0 || a.x0 - b.x0);
+  // Außenecke: weder links/rechts daneben noch darüber/darunter eine Zelle.
+  const convex = (gx: number, gy: number, sx: number, sy: number) => !has(gx + sx * 0.5, gy - sy * 0.5) && !has(gx - sx * 0.5, gy + sy * 0.5);
+  const out: HitRect[] = blocks.map((b) => ({
+    ...b,
+    joint: false,
+    fase: [convex(b.x0, b.y0, -1, -1), convex(b.x1, b.y0, 1, -1), convex(b.x1, b.y1, 1, 1), convex(b.x0, b.y1, -1, 1)],
+  }));
+  for (const lo of blocks) {
+    for (const hi of blocks) {
+      if (Math.abs(lo.y1 - hi.y0) > 1e-6) continue;
+      const x0 = Math.max(lo.x0, hi.x0);
+      const x1 = Math.min(lo.x1, hi.x1);
+      if (x1 - x0 < 1e-6) continue;
+      out.push({ x0, x1, y0: lo.y1 - 0.5, y1: lo.y1 + 0.5, joint: true, fase: [false, false, false, false] });
+    }
+  }
+  hitCache.set(form, out);
+  return out;
+}
+
+/**
+ * Konvexes Polygon eines Hitbox-Rechtecks, eingerückt und gefast, in Körperkoordinaten. `upright`: Der Stein liegt
+ * in gerader Vierteldrehung, seine x-Achse ist also waagrecht.
+ */
+function hitPolygon(r: HitRect, scale: number, upright: boolean): Vec2[] {
+  const ix = upright ? HIT_INSET_SIDE : HIT_INSET_STACK;
+  const iy = upright ? HIT_INSET_STACK : HIT_INSET_SIDE;
+  const x0 = r.x0 * scale + ix;
+  const x1 = r.x1 * scale - ix;
+  // Verbindungsstücke liegen innen; oben und unten reichen sie in die Blöcke hinein.
+  const y0 = r.y0 * scale + (r.joint ? 0 : iy);
+  const y1 = r.y1 * scale - (r.joint ? 0 : iy);
+  const c = HIT_CHAMFER * scale;
+  const pts: Vec2[] = [];
+  const corner = (x: number, y: number, fase: boolean, a: [number, number], b: [number, number]) => {
+    if (!fase) pts.push(Vec2(x, y));
+    else pts.push(Vec2(x + a[0] * c, y + a[1] * c), Vec2(x + b[0] * c, y + b[1] * c));
+  };
+  // Gegen den Uhrzeigersinn, je Ecke erst der Punkt auf der eingehenden, dann auf der ausgehenden Kante.
+  corner(x0, y0, r.fase[0], [0, 1], [1, 0]);
+  corner(x1, y0, r.fase[1], [-1, 0], [0, 1]);
+  corner(x1, y1, r.fase[2], [0, -1], [-1, 0]);
+  corner(x0, y1, r.fase[3], [1, 0], [0, -1]);
+  return pts;
+}
 
 /**
  * Geschwindigkeit, mit der man `err` entfernt sanft ankommt: anfahren mit `accel`, abbremsen mit `brake`,
@@ -244,7 +370,8 @@ export class TowerSim {
     this.reached = new Set(opts.reachedMarks ?? []);
     this.stream = opts.stream ?? ((i) => ({ ...towerPiece(opts.seed, i), ...towerSpawn(opts.seed, i) }));
     this.world = new World({ gravity: Vec2(0, GRAVITY) });
-    this.base = this.world.createBody({ type: 'static', position: Vec2(0, -0.5) });
+    // Um die halbe Ruhe-Überlappung tiefer, damit die unterste Lage wie gezeichnet genau auf y = 0 aufliegt.
+    this.base = this.world.createBody({ type: 'static', position: Vec2(0, -0.5 - HIT_INSET_STACK) });
     this.base.createFixture({ shape: Box(TOWER_BASE_HALF, 0.5), friction: FRICTION });
     this.world.on('begin-contact', (c: Contact) => this.onContact(c));
   }
@@ -275,6 +402,7 @@ export class TowerSim {
     }
     this.targetAngle -= (dir * Math.PI) / 2;
     this.current.steered = true;
+    this.reshape(this.current, this.targetAngle);
     this.events.push({ type: 'turn', dir });
   }
 
@@ -348,7 +476,7 @@ export class TowerSim {
 
   /** Ranken: Die oberen Steine werden dort, wo sie sich berühren, fest miteinander und mit ihrer Auflage verschweißt. */
   vines(): number {
-    const top = this.settled().filter((p) => this.topOf(p) > this.height - VINE_DEPTH);
+    const top = this.settled().filter((p) => this.topOf(p) > this.height - VINE_DEPTH + DEPTH_TOLERANCE);
     const set = new Set(top.map((p) => p.body));
     for (let c = this.world.getContactList(); c; c = c.getNext()) {
       if (!c.isTouching()) continue;
@@ -375,7 +503,7 @@ export class TowerSim {
 
   /** Versteinern: alles, was ganz unterhalb von Spitze − 2 ruht, wird fester Fels wie ein neuer Sockel. */
   petrify(): number {
-    const limit = this.height - PETRIFY_DEPTH;
+    const limit = this.height - PETRIFY_DEPTH + DEPTH_TOLERANCE;
     let count = 0;
     for (const p of this.settled()) {
       if (p.petrified || this.topOf(p) > limit) continue;
@@ -538,6 +666,44 @@ export class TowerSim {
     p.body.setLinearVelocity(Vec2(vx, -vy));
     p.body.setAngularVelocity(w);
     this.preVel = { x: vx, y: -vy };
+    this.edgeAssist(p, pos.x + vx * STEP_S, pos.y - vy * STEP_S, p.body.getAngle() + w * STEP_S);
+  }
+
+  /** Siehe `EDGE_ASSIST`: `x`, `y`, `angle` ist die Lage nach dem nächsten Schritt. */
+  private edgeAssist(p: Piece, x: number, y: number, angle: number): void {
+    if (!this.blocked(p, x, y, angle)) return;
+    // Zuerst zur Seite, auf die der Spieler ohnehin will.
+    const first = this.targetX >= x ? 1 : -1;
+    for (let d = EDGE_ASSIST_STEP; d <= EDGE_ASSIST + 1e-9; d += EDGE_ASSIST_STEP) {
+      for (const dir of [first, -first]) {
+        // Nur nahe am Ziel des Spielers: Wer gegen eine Wand schiebt oder noch unterwegs ist, setzt auf wie immer.
+        if (Math.abs(x + dir * d - this.targetX) > EDGE_ASSIST + 1e-9 || this.blocked(p, x + dir * d, y, angle)) continue;
+        const pos = p.body.getPosition();
+        const v = p.body.getLinearVelocity();
+        // Seitlich nur versetzen, ohne Schwung in Richtung der Kante.
+        p.body.setPosition(Vec2(x + dir * d, pos.y));
+        p.body.setLinearVelocity(Vec2(0, v.y));
+        this.preVel = { x: 0, y: v.y };
+        return;
+      }
+    }
+  }
+
+  /** Würde der Stein in dieser Lage irgendetwas berühren (Häute überlappen)? */
+  private blocked(p: Piece, x: number, y: number, angle: number): boolean {
+    const xf = Transform(Vec2(x, y), angle);
+    const box = new AABB();
+    let hit = false;
+    for (let f: Fixture | null = p.body.getFixtureList(); f && !hit; f = f.getNext()) {
+      const shape = f.getShape();
+      shape.computeAABB(box, xf, 0);
+      this.world.queryAABB(box, (g) => {
+        if (g.getBody() === p.body || !testOverlap(shape, 0, g.getShape(), 0, xf, g.getBody().getTransform())) return true;
+        hit = true;
+        return false;
+      });
+    }
+    return hit;
   }
 
   /** Freier Weg unter dem fallenden Stein bis zum nächsten Hindernis (über die Hüllrechtecke, eher zu knapp). */
@@ -617,7 +783,7 @@ export class TowerSim {
       linearDamping: LINEAR_DAMPING,
       angularDamping: form === TOWER_ROUND ? ROUND_ANGULAR_DAMPING : ANGULAR_DAMPING,
     });
-    const piece: Piece = { id: this.nextId++, index, form, body, special, glued: false, petrified: false, scale, steered };
+    const piece: Piece = { id: this.nextId++, index, form, body, special, glued: false, petrified: false, scale, steered, upright: isUpright(angle) };
     this.targetX = x;
     this.targetAngle = angle;
     this.addFixtures(piece, scale);
@@ -632,21 +798,32 @@ export class TowerSim {
   }
 
   private addFixtures(p: Piece, scale: number): void {
-    const half = 0.5 * scale;
     if (p.form === TOWER_ROUND) {
       p.body.createFixture({ shape: Circle(TOWER_ROUND_RADIUS * scale), density: DENSITY, friction: this.ice ? ICE_FRICTION : FRICTION, restitution: 0 });
       p.scale = scale;
       return;
     }
-    for (const c of formCells(p.form)) {
+    // Verbindungsstücke überlappen die Blöcke; ohne Masse verschieben sie den Schwerpunkt nicht.
+    for (const r of formHitRects(p.form)) {
       p.body.createFixture({
-        shape: Box(half, half, Vec2(c.x * scale, c.y * scale), 0),
-        density: DENSITY,
+        shape: Polygon(hitPolygon(r, scale, p.upright)),
+        density: r.joint ? 0 : DENSITY,
         friction: this.ice ? ICE_FRICTION : FRICTION,
         restitution: 0,
       });
     }
     p.scale = scale;
+  }
+
+  /**
+   * Passt die Hitbox des fallenden Steins an die Zieldrehung an, damit die schmale Seite der Hitbox waagrecht liegt.
+   * Der fallende Stein berührt noch nichts, das Umbauen verschiebt also nichts.
+   */
+  private reshape(p: Piece, angle: number): void {
+    const upright = isUpright(angle);
+    if (p.upright === upright || p.form === TOWER_ROUND) return;
+    p.upright = upright;
+    this.rebuild(p, p.scale);
   }
 
   private rebuild(p: Piece, scale: number): void {

@@ -5,6 +5,7 @@
     FX_FOG,
     FX_GLUE,
     specialTargetsOthers,
+    STONE_FALLING,
     TOWER_SPECIALS,
     type RoomView,
     type TowerEffectView,
@@ -15,32 +16,30 @@
   import { client } from '../../lib/client.svelte.ts';
   import { playerColor } from '../../lib/format.ts';
   import { FrameClock } from '../../lib/frameClock.svelte.ts';
-  import EndCategoryButton from '../EndCategoryButton.svelte';
   import TowerAlert from './TowerAlert.svelte';
-  import TowerBadge from './TowerBadge.svelte';
   import TowerOffer from './TowerOffer.svelte';
   import TowerCanvas from './TowerCanvas.svelte';
   import TowerControls, { towerGestures } from './TowerControls.svelte';
   import TowerCountdown from './TowerCountdown.svelte';
   import TowerHold from './TowerHold.svelte';
-  import TowerNext from './TowerNext.svelte';
+  import TowerHud from './TowerHud.svelte';
+  import TowerMenu from './TowerMenu.svelte';
+  import TowerNotice, { noticeStrong, type TowerNoticeItem } from './TowerNotice.svelte';
   import TowerOverview from './TowerOverview.svelte';
   import TowerRail from './TowerRail.svelte';
-  import TowerRing from './TowerRing.svelte';
   import { TowerSim } from './TowerSim.ts';
   import TowerSpecialCard from './TowerSpecialCard.svelte';
   import TowerTarget from './TowerTarget.svelte';
-  import TowerTickerFeed from './TowerTickerFeed.svelte';
-  import TowerToast from './TowerToast.svelte';
   import { type TowerScene } from './towerDraw.ts';
   import { towerFeed } from './towerFeed.svelte.ts';
   import { towerCastFeedback, towerEffectFeedback, towerOfferFeedback, towerSimFeedback } from './towerFeedback.ts';
-  import { GOLD, groupOf, meters } from './towerStyle.ts';
+  import { groupOf, toneOf } from './towerStyle.ts';
   import type { TickerItem } from './towerTicker.ts';
   import { TickerList } from './towerTickerList.svelte.ts';
 
   /**
-   * Hochstapler. Am Handy: der eigene Turm mit Physik, Steuerung und einem schlanken HUD über dem Spielfeld.
+   * Hochstapler. Am Handy: der eigene Turm mit Physik im Vollbild, eine dünne HUD-Zeile oben, flache Steuerleiste
+   * unten mit der Zauber-Taste in der Mitte. Alles andere (Angebot, Meldungen, Alarm) bleibt schmal am Rand.
    * Am Fernseher (`readonly`) und für den moderierenden Host: alle Türme in der Übersicht (TowerOverview).
    */
   let { view, round, readonly = false }: { view: RoomView; round: TowerRoundView; readonly?: boolean } = $props();
@@ -67,7 +66,8 @@
     latest = { effects: round.effects, playing: view.phase === 'playing', goAt: round.goAt };
   });
 
-  let ui = $state({ height: 0, hold: 0, next: 0, glue: false, boulder: false, fog: false });
+  /** `fall`: Lage des fallenden Steins (−1 links, 0 Mitte, 1 rechts), damit Meldungen ausweichen. */
+  let ui = $state({ height: 0, hold: 0, next: 0, glue: false, boulder: false, fog: false, fall: 0 });
   let gust: { at: number; dir: number } | null = null;
   let lastSent = 0;
   let lastUi = 0;
@@ -119,7 +119,9 @@
     if (time - lastUi >= 90) {
       lastUi = time;
       const fx = sim.effectFlags();
-      ui = { height: sim.height, hold: sim.holdMs / 3000, next: sim.peekNext(), glue: (fx & FX_GLUE) !== 0, boulder: (fx & FX_BOULDER) !== 0, fog };
+      const x = sim.stones().find((s) => s.flags & STONE_FALLING)?.x ?? 0;
+      const fall = x < -1.2 ? -1 : x > 1.2 ? 1 : 0;
+      ui = { height: sim.height, hold: sim.holdMs / 3000, next: sim.peekNext(), glue: (fx & FX_GLUE) !== 0, boulder: (fx & FX_BOULDER) !== 0, fog, fall };
     }
   }
 
@@ -168,11 +170,49 @@
     client.send({ type: 'tower_special_use', special, ...(targetId ? { targetId } : {}) });
   }
 
-  // ------------------------------------------------------------- Handy: HUD
 
-  /** Höhe der Karten unten im Spielfeld; die Kamera hebt den Turm darüber, damit nichts verdeckt baut. */
+  // ------------------------------------------------------------- Handy: Vollbild und HUD
+
+  // Solange das Spielfeld den Bildschirm hat, scrollt und federt nichts darunter.
+  onMount(() => {
+    if (!sim) return;
+    document.documentElement.classList.add('tower-lock');
+    return () => document.documentElement.classList.remove('tower-lock');
+  });
+
+  /** Gemessene Höhen der Leisten oben und unten; die Kamera hält die Turmspitze und den Sockel davon frei. */
+  let topHeight = $state(0);
   let bottomHeight = $state(0);
+  const topInset = $derived(topHeight > 0 ? topHeight + 6 : 0);
   const bottomInset = $derived(bottomHeight > 0 ? bottomHeight + 8 : 0);
+
+  /** Nur Gesten: Knöpfe eingeklappt, die Zauber-Taste schwebt. Wird je Gerät gemerkt. */
+  const GESTURES_KEY = 'quiz:tower:gestures';
+  const HINT_KEY = 'quiz:tower:hint';
+  const readStore = (key: string) => {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  };
+  const writeStore = (key: string, value: string) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      // privater Modus: dann eben nicht gemerkt
+    }
+  };
+  let gestures = $state(readStore(GESTURES_KEY) === '1');
+  function setGestures(on: boolean) {
+    gestures = on;
+    writeStore(GESTURES_KEY, on ? '1' : '0');
+  }
+  /** Gesten-Hinweis im Countdown nur beim allerersten Rennen auf diesem Gerät. */
+  const showHint = readStore(HINT_KEY) !== '1';
+  if (showHint && sim) writeStore(HINT_KEY, '1');
+
+  let menuOpen = $state(false);
 
   const stock = $derived(round.my?.stock ?? null);
   let picking = $state<TowerSpecial | null>(null);
@@ -183,6 +223,7 @@
   function tapSpecial() {
     if (!stock || !started) return;
     if (!specialTargetsOthers(stock)) useSpecial(stock);
+    else if (targets.length === 1) useSpecial(stock, targets[0]!.id);
     else if (targets.length > 0) picking = stock;
   }
   function pick(id: string) {
@@ -203,25 +244,41 @@
   function strike() {
     if (darkStock && holder) useSpecial(darkStock, holder.id);
   }
+  /** Dunkle Magie per Tipp auf einen Kopf in der Höhenleiste. */
+  function railPick(id: string) {
+    if (darkStock && started) useSpecial(darkStock, id);
+  }
   const shielded = $derived(me ? (round.players[me]?.shielded ?? false) : false);
 
   /** Platz live: eigener Turm gegen die letzten Frames der anderen. */
   const rank = $derived(1 + targets.filter((t) => t.height > ui.height + 0.05).length);
   const total = $derived(targets.length + 1);
-  const gap = $derived(round.goalHeight - ui.height);
-  const nextMark = $derived(round.marks.find((m) => m > ui.height && !(me && round.players[me]?.marks.includes(m))) ?? null);
+  const showRank = $derived(total > 1 && (ui.height > 0.3 || targets.some((t) => t.height > 0.3)));
+  const myMarks = $derived(me ? (round.players[me]?.marks ?? []) : []);
+  const nextMark = $derived(round.marks.find((m) => m > ui.height && !myMarks.includes(m)) ?? null);
+  /** Weg von der letzten Marke unter mir bis zur nächsten, 0 bis 1: der Ring um die leere Zauber-Taste. */
+  const markProgress = $derived.by(() => {
+    if (nextMark === null) return 0;
+    const from = Math.max(0, ...round.marks.filter((m) => m < nextMark));
+    return (ui.height - from) / Math.max(0.5, nextMark - from);
+  });
 
-  /** Laufende Effekte auf mir mit Restzeit; Kleber und Brocken solange sie scharf sind. */
-  const myEffects = $derived(round.effects.filter((e) => e.target === me && !e.blocked && e.until > clock.now && TOWER_SPECIALS[e.special].durationMs > 0));
+  /** Laufende Effekte auf mir mit Restzeit; Kleber und Brocken zeigt das HUD, solange sie scharf sind. */
+  const myEffects = $derived(
+    round.effects
+      .filter((e) => e.target === me && !e.blocked && e.until > clock.now && TOWER_SPECIALS[e.special].durationMs > 0)
+      .map((e) => ({ id: e.id, special: e.special, value: (e.until - clock.now) / Math.max(1, e.until - e.at) })),
+  );
 
   const railEntries = $derived([
-    ...targets.map((t) => ({ id: t.id, height: t.height, color: t.color })),
+    ...targets.map((t) => ({ id: t.id, height: t.height, color: t.color, holding: t.holding, shielded: t.shielded })),
     ...(me ? [{ id: me, height: ui.height, color: myColor }] : []),
   ]);
 
-  // Ticker und Banner: Was mich trifft, kommt groß als Banner, der Rest dezent als Meldung.
-  const ticker = new TickerList(4200, 2);
-  let toasts = $state<{ id: number; by: string; special: TowerSpecial; blocked: boolean; at: number }[]>([]);
+  // Meldungen: höchstens eine. Trifft mich ein Zauber, verdrängt das alles andere; Marken und „hält“ (dafür gibt es
+  // den Alarm) kommen gar nicht, vom eigenen Turm nur die Führung und die eigenen Zauber.
+  const ticker = new TickerList(2600, 1);
+  let hit = $state<TowerNoticeItem | null>(null);
   $effect(() => {
     if (!sim) return;
     const ids = round.turnOrder.filter((id) => round.players[id]);
@@ -244,10 +301,13 @@
     };
     untrack(() => {
       towerFeed.noteSpells(round.startedAt, input.effects);
-      // Eigene Höhe sieht man ohnehin; vom eigenen Turm meldet der Ticker nur die Führung.
-      const keep = (i: TickerItem) => (i.player === me ? i.kind === 'lead' || (i.kind === 'effect' && i.target !== me) : !(i.kind === 'effect' && i.target === me));
+      const keep = (i: TickerItem) => {
+        if (i.kind === 'mark' || i.kind === 'hold') return false;
+        if (i.kind === 'effect') return i.target !== me;
+        return i.player !== me || i.kind === 'lead';
+      };
       const fresh = ticker.feed(input, keep);
-      for (const i of fresh) if (i.kind === 'effect' && i.target === me && i.player !== me) toasts = [...toasts, { id: i.id, by: i.player, special: i.special, blocked: i.blocked, at: i.at }].slice(-1);
+      for (const i of fresh) if (i.kind === 'effect' && i.target === me && i.player !== me) hit = { id: i.id, kind: 'hit', at: i.at, by: i.player, special: i.special, blocked: i.blocked };
     });
   });
   $effect(() => {
@@ -255,179 +315,188 @@
     untrack(() => {
       const t = performance.now();
       ticker.prune(t);
-      if (toasts.some((x) => t - x.at > 2600)) toasts = toasts.filter((x) => t - x.at <= 2600);
+      if (hit && t - hit.at > 2800) hit = null;
     });
   });
+  /** Die eine sichtbare Meldung. Während eines Alarms nur, was mich direkt betrifft. */
+  const notice = $derived.by((): TowerNoticeItem | null => {
+    const n = hit ?? ticker.items[0] ?? null;
+    if (n && holder && !noticeStrong(n, me)) return null;
+    return n;
+  });
+  /** Meldungen weichen dem fallenden Stein aus: fällt er links, steht die Meldung rechts. */
+  const noticeAlign = $derived<'left' | 'right'>(ui.fall < 0 ? 'right' : 'left');
 </script>
 
 {#if sim}
-  <div class="-mx-2 flex flex-col gap-2" style="height: calc(100dvh - 5.75rem)">
-    <!-- Spielfläche mit Gesten, HUD liegt darüber -->
-    <div class="field relative min-h-0 flex-1 overflow-hidden rounded-[1.75rem] {shielded ? 'field-shield' : ''}" use:towerGestures={handlers}>
-      <TowerCanvas class="h-full w-full" scene={myScene} onTick={tick} worldWidth={13} headroom={9.5} insetBottom={bottomInset} />
+  <div class="tower-full fixed inset-0 z-40 flex select-none justify-center overflow-hidden bg-[#0b1220]">
+    <!-- Spielfläche mit Gesten über den ganzen Bildschirm (auf breiten Schirmen als Hochformat-Spalte);
+         alles andere liegt schmal am Rand darüber -->
+    <div class="field relative h-full w-full max-w-[min(100%,72dvh)] overflow-hidden {shielded ? 'field-shield' : ''} {holder ? 'field-alarm' : ''}" use:towerGestures={handlers}>
+      <TowerCanvas class="h-full w-full" scene={myScene} onTick={tick} worldWidth={13} headroom={9.5} insetBottom={bottomInset} insetTop={topInset} />
 
-      <!-- Oben: Höhe, Platz, nächster Stein -->
-      <div class="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5">
-        <div class="flex flex-col items-start gap-1.5">
-          <div class="hud flex items-stretch overflow-hidden rounded-2xl text-white">
-            <div class="px-3 pb-1.5 pt-1">
-              <div class="flex items-baseline gap-1">
-                <span class="font-mono text-[1.9rem] font-black leading-none tabular-nums">{meters(ui.height)}</span>
-                <span class="text-sm font-bold text-white/60">m</span>
-              </div>
-              <div class="mt-0.5 text-[0.68rem] font-bold leading-tight text-white/65">
-                {#if gap <= 0}
-                  <span style="color:{GOLD}">über der Linie!</span>
-                {:else}
-                  noch <span class="text-white">{meters(gap)} m</span> bis {round.goalHeight} m
-                {/if}
-              </div>
-            </div>
-            {#if total > 1 && (ui.height > 0.3 || targets.some((t) => t.height > 0.3))}
-              <div class="flex flex-col items-center justify-center border-l border-white/10 px-2.5 {rank === 1 ? 'bg-[rgba(246,196,83,0.14)]' : ''}">
-                <span class="text-[1.35rem] font-black leading-none" style={rank === 1 ? `color:${GOLD}` : ''}>{rank}.</span>
-                <span class="text-[0.6rem] font-bold text-white/55">von {total}</span>
-              </div>
-            {/if}
-          </div>
-          {#if ui.glue || ui.boulder || myEffects.length > 0}
-            <div class="flex flex-wrap gap-1.5">
-              {#if ui.glue}<span class="chip"><TowerBadge special="glue" size={22} />{TOWER_SPECIALS.glue.name} bereit</span>{/if}
-              {#if ui.boulder}<span class="chip"><TowerBadge special="boulder" size={22} />{TOWER_SPECIALS.boulder.name} kommt</span>{/if}
-              {#each myEffects as e (e.id)}
-                <span class="chip">
-                  <TowerRing value={(e.until - clock.now) / (e.until - e.at)} size={28} stroke={2.5}>
-                    <TowerBadge special={e.special} size={22} />
-                  </TowerRing>
-                  {TOWER_SPECIALS[e.special].name}
-                  <span class="font-mono tabular-nums text-white/70">{Math.max(0, Math.ceil((e.until - clock.now) / 1000))}</span>
-                </span>
-              {/each}
-            </div>
-          {/if}
-        </div>
-        <div class="flex flex-col items-end gap-2">
-          <TowerNext form={ui.next} color={myColor} fog={ui.fog} />
-        </div>
-      </div>
-
-      <!-- Rechts: Höhenrennen gegen die anderen -->
-      {#if total > 1}
-        <div class="rail pointer-events-none absolute bottom-24 right-2 top-[6.6rem] w-8 rounded-full px-1 pb-4 pt-5">
-          <TowerRail {view} goal={round.goalHeight} marks={round.marks} entries={railEntries} {me} vertical head={22} />
-        </div>
-      {/if}
-
-      <!-- Mitte: Alarm und Banner; links unter der Höhe dezent der Ticker -->
-      <div class="pointer-events-none absolute inset-x-0 top-[6.5rem] flex flex-col items-center gap-2 px-3">
-        {#if holder && view.phase === 'playing'}
-          <TowerAlert {view} holder={holder.id} hold={holder.hold} shielded={holder.shielded} dark={darkStock} offerOpen={offer !== null} onStrike={strike} />
+      {#key hit?.id}
+        {#if hit && hit.kind === 'hit' && !hit.blocked}
+          <div class="hit-flash pointer-events-none absolute inset-0" style="--c:{toneOf(hit.special).glow}"></div>
         {/if}
-        {#each toasts as t (t.id)}
-          <TowerToast {view} by={t.by} special={t.special} blocked={t.blocked} />
-        {/each}
+      {/key}
+
+      <!-- Oben: eine dünne Zeile -->
+      <div class="pointer-events-none absolute inset-x-0 top-0 z-20 px-2 pt-[max(0.5rem,env(safe-area-inset-top))]" bind:clientHeight={topHeight}>
+        <TowerHud
+          height={ui.height}
+          goal={round.goalHeight}
+          {rank}
+          {total}
+          {showRank}
+          effects={myEffects}
+          glue={ui.glue}
+          boulder={ui.boulder}
+          next={ui.next}
+          color={myColor}
+          fog={ui.fog}
+          offline={client.status !== 'open'}
+          onMenu={() => (menuOpen = true)}
+        />
       </div>
-      {#if !holder && toasts.length === 0}
-        <div class="pointer-events-none absolute left-2.5 right-12 {myEffects.length > 0 || ui.glue || ui.boulder ? 'top-[8.4rem]' : 'top-[5.9rem]'}">
-          <TowerTickerFeed {view} items={ticker.items} {me} glass size="sm" />
+
+      <!-- Darunter: höchstens eine Meldung, schmal und seitlich (weicht dem fallenden Stein aus) -->
+      <div class="pointer-events-none absolute inset-x-0 z-20 flex flex-col gap-1 pl-2 pr-8" style="top:{topHeight + 6}px">
+        {#key notice?.id}
+          {#if notice}
+            <TowerNotice {view} item={notice} {me} align={noticeAlign} />
+          {/if}
+        {/key}
+      </div>
+
+      <!-- Rechts: Höhenrennen als schmaler Strich -->
+      {#if total > 1}
+        <div class="pointer-events-none absolute right-1 z-10 w-6" style="top:{topHeight + 22}px; bottom:{bottomHeight + 18}px">
+          <TowerRail {view} goal={round.goalHeight} marks={round.marks} entries={railEntries} {me} vertical head={16} armed={!!darkStock && started} onPick={railPick} />
         </div>
       {/if}
 
       {#if ui.hold > 0 && view.phase === 'playing'}
-        <div class="pointer-events-none absolute inset-0 grid place-items-center">
-          <TowerHold hold={ui.hold} size={150} />
+        <div class="pointer-events-none absolute inset-x-0 z-10 flex justify-center" style="top:{topHeight + 40}px">
+          <TowerHold hold={ui.hold} size={88} />
         </div>
       {/if}
 
-      <!-- Unten: Zauber im Vorrat (bleibt auch während einer Wahl einsetzbar), darunter ein offenes Angebot -->
-      <div class="absolute bottom-2 left-2 z-20 flex flex-col gap-2 {choosing ? 'right-2' : 'right-11'}" bind:clientHeight={bottomHeight}>
-        {#if stock || !choosing}
-          <div class="flex items-end gap-2 pl-0.5">
-            <div class="max-w-[17rem] flex-1">
-              <TowerSpecialCard {stock} {nextMark} disabled={!started} onTap={tapSpecial} compact={choosing} />
-            </div>
-            {#if client.isHost && !choosing}
-              <div class="ml-auto" onpointerdown={(e) => e.stopPropagation()} role="presentation">
-                <EndCategoryButton {view} label="Beenden" title="Das Rennen endet sofort, gewertet wird nach Höhe." />
-              </div>
-            {/if}
+      <!-- Unten: Halte-Alarm (mit Ein-Tipp-Zauber am Daumen) und Angebot als schmale Leisten, darunter die
+           Steuerleiste mit der Zauber-Taste in der Mitte. Oben fällt der neue Stein, dort bleibt es frei. -->
+      <div class="pointer-events-none absolute inset-x-0 bottom-0 z-30" bind:clientHeight={bottomHeight}>
+        {#if holder && view.phase === 'playing'}
+          <div class="flex justify-center px-2 pb-1.5">
+            <TowerAlert {view} holder={holder.id} hold={holder.hold} shielded={holder.shielded} dark={darkStock} offerOpen={offer !== null} onStrike={strike} />
           </div>
         {/if}
         {#if choosing && offer}
-          <TowerOffer {offer} {stock} urge={holder !== null} onChoose={choose} />
+          <div class="pointer-events-auto px-2 pb-1.5">
+            <TowerOffer {offer} {stock} urge={holder !== null} onChoose={choose} />
+          </div>
         {/if}
+        {#if gestures}
+          <div class="flex justify-end px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <div class="float pointer-events-auto rounded-full">{@render magic()}</div>
+          </div>
+        {/if}
+        <div class={gestures ? '' : 'strip pointer-events-auto px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2'}>
+          <TowerControls disabled={!started} hidden={gestures} center={magic} onMove={handlers.move} onRotate={handlers.rotate} onFast={handlers.fast} />
+        </div>
       </div>
 
       {#if picking}
-        <TowerTarget {view} special={picking} {targets} goal={round.goalHeight} onPick={pick} onCancel={() => (picking = null)} />
+        <TowerTarget {view} special={picking} {targets} bottom={bottomHeight + 6} onPick={pick} onCancel={() => (picking = null)} />
+      {/if}
+
+      {#if menuOpen}
+        <TowerMenu {view} {gestures} onGestures={setGestures} onClose={() => (menuOpen = false)} />
       {/if}
 
       {#if clock.now > 0 && clock.now < round.goAt + 1000}
-        <TowerCountdown goAt={round.goAt} now={clock.now} goal={round.goalHeight} />
+        <TowerCountdown goAt={round.goAt} now={clock.now} goal={round.goalHeight} hint={showHint} />
       {/if}
     </div>
-
-    <TowerControls disabled={!started} onMove={handlers.move} onRotate={handlers.rotate} onFast={handlers.fast} />
   </div>
 {:else}
   <TowerOverview {view} {round} {readonly} />
 {/if}
 
+{#snippet magic()}
+  <TowerSpecialCard {stock} {nextMark} progress={markProgress} disabled={!started} onTap={tapSpecial} />
+{/snippet}
+
 <style>
-  .field {
-    box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.06),
-      0 14px 34px -14px rgba(20, 40, 90, 0.55);
+  :global(html.tower-lock),
+  :global(html.tower-lock body) {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  .tower-full {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  /* Steuerleiste: dunkles Glas, die Landschaft schimmert durch. */
+  .strip {
+    background: linear-gradient(180deg, rgba(8, 12, 26, 0.5), rgba(8, 12, 26, 0.72));
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  .float {
+    background: rgba(10, 16, 30, 0.55);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
   /* Schutzschild aktiv: goldener Saum um das Spielfeld. */
-  .field-shield {
-    box-shadow:
-      inset 0 0 0 2px rgba(255, 214, 110, 0.9),
-      inset 0 0 36px -6px rgba(250, 196, 70, 0.7),
-      0 0 22px -4px rgba(250, 196, 70, 0.55);
-  }
-  .field-shield::after {
+  .field-shield::after,
+  .field-alarm::before {
     content: '';
     position: absolute;
     inset: 0;
     pointer-events: none;
-    border-radius: inherit;
-    box-shadow: inset 0 0 0 2px rgba(255, 214, 110, 0.9);
+    z-index: 5;
+  }
+  .field-shield::after {
+    box-shadow:
+      inset 0 0 0 2px rgba(255, 214, 110, 0.85),
+      inset 0 0 28px -6px rgba(250, 196, 70, 0.65);
     animation: shield 2.4s ease-in-out infinite;
+  }
+  /* Ein Gegner hält über der Linie: grünes Leuchten vom Rand. */
+  .field-alarm::before {
+    box-shadow: inset 0 0 36px 4px rgba(62, 224, 143, 0.55);
+    animation: alarm 900ms ease-in-out infinite;
+  }
+  /* Mich trifft ein Zauber: kurzes Aufleuchten vom Rand in seiner Farbe (statt eines großen Banners). */
+  .hit-flash {
+    z-index: 6;
+    box-shadow: inset 0 0 60px 10px var(--c);
+    animation: hit 900ms ease-out forwards;
   }
   @keyframes shield {
     50% {
       box-shadow:
         inset 0 0 0 3px rgba(255, 230, 150, 1),
-        inset 0 0 50px -4px rgba(250, 196, 70, 0.6);
+        inset 0 0 40px -4px rgba(250, 196, 70, 0.6);
     }
   }
-  .hud {
-    background: rgba(10, 16, 30, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow:
-      inset 0 0 0 1px rgba(255, 255, 255, 0.14),
-      0 8px 24px -12px rgba(5, 10, 25, 0.6);
+  @keyframes alarm {
+    50% {
+      box-shadow: inset 0 0 50px 10px rgba(62, 224, 143, 0.75);
+    }
   }
-  .rail {
-    background: linear-gradient(180deg, rgba(10, 16, 30, 0.42), rgba(10, 16, 30, 0.28));
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  @keyframes hit {
+    to {
+      opacity: 0;
+    }
   }
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    border-radius: 999px;
-    padding: 0.15rem 0.6rem 0.15rem 0.2rem;
-    font-size: 0.72rem;
-    font-weight: 800;
-    color: white;
-    background: rgba(10, 16, 30, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  @media (prefers-reduced-motion: reduce) {
+    .field-shield::after,
+    .field-alarm::before {
+      animation: none;
+    }
   }
 </style>

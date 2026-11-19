@@ -16,6 +16,7 @@
     labels = true,
     minVisible = undefined,
     insetBottom = 0,
+    insetTop = 0,
     class: className = '',
     style = undefined,
   }: {
@@ -27,6 +28,8 @@
     minVisible?: number;
     /** Am unteren Rand verdeckte Höhe in CSS-Pixeln; die Kamera hebt den Turm darüber. */
     insetBottom?: number;
+    /** Am oberen Rand verdeckte Höhe in CSS-Pixeln; die Kamera hält die Turmspitze samt Luft darunter. */
+    insetTop?: number;
     class?: string;
     style?: string;
   } = $props();
@@ -63,7 +66,7 @@
           canvas.height = Math.round(h * dpr);
         }
         const s = scene();
-        if (s) drawTower(ctx, w, h, dpr, s, cam, time, dt, { worldWidth, headroom, labels, ...(minVisible ? { minVisible } : {}), insetBottom });
+        if (s) drawTower(ctx, w, h, dpr, s, cam, time, dt, { worldWidth, headroom, labels, ...(minVisible ? { minVisible } : {}), insetBottom, insetTop });
       }
       raf = requestAnimationFrame(tick);
     };

@@ -73,6 +73,9 @@
     const step = () => Math.max(10, node.clientWidth / (handlers.worldWidth ?? 13) / 2);
     const down = (e: PointerEvent) => {
       wakeTowerAudio();
+      // Knöpfe über dem Feld (Angebot, Zauber, Menü …) sind keine Gesten. Svelte verteilt `onpointerdown` erst an
+      // der Wurzel, ein stopPropagation dort käme für diesen direkten Listener zu spät.
+      if ((e.target as Element | null)?.closest?.('button, [data-no-gesture]')) return;
       if (g) return;
       node.setPointerCapture?.(e.pointerId);
       g = { id: e.pointerId, x0: e.clientX, y0: e.clientY, t: performance.now(), anchor: e.clientX, mode: 'none' };
@@ -128,21 +131,25 @@
 </script>
 
 <script lang="ts">
-  import { onDestroy, untrack } from 'svelte';
+  import { onDestroy, untrack, type Snippet } from 'svelte';
 
   /**
-   * Steuerung am Handy: große Knöpfe ◀ ▶ ⟳ ▼ (Schieben mit Auto-Repeat beim Halten, ▼ beschleunigt solange
-   * gedrückt) und die Zauber-Taste. Am Rechner dieselbe Steuerung über die Tastatur: Pfeile oder A/D schieben,
-   * Hoch/W/Leertaste dreht, Runter/S beschleunigt. Dunkle Zauber brauchen ein Ziel: Köpfe der Mitspieler,
-   * der Führende ist vorausgewählt.
+   * Steuerung am Handy: flache Knöpfe ◀ ▶ (Mitte) ⟳ ▼ (Schieben mit Auto-Repeat beim Halten, ▼ beschleunigt
+   * solange gedrückt). In der Mitte sitzt `center`, die runde Zauber-Taste, bewusst abgesetzt von den Daumen.
+   * `hidden`: nur Gesten, die Knöpfe sind eingeklappt (die Tastatur geht weiter).
+   * Am Rechner dieselbe Steuerung über die Tastatur: Pfeile oder A/D schieben, Hoch/W/Leertaste dreht, Runter/S beschleunigt.
    */
   let {
     disabled = false,
+    hidden = false,
+    center = undefined,
     onMove,
     onRotate,
     onFast,
   }: {
     disabled?: boolean;
+    hidden?: boolean;
+    center?: Snippet;
     onMove: (dir: -1 | 1) => void;
     onRotate: () => void;
     onFast: (on: boolean) => void;
@@ -231,8 +238,8 @@
 
 <svelte:window onkeydown={onKeyDown} onkeyup={onKeyUp} onblur={onBlur} />
 
-<div class="relative">
-  <div class="grid grid-cols-4 gap-2 select-none">
+{#if !hidden}
+  <div class="flex select-none items-center gap-1.5">
     <button
       class="ctl {heldDirs.has(-1) ? 'ctl-on' : ''}"
       aria-label="nach links"
@@ -243,7 +250,7 @@
       onlostpointercapture={(e) => release(-1, e)}
       oncontextmenu={(e) => e.preventDefault()}
     >
-      <svg viewBox="0 0 24 24" class="h-7 w-7"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      <svg viewBox="0 0 24 24" class="h-6 w-6"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
     </button>
     <button
       class="ctl {heldDirs.has(1) ? 'ctl-on' : ''}"
@@ -255,10 +262,13 @@
       onlostpointercapture={(e) => release(1, e)}
       oncontextmenu={(e) => e.preventDefault()}
     >
-      <svg viewBox="0 0 24 24" class="h-7 w-7"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      <svg viewBox="0 0 24 24" class="h-6 w-6"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
     </button>
+    {#if center}
+      <div class="mx-1 shrink-0">{@render center()}</div>
+    {/if}
     <button class="ctl" aria-label="drehen" {disabled} onpointerdown={rotate} oncontextmenu={(e) => e.preventDefault()}>
-      <svg viewBox="0 0 24 24" class="h-7 w-7"><path d="M19 12a7 7 0 1 1-2.05-4.95M19 4v4h-4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      <svg viewBox="0 0 24 24" class="h-6 w-6"><path d="M19 12a7 7 0 1 1-2.05-4.95M19 4v4h-4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
     </button>
     <button
       class="ctl {fastOn ? 'ctl-on' : ''}"
@@ -274,37 +284,41 @@
       onlostpointercapture={(e) => fast(false, `p${e.pointerId}`)}
       oncontextmenu={(e) => e.preventDefault()}
     >
-      <svg viewBox="0 0 24 24" class="h-7 w-7"><path d="M6 7l6 6 6-6M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      <svg viewBox="0 0 24 24" class="h-6 w-6"><path d="M6 7l6 6 6-6M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
     </button>
   </div>
-</div>
+{/if}
 
 <style>
+  /* Dunkles Glas statt weißer Klötze: ruhig über dem Feld und weiter gut treffbar (52 px hoch, volle Breite). */
   .ctl {
+    flex: 1 1 0;
+    min-width: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 4rem;
-    border-radius: 1.25rem;
-    background: linear-gradient(180deg, #ffffff, #eef2f7);
-    color: #27324a;
-    border: 1px solid rgba(30, 50, 90, 0.12);
+    height: 3.25rem;
+    border-radius: 1rem;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
     box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.9) inset,
-      0 4px 0 rgba(30, 50, 90, 0.14),
-      0 8px 18px -10px rgba(30, 50, 90, 0.35);
-    transition: transform 70ms ease, box-shadow 70ms ease;
+      inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    transition:
+      transform 70ms ease,
+      background-color 70ms ease;
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
     touch-action: none;
   }
+  .ctl:disabled {
+    color: rgba(255, 255, 255, 0.45);
+  }
   .ctl:active:not(:disabled),
   .ctl-on {
-    transform: translateY(3px);
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.9) inset,
-      0 1px 0 rgba(30, 50, 90, 0.14);
+    transform: scale(0.96);
+    background: rgba(255, 255, 255, 0.24);
   }
 </style>

@@ -5,7 +5,7 @@
    * Start des Rennens, auf allen Geräten gleich: kurz „Bereit?“ mit der Ziellinie, dann 3-2-1 und „Los!“.
    * `goAt` und `now` sind Serverzeit (FrameClock), `now` treibt die Anzeige, es gibt keine eigenen Timer.
    */
-  let { goAt, now, goal }: { goAt: number; now: number; goal: number } = $props();
+  let { goAt, now, goal, hint = false }: { goAt: number; now: number; goal: number; /** Einmaliger Gesten-Hinweis am Handy. */ hint?: boolean } = $props();
 
   const left = $derived(goAt - now);
   const stage = $derived(left > 3000 ? 'ready' : left > 0 ? 'count' : left > -900 ? 'go' : null);
@@ -36,6 +36,22 @@
     {:else}
       <span class="cd-go relative font-black uppercase leading-none" style="color:{GOLD}">Los!</span>
     {/if}
+    {#if hint && stage !== 'go'}
+      <ul class="cd-hint absolute inset-x-3 bottom-[12%] mx-auto flex max-w-[22rem] justify-center gap-1.5 text-[0.68rem] font-bold text-white">
+        <li class="flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1.5">
+          <svg viewBox="0 0 24 24" class="h-5 w-5" aria-hidden="true"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          Wischen schiebt
+        </li>
+        <li class="flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1.5">
+          <svg viewBox="0 0 24 24" class="h-5 w-5" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="currentColor" /><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.6" /></svg>
+          Tippen dreht
+        </li>
+        <li class="flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1.5">
+          <svg viewBox="0 0 24 24" class="h-5 w-5" aria-hidden="true"><path d="M12 4v15M7 14l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          Ziehen lässt fallen
+        </li>
+      </ul>
+    {/if}
   </div>
 {/if}
 
@@ -58,6 +74,13 @@
   }
   .cd-ready {
     animation: cd-rise 500ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .cd-hint li {
+    background: rgba(10, 16, 30, 0.55);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  }
+  .cd-hint {
+    animation: cd-rise 500ms 300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
   .cd-ring {
     width: clamp(7rem, 48cqmin, 26rem);

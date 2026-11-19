@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { testOverlap, Vec2 } from 'planck';
+import { AABB, testOverlap, Vec2 } from 'planck';
 import { FX_BOULDER, FX_SHIELD, STONE_FALLING, STONE_GIANT, STONE_GLUED, STONE_PETRIFIED, TOWER_BEAM, TOWER_BEAM_HALF, TOWER_ROUND } from '@quiz/shared';
 import { FALL_SPEED, LOST_DELAY_MS, SPAWN_GAP, TowerSim, type SimEvent } from './TowerSim.ts';
 
@@ -402,5 +402,144 @@ describe('TowerSim', () => {
     expect(s.active).toBe(false);
     expect(s.holdMs).toBe(0);
     expect(s.finished).toBe(false);
+  });
+});
+
+/**
+ * Passgenauigkeit: Steine, die laut Zeichnung genau passen, müssen auch physikalisch passen. Früher war jede Zelle
+ * durch die Polygon-Haut von planck 1,02 breit; ein Stein blieb an Ecken hängen, setzte schief auf oder kippte.
+ */
+describe('TowerSim: Passgenauigkeit', () => {
+  const T = 2;
+  const S = 3;
+  const Z = 4;
+  const L = 5;
+  const J = 6;
+  const Q = -Math.PI / 2;
+  type Piece = NonNullable<TowerSim['current']>;
+
+  interface Spec {
+    form: number;
+    x: number;
+    turns: number;
+  }
+
+  /** Setzt die Steine der Reihe nach (fallen lassen, ruhen lassen); nur der letzte fällt ohne ▼, wenn `fast` aus ist. */
+  function build(specs: Spec[], fast = true) {
+    const s = new TowerSim({ seed: 1, goalHeight: 50, stream: (i) => ({ special: false, ...specs[Math.min(i, specs.length - 1)]! }) });
+    const placed: Piece[] = [];
+    for (let k = 0; k < specs.length; k++) {
+      for (let i = 0; i < 100 && !s.current; i++) s.advance(STEP);
+      const p = s.current!;
+      p.steered = true;
+      s.fast = fast || k < specs.length - 1;
+      for (let i = 0; i < 900 && s.current === p; i++) s.advance(STEP);
+      s.fast = false;
+      s.advance(1500);
+      placed.push(p);
+    }
+    return { s, placed, last: placed.at(-1)! };
+  }
+
+  function expectAt(p: Piece, x: number, y: number, a: number, tol = 0.02) {
+    const pos = p.body.getPosition();
+    expect(Math.abs(pos.x - x)).toBeLessThan(tol);
+    expect(Math.abs(pos.y - y)).toBeLessThan(tol);
+    expect(Math.abs(p.body.getAngle() - a)).toBeLessThan(tol);
+  }
+
+  const cases: { name: string; specs: Spec[]; at: [number, number, number] }[] = [
+    { name: 'I senkrecht in eine 1 breite Lücke zwischen zwei Säulen', specs: [{ form: O, x: -1.5, turns: 0 }, { form: O, x: 1.5, turns: 0 }, { form: I, x: 0, turns: 1 }], at: [0, 2, Q] },
+    { name: 'O in eine 2 breite Lücke', specs: [{ form: O, x: -2, turns: 0 }, { form: O, x: 2, turns: 0 }, { form: O, x: 0, turns: 0 }], at: [0, 1, 0] },
+    { name: 'L kopfüber auf eine passende Stufe', specs: [{ form: I, x: 0.5, turns: 0 }, { form: L, x: -1, turns: 2 }], at: [-1, 1, 2 * Q] },
+    { name: 'J kopfüber auf eine passende Stufe', specs: [{ form: I, x: -0.5, turns: 0 }, { form: J, x: 1, turns: 2 }], at: [1, 1, 2 * Q] },
+    { name: 'T kopfüber mit dem Stiel in eine Lücke', specs: [{ form: O, x: -1.5, turns: 0 }, { form: O, x: 1.5, turns: 0 }, { form: T, x: 0, turns: 2 }], at: [0, 2, 2 * Q] },
+    { name: 'S senkrecht in die Stufe eines Z', specs: [{ form: Z, x: 0, turns: 0 }, { form: S, x: 0.5, turns: 1 }], at: [0.5, 2.5, Q] },
+    { name: 'O landet bündig neben einem O', specs: [{ form: O, x: -1, turns: 0 }, { form: O, x: 1, turns: 0 }], at: [1, 1, 0] },
+    { name: 'I senkrecht landet bündig neben einem O', specs: [{ form: O, x: -1, turns: 0 }, { form: I, x: 0.5, turns: 1 }], at: [0.5, 2, Q] },
+  ];
+  for (const c of cases) {
+    for (const fast of [true, false]) {
+      test(`${c.name}${fast ? ' (mit ▼)' : ''}`, () => {
+        const { s, placed, last } = build(c.specs, fast);
+        expect(s.lostCount).toBe(0);
+        expectAt(last, ...c.at);
+        // Die liegenden Steine wurden nicht verschoben.
+        for (let k = 0; k < placed.length - 1; k++) expect(Math.abs(placed[k]!.body.getPosition().x - c.specs[k]!.x)).toBeLessThan(0.02);
+      });
+    }
+  }
+
+  test('Lagen liegen bündig wie gezeichnet: Höhe genau ganzzahlig', () => {
+    const { s, placed } = build([{ form: O, x: 0, turns: 0 }, { form: O, x: 0, turns: 0 }, { form: O, x: 0, turns: 0 }, { form: I, x: 0, turns: 0 }]);
+    expect(Math.abs(s.height - 7)).toBeLessThan(0.005);
+    expect(Math.abs(placed[0]!.body.getPosition().y - 1)).toBeLessThan(0.005);
+  });
+
+  test('Säule steht etwas neben dem Raster: der Stein passt trotzdem', () => {
+    // Lücke 0,08 zu schmal (gut zwei Pixel)
+    const narrow = build([{ form: O, x: -1.5, turns: 0 }, { form: O, x: 1.42, turns: 0 }, { form: I, x: 0, turns: 1 }]);
+    expect(narrow.s.lostCount).toBe(0);
+    expectAt(narrow.last, 0, 2, Q, 0.05);
+    // Nachbar ragt 0,08 unter den neuen Stein: der rückt minimal zur Seite und kippt nicht.
+    const flush = build([{ form: O, x: -0.92, turns: 0 }, { form: O, x: 1, turns: 0 }]);
+    expect(flush.s.lostCount).toBe(0);
+    expectAt(flush.last, 1, 1, 0, 0.05);
+  });
+
+  test('seitlich an eine Kante heranrücken: kein Aufsetzen in der Luft, der Stein gleitet bis zum Boden', () => {
+    const s = new TowerSim({ seed: 1, goalHeight: 50, stream: (i) => (i === 0 ? { form: O, special: false, x: -1, turns: 0 } : { form: I, special: false, x: 2, turns: 1 }) });
+    drop(s);
+    s.advance(20);
+    const p = s.current!;
+    s.drain();
+    // Erst rechts neben der Säule hinunter, dann bündig heranrücken, solange der Stein noch neben ihr ist.
+    s.fast = true;
+    for (let i = 0; i < 300 && p.body.getPosition().y > 3.4; i++) s.advance(STEP);
+    s.fast = false;
+    for (let i = 0; i < 3; i++) s.move(-1);
+    for (let i = 0; i < 600 && s.current === p; i++) s.advance(STEP);
+    const land = ofType(s.drain(), 'land')[0]!;
+    // Erst unten am Sockel aufgesetzt, nicht an der Säule hängen geblieben.
+    expect(land.y).toBeLessThan(2.1);
+    s.advance(1500);
+    expectAt(p, 0.5, 2, Q);
+  });
+
+  test('ehrlich bleibt ehrlich: ein Stein, der nur knapp auf einer Kante liegt, kippt herunter', () => {
+    const { s, last } = build([{ form: O, x: -1, turns: 0 }, { form: O, x: 0.8, turns: 0 }]);
+    // Der zweite Stein bekäme oben nur 0,2 Auflage, der Schwerpunkt liegt weit draußen: Er bleibt nicht oben liegen.
+    const pos = last.body.getPosition();
+    expect(s.lostCount > 0 || pos.y < 2.5 || Math.abs(last.body.getAngle()) > 0.5).toBe(true);
+  });
+
+  test('Hitbox: wenige konvexe Teile, waagrecht schmaler als gezeichnet, senkrecht fast bündig', () => {
+    const s = sim([I, O, T]);
+    s.advance(20);
+    const parts = (p: Piece) => {
+      let n = 0;
+      for (let f = p.body.getFixtureList(); f; f = f.getNext()) n++;
+      return n;
+    };
+    const bar = s.current!;
+    expect(parts(bar)).toBe(1);
+    // Ausdehnung samt Haut in der aktuellen Lage
+    const size = () => {
+      const box = new AABB();
+      bar.body.getFixtureList()!.getShape().computeAABB(box, bar.body.getTransform(), 0);
+      return { w: box.upperBound.x - box.lowerBound.x, h: box.upperBound.y - box.lowerBound.y };
+    };
+    expect(size().w).toBeLessThan(4 - 0.03);
+    expect(Math.abs(size().h - 1)).toBeLessThan(0.01);
+    // Gedreht liegt die schmale Seite der Hitbox wieder waagrecht.
+    s.rotate();
+    s.advance(300);
+    expect(size().w).toBeLessThan(1 - 0.03);
+    expect(Math.abs(size().h - 4)).toBeLessThan(0.01);
+    drop(s);
+    expect(parts(s.current!)).toBe(1);
+    drop(s);
+    // T: Balken, Stiel und ein Verbindungsstück
+    expect(parts(s.current!)).toBe(3);
   });
 });

@@ -84,6 +84,8 @@ export interface DrawOptions {
   minVisible?: number;
   /** Am unteren Rand verdeckt (CSS-Pixel, z. B. Zauberkarten): Die Kamera hebt den Turm darüber. */
   insetBottom?: number;
+  /** Am oberen Rand verdeckt (CSS-Pixel, z. B. die HUD-Zeile): Die Kamera hält die Spitze samt Platz darunter. */
+  insetTop?: number;
 }
 
 const meters = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -257,7 +259,7 @@ export function drawTower(ctx: CanvasRenderingContext2D, w: number, h: number, d
   else [st.zoom, st.vz] = smoothDamp(st.zoom, zt, st.vz, 0.7, dt);
   const ppu = Math.min(w / (opts.worldWidth * st.zoom), opts.minVisible ? h / opts.minVisible : Infinity);
   const visible = h / ppu;
-  const target = Math.max(CAM_START - (opts.insetBottom ?? 0) / ppu, scene.height + opts.headroom - visible);
+  const target = Math.max(CAM_START - (opts.insetBottom ?? 0) / ppu, scene.height + opts.headroom + (opts.insetTop ?? 0) / ppu - visible);
   if (!cam.ready) {
     cam.y = target;
     st.vy = 0;

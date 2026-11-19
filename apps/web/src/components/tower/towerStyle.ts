@@ -34,10 +34,7 @@ export const toneOf = (s: TowerSpecial): Tone => GROUP_TONE[groupOf(s)];
 export const GOLD = '#f6c453';
 export const HOLD_GREEN = '#3ee08f';
 
-/** Dunkles Glas über dem Spielfeld. */
-export const GLASS = 'bg-[rgba(10,16,30,0.6)] text-white ring-1 ring-white/15 backdrop-blur-md shadow-[0_8px_24px_-10px_rgba(5,10,25,0.6)]';
-
-/** Kurze Wirkung für Karten. Fehlt ein Eintrag (neuer Zauber), gilt der Hinweis aus den Regeln. */
+/** Kurze Wirkung (Langtext beim Antippen und Halten). Fehlt ein Eintrag (neuer Zauber), gilt der Hinweis aus den Regeln. */
 const SHORT: Partial<Record<TowerSpecial, string>> = {
   glue: 'Ranken halten deine Spitze zusammen',
   shrink: 'Aktueller Stein schrumpft',
@@ -54,16 +51,22 @@ const SHORT: Partial<Record<TowerSpecial, string>> = {
 };
 export const shortHint = (s: TowerSpecial): string => SHORT[s] ?? TOWER_SPECIALS[s]?.hint ?? '';
 
-/** Zusatz unter dem Banner, wenn mich ein dunkler Zauber trifft. */
-const HIT_HINT: Partial<Record<TowerSpecial, string>> = {
-  boulder: 'Dein nächster Stein ist übergroß.',
-  ice: 'Deine Steine sind gerade spiegelglatt.',
-  gust: 'Festhalten!',
-  fog: 'Du siehst kurz fast nichts.',
-  turbo: 'Deine Steine fallen doppelt so schnell.',
-  round: 'Dein nächster Stein rollt.',
+/** Ganz kurze Wirkung für die schlanken Angebots-Chips am Handy (eine Zeile auf schmalen Geräten). */
+const TINY: Partial<Record<TowerSpecial, string>> = {
+  glue: 'Hält deine Spitze',
+  shrink: 'Stein schrumpft',
+  beam: 'Fester Balken',
+  petrify: 'Turm wird Fels',
+  shield: 'Blockt nächsten Zauber',
+  vanish: 'Letzter Stein weg',
+  boulder: 'Gegner: Riesenstein',
+  ice: 'Gegner: glatte Steine',
+  gust: 'Gegner: Windstoß',
+  fog: 'Gegner: Nebel',
+  turbo: 'Gegner: fällt schneller',
+  round: 'Gegner: Kugelstein',
 };
-export const hitHint = (s: TowerSpecial): string => HIT_HINT[s] ?? '';
+export const tinyHint = (s: TowerSpecial): string => TINY[s] ?? shortHint(s);
 
 /** Wünscht das Gerät weniger Bewegung? Svelte-Übergänge laufen per Skript, die globale CSS-Regel greift dort nicht. */
 export const reducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
