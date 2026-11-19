@@ -1,4 +1,4 @@
-import { unpackStones, type TowerFrame, type TowerStone } from '@quiz/shared';
+import { unpackStones, type TowerEffectView, type TowerFrame, type TowerStone } from '@quiz/shared';
 
 interface FeedEntry {
   prev: TowerStone[] | null;
@@ -50,6 +50,23 @@ class TowerFeed {
   clear(): void {
     this.map.clear();
     this.version++;
+  }
+
+  // Gewirkte Zauber der Runde, für die Zusammenfassung in der Auswertung. Der Server vergisst abgelaufene Effekte,
+  // also merkt sich jedes Gerät selbst, was es gesehen hat (nach dem Neuladen fehlt, was davor lag).
+  private spells = new Map<number, TowerEffectView>();
+  private spellRound = 0;
+
+  noteSpells(roundStart: number, effects: TowerEffectView[]): void {
+    if (roundStart !== this.spellRound) {
+      this.spells.clear();
+      this.spellRound = roundStart;
+    }
+    for (const e of effects) if (!this.spells.has(e.id)) this.spells.set(e.id, { ...e });
+  }
+
+  spellsOf(roundStart: number): TowerEffectView[] {
+    return roundStart === this.spellRound ? [...this.spells.values()] : [];
   }
 }
 

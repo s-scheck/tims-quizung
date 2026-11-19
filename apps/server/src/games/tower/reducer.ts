@@ -1,6 +1,7 @@
 import {
-  specialFor,
+  offerFor,
   specialTargetsOthers,
+  towerPool,
   TOWER_EFFECT_SHOW_MS,
   TOWER_GOAL_HEIGHT,
   TOWER_MAX_HEIGHT,
@@ -11,17 +12,20 @@ import {
   type ClientMsg,
   type TowerFrame,
   type TowerRanked,
+  type TowerSide,
   type TowerSpecial,
 } from '@quiz/shared';
 import type { Room } from '../../rooms/room.ts';
-import type { PseudoCategory, TowerPlayerState, TowerRound } from '../../rooms/state.ts';
+import type { PseudoCategory, TowerEffect, TowerPlayerState, TowerRound } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
 import type { StartRoundOptions } from '../registry.ts';
 import { baseRound, buildTurnOrder, toReveal } from '../common.ts';
 
 export const TOWER_CATEGORY: PseudoCategory = { kind: 'none', id: 'tower', title: 'Hochstapler' };
-/** Schneller ist ein Turm bis zur niedrigsten Linie nicht zu schaffen; frühere Meldungen sind unplausibel. */
+/** Schneller ist ein Turm bis zur niedrigsten Linie nicht zu schaffen (ab „Los!“); frühere Meldungen sind unplausibel. */
 export const TOWER_MIN_FINISH_MS = 10_000;
+/** Start-Countdown: kurz „Bereit?“, dann 3-2-1. So lange fällt auf keinem Handy ein Stein. */
+export const TOWER_COUNTDOWN_MS = 4000;
 
 export function towerRound(room: Room): TowerRound | null {
   return room.round?.game === 'tower' ? room.round : null;
@@ -34,7 +38,7 @@ export function startTowerRound(room: Room, _category: unknown, opts: StartRound
   room.towerOptions = options;
   const players: Record<string, TowerPlayerState> = {};
   for (const id of turnOrder) {
-    players[id] = { seed: Math.floor(room.random() * 0xffffffff), stock: null, height: 0, marks: [], claimed: [], finishedAt: null };
+    players[id] = { seed: Math.floor(room.random() * 0xffffffff), stock: null, offer: null, height: 0, marks: [], claimed: [], finishedAt: null };
   }
   room.round = {
     ...baseRound(TOWER_CATEGORY, turnOrder),
@@ -44,10 +48,12 @@ export function startTowerRound(room: Room, _category: unknown, opts: StartRound
     category: TOWER_CATEGORY,
     options,
     startedAt: room.now,
+    goAt: room.now + TOWER_COUNTDOWN_MS,
     goalHeight: TOWER_GOAL_HEIGHT[options.goal],
     players,
     effects: [],
     nextEffectId: 1,
+    pool: towerPool(room.random),
     winners: [],
     frames: {},
   };
@@ -63,6 +69,8 @@ export function handleTowerMessage(room: Room, playerId: string, msg: ClientMsg)
       return mark(room, playerId, msg.height, msg.piece);
     case 'tower_finish':
       return finish(room, playerId, msg.height);
+    case 'tower_choose':
+      return choose(room, playerId, msg.side);
     case 'end_round':
       return endRound(room, playerId);
     case 'tower_frame':
@@ -95,13 +103,27 @@ export function currentRanking(r: TowerRound): TowerRanked[] {
   );
 }
 
-/** Neues Spezial nach Rang; ist der Vorrat schon voll, verfällt es. */
+/** Neues Angebot (ein heller, ein dunkler Zauber) nach Rang; ein noch offenes Angebot wird ersetzt. */
 function grant(room: Room, r: TowerRound, playerId: string): void {
   const ranking = currentRanking(r);
   const rank = ranking.find((x) => x.playerId === playerId)?.rank ?? 1;
-  const special = specialFor(rank, ranking.length, room.random);
-  const p = r.players[playerId]!;
-  if (p.stock === null) p.stock = special;
+  r.players[playerId]!.offer = offerFor(rank, ranking.length, r.pool, room.random);
+}
+
+/** Nimmt hell oder dunkel aus dem Angebot; ein Zauber im Vorrat wird dabei ersetzt. */
+function choose(room: Room, playerId: string, side: TowerSide): Result {
+  const b = builder(room, playerId);
+  if ('error' in b) return b.error;
+  const { p } = b;
+  if (!p.offer) return fail('invalid_action', 'Gerade gibt es keine Zauber zur Wahl');
+  p.stock = p.offer[side];
+  p.offer = null;
+  return OK;
+}
+
+/** Aktiver Schutzschild des Spielers. */
+export function activeShield(r: TowerRound, playerId: string, now: number): TowerEffect | undefined {
+  return r.effects.find((e) => e.special === 'shield' && e.target === playerId && e.until > now);
 }
 
 /** Höhenmarke zum ersten Mal überbaut oder Spezialstein verbaut (`piece` = Index im Steinstrom). */
@@ -128,6 +150,7 @@ function useSpecial(room: Room, playerId: string, special: TowerSpecial, targetI
   const b = builder(room, playerId);
   if ('error' in b) return b.error;
   const { r, p } = b;
+  if (room.now < r.goAt) return fail('invalid_action', 'Es geht gleich los');
   if (p.stock !== special) return fail('invalid_action', 'Dieses Spezial hast du nicht');
   let target = playerId;
   if (specialTargetsOthers(special)) {
@@ -139,8 +162,15 @@ function useSpecial(room: Room, playerId: string, special: TowerSpecial, targetI
   }
   const duration = TOWER_SPECIALS[special].durationMs;
   r.effects = r.effects.filter((e) => e.until > room.now);
-  r.effects.push({ id: r.nextEffectId++, special, by: playerId, target, at: room.now, until: room.now + (duration > 0 ? duration : TOWER_EFFECT_SHOW_MS) });
   p.stock = null;
+  const shield = target !== playerId ? activeShield(r, target, room.now) : undefined;
+  if (shield) {
+    // Der Schild fängt den dunklen Zauber ab und ist danach verbraucht; der abgefangene Zauber bleibt kurz als Hinweis.
+    r.effects = r.effects.filter((e) => e !== shield);
+    r.effects.push({ id: r.nextEffectId++, special, by: playerId, target, at: room.now, until: room.now + TOWER_EFFECT_SHOW_MS, blocked: true });
+    return OK;
+  }
+  r.effects.push({ id: r.nextEffectId++, special, by: playerId, target, at: room.now, until: room.now + (duration > 0 ? duration : TOWER_EFFECT_SHOW_MS) });
   return OK;
 }
 
@@ -151,7 +181,7 @@ function finish(room: Room, playerId: string, height: number): Result {
   const { r, p } = b;
   if (p.finishedAt !== null) return fail('invalid_action', 'Du bist schon im Ziel');
   if (height < r.goalHeight) return fail('invalid_action', 'Der Turm steht noch nicht über der Ziellinie');
-  if (room.now - r.startedAt < TOWER_MIN_FINISH_MS) return fail('invalid_action', 'So schnell baut niemand einen Turm');
+  if (room.now - r.goAt < TOWER_MIN_FINISH_MS) return fail('invalid_action', 'So schnell baut niemand einen Turm');
   p.height = Math.min(height, TOWER_MAX_HEIGHT);
   p.finishedAt = room.now;
   r.winners.push(playerId);

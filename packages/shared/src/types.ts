@@ -3,7 +3,7 @@ import type { MorseBeep } from './rules/morse.ts';
 import type { AvatarInfo, Point } from './avatar.ts';
 import type { SplashOptions } from './rules/splash.ts';
 import type { DungeonDoorKind, DungeonOptions, DungeonRankEntry, DungeonStanding } from './rules/dungeon.ts';
-import type { TowerOptions, TowerRanked, TowerSpecial } from './rules/tower.ts';
+import type { TowerOffer, TowerOptions, TowerRanked, TowerSpecial } from './rules/tower.ts';
 
 /** Phasen eines Raums. Ein flaches Modell, kein verschachteltes Spiel-Phasenfeld. */
 export type Phase =
@@ -1075,6 +1075,8 @@ export interface TowerPlayerView {
   marks: number[];
   /** Hat ein Spezial im Vorrat; welches, sieht nur der Spieler selbst. */
   hasStock: boolean;
+  /** Schutzschild aktiv (blockt den nächsten dunklen Zauber). */
+  shielded: boolean;
   /** Serverzeit, zu der der Turm ruhig über der Linie stand. */
   finishedAt: number | null;
 }
@@ -1087,6 +1089,8 @@ export interface TowerEffectView {
   target: string;
   at: number;
   until: number;
+  /** Vom Schutzschild des Ziels abgefangen, wirkt nicht. */
+  blocked?: boolean;
 }
 
 export interface TowerRoundView extends BaseRoundView {
@@ -1095,13 +1099,17 @@ export interface TowerRoundView extends BaseRoundView {
   category: { id: string; title: string; question: string };
   options: TowerOptions;
   startedAt: number;
+  /** Serverzeit für „Los!“: Bis dahin läuft auf allen Geräten derselbe Countdown, erst danach fallen Steine. */
+  goAt: number;
   goalHeight: number;
   marks: number[];
   players: Record<string, TowerPlayerView>;
   effects: TowerEffectView[];
   winners: string[];
-  /** Nur für den Spieler selbst: Steinstrom und Vorrat. */
-  my?: { seed: number; stock: TowerSpecial | null };
+  /** Die Zauber dieser Partie (je Seite eine Auswahl). */
+  pool: TowerSpecial[];
+  /** Nur für den Spieler selbst: Steinstrom, Vorrat und offenes Angebot (hell oder dunkel wählen). */
+  my?: { seed: number; stock: TowerSpecial | null; offer: TowerOffer | null };
   /** Ab der Auflösung: Rangliste und Punktevorschlag. */
   ranking?: TowerRanked[];
   points?: Record<string, number>;

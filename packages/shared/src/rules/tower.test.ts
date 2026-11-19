@@ -6,8 +6,7 @@ import {
   isTowerFrame,
   isTowerOptions,
   packFrame,
-  specialFor,
-  specialWeights,
+  offerFor,
   STONE_FALLING,
   TOWER_BASIC_FORMS,
   TOWER_BOULDER,
@@ -17,6 +16,9 @@ import {
   TOWER_SPECIALS,
   towerMarks,
   towerPiece,
+  towerSpawn,
+  TOWER_SPAWN_SPREAD,
+  towerPool,
   towerPoints,
   towerRanking,
   unpackStones,
@@ -67,6 +69,21 @@ describe('Hochstapler: Steinstrom, Ziel und Marken', () => {
     expect(other).not.toEqual(a.map((p) => p.form));
   });
 
+  test('Startlage: deterministisch, halbe Einheiten, gestreut und gedreht, der erste Stein gerade und mittig', () => {
+    expect(towerSpawn(5, 0)).toEqual({ x: 0, turns: 0 });
+    const a = Array.from({ length: 400 }, (_, i) => towerSpawn(1234, i));
+    expect(a).toEqual(Array.from({ length: 400 }, (_, i) => towerSpawn(1234, i)));
+    for (const s of a) {
+      expect(Math.abs(s.x)).toBeLessThanOrEqual(TOWER_SPAWN_SPREAD);
+      expect(Number.isInteger(s.x * 2)).toBe(true);
+      expect([0, 1, 2, 3]).toContain(s.turns);
+    }
+    // Gut gestreut: alle Drehungen kommen vor, und viele Steine erscheinen nicht über der Mitte.
+    expect(new Set(a.map((s) => s.turns)).size).toBe(4);
+    expect(a.filter((s) => Math.abs(s.x) >= 1.5).length).toBeGreaterThan(150);
+    expect(Math.abs(a.reduce((s, x) => s + x.x, 0) / a.length)).toBeLessThan(0.4);
+  });
+
   test('etwa jeder zwölfte Stein ist ein Spezialstein', () => {
     let specials = 0;
     const n = 6000;
@@ -86,40 +103,35 @@ describe('Hochstapler: Steinstrom, Ziel und Marken', () => {
   });
 });
 
-describe('Hochstapler: Aufholhilfe', () => {
-  const share = (rank: number, n: number, pred: (s: TowerSpecial) => boolean) => {
-    const w = specialWeights(rank, n);
-    const total = TOWER_SPECIAL_IDS.reduce((s, id) => s + w[id], 0);
-    return TOWER_SPECIAL_IDS.filter(pred).reduce((s, id) => s + w[id], 0) / total;
-  };
-  const value = (rank: number, n: number) => {
-    const w = specialWeights(rank, n);
-    const total = TOWER_SPECIAL_IDS.reduce((s, id) => s + w[id], 0);
-    return TOWER_SPECIAL_IDS.reduce((s, id) => s + w[id] * TOWER_SPECIALS[id].value, 0) / total;
-  };
-
-  test('Rückstand bringt mehr Helfer und im Schnitt nützlichere Spezials', () => {
-    const helper = (s: TowerSpecial) => TOWER_SPECIALS[s].group === 'helper';
-    const sight = (s: TowerSpecial) => TOWER_SPECIALS[s].group === 'sight';
-    for (let rank = 1; rank < 6; rank++) {
-      expect(share(rank + 1, 6, helper)).toBeGreaterThan(share(rank, 6, helper));
-      expect(share(rank + 1, 6, sight)).toBeLessThan(share(rank, 6, sight));
-      expect(value(rank + 1, 6)).toBeGreaterThan(value(rank, 6));
-    }
-    expect(share(6, 6, helper)).toBeGreaterThan(0.6);
-    expect(share(1, 6, helper)).toBeLessThan(0.3);
+describe('Hochstapler: Magie', () => {
+  test('Auswahl je Partie: je Seite vier verschiedene Zauber', () => {
+    const pool = towerPool(seededRandom(3));
+    expect(new Set(pool).size).toBe(pool.length);
+    expect(pool.filter((s) => TOWER_SPECIALS[s].group === 'light')).toHaveLength(4);
+    expect(pool.filter((s) => TOWER_SPECIALS[s].group === 'dark')).toHaveLength(4);
   });
 
-  test('specialFor zieht nach Gewicht', () => {
+  test('Angebot: ein heller und ein dunkler Zauber aus der Auswahl', () => {
+    const rnd = seededRandom(9);
+    const pool = towerPool(rnd);
+    for (let i = 0; i < 200; i++) {
+      const o = offerFor(1 + (i % 4), 4, pool, rnd);
+      expect(TOWER_SPECIALS[o.light].group).toBe('light');
+      expect(TOWER_SPECIALS[o.dark].group).toBe('dark');
+      expect(pool).toContain(o.light);
+      expect(pool).toContain(o.dark);
+    }
+  });
+
+  test('Aufholhilfe: wer hinten liegt, bekommt im Schnitt stärkere helle Zauber', () => {
     const rnd = seededRandom(5);
-    const count = (rank: number) => {
-      let helpers = 0;
-      for (let i = 0; i < 4000; i++) if (TOWER_SPECIALS[specialFor(rank, 4, rnd)].group === 'helper') helpers++;
-      return helpers / 4000;
+    const pool = TOWER_SPECIAL_IDS as TowerSpecial[];
+    const avg = (rank: number) => {
+      let sum = 0;
+      for (let i = 0; i < 4000; i++) sum += TOWER_SPECIALS[offerFor(rank, 4, pool, rnd).light].value;
+      return sum / 4000;
     };
-    expect(count(4)).toBeGreaterThan(count(1) + 0.3);
-    expect(TOWER_SPECIAL_IDS).toContain(specialFor(1, 1, () => 0.999999));
-    expect(specialFor(1, 3, () => 0)).toBe('glue');
+    expect(avg(4)).toBeGreaterThan(avg(1) + 0.2);
   });
 });
 
@@ -180,10 +192,10 @@ describe('Hochstapler: Frame', () => {
     expect(isTowerFrame({ ...ok, s: [1, 2, 3] })).toBe(false);
     expect(isTowerFrame({ ...ok, s: [1, 99, 0, 0, 0, 0] })).toBe(false);
     expect(isTowerFrame({ ...ok, s: [1, 0, Number.NaN, 0, 0, 0] })).toBe(false);
-    expect(isTowerFrame({ ...ok, s: [1, 0, 0, 0, 0, 64] })).toBe(false);
+    expect(isTowerFrame({ ...ok, s: [1, 0, 0, 0, 0, 128] })).toBe(false);
     expect(isTowerFrame({ ...ok, s: new Array((TOWER_FRAME_MAX_STONES + 1) * 6).fill(0) })).toBe(false);
     expect(isTowerFrame({ ...ok, h: -1 })).toBe(false);
-    expect(isTowerFrame({ ...ok, next: 9 })).toBe(false);
+    expect(isTowerFrame({ ...ok, next: 10 })).toBe(false);
     expect(isTowerFrame({ ...ok, extra: 'x' })).toBe(false);
     expect(isTowerFrame([1, 2])).toBe(false);
   });

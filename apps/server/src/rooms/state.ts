@@ -1,4 +1,4 @@
-import type { DungeonDoorKind, DungeonOptions, DungeonStatus, LatLngBounds, Point, SongStage, SongsAudio, SplashOptions, SplashStage, TowerFrame, TowerOptions, TowerSpecial } from '@quiz/shared';
+import type { DungeonDoorKind, DungeonOptions, DungeonStatus, LatLngBounds, Point, SongStage, SongsAudio, SplashOptions, SplashStage, TowerFrame, TowerOffer, TowerOptions, TowerSpecial } from '@quiz/shared';
 import type { BluffStage, FaceEffectState, GuessMode, GuessStatus, JudgeStatus, KidsPenalty, KidsStage, KidsThinkSeconds, MatchSelection, PictureMode, PlacementStatus, RiskRules, Selection, StillsResultView, StillsStage } from '@quiz/shared';
 import type { Category, CategoryItem, Place, EventsCategory, Face, FacesCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, Question, QuestionsCategory, RankedCategory, Song, SongsCategory, StillsCategory, TimelineEvent } from '@quiz/content';
 
@@ -535,6 +535,8 @@ export interface TowerPlayerState {
   seed: number;
   /** Höchstens ein Spezial im Vorrat. */
   stock: TowerSpecial | null;
+  /** Offenes Angebot (hell oder dunkel), bis der Spieler wählt; ein neues ersetzt es. */
+  offer: TowerOffer | null;
   /** Zuletzt gemeldete Höhe (Frames und Meldungen). */
   height: number;
   /** Schon überbaute Höhenmarken, jede bringt nur einmal ein Spezial. */
@@ -551,6 +553,8 @@ export interface TowerEffect {
   target: string;
   at: number;
   until: number;
+  /** Vom Schutzschild des Ziels abgefangen. */
+  blocked?: boolean;
 }
 
 export interface TowerRound extends BaseRound {
@@ -558,10 +562,14 @@ export interface TowerRound extends BaseRound {
   category: PseudoCategory;
   options: TowerOptions;
   startedAt: number;
+  /** Serverzeit für „Los!“ nach dem Start-Countdown; vorher fällt kein Stein. */
+  goAt: number;
   goalHeight: number;
   players: Record<string, TowerPlayerState>;
   effects: TowerEffect[];
   nextEffectId: number;
+  /** Die Zauber dieser Partie. */
+  pool: TowerSpecial[];
   winners: string[];
   /** Letzter Schnappschuss je Spieler, für neu verbundene Geräte und die Auflösung. Nicht Teil der Sicht. */
   frames: Record<string, TowerFrame>;

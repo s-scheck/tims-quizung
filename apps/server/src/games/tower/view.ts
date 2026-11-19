@@ -1,6 +1,6 @@
 import { towerMarks, towerPoints, type RoundView, type TowerRoundView } from '@quiz/shared';
 import type { Room } from '../../rooms/room.ts';
-import { currentRanking, towerRound } from './reducer.ts';
+import { activeShield, currentRanking, towerRound } from './reducer.ts';
 
 /**
  * Sicht auf das Rennen. Höhen, Marken, Effekte und Sieger sind öffentlich (der Fernseher zeigt sie),
@@ -21,17 +21,19 @@ export function towerRoundView(room: Room, revealed: boolean, viewerId: string |
     soloMode: false,
     options: { ...r.options },
     startedAt: r.startedAt,
+    goAt: r.goAt,
     goalHeight: r.goalHeight,
     marks: towerMarks(r.goalHeight),
     players: Object.fromEntries(
       Object.entries(r.players).map(([id, p]) => [
         id,
-        { height: Math.round(p.height * 10) / 10, marks: [...p.marks], hasStock: p.stock !== null, finishedAt: p.finishedAt },
+        { height: Math.round(p.height * 10) / 10, marks: [...p.marks], hasStock: p.stock !== null, shielded: !revealed && activeShield(r, id, room.now) !== undefined, finishedAt: p.finishedAt },
       ]),
     ),
     effects: revealed ? [] : r.effects.filter((e) => e.until > room.now).map((e) => ({ ...e })),
     winners: [...r.winners],
-    ...(mine ? { my: { seed: mine.seed, stock: mine.stock } } : {}),
+    pool: [...r.pool],
+    ...(mine ? { my: { seed: mine.seed, stock: mine.stock, offer: mine.offer ? { ...mine.offer } : null } } : {}),
   };
   if (revealed) {
     const ranking = currentRanking(r);

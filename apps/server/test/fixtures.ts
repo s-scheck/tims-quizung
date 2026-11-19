@@ -3,6 +3,7 @@ import { DUNGEON_DEFAULTS, SPLASH_DEFAULTS, type ClientMsg, type DungeonOptions,
 import { Room, type CategoryProvider } from '../src/rooms/room.ts';
 import { FakeScheduler } from '../src/rooms/scheduler.ts';
 import '../src/games/index.ts';
+import { TOWER_COUNTDOWN_MS } from '../src/games/tower/reducer.ts';
 
 export const CITIES: Category = {
   kind: 'ranked',
@@ -393,11 +394,12 @@ export function startDungeon(h: Harness, dungeon: Partial<DungeonOptions> = {}):
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'dungeon', categoryId: 'dungeon', dungeon: { ...DUNGEON_DEFAULTS, ...dungeon } }));
 }
 
-/** Startet Spiel und Hochstapler-Runde mit der gewählten Ziellinie. */
-export function startTower(h: Harness, goal: TowerGoal = 'low'): void {
+/** Startet Spiel und Hochstapler-Runde mit der gewählten Ziellinie; ohne `countdown: true` ist der Start-Countdown schon vorbei. */
+export function startTower(h: Harness, goal: TowerGoal = 'low', { countdown = false }: { countdown?: boolean } = {}): void {
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'tower', categoryId: 'tower', tower: { goal } }));
+  if (!countdown) h.scheduler.advance(TOWER_COUNTDOWN_MS);
 }
 
 export function startMorse(h: Harness, word = 'Hallo Welt'): void {

@@ -268,6 +268,8 @@ export function isClientMsg(x: unknown): x is ClientMsg {
       return isHeight(x.height) && (x.piece === undefined || (isInt(x.piece) && x.piece >= 0 && x.piece <= 1e6));
     case 'tower_finish':
       return isHeight(x.height);
+    case 'tower_choose':
+      return x.side === 'light' || x.side === 'dark';
     case 'song_guess':
       return isStr(x.title, GUESS_MAX_LENGTH) && isStr(x.artist, GUESS_MAX_LENGTH) && (x.title.trim().length > 0 || x.artist.trim().length > 0);
     case 'song_correct':

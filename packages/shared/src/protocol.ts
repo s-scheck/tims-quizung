@@ -2,7 +2,7 @@ import type { FaceEffect, GameId, GuessMode, KidsPenalty, MorseSpeed, PictureMod
 import type { RiskDuplicates, RiskMissPoints } from './rules/risk.ts';
 import type { SplashOptions } from './rules/splash.ts';
 import type { DungeonOptions } from './rules/dungeon.ts';
-import type { TowerFrame, TowerOptions, TowerSpecial } from './rules/tower.ts';
+import type { TowerFrame, TowerOptions, TowerSide, TowerSpecial } from './rules/tower.ts';
 
 export const PROTOCOL_VERSION = 2;
 
@@ -161,6 +161,8 @@ export type ClientMsg =
   | { type: 'tower_special_use'; special: TowerSpecial; targetId?: string }
   | { type: 'tower_mark'; height: number; piece?: number }
   | { type: 'tower_finish'; height: number }
+  /** Nimmt aus dem offenen Angebot den hellen oder den dunklen Zauber. */
+  | { type: 'tower_choose'; side: TowerSide }
   | { type: 'submit_scores'; scores: Record<string, number> }
   | { type: 'next_round' }
   | { type: 'end_game' }

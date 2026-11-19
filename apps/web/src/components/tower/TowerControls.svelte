@@ -1,40 +1,113 @@
 <script lang="ts" module>
-  /** Gesten auf der Spielfläche: wischen links/rechts schiebt, tippen dreht, nach unten wischen und halten beschleunigt. */
-  export function towerGestures(node: HTMLElement, handlers: { move: (dir: -1 | 1) => void; rotate: () => void; fast: (on: boolean) => void }) {
-    const STEP = 24;
-    let g: { id: number; x: number; y: number; t: number; lastX: number; moved: boolean; fast: boolean } | null = null;
+  import { wakeTowerAudio } from './towerFeedback.ts';
+
+  /** Auto-Repeat wie in Profi-Stapelspielen: erster Schritt sofort, nach `DAS_MS` alle `ARR_MS` ein weiterer. */
+  export const DAS_MS = 165;
+  export const ARR_MS = 45;
+
+  export interface TowerHandlers {
+    move: (dir: -1 | 1) => void;
+    rotate: () => void;
+    fast: (on: boolean) => void;
+  }
+
+  /**
+   * Halten von links/rechts mit Auto-Repeat. Mehrere Quellen (Knopf, Taste) dürfen gleichzeitig halten; es gilt
+   * die zuletzt gedrückte Richtung, beim Loslassen übernimmt die andere wieder (ohne erneute Verzögerung).
+   */
+  export function createRepeater(move: () => (dir: -1 | 1) => void) {
+    const held: { dir: -1 | 1; src: string }[] = [];
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let onChange: (dirs: Set<number>) => void = () => {};
+    const stopTimer = () => {
+      if (timer) clearTimeout(timer);
+      timer = null;
+    };
+    const run = (dir: -1 | 1, delay: number) => {
+      stopTimer();
+      timer = setTimeout(function again() {
+        move()(dir);
+        timer = setTimeout(again, ARR_MS);
+      }, delay);
+    };
+    const notify = () => onChange(new Set(held.map((h) => h.dir)));
+    return {
+      press(dir: -1 | 1, src: string) {
+        if (held.some((h) => h.src === src && h.dir === dir)) return;
+        held.push({ dir, src });
+        move()(dir);
+        run(dir, DAS_MS);
+        notify();
+      },
+      release(dir: -1 | 1, src: string) {
+        const i = held.findIndex((h) => h.src === src && h.dir === dir);
+        if (i < 0) return;
+        const wasActive = i === held.length - 1;
+        held.splice(i, 1);
+        if (held.length === 0) stopTimer();
+        else if (wasActive) run(held[held.length - 1]!.dir, ARR_MS);
+        notify();
+      },
+      releaseAll() {
+        held.length = 0;
+        stopTimer();
+        notify();
+      },
+      watch(fn: (dirs: Set<number>) => void) {
+        onChange = fn;
+      },
+    };
+  }
+
+  /**
+   * Gesten auf der Spielfläche. Der Stein folgt dem Finger 1:1 (eine halbe Einheit je halbe Zellbreite auf dem
+   * Bildschirm), nach unten ziehen und halten beschleunigt, Tippen oder kurz nach oben wischen dreht.
+   * Erst nach einem kleinen Totbereich entscheidet sich die Richtung: Wischen dreht nie versehentlich.
+   * `worldWidth` ist die sichtbare Breite in Steineinheiten (wie bei `TowerCanvas`).
+   */
+  export function towerGestures(node: HTMLElement, handlers: TowerHandlers & { worldWidth?: number }) {
+    const SLOP = 10;
+    const TAP_MS = 280;
+    type Mode = 'none' | 'drag' | 'fast' | 'up';
+    let g: { id: number; x0: number; y0: number; t: number; anchor: number; mode: Mode } | null = null;
+    const step = () => Math.max(10, node.clientWidth / (handlers.worldWidth ?? 13) / 2);
     const down = (e: PointerEvent) => {
+      wakeTowerAudio();
       if (g) return;
-      node.setPointerCapture(e.pointerId);
-      g = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), lastX: e.clientX, moved: false, fast: false };
+      node.setPointerCapture?.(e.pointerId);
+      g = { id: e.pointerId, x0: e.clientX, y0: e.clientY, t: performance.now(), anchor: e.clientX, mode: 'none' };
     };
     const move = (e: PointerEvent) => {
       if (!g || e.pointerId !== g.id) return;
-      const dx = e.clientX - g.lastX;
-      if (!g.fast && Math.abs(dx) >= STEP) {
-        const steps = Math.trunc(dx / STEP);
-        for (let i = 0; i < Math.abs(steps); i++) handlers.move(steps > 0 ? 1 : -1);
-        g.lastX += steps * STEP;
-        g.moved = true;
+      const dx = e.clientX - g.x0;
+      const dy = e.clientY - g.y0;
+      if (g.mode === 'none' && Math.hypot(dx, dy) > SLOP) {
+        if (dy > 0 && dy > Math.abs(dx) * 1.2) {
+          g.mode = 'fast';
+          handlers.fast(true);
+        } else if (dy < 0 && -dy > Math.abs(dx) * 1.5) g.mode = 'up';
+        else g.mode = 'drag';
       }
-      const dy = e.clientY - g.y;
-      if (!g.fast && dy > 36 && dy > Math.abs(e.clientX - g.x) * 1.2) {
-        g.fast = true;
-        g.moved = true;
-        handlers.fast(true);
+      if (g.mode === 'drag') {
+        const s = step();
+        while (e.clientX - g.anchor >= s) {
+          handlers.move(1);
+          g.anchor += s;
+        }
+        while (g.anchor - e.clientX >= s) {
+          handlers.move(-1);
+          g.anchor -= s;
+        }
       }
     };
-    const up = (e: PointerEvent) => {
+    const end = (e: PointerEvent, cancelled: boolean) => {
       if (!g || e.pointerId !== g.id) return;
-      if (g.fast) handlers.fast(false);
-      else if (!g.moved && performance.now() - g.t < 350 && Math.hypot(e.clientX - g.x, e.clientY - g.y) < 14) handlers.rotate();
+      if (g.mode === 'fast') handlers.fast(false);
+      else if (!cancelled && (g.mode === 'up' || (g.mode === 'none' && performance.now() - g.t < TAP_MS))) handlers.rotate();
       g = null;
     };
-    const cancel = (e: PointerEvent) => {
-      if (!g || e.pointerId !== g.id) return;
-      if (g.fast) handlers.fast(false);
-      g = null;
-    };
+    const up = (e: PointerEvent) => end(e, false);
+    const cancel = (e: PointerEvent) => end(e, true);
     node.style.touchAction = 'none';
     node.addEventListener('pointerdown', down);
     node.addEventListener('pointermove', move);
@@ -55,129 +128,136 @@
 </script>
 
 <script lang="ts">
-  import { specialTargetsOthers, TOWER_SPECIALS, type RoomView, type TowerSpecial } from '@quiz/shared';
-  import { playerName } from '../../lib/format.ts';
-  import PlayerHead from '../PlayerHead.svelte';
-  import TowerIcon from './TowerIcon.svelte';
-  import { formatMeters } from './towerDraw.ts';
+  import { onDestroy, untrack } from 'svelte';
 
   /**
-   * Steuerung am Handy: große Knöpfe ◀ ▶ ⟳ ▼ (Schieben wiederholt beim Halten, ▼ beschleunigt solange gedrückt)
-   * und die Spezial-Taste. Störer brauchen ein Ziel: Köpfe der Mitspieler, der Führende ist vorausgewählt.
+   * Steuerung am Handy: große Knöpfe ◀ ▶ ⟳ ▼ (Schieben mit Auto-Repeat beim Halten, ▼ beschleunigt solange
+   * gedrückt) und die Zauber-Taste. Am Rechner dieselbe Steuerung über die Tastatur: Pfeile oder A/D schieben,
+   * Hoch/W/Leertaste dreht, Runter/S beschleunigt. Dunkle Zauber brauchen ein Ziel: Köpfe der Mitspieler,
+   * der Führende ist vorausgewählt.
    */
   let {
-    view,
-    stock,
-    targets,
     disabled = false,
     onMove,
     onRotate,
     onFast,
-    onUse,
   }: {
-    view: RoomView;
-    stock: TowerSpecial | null;
-    /** Mögliche Ziele mit Höhe, der Führende zuerst. */
-    targets: { id: string; height: number }[];
     disabled?: boolean;
     onMove: (dir: -1 | 1) => void;
     onRotate: () => void;
     onFast: (on: boolean) => void;
-    onUse: (special: TowerSpecial, targetId?: string) => void;
   } = $props();
 
   // ---------------------------------------------------- Halten = wiederholen
 
-  let repeat: ReturnType<typeof setTimeout> | null = null;
-  function hold(dir: -1 | 1, e: PointerEvent) {
+  const repeater = createRepeater(() => onMove);
+  let heldDirs = $state(new Set<number>());
+  repeater.watch((dirs) => (heldDirs = dirs));
+  onDestroy(() => repeater.releaseAll());
+
+  function press(dir: -1 | 1, e: PointerEvent) {
+    wakeTowerAudio();
     if (disabled) return;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    stopHold();
-    onMove(dir);
-    const again = (delay: number) => {
-      repeat = setTimeout(() => {
-        onMove(dir);
-        again(75);
-      }, delay);
-    };
-    again(230);
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    repeater.press(dir, `p${e.pointerId}`);
   }
-  function stopHold() {
-    if (repeat) clearTimeout(repeat);
-    repeat = null;
+  function release(dir: -1 | 1, e: PointerEvent) {
+    repeater.release(dir, `p${e.pointerId}`);
   }
 
+  // Schnell fallen: Knopf und Taste dürfen sich überlappen.
+  const fastBy = new Set<string>();
   let fastOn = $state(false);
-  function fast(on: boolean) {
-    if (fastOn === on) return;
-    fastOn = on;
-    onFast(on);
+  function fast(on: boolean, src: string) {
+    if (on && disabled) return;
+    if (on) fastBy.add(src);
+    else fastBy.delete(src);
+    const now = fastBy.size > 0;
+    if (now === fastOn) return;
+    fastOn = now;
+    onFast(now);
   }
 
-  // ---------------------------------------------------------- Spezial
-
-  let picking = $state(false);
-  let chosen = $state<string | null>(null);
-  const info = $derived(stock ? TOWER_SPECIALS[stock] : null);
-
-  function useClick() {
-    if (!stock || disabled) return;
-    if (!specialTargetsOthers(stock)) {
-      onUse(stock);
-      return;
-    }
-    if (targets.length === 0) return;
-    chosen = targets[0]!.id;
-    picking = true;
+  function rotate() {
+    wakeTowerAudio();
+    if (!disabled) onRotate();
   }
 
-  function confirm() {
-    if (!stock || !chosen) return;
-    onUse(stock, chosen);
-    picking = false;
-  }
-
+  // Gesperrt (Runde vorbei): alles Gehaltene loslassen.
   $effect(() => {
-    if (!stock) picking = false;
+    if (disabled) untrack(onBlur);
   });
+
+  // ---------------------------------------------------------- Tastatur
+
+  const KEY_DIR: Record<string, -1 | 1> = { ArrowLeft: -1, a: -1, A: -1, ArrowRight: 1, d: 1, D: 1 };
+  const typing = (e: KeyboardEvent) => {
+    const t = e.target as HTMLElement | null;
+    return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+  };
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (typing(e) || e.metaKey || e.ctrlKey || e.altKey) return;
+    const dir = KEY_DIR[e.key];
+    if (dir !== undefined) {
+      e.preventDefault();
+      wakeTowerAudio();
+      // Eigenes Auto-Repeat statt der Wiederholung des Systems.
+      if (!e.repeat && !disabled) repeater.press(dir, `k${e.key.toLowerCase()}`);
+    } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') {
+      e.preventDefault();
+      if (!e.repeat) rotate();
+    } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+      e.preventDefault();
+      wakeTowerAudio();
+      fast(true, 'key');
+    }
+  }
+  function onKeyUp(e: KeyboardEvent) {
+    const dir = KEY_DIR[e.key];
+    if (dir !== undefined) repeater.release(dir, `k${e.key.toLowerCase()}`);
+    else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') fast(false, 'key');
+  }
+  function onBlur() {
+    repeater.releaseAll();
+    fastBy.clear();
+    if (fastOn) {
+      fastOn = false;
+      onFast(false);
+    }
+  }
+
 </script>
 
-<div class="relative">
-  {#if picking && stock && info}
-    <div class="absolute inset-x-0 bottom-full z-20 mb-2 rounded-3xl border border-slate-700 bg-slate-950/95 p-3 shadow-xl backdrop-blur">
-      <p class="flex items-center gap-2 text-sm font-bold">
-        <TowerIcon special={stock} size={18} class="text-sky-400" />
-        {info.name} gegen wen?
-      </p>
-      <p class="mb-2 text-xs text-slate-500">{info.hint}</p>
-      <div class="flex flex-wrap gap-2">
-        {#each targets as t, i (t.id)}
-          <button
-            class="flex min-w-[5.5rem] flex-1 flex-col items-center gap-1 rounded-2xl border-2 px-2 py-2 transition
-              {chosen === t.id ? 'border-sky-500 bg-sky-500/15' : 'border-slate-800'}"
-            onclick={() => (chosen = t.id)}
-          >
-            <PlayerHead {view} id={t.id} size={40} />
-            <span class="max-w-full truncate text-sm font-bold">{playerName(view, t.id)}</span>
-            <span class="text-xs text-slate-500">{formatMeters(t.height)} m{i === 0 ? ' · vorne' : ''}</span>
-          </button>
-        {/each}
-      </div>
-      <div class="mt-3 flex gap-2">
-        <button class="btn-ghost flex-1" onclick={() => (picking = false)}>Abbrechen</button>
-        <button class="btn-primary flex-[2]" disabled={!chosen} onclick={confirm}>Einsetzen</button>
-      </div>
-    </div>
-  {/if}
+<svelte:window onkeydown={onKeyDown} onkeyup={onKeyUp} onblur={onBlur} />
 
-  <div class="grid grid-cols-[1fr_1fr_1fr_1fr_1.15fr] gap-2 select-none">
-    <button class="ctl" aria-label="nach links" {disabled} onpointerdown={(e) => hold(-1, e)} onpointerup={stopHold} onpointercancel={stopHold} onlostpointercapture={stopHold}>
+<div class="relative">
+  <div class="grid grid-cols-4 gap-2 select-none">
+    <button
+      class="ctl {heldDirs.has(-1) ? 'ctl-on' : ''}"
+      aria-label="nach links"
+      {disabled}
+      onpointerdown={(e) => press(-1, e)}
+      onpointerup={(e) => release(-1, e)}
+      onpointercancel={(e) => release(-1, e)}
+      onlostpointercapture={(e) => release(-1, e)}
+      oncontextmenu={(e) => e.preventDefault()}
+    >
       <svg viewBox="0 0 24 24" class="h-7 w-7"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
     </button>
-    <button class="ctl" aria-label="nach rechts" {disabled} onpointerdown={(e) => hold(1, e)} onpointerup={stopHold} onpointercancel={stopHold} onlostpointercapture={stopHold}>
+    <button
+      class="ctl {heldDirs.has(1) ? 'ctl-on' : ''}"
+      aria-label="nach rechts"
+      {disabled}
+      onpointerdown={(e) => press(1, e)}
+      onpointerup={(e) => release(1, e)}
+      onpointercancel={(e) => release(1, e)}
+      onlostpointercapture={(e) => release(1, e)}
+      oncontextmenu={(e) => e.preventDefault()}
+    >
       <svg viewBox="0 0 24 24" class="h-7 w-7"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
     </button>
-    <button class="ctl" aria-label="drehen" {disabled} onpointerdown={() => !disabled && onRotate()}>
+    <button class="ctl" aria-label="drehen" {disabled} onpointerdown={rotate} oncontextmenu={(e) => e.preventDefault()}>
       <svg viewBox="0 0 24 24" class="h-7 w-7"><path d="M19 12a7 7 0 1 1-2.05-4.95M19 4v4h-4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
     </button>
     <button
@@ -185,28 +265,16 @@
       aria-label="schneller fallen"
       {disabled}
       onpointerdown={(e) => {
-        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-        fast(true);
+        wakeTowerAudio();
+        (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+        fast(true, `p${e.pointerId}`);
       }}
-      onpointerup={() => fast(false)}
-      onpointercancel={() => fast(false)}
-      onlostpointercapture={() => fast(false)}
+      onpointerup={(e) => fast(false, `p${e.pointerId}`)}
+      onpointercancel={(e) => fast(false, `p${e.pointerId}`)}
+      onlostpointercapture={(e) => fast(false, `p${e.pointerId}`)}
+      oncontextmenu={(e) => e.preventDefault()}
     >
       <svg viewBox="0 0 24 24" class="h-7 w-7"><path d="M6 7l6 6 6-6M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
-    </button>
-    <button
-      class="ctl flex-col gap-0.5 {stock ? 'ctl-special' : 'opacity-50'}"
-      aria-label="Spezial einsetzen"
-      disabled={!stock || disabled}
-      onclick={useClick}
-    >
-      {#if stock && info}
-        <TowerIcon special={stock} size={24} />
-        <span class="text-[0.65rem] font-black leading-none">{info.name}</span>
-      {:else}
-        <svg viewBox="0 0 24 24" class="h-6 w-6"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
-        <span class="text-[0.6rem] font-bold leading-none">leer</span>
-      {/if}
     </button>
   </div>
 </div>
@@ -225,8 +293,11 @@
       0 1px 0 rgba(255, 255, 255, 0.9) inset,
       0 4px 0 rgba(30, 50, 90, 0.14),
       0 8px 18px -10px rgba(30, 50, 90, 0.35);
-    transition: transform 80ms ease, box-shadow 80ms ease;
+    transition: transform 70ms ease, box-shadow 70ms ease;
     -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
     touch-action: none;
   }
   .ctl:active:not(:disabled),
@@ -235,24 +306,5 @@
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.9) inset,
       0 1px 0 rgba(30, 50, 90, 0.14);
-  }
-  .ctl-special {
-    background: linear-gradient(180deg, #ffe6a3, #ffc542);
-    color: #4a3200;
-    border-color: rgba(160, 100, 0, 0.35);
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.8) inset,
-      0 4px 0 #d39a12,
-      0 0 22px -4px rgba(255, 190, 40, 0.8);
-    animation: tower-ready 1.6s ease-in-out infinite;
-  }
-  @keyframes tower-ready {
-    0%,
-    100% {
-      filter: brightness(1);
-    }
-    50% {
-      filter: brightness(1.08);
-    }
   }
 </style>

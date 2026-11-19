@@ -4,6 +4,7 @@
  * Die Physik läuft auf jedem Handy, hier stehen nur Formen, Steinstrom, Spezials, Rangliste und das Frame-Format.
  */
 
+import { shuffle } from './sort.ts';
 import { seededRandom } from './splash.ts';
 
 // ---------------------------------------------------------------- Optionen
@@ -73,8 +74,11 @@ export const TOWER_BASIC_FORMS = 7;
 export const TOWER_BOULDER = 7;
 /** Kein Stein, sondern der Stützbalken (nur im Frame). */
 export const TOWER_BEAM = 8;
-export const TOWER_FORM_COUNT = 9;
-export const TOWER_FORM_NAMES = ['I', 'O', 'T', 'S', 'Z', 'L', 'J', 'Brocken', 'Balken'] as const;
+/** Rundstein (dunkle Magie): physikalisch ein Kreis mit Radius `TOWER_ROUND_RADIUS`, keine Zellen. */
+export const TOWER_ROUND = 9;
+export const TOWER_ROUND_RADIUS = 0.9;
+export const TOWER_FORM_COUNT = 10;
+export const TOWER_FORM_NAMES = ['I', 'O', 'T', 'S', 'Z', 'L', 'J', 'Brocken', 'Balken', 'Rund'] as const;
 /** Maße des Stützbalkens (halbe Breite und halbe Höhe). */
 export const TOWER_BEAM_HALF = { w: 3.2, h: 0.2 } as const;
 
@@ -139,12 +143,49 @@ export function towerPiece(seed: number, index: number): { form: number; special
   return { form: bag[index % TOWER_BASIC_FORMS]!, special };
 }
 
+/** So weit (in Einheiten) erscheint ein neuer Stein höchstens neben der Mitte. */
+export const TOWER_SPAWN_SPREAD = 3.5;
+
+/**
+ * Startlage von Stein Nummer `index`: seitlicher Versatz auf halben Einheiten und Vierteldrehungen im
+ * Uhrzeigersinn. Deterministisch aus dem Seed, damit alle dieselben Bedingungen haben. Wer nichts tut, lässt die
+ * Steine schief und neben den Sockel fallen; Steuern lohnt sich also immer. Der erste Stein kommt gerade und mittig.
+ */
+export function towerSpawn(seed: number, index: number): { x: number; turns: number } {
+  if (index === 0) return { x: 0, turns: 0 };
+  const rnd = seededRandom(mix(seed ^ 0x2c1b3c6d, index));
+  const steps = TOWER_SPAWN_SPREAD * 2;
+  const x = (Math.floor(rnd() * (steps * 2 + 1)) - steps) / 2;
+  const turns = Math.floor(rnd() * 4);
+  return { x, turns };
+}
+
+/** Der Turm zählt über der Linie nur, wenn von den zuletzt gelandeten Steinen mindestens einer selbst gesteuert war. */
+export const TOWER_STEERED_WINDOW = 3;
+
 // ----------------------------------------------------------------- Spezials
 
-export type TowerSpecial = 'glue' | 'shrink' | 'beam' | 'boulder' | 'ice' | 'gust' | 'fog' | 'turbo';
-export const TOWER_SPECIAL_IDS: readonly TowerSpecial[] = ['glue', 'shrink', 'beam', 'boulder', 'ice', 'gust', 'fog', 'turbo'];
-/** Helfer wirken auf den eigenen Turm, Störer sowie Sicht und Tempo auf ein Ziel. */
-export type TowerSpecialGroup = 'helper' | 'attack' | 'sight';
+/**
+ * Magie. Helle Zauber wirken auf den eigenen Turm, dunkle auf einen gewählten Gegner. An jeder Höhenmarke
+ * (und bei Spezialsteinen) bietet der Server ein Paar an, einen hellen und einen dunklen Zauber; der Spieler
+ * nimmt genau einen davon (`tower_choose`). Pro Partie ist nur eine Auswahl aller Zauber im Spiel (`pool`).
+ */
+export type TowerSpecial =
+  | 'glue'
+  | 'shrink'
+  | 'beam'
+  | 'petrify'
+  | 'shield'
+  | 'vanish'
+  | 'boulder'
+  | 'ice'
+  | 'gust'
+  | 'fog'
+  | 'turbo'
+  | 'round';
+export const TOWER_SPECIAL_IDS: readonly TowerSpecial[] = ['glue', 'shrink', 'beam', 'petrify', 'shield', 'vanish', 'boulder', 'ice', 'gust', 'fog', 'turbo', 'round'];
+export type TowerSpecialGroup = 'light' | 'dark';
+export type TowerSide = TowerSpecialGroup;
 
 export interface TowerSpecialInfo {
   name: string;
@@ -156,18 +197,29 @@ export interface TowerSpecialInfo {
   value: number;
 }
 
+/** Werte (Dauer, Stärke, Texte) darf der Spielgefühl-Feinschliff anpassen; Ids und Gruppen sind fest. */
 export const TOWER_SPECIALS: Record<TowerSpecial, TowerSpecialInfo> = {
-  glue: { name: 'Kleber', group: 'helper', durationMs: 0, value: 3, hint: 'Dein nächster Stein haftet beim Aufsetzen fest.' },
-  shrink: { name: 'Schrumpfen', group: 'helper', durationMs: 0, value: 2, hint: 'Dein aktueller Stein schrumpft auf 70 %.' },
-  beam: { name: 'Stützbalken', group: 'helper', durationMs: 20_000, value: 3, hint: 'Ein fester Balken knapp unter deiner Turmspitze, 20 Sekunden lang.' },
-  boulder: { name: 'Brocken', group: 'attack', durationMs: 0, value: 2, hint: 'Der nächste Stein deines Ziels ist eine sperrige Fünferform.' },
-  ice: { name: 'Glatteis', group: 'attack', durationMs: 10_000, value: 2, hint: 'Die Steine deines Ziels werden 10 Sekunden lang spiegelglatt.' },
-  gust: { name: 'Windstoß', group: 'attack', durationMs: 0, value: 2, hint: 'Ein kräftiger Stoß von der Seite gegen den Turm deines Ziels.' },
-  fog: { name: 'Nebel', group: 'sight', durationMs: 8_000, value: 1, hint: 'Dein Ziel sieht 8 Sekunden keine Vorschau, die obere Turmhälfte verschwimmt.' },
-  turbo: { name: 'Turbo', group: 'sight', durationMs: 10_000, value: 1, hint: 'Die Steine deines Ziels fallen 10 Sekunden doppelt so schnell.' },
+  glue: { name: 'Ranken', group: 'light', durationMs: 0, value: 3, hint: 'Ranken überwuchern deine oberen Steine und halten sie fest zusammen.' },
+  shrink: { name: 'Schrumpfen', group: 'light', durationMs: 0, value: 2, hint: 'Dein aktueller Stein schrumpft, gut zum Stopfen von Lücken.' },
+  beam: { name: 'Stützbalken', group: 'light', durationMs: 20_000, value: 3, hint: 'Ein fester Balken knapp unter deiner Turmspitze, 20 Sekunden lang.' },
+  petrify: { name: 'Versteinern', group: 'light', durationMs: 0, value: 3, hint: 'Dein Turm bis knapp unter die Spitze wird zu festem Fels.' },
+  shield: { name: 'Schutzschild', group: 'light', durationMs: 30_000, value: 2, hint: 'Blockt den nächsten dunklen Zauber gegen dich.' },
+  vanish: { name: 'Wegzaubern', group: 'light', durationMs: 0, value: 2, hint: 'Dein zuletzt gesetzter Stein verschwindet.' },
+  boulder: { name: 'Riesenstein', group: 'dark', durationMs: 0, value: 2, hint: 'Der nächste Stein deines Ziels ist übergroß.' },
+  ice: { name: 'Glatteis', group: 'dark', durationMs: 10_000, value: 2, hint: 'Die Steine deines Ziels werden 10 Sekunden lang spiegelglatt.' },
+  gust: { name: 'Windstoß', group: 'dark', durationMs: 0, value: 2, hint: 'Ein kräftiger Stoß von der Seite gegen den Turm deines Ziels.' },
+  fog: { name: 'Nebel', group: 'dark', durationMs: 8_000, value: 1, hint: 'Eine Wolke verdeckt deinem Ziel 8 Sekunden lang Turm und Vorschau.' },
+  turbo: { name: 'Turbo', group: 'dark', durationMs: 10_000, value: 1, hint: 'Die Steine deines Ziels fallen 10 Sekunden doppelt so schnell.' },
+  round: { name: 'Rundstein', group: 'dark', durationMs: 0, value: 2, hint: 'Der nächste Stein deines Ziels ist rund und rollt.' },
 };
 
-export const TOWER_GROUP_LABELS: Record<TowerSpecialGroup, string> = { helper: 'Helfer', attack: 'Störer', sight: 'Sicht und Tempo' };
+export const TOWER_GROUP_LABELS: Record<TowerSpecialGroup, string> = { light: 'Helle Magie', dark: 'Dunkle Magie' };
+
+/** Angebot an einer Marke: ein heller und ein dunkler Zauber, genau einer wird genommen. */
+export interface TowerOffer {
+  light: TowerSpecial;
+  dark: TowerSpecial;
+}
 
 /** So lange bleiben einmalige Effekte (Windstoß, Brocken …) als Hinweis sichtbar. */
 export const TOWER_EFFECT_SHOW_MS = 3000;
@@ -178,37 +230,37 @@ export function isTowerSpecial(x: unknown): x is TowerSpecial {
 
 /** Muss der Spieler ein Ziel wählen? */
 export function specialTargetsOthers(s: TowerSpecial): boolean {
-  return TOWER_SPECIALS[s].group !== 'helper';
+  return TOWER_SPECIALS[s].group === 'dark';
+}
+
+/** So viele helle und dunkle Zauber sind pro Partie im Spiel. */
+export const TOWER_POOL_PER_SIDE = 4;
+
+/** Zieht die Auswahl einer Partie: je Seite `TOWER_POOL_PER_SIDE` Zauber. */
+export function towerPool(random: () => number): TowerSpecial[] {
+  const pick = (group: TowerSpecialGroup) => shuffle(TOWER_SPECIAL_IDS.filter((id) => TOWER_SPECIALS[id].group === group), random).slice(0, TOWER_POOL_PER_SIDE);
+  return [...pick('light'), ...pick('dark')];
 }
 
 /**
- * Gewichte für die Vergabe nach Rang (1 = vorne) bei `n` Spielern. Aufholhilfe: Wer zurückliegt, bekommt deutlich
- * öfter starke Helfer für den eigenen Turm, wer vorne liegt, eher milde Sicht- und Tempo-Effekte und Störer.
+ * Angebot an einer Marke nach Rang (1 = vorne) bei `n` Spielern, aus der Auswahl der Partie. Aufholhilfe: Wer
+ * zurückliegt, bekommt eher starke helle Zauber (hoher `value`), wer vorne liegt, eher schwache.
  */
-export function specialWeights(rank: number, n: number): Record<TowerSpecial, number> {
+export function offerFor(rank: number, n: number, pool: readonly TowerSpecial[], random: () => number): TowerOffer {
   const t = n <= 1 ? 0.5 : Math.min(1, Math.max(0, (rank - 1) / (n - 1)));
-  return {
-    glue: 0.5 + 3.5 * t,
-    beam: 0.5 + 3 * t,
-    shrink: 1 + 1.5 * t,
-    boulder: 1,
-    ice: 1,
-    gust: 1 + 0.5 * t,
-    fog: 2 - 1.5 * t,
-    turbo: 2 - 1.5 * t,
+  const draw = (group: TowerSpecialGroup): TowerSpecial => {
+    const ids = pool.filter((id) => TOWER_SPECIALS[id].group === group);
+    const list = ids.length > 0 ? ids : TOWER_SPECIAL_IDS.filter((id) => TOWER_SPECIALS[id].group === group);
+    const weight = (id: TowerSpecial) => (group === 'light' ? 1 + (TOWER_SPECIALS[id].value - 2) * (t - 0.5) * 2 : 1);
+    const total = list.reduce((sum, id) => sum + Math.max(0.1, weight(id)), 0);
+    let r = random() * total;
+    for (const id of list) {
+      r -= Math.max(0.1, weight(id));
+      if (r < 0) return id;
+    }
+    return list[list.length - 1]!;
   };
-}
-
-/** Zieht ein Spezial passend zum Rang. */
-export function specialFor(rank: number, n: number, random: () => number): TowerSpecial {
-  const weights = specialWeights(rank, n);
-  const total = TOWER_SPECIAL_IDS.reduce((s, id) => s + weights[id], 0);
-  let r = random() * total;
-  for (const id of TOWER_SPECIAL_IDS) {
-    r -= weights[id];
-    if (r < 0) return id;
-  }
-  return TOWER_SPECIAL_IDS[TOWER_SPECIAL_IDS.length - 1]!;
+  return { light: draw('light'), dark: draw('dark') };
 }
 
 // ---------------------------------------------------------------- Rangliste
@@ -273,7 +325,11 @@ export const STONE_GLUED = 2;
 export const STONE_SPECIAL = 4;
 export const STONE_SHRUNK = 8;
 export const STONE_ICY = 16;
-const STONE_FLAGS_MAX = 31;
+/** Versteinert: fest, bewegt sich nicht mehr. */
+export const STONE_PETRIFIED = 32;
+/** Riesenstein: übergroß gezeichnet und simuliert. */
+export const STONE_GIANT = 64;
+const STONE_FLAGS_MAX = 127;
 
 /** Effekt-Flags des ganzen Turms */
 export const FX_ICE = 1;
@@ -282,7 +338,9 @@ export const FX_TURBO = 4;
 export const FX_BEAM = 8;
 export const FX_GLUE = 16;
 export const FX_BOULDER = 32;
-const FX_MAX = 63;
+/** Schutzschild aktiv. */
+export const FX_SHIELD = 64;
+const FX_MAX = 127;
 
 export interface TowerStone {
   id: number;

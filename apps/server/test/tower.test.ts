@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { isClientMsg, packFrame, TOWER_EFFECT_SHOW_MS, TOWER_GOAL_HEIGHT, TOWER_SPECIALS, towerPiece, type TowerSpecial } from '@quiz/shared';
 import { toView } from '../src/rooms/view.ts';
 import type { TowerRound } from '../src/rooms/state.ts';
-import { acceptTowerFrame, TOWER_MIN_FINISH_MS } from '../src/games/tower/reducer.ts';
+import { acceptTowerFrame, TOWER_COUNTDOWN_MS, TOWER_MIN_FINISH_MS } from '../src/games/tower/reducer.ts';
 import { expectOk, makeHarness, startTower, type Harness } from './fixtures.ts';
 
 function tr(h: Harness): TowerRound {
@@ -70,6 +70,27 @@ describe('Hochstapler: Start', () => {
   });
 });
 
+describe('Hochstapler: Start-Countdown', () => {
+  test('alle bekommen dieselbe Startzeit, vorher gehen keine Spezials, das Ziel zählt ab „Los!“', () => {
+    const h = makeHarness(['A', 'B']);
+    const [a, b] = h.ids as [string, string];
+    startTower(h, 'low', { countdown: true });
+    const r = tr(h);
+    expect(r.goAt - r.startedAt).toBe(TOWER_COUNTDOWN_MS);
+    expect(viewRound(h, a).goAt).toBe(r.goAt);
+    expect(viewRound(h, null).goAt).toBe(r.goAt);
+    give(h, a, 'fog');
+    expect(h.act(a, { type: 'tower_special_use', special: 'fog', targetId: b }).ok).toBe(false);
+    h.scheduler.advance(TOWER_COUNTDOWN_MS);
+    expectOk(h.act(a, { type: 'tower_special_use', special: 'fog', targetId: b }));
+    // Mindestzeit fürs Ziel läuft erst ab „Los!“.
+    h.scheduler.advance(TOWER_MIN_FINISH_MS - 1);
+    expect(h.act(a, { type: 'tower_finish', height: TOWER_GOAL_HEIGHT.low + 0.2 }).ok).toBe(false);
+    h.scheduler.advance(1);
+    expectOk(h.act(a, { type: 'tower_finish', height: TOWER_GOAL_HEIGHT.low + 0.2 }));
+  });
+});
+
 describe('Hochstapler: Marken und Spezials', () => {
   test('erste Überbauung einer Marke bringt ein Spezial, jede Marke nur einmal', () => {
     const h = makeHarness(['A', 'B']);
@@ -79,6 +100,9 @@ describe('Hochstapler: Marken und Spezials', () => {
     expectOk(h.act(a, { type: 'tower_mark', height: 3.4 }));
     const p = tr(h).players[a]!;
     expect(p.marks).toEqual([3]);
+    expect(p.offer).not.toBeNull();
+    expectOk(h.act(a, { type: 'tower_choose', side: 'light' }));
+    expect(p.offer).toBeNull();
     expect(p.stock).not.toBeNull();
     expect(viewRound(h, a).my?.stock).toBe(p.stock);
     // Andere sehen nur, dass etwas im Vorrat liegt.
@@ -111,15 +135,15 @@ describe('Hochstapler: Marken und Spezials', () => {
     expect(h.act(a, { type: 'tower_mark', height: 1, piece: plain }).ok).toBe(false);
     const piece = specialPiece(h, a);
     expectOk(h.act(a, { type: 'tower_mark', height: 1, piece }));
-    expect(tr(h).players[a]!.stock).not.toBeNull();
-    tr(h).players[a]!.stock = null;
+    expect(tr(h).players[a]!.offer).not.toBeNull();
+    tr(h).players[a]!.offer = null;
     expect(h.act(a, { type: 'tower_mark', height: 1, piece }).ok).toBe(false);
-    expect(tr(h).players[a]!.stock).toBeNull();
+    expect(tr(h).players[a]!.offer).toBeNull();
   });
 
-  test('Aufholhilfe: wer hinten liegt, bekommt öfter Helfer', () => {
-    let behindHelpers = 0;
-    let frontHelpers = 0;
+  test('Aufholhilfe: wer hinten liegt, bekommt stärkere helle Zauber angeboten', () => {
+    let behindValue = 0;
+    let frontValue = 0;
     for (let seed = 1; seed <= 60; seed++) {
       const h = makeHarness(['A', 'B', 'C', 'D'], { seed });
       const [a, b, c, d] = h.ids as [string, string, string, string];
@@ -131,10 +155,52 @@ describe('Hochstapler: Marken und Spezials', () => {
       // A liegt mit 3,2 hinten, D mit 9,4 vorne.
       expectOk(h.act(a, { type: 'tower_mark', height: 3.2 }));
       expectOk(h.act(d, { type: 'tower_mark', height: 9.4 }));
-      if (TOWER_SPECIALS[r.players[a]!.stock!].group === 'helper') behindHelpers++;
-      if (TOWER_SPECIALS[r.players[d]!.stock!].group === 'helper') frontHelpers++;
+      behindValue += TOWER_SPECIALS[r.players[a]!.offer!.light].value;
+      frontValue += TOWER_SPECIALS[r.players[d]!.offer!.light].value;
     }
-    expect(behindHelpers).toBeGreaterThan(frontHelpers + 15);
+    expect(behindValue).toBeGreaterThan(frontValue + 5);
+  });
+
+  test('Angebot: hell oder dunkel wählen, nur Eigenes sichtbar, neues Angebot ersetzt', () => {
+    const h = makeHarness(['A', 'B']);
+    const [a, b] = h.ids as [string, string];
+    startTower(h);
+    expect(h.act(a, { type: 'tower_choose', side: 'light' }).ok).toBe(false);
+    expectOk(h.act(a, { type: 'tower_mark', height: 3.1 }));
+    const offer = viewRound(h, a).my!.offer!;
+    expect(TOWER_SPECIALS[offer.light].group).toBe('light');
+    expect(TOWER_SPECIALS[offer.dark].group).toBe('dark');
+    expect(viewRound(h, b).my!.offer).toBeNull();
+    expect(viewRound(h, null).my).toBeUndefined();
+    expect(viewRound(h, null).pool).toHaveLength(8);
+    expectOk(h.act(a, { type: 'tower_choose', side: 'dark' }));
+    expect(tr(h).players[a]!.stock).toBe(offer.dark);
+    expect(tr(h).players[a]!.offer).toBeNull();
+    expect(h.act(a, { type: 'tower_choose', side: 'light' }).ok).toBe(false);
+    // Wählen bei vollem Vorrat ersetzt den alten Zauber.
+    expectOk(h.act(a, { type: 'tower_mark', height: 6.2 }));
+    const second = tr(h).players[a]!.offer!;
+    expectOk(h.act(a, { type: 'tower_choose', side: 'light' }));
+    expect(tr(h).players[a]!.stock).toBe(second.light);
+  });
+
+  test('Schutzschild fängt den nächsten dunklen Zauber ab', () => {
+    const h = makeHarness(['A', 'B']);
+    const [a, b] = h.ids as [string, string];
+    startTower(h);
+    give(h, b, 'shield');
+    expectOk(h.act(b, { type: 'tower_special_use', special: 'shield' }));
+    expect(viewRound(h, null).players[b]!.shielded).toBe(true);
+    give(h, a, 'ice');
+    expectOk(h.act(a, { type: 'tower_special_use', special: 'ice', targetId: b }));
+    const ice = viewRound(h, b).effects.find((e) => e.special === 'ice')!;
+    expect(ice.blocked).toBe(true);
+    expect(ice.until - ice.at).toBe(TOWER_EFFECT_SHOW_MS);
+    expect(viewRound(h, null).players[b]!.shielded).toBe(false);
+    // Der nächste trifft.
+    give(h, a, 'fog');
+    expectOk(h.act(a, { type: 'tower_special_use', special: 'fog', targetId: b }));
+    expect(viewRound(h, b).effects.find((e) => e.special === 'fog')!.blocked).toBeUndefined();
   });
 
   test('Störer kommt beim Ziel an, Helfer wirkt auf sich selbst', () => {
