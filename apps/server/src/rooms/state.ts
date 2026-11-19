@@ -1,4 +1,4 @@
-import type { Point, SongStage, SongsAudio, SplashOptions, SplashStage } from '@quiz/shared';
+import type { Point, SongStage, SongsAudio, SplashOptions, SplashStage, TowerFrame, TowerOptions, TowerSpecial } from '@quiz/shared';
 import type { BluffStage, FaceEffectState, GuessMode, GuessStatus, JudgeStatus, KidsPenalty, KidsStage, KidsThinkSeconds, MatchSelection, PictureMode, PlacementStatus, RiskRules, Selection, StillsResultView, StillsStage } from '@quiz/shared';
 import type { Category, EventsCategory, Face, FacesCategory, PairsCategory, PictureCategory, PlacesCategory, PromptsCategory, Question, QuestionsCategory, RankedCategory, Song, SongsCategory, StillsCategory, TimelineEvent } from '@quiz/content';
 
@@ -471,4 +471,43 @@ export interface SplashRound extends BaseRound {
   owners: string[];
 }
 
-export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound | FacesRound | KidsRound | StillsRound | SongsRound | SplashRound;
+// -------------------------------------------------------------- Hochstapler
+
+export interface TowerPlayerState {
+  /** Steinstrom des Spielers. */
+  seed: number;
+  /** Höchstens ein Spezial im Vorrat. */
+  stock: TowerSpecial | null;
+  /** Zuletzt gemeldete Höhe (Frames und Meldungen). */
+  height: number;
+  /** Schon überbaute Höhenmarken, jede bringt nur einmal ein Spezial. */
+  marks: number[];
+  /** Eingelöste Spezialsteine (Index im Steinstrom). */
+  claimed: number[];
+  finishedAt: number | null;
+}
+
+export interface TowerEffect {
+  id: number;
+  special: TowerSpecial;
+  by: string;
+  target: string;
+  at: number;
+  until: number;
+}
+
+export interface TowerRound extends BaseRound {
+  game: 'tower';
+  category: PseudoCategory;
+  options: TowerOptions;
+  startedAt: number;
+  goalHeight: number;
+  players: Record<string, TowerPlayerState>;
+  effects: TowerEffect[];
+  nextEffectId: number;
+  winners: string[];
+  /** Letzter Schnappschuss je Spieler, für neu verbundene Geräte und die Auflösung. Nicht Teil der Sicht. */
+  frames: Record<string, TowerFrame>;
+}
+
+export type Round = SortRound | TopXRound | MatchRound | MapRound | TimelineRound | RiskRound | BluffRound | MorseRound | PictureRound | FacesRound | KidsRound | StillsRound | SongsRound | SplashRound | TowerRound;

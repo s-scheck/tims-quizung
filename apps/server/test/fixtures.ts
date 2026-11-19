@@ -1,5 +1,5 @@
 import type { Category } from '@quiz/content';
-import { SPLASH_DEFAULTS, type ClientMsg, type TimerSeconds, type RevealMode, type SplashOptions } from '@quiz/shared';
+import { SPLASH_DEFAULTS, type ClientMsg, type TimerSeconds, type RevealMode, type SplashOptions, type TowerGoal } from '@quiz/shared';
 import { Room, type CategoryProvider } from '../src/rooms/room.ts';
 import { FakeScheduler } from '../src/rooms/scheduler.ts';
 import '../src/games/index.ts';
@@ -385,6 +385,13 @@ export function startSplash(h: Harness, splash: Partial<SplashOptions> = {}): vo
   expectOk(h.act(h.host, { type: 'start_game' }));
   expectOk(h.act(h.host, { type: 'intro_done' }));
   expectOk(h.act(h.host, { type: 'choose_category', gameId: 'splash', categoryId: 'quiz', splash: { ...SPLASH_DEFAULTS, ...splash } }));
+}
+
+/** Startet Spiel und Hochstapler-Runde mit der gewählten Ziellinie. */
+export function startTower(h: Harness, goal: TowerGoal = 'low'): void {
+  expectOk(h.act(h.host, { type: 'start_game' }));
+  expectOk(h.act(h.host, { type: 'intro_done' }));
+  expectOk(h.act(h.host, { type: 'choose_category', gameId: 'tower', categoryId: 'tower', tower: { goal } }));
 }
 
 export function startMorse(h: Harness, word = 'Hallo Welt'): void {

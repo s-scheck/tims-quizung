@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import { CLOSE_CODES, PROTOCOL_VERSION, type ClientMsg, type ServerMsg } from '@quiz/shared';
+import { CLOSE_CODES, packFrame, PROTOCOL_VERSION, type ClientMsg, type ServerMsg } from '@quiz/shared';
 import { createServer, type QuizServer } from '../src/server.ts';
 import { provider } from './fixtures.ts';
 
@@ -150,7 +150,7 @@ describe('WebSocket-Ablauf', () => {
     const started = await tim2.nextOfType('state');
     expect(started.room.phase).toBe('choosing_category');
     expect(started.room.categories?.length).toBe(14);
-    expect(started.room.games?.length).toBe(14);
+    expect(started.room.games?.length).toBe(15);
 
     // Kick schließt Annas Socket mit 4001.
     tim2.send({ type: 'kick', playerId: annaWelcome.playerId! });
@@ -300,5 +300,59 @@ describe('WebSocket-Ablauf', () => {
     host.close();
     b.close();
     screen.close();
+  });
+  test('Hochstapler: Frames gehen ohne Echo an Mitspieler und Bildschirm, ungültige werden abgelehnt', async () => {
+    const a = new Client(wsUrl);
+    await a.open();
+    a.send({ type: 'create', name: 'A', version: PROTOCOL_VERSION });
+    const w = await a.nextOfType('welcome');
+    await a.nextOfType('state');
+    const b = new Client(wsUrl);
+    await b.open();
+    b.send({ type: 'join', code: w.code, name: 'B', version: PROTOCOL_VERSION });
+    await b.nextOfType('welcome');
+    await b.nextOfType('state');
+    await a.nextOfType('state');
+    const screen = new Client(wsUrl);
+    await screen.open();
+    screen.send({ type: 'watch', code: w.code, version: PROTOCOL_VERSION });
+    await screen.nextOfType('welcome');
+    await screen.nextOfType('state');
+
+    for (const msg of [{ type: 'start_game' }, { type: 'intro_done' }, { type: 'choose_category', gameId: 'tower', categoryId: 'tower', tower: { goal: 'low' } }] as ClientMsg[]) {
+      a.send(msg);
+      await a.nextOfType('state');
+      await b.nextOfType('state');
+      await screen.nextOfType('state');
+    }
+
+    const frame = packFrame({ t: 123, h: 2.5, fx: 0, hold: 0, next: 3, stones: [{ id: 1, form: 2, x: 0.5, y: 0.5, a: 0, flags: 0 }] });
+    a.send({ type: 'tower_frame', frame });
+    expect(await b.nextOfType('tower_frame')).toEqual({ type: 'tower_frame', playerId: w.playerId!, frame });
+    expect(await screen.nextOfType('tower_frame')).toMatchObject({ playerId: w.playerId, frame: { h: 2.5 } });
+    // Kein Echo: Die nächste Nachricht an A ist die Antwort auf den Ping.
+    a.send({ type: 'ping' });
+    expect((await a.next()).type).toBe('pong');
+    // Ohne Zustandswechsel: Die Höhe steht im Raum, aber es gab keinen Broadcast.
+    const room = app.registry.get(w.code)!;
+    expect(room.round?.game === 'tower' ? room.round.players[w.playerId!]?.height : null).toBe(2.5);
+
+    a.send({ type: 'tower_frame', frame: { ...frame, s: [1, 2, 3] } } as unknown as ClientMsg);
+    expect(await a.nextOfType('error')).toMatchObject({ code: 'bad_message' });
+    a.sendRaw(JSON.stringify({ type: 'tower_frame', frame: { ...frame, s: new Array(200 * 6).fill(0) } }));
+    expect(await a.nextOfType('error')).toMatchObject({ code: 'bad_message' });
+
+    // Ein neuer Bildschirm bekommt den letzten Stand jedes Turms.
+    const late = new Client(wsUrl);
+    await late.open();
+    late.send({ type: 'watch', code: w.code, version: PROTOCOL_VERSION });
+    await late.nextOfType('welcome');
+    await late.nextOfType('state');
+    expect(await late.nextOfType('tower_frame')).toMatchObject({ playerId: w.playerId, frame: { h: 2.5 } });
+
+    a.close();
+    b.close();
+    screen.close();
+    late.close();
   });
 });

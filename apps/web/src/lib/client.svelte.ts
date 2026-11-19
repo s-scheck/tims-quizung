@@ -9,6 +9,7 @@ import {
 } from '@quiz/shared';
 import { clearSession, saveSession } from './session.ts';
 import { toasts } from './toast.svelte.ts';
+import { towerFeed } from '../components/tower/towerFeed.svelte.ts';
 
 /** So lange darf der Server nach dem Zurückkehren in die App auf einen Ping schweigen. */
 const PROBE_TIMEOUT_MS = 4000;
@@ -313,6 +314,9 @@ export class Client {
         toasts.error(msg.message);
         return;
       }
+      case 'tower_frame':
+        towerFeed.push(msg.playerId, msg.frame);
+        return;
       case 'pong':
         this.serverOffset = msg.serverNow - Date.now();
         if (this.probeTimer) {

@@ -17,6 +17,8 @@ import {
   type SplashOptions,
   SPLASH_DEFAULTS,
   type HeadShape,
+  TOWER_DEFAULTS,
+  type TowerOptions,
 } from '@quiz/shared';
 import type { Category } from '@quiz/content';
 import type { Scheduler, TimerHandle } from './scheduler.ts';
@@ -82,6 +84,8 @@ export class Room {
   riskRules: RiskRules = { duplicates: 'both', missPoints: 0 };
   /** Zuletzt gewählte Einstellungen für Splash!. */
   splashOptions: SplashOptions = { ...SPLASH_DEFAULTS };
+  /** Zuletzt gewählte Ziellinie für Hochstapler. */
+  towerOptions: TowerOptions = { ...TOWER_DEFAULTS };
   /** Zuletzt gewählte Art der Auflösung, Vorgabe für den Picker. */
   revealMode: RevealMode = 'auto';
   /** Gespielte Ziele je Orts- oder Ereignisliste, damit Zufall nichts wiederholt und der Moderator es sieht. */
@@ -390,6 +394,7 @@ export class Room {
           ...(msg.penalty !== undefined ? { penalty: msg.penalty } : {}),
           ...(msg.allGuess !== undefined ? { allGuess: msg.allGuess } : {}),
           ...(msg.splash !== undefined ? { splash: msg.splash } : {}),
+          ...(msg.tower !== undefined ? { tower: msg.tower } : {}),
         });
       case 'back_to_lobby':
         return this.backToLobby(playerId);

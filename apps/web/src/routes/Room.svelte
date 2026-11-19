@@ -38,6 +38,8 @@
   import SongsReveal from '../components/SongsReveal.svelte';
   import SplashBoard from '../components/SplashBoard.svelte';
   import SplashReveal from '../components/SplashReveal.svelte';
+  import TowerBoard from '../components/tower/TowerBoard.svelte';
+  import TowerReveal from '../components/tower/TowerReveal.svelte';
   import Scoring from '../components/Scoring.svelte';
   import Scoreboard from '../components/Scoreboard.svelte';
   import FinalStandings from '../components/FinalStandings.svelte';
@@ -160,6 +162,8 @@
           <SongsBoard {view} round={view.round} />
         {:else if view.round?.game === 'splash'}
           <SplashBoard {view} round={view.round} />
+        {:else if view.round?.game === 'tower'}
+          <TowerBoard {view} round={view.round} />
         {:else if view.round?.game === 'sort'}
           <Board {view} round={view.round} />
         {/if}
@@ -196,6 +200,8 @@
           <SongsReveal {view} round={view.round} />
         {:else if view.round?.game === 'splash'}
           <SplashReveal {view} round={view.round} />
+        {:else if view.round?.game === 'tower'}
+          <TowerReveal {view} round={view.round} />
         {:else if view.round?.game === 'sort'}
           <Reveal {view} round={view.round} />
         {/if}

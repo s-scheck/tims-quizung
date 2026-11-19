@@ -42,6 +42,7 @@
   import { client } from '../lib/client.svelte.ts';
   import { playerName } from '../lib/format.ts';
   import ModeChoice from './ModeChoice.svelte';
+  import TowerPick from './tower/TowerPick.svelte';
   import Scoreboard from './Scoreboard.svelte';
 
   let { view }: { view: RoomView } = $props();
@@ -509,7 +510,9 @@
       <p class="text-xs text-slate-500">Du spielst mit, deshalb zieht der Server {targetNoun === 'Aufgabe' ? 'eine zufällige Aufgabe' : `ein zufälliges ${targetNoun}`}, {targetNoun === 'Aufgabe' ? 'die' : 'das'} du nicht vorher siehst.</p>
     {/if}
 
-    {#if isMorse}
+    {#if gameId === 'tower'}
+      <TowerPick {view} />
+    {:else if isMorse}
       <div class="card space-y-3">
         <div>
           <p class="font-semibold">Wort zum Morsen</p>

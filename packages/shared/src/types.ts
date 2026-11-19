@@ -2,6 +2,7 @@ import type { RiskRules } from './rules/risk.ts';
 import type { MorseBeep } from './rules/morse.ts';
 import type { AvatarInfo, Point } from './avatar.ts';
 import type { SplashOptions } from './rules/splash.ts';
+import type { TowerOptions, TowerRanked, TowerSpecial } from './rules/tower.ts';
 
 /** Phasen eines Raums. Ein flaches Modell, kein verschachteltes Spiel-Phasenfeld. */
 export type Phase =
@@ -16,8 +17,8 @@ export type Phase =
   | 'scoreboard'
   | 'finished';
 
-export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse' | 'picture' | 'faces' | 'kids' | 'stills' | 'songs' | 'splash';
-export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture', 'faces', 'kids', 'stills', 'songs', 'splash'];
+export type GameId = 'sort' | 'topx' | 'match' | 'map' | 'timeline' | 'risk' | 'bluff' | 'morse' | 'picture' | 'faces' | 'kids' | 'stills' | 'songs' | 'splash' | 'tower';
+export const GAME_IDS: readonly GameId[] = ['sort', 'topx', 'match', 'map', 'timeline', 'risk', 'bluff', 'morse', 'picture', 'faces', 'kids', 'stills', 'songs', 'splash', 'tower'];
 /** Auflösung: alles auf einmal („auto“) oder vom Moderator Stück für Stück aufgedeckt („show“). */
 export type RevealMode = 'auto' | 'show';
 export const REVEAL_MODES: readonly RevealMode[] = ['auto', 'show'];
@@ -985,7 +986,49 @@ export interface SplashRoundView extends BaseRoundView {
   privileged?: boolean;
 }
 
+// ------------------------------------------------------------- Hochstapler
+
+export interface TowerPlayerView {
+  /** Zuletzt gemeldete Turmhöhe über dem Sockel. */
+  height: number;
+  /** Schon überbaute Höhenmarken. */
+  marks: number[];
+  /** Hat ein Spezial im Vorrat; welches, sieht nur der Spieler selbst. */
+  hasStock: boolean;
+  /** Serverzeit, zu der der Turm ruhig über der Linie stand. */
+  finishedAt: number | null;
+}
+
+/** Eingesetztes Spezial. Einmalige Effekte bleiben kurz als Hinweis sichtbar, Dauerwirkungen bis `until`. */
+export interface TowerEffectView {
+  id: number;
+  special: TowerSpecial;
+  by: string;
+  target: string;
+  at: number;
+  until: number;
+}
+
+export interface TowerRoundView extends BaseRoundView {
+  game: 'tower';
+  /** Ersatz-Kategorie, damit Auflösung und Punkteeingabe einheitlich bleiben. */
+  category: { id: string; title: string; question: string };
+  options: TowerOptions;
+  startedAt: number;
+  goalHeight: number;
+  marks: number[];
+  players: Record<string, TowerPlayerView>;
+  effects: TowerEffectView[];
+  winners: string[];
+  /** Nur für den Spieler selbst: Steinstrom und Vorrat. */
+  my?: { seed: number; stock: TowerSpecial | null };
+  /** Ab der Auflösung: Rangliste und Punktevorschlag. */
+  ranking?: TowerRanked[];
+  points?: Record<string, number>;
+}
+
 export type RoundView =
+  | TowerRoundView
   | SplashRoundView
   | SortRoundView
   | TopXRoundView
@@ -1043,6 +1086,8 @@ export interface RoomView {
   devLock?: DevLockView;
   /** Zuletzt gewählte Einstellungen für Splash!. */
   splashOptions: SplashOptions;
+  /** Zuletzt gewählte Ziellinie für Hochstapler. */
+  towerOptions: TowerOptions;
   /** Nur in `finished`: aufgedeckte Rangstufen vom letzten Platz an, `total` ist die Zahl der Stufen. */
   finale?: { shown: number; total: number };
   /** Nur in `choosing_category` enthalten. */

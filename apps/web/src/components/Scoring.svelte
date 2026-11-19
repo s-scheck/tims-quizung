@@ -23,6 +23,7 @@
     untrack(() => {
       const r = view.round;
       // Splash!: die sichtbare Fläche in Prozent, gerundet, als Vorschlag.
+      if (r?.game === 'tower') return Object.fromEntries(scoredPlayers(view).filter((p) => r.turnOrder.includes(p.id)).map((p) => [p.id, r.points?.[p.id] ?? 0]));
       if (r?.game === 'splash') return Object.fromEntries(scoredPlayers(view).filter((p) => r.turnOrder.includes(p.id)).map((p) => [p.id, Math.round(r.coverage?.[p.id] ?? 0)]));
       if (r?.game !== 'stills') return {};
       return Object.fromEntries(scoredPlayers(view).map((p) => [p.id, r.points[p.id] ?? 0]));
@@ -49,6 +50,11 @@
     }
     if (r.game === 'risk') return `${r.totals[id] ?? 0} Kategorie-Punkte`;
     if (r.game === 'songs') return `${r.totals[id] ?? 0} Punkte in der Playlist`;
+    if (r.game === 'tower') {
+      const entry = r.ranking?.find((x) => x.playerId === id);
+      if (!entry) return 'kein Turm';
+      return `${entry.rank}. Platz, ${entry.height.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} m${entry.finishedAt !== null ? ', im Ziel' : ''}, Vorschlag ${r.points?.[id] ?? 0}`;
+    }
     if (r.game === 'splash') return `${(r.coverage?.[id] ?? 0).toFixed(1)} % Fläche`;
     if (r.game === 'bluff') return `${r.points?.[id] ?? 0} Spielpunkte`;
     if (r.game === 'faces') {
