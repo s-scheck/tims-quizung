@@ -2,6 +2,7 @@ import type { FaceEffect, GameId, GuessMode, KidsPenalty, MorseSpeed, PictureMod
 import type { RiskDuplicates, RiskMissPoints } from './rules/risk.ts';
 import type { SplashOptions } from './rules/splash.ts';
 import type { DungeonOptions } from './rules/dungeon.ts';
+import type { TowerFrame, TowerOptions, TowerSpecial } from './rules/tower.ts';
 
 export const PROTOCOL_VERSION = 2;
 
@@ -67,6 +68,8 @@ export type ClientMsg =
       splash?: SplashOptions;
       /** Dungeon: Räume, Türen und Formate. */
       dungeon?: DungeonOptions;
+      /** Hochstapler: Ziellinie. */
+      tower?: TowerOptions;
     }
   | ({ type: 'select'; turnNo: number; targetId?: string } & Selection)
   | { type: 'confirm'; turnNo: number }
@@ -153,6 +156,11 @@ export type ClientMsg =
   | { type: 'dungeon_answer'; choice?: number; text?: string; pin?: { lat: number; lng: number }; year?: number }
   | { type: 'dungeon_skip'; playerId: string }
   | { type: 'dungeon_next' }
+  /** Hochstapler: Schnappschuss des eigenen Turms (geht ohne Zustandsänderung direkt an die anderen), Spezial einsetzen, Marke oder Spezialstein erreicht, ruhig über der Linie. */
+  | { type: 'tower_frame'; frame: TowerFrame }
+  | { type: 'tower_special_use'; special: TowerSpecial; targetId?: string }
+  | { type: 'tower_mark'; height: number; piece?: number }
+  | { type: 'tower_finish'; height: number }
   | { type: 'submit_scores'; scores: Record<string, number> }
   | { type: 'next_round' }
   | { type: 'end_game' }
@@ -170,4 +178,6 @@ export type ServerMsg =
   | { type: 'welcome'; code: string; role: Role; playerId: string | null; token?: string }
   | { type: 'state'; seq: number; serverNow: number; room: RoomView }
   | { type: 'error'; code: ErrorCode; message: string }
-  | { type: 'pong'; serverNow: number };
+  | { type: 'pong'; serverNow: number }
+  /** Hochstapler: Turm eines Mitspielers, unverändert weitergereicht. */
+  | { type: 'tower_frame'; playerId: string; frame: TowerFrame };

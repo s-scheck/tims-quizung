@@ -40,6 +40,8 @@
   import SplashReveal from '../components/SplashReveal.svelte';
   import DungeonBoard from '../components/dungeon/DungeonBoard.svelte';
   import DungeonReveal from '../components/dungeon/DungeonReveal.svelte';
+  import TowerBoard from '../components/tower/TowerBoard.svelte';
+  import TowerReveal from '../components/tower/TowerReveal.svelte';
   import Scoring from '../components/Scoring.svelte';
   import Scoreboard from '../components/Scoreboard.svelte';
   import FinalStandings from '../components/FinalStandings.svelte';
@@ -164,6 +166,8 @@
           <SplashBoard {view} round={view.round} />
         {:else if view.round?.game === 'dungeon'}
           <DungeonBoard {view} round={view.round} />
+        {:else if view.round?.game === 'tower'}
+          <TowerBoard {view} round={view.round} />
         {:else if view.round?.game === 'sort'}
           <Board {view} round={view.round} />
         {/if}
@@ -202,6 +206,8 @@
           <SplashReveal {view} round={view.round} />
         {:else if view.round?.game === 'dungeon'}
           <DungeonReveal {view} round={view.round} />
+        {:else if view.round?.game === 'tower'}
+          <TowerReveal {view} round={view.round} />
         {:else if view.round?.game === 'sort'}
           <Reveal {view} round={view.round} />
         {/if}

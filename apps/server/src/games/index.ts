@@ -14,6 +14,7 @@ import { stillsGame } from './stills/index.ts';
 import { songsGame } from './songs/index.ts';
 import { splashGame } from './splash/index.ts';
 import { dungeonGame } from './dungeon/index.ts';
+import { towerGame } from './tower/index.ts';
 
 registerGame(sortGame);
 registerGame(topxGame);
@@ -30,5 +31,6 @@ registerGame(stillsGame);
 registerGame(songsGame);
 registerGame(splashGame);
 registerGame(dungeonGame);
+registerGame(towerGame);
 
-export { sortGame, topxGame, matchGame, mapGame, timelineGame, riskGame, bluffGame, morseGame, pictureGame, facesGame, kidsGame, stillsGame, songsGame, splashGame, dungeonGame };
+export { sortGame, topxGame, matchGame, mapGame, timelineGame, riskGame, bluffGame, morseGame, pictureGame, facesGame, kidsGame, stillsGame, songsGame, splashGame, dungeonGame, towerGame };

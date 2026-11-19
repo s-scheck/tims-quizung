@@ -14,7 +14,8 @@
     "@fontsource-variable/nunito": "^5.3.0",
     "@quiz/content": "workspace:*",
     "@quiz/shared": "workspace:*",
-    "leaflet": "^1.9.4"
+    "leaflet": "^1.9.4",
+    "planck": "1.4.2"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.1",

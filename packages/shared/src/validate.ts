@@ -1,6 +1,7 @@
 import type { ClientMsg } from './protocol.ts';
 import { isSplashOptions } from './rules/splash.ts';
 import { isDungeonOptions } from './rules/dungeon.ts';
+import { isTowerFrame, isTowerOptions, isTowerSpecial, TOWER_MAX_HEIGHT } from './rules/tower.ts';
 import {
   FACE_COLS_MAX,
   FACE_COLS_MIN,
@@ -131,6 +132,10 @@ function isUnit(x: unknown): x is number {
   return typeof x === 'number' && Number.isFinite(x) && x >= 0 && x <= 1;
 }
 
+function isHeight(x: unknown): x is number {
+  return typeof x === 'number' && Number.isFinite(x) && x >= 0 && x <= TOWER_MAX_HEIGHT;
+}
+
 /** Strukturelle Prüfung einer eingehenden Nachricht. Fachliche Prüfungen macht der Raum. */
 export function isClientMsg(x: unknown): x is ClientMsg {
   if (!isRecord(x) || typeof x.type !== 'string') return false;
@@ -188,7 +193,8 @@ export function isClientMsg(x: unknown): x is ClientMsg {
         (x.penalty === undefined || isKidsPenalty(x.penalty)) &&
         (x.allGuess === undefined || typeof x.allGuess === 'boolean') &&
         (x.splash === undefined || isSplashOptions(x.splash)) &&
-        (x.dungeon === undefined || isDungeonOptions(x.dungeon))
+        (x.dungeon === undefined || isDungeonOptions(x.dungeon)) &&
+        (x.tower === undefined || isTowerOptions(x.tower))
       );
     case 'kids_show':
     case 'kids_buzz':
@@ -254,6 +260,14 @@ export function isClientMsg(x: unknown): x is ClientMsg {
     case 'splash_skip':
     case 'splash_next':
       return true;
+    case 'tower_frame':
+      return isTowerFrame(x.frame);
+    case 'tower_special_use':
+      return isTowerSpecial(x.special) && (x.targetId === undefined || isStr(x.targetId, 100));
+    case 'tower_mark':
+      return isHeight(x.height) && (x.piece === undefined || (isInt(x.piece) && x.piece >= 0 && x.piece <= 1e6));
+    case 'tower_finish':
+      return isHeight(x.height);
     case 'song_guess':
       return isStr(x.title, GUESS_MAX_LENGTH) && isStr(x.artist, GUESS_MAX_LENGTH) && (x.title.trim().length > 0 || x.artist.trim().length > 0);
     case 'song_correct':

@@ -227,6 +227,11 @@
     <p>Erst wenn alle stehen, antworten alle gleichzeitig. Richtig heißt nächster Raum, falsch heißt diese Tür ist für dich zu. Sind alle Türen eines Raums zu, bist du raus. Wer in den wenigsten Runden draußen ist, gewinnt. Es läuft nie etwas nach Zeit.</p>
   </div>
   <div class="card space-y-2 text-sm text-slate-400">
+    <h3 class="font-semibold text-slate-200">Hochstapler</h3>
+    <p>Jeder stapelt auf seinem Handy fallende Steine zu einem wackligen Turm: schieben, drehen, schneller fallen lassen, per Knopf oder Wischen. Der Fernseher zeigt alle Türme nebeneinander.</p>
+    <p>Wer zuerst drei Sekunden ruhig über der Ziellinie steht, gewinnt, der Rest zählt nach Höhe. Höhenmarken und Spezialsteine bringen Helfer wie Kleber oder Stützbalken und Störer wie Glatteis, Windstoß oder Nebel gegen die anderen.</p>
+  </div>
+  <div class="card space-y-2 text-sm text-slate-400">
     <h3 class="font-semibold text-slate-200">Filmfotos</h3>
     <p>Fünf Fotos aus einem Film, vom schwersten zum leichtesten. Der Host schaltet weiter, wer den Film früher erkennt, bekommt mehr Punkte.</p>
     <p>Tippen: ein Tipp pro Foto, der Host prüft nach jedem Foto. Buzzern: wer zuerst drückt, sagt den Film laut. Sobald jemand richtig liegt, ist das Raten vorbei.</p>

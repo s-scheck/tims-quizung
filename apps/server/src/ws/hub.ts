@@ -8,11 +8,13 @@ import {
   type ErrorCode,
   type Role,
   type ServerMsg,
+  type TowerFrame,
 } from '@quiz/shared';
 import type { RoomRegistry } from '../rooms/registry.ts';
 import type { Room } from '../rooms/room.ts';
 import { toView } from '../rooms/view.ts';
 import type { TokenBucket } from './ratelimit.ts';
+import { acceptTowerFrame, towerFrames } from '../games/tower/reducer.ts';
 
 export interface WsData {
   code: string | null;
@@ -57,6 +59,23 @@ export class Hub {
       const publicJson = this.stateMessage(room, null);
       for (const ws of screens) ws.send(publicJson);
     }
+  }
+
+  /**
+   * Hochstapler: Schnappschuss eines Turms ohne Zustandswechsel und ohne `room.emit()` direkt an die anderen Spieler
+   * und die Bildschirme. Späte Frames nach Rundenende fallen still weg.
+   */
+  private towerFrame(room: Room, playerId: string, frame: TowerFrame): void {
+    if (!acceptTowerFrame(room, playerId, frame)) return;
+    room.touch();
+    const json = JSON.stringify({ type: 'tower_frame', playerId, frame } satisfies ServerMsg);
+    for (const [id, ws] of this.conns.get(room.code) ?? []) if (id !== playerId) ws.send(json);
+    for (const ws of this.screens.get(room.code) ?? []) ws.send(json);
+  }
+
+  /** Ein neu verbundenes Gerät bekommt den letzten Stand aller Türme. */
+  private sendTowerFrames(ws: Socket, room: Room): void {
+    for (const [playerId, frame] of towerFrames(room)) this.send(ws, { type: 'tower_frame', playerId, frame });
   }
 
   closeRoomSockets(code: string, closeCode: number = CLOSE_CODES.ROOM_CLOSED, reason = 'Raum geschlossen'): void {
@@ -202,6 +221,9 @@ export class Hub {
         this.afterPlayerGone(room);
         return;
       }
+      case 'tower_frame':
+        this.towerFrame(room, playerId, msg.frame);
+        return;
       default: {
         const res = room.handle(playerId, msg);
         if (!res.ok) {
@@ -251,6 +273,7 @@ export class Hub {
         this.attachPlayer(ws, room, res.player.id);
         this.send(ws, { type: 'welcome', code: room.code, role: 'player', playerId: res.player.id, token: res.player.token });
         room.emit();
+        this.sendTowerFrames(ws, room);
         return;
       }
       case 'watch': {
@@ -260,6 +283,7 @@ export class Hub {
         this.attachScreen(ws, room);
         this.send(ws, { type: 'welcome', code: room.code, role: 'screen', playerId: null });
         ws.send(this.stateMessage(room, null));
+        this.sendTowerFrames(ws, room);
         return;
       }
       default:

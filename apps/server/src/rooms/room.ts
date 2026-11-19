@@ -19,6 +19,8 @@ import {
   DUNGEON_DEFAULTS,
   type DungeonOptions,
   type HeadShape,
+  TOWER_DEFAULTS,
+  type TowerOptions,
 } from '@quiz/shared';
 import type { Category } from '@quiz/content';
 import type { Scheduler, TimerHandle } from './scheduler.ts';
@@ -86,6 +88,8 @@ export class Room {
   splashOptions: SplashOptions = { ...SPLASH_DEFAULTS };
   /** Zuletzt gewählte Einstellungen für Dungeon. */
   dungeonOptions: DungeonOptions = { ...DUNGEON_DEFAULTS, formats: [...DUNGEON_DEFAULTS.formats] };
+  /** Zuletzt gewählte Ziellinie für Hochstapler. */
+  towerOptions: TowerOptions = { ...TOWER_DEFAULTS };
   /** Zuletzt gewählte Art der Auflösung, Vorgabe für den Picker. */
   revealMode: RevealMode = 'auto';
   /** Gespielte Ziele je Orts- oder Ereignisliste, damit Zufall nichts wiederholt und der Moderator es sieht. */
@@ -395,6 +399,7 @@ export class Room {
           ...(msg.allGuess !== undefined ? { allGuess: msg.allGuess } : {}),
           ...(msg.splash !== undefined ? { splash: msg.splash } : {}),
           ...(msg.dungeon !== undefined ? { dungeon: msg.dungeon } : {}),
+          ...(msg.tower !== undefined ? { tower: msg.tower } : {}),
         });
       case 'back_to_lobby':
         return this.backToLobby(playerId);

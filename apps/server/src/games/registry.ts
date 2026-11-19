@@ -1,4 +1,4 @@
-import type { ClientMsg, FaceEffect, GameId, GuessMode, KidsPenalty, PictureMode, RiskDuplicates, RiskMissPoints, RoundView, RevealMode, SplashOptions, DungeonOptions } from '@quiz/shared';
+import type { ClientMsg, FaceEffect, GameId, GuessMode, KidsPenalty, PictureMode, RiskDuplicates, RiskMissPoints, RoundView, RevealMode, SplashOptions, DungeonOptions, TowerOptions } from '@quiz/shared';
 import type { Category } from '@quiz/content';
 import type { Room } from '../rooms/room.ts';
 import type { Result } from '../rooms/result.ts';
@@ -31,6 +31,8 @@ export interface StartRoundOptions {
   splash?: SplashOptions;
   /** Dungeon: Räume, Türen und Formate. */
   dungeon?: DungeonOptions;
+  /** Hochstapler: Ziellinie. */
+  tower?: TowerOptions;
 }
 
 /**

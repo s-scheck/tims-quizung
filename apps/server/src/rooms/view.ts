@@ -39,6 +39,7 @@ export function toView(room: Room, viewerId: string | null): RoomView {
     riskRules: { ...room.riskRules },
     splashOptions: { ...room.splashOptions },
     dungeonOptions: { ...room.dungeonOptions, formats: [...room.dungeonOptions.formats] },
+    towerOptions: { ...room.towerOptions },
     revealMode: room.revealMode,
     ...(room.devLock ? { devLock: { ...room.devLock } } : {}),
     jokersUsed: [...room.jokersUsed],

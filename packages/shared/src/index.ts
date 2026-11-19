@@ -13,3 +13,4 @@ export * from './rules/morse.ts';
 export * from './avatar.ts';
 export * from './rules/splash.ts';
 export * from './rules/dungeon.ts';
+export * from './rules/tower.ts';
