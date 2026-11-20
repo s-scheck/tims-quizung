@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { isClientMsg, type ClientMsg, type DungeonRoundView } from '@quiz/shared';
+import { DUNGEON_RESULT_MS, isClientMsg, type ClientMsg, type DungeonRoundView } from '@quiz/shared';
 import { toView } from '../src/rooms/view.ts';
 import type { DungeonDoor, DungeonRound } from '../src/rooms/state.ts';
 import { buildDungeon } from '../src/games/dungeon/build.ts';
@@ -126,6 +126,8 @@ describe('Dungeon: Ablauf', () => {
     const [, a, b] = h.ids as [string, string, string];
     startDungeon(h, { rooms: 3, doors: 3 });
     const r = dr(h);
+    // b hat seinen einen Schlüssel schon verbraucht, sonst rettet er ihn vor dem Ausscheiden.
+    r.players[b]!.keyFound = true;
     for (let round = 0; round < 3; round++) {
       expectOk(go(h, a, doorsOf(h, a)[0]!));
       expectOk(go(h, b, doorsOf(h, b).find((d) => !r.players[b]!.locked.includes(d.id))!));
@@ -200,5 +202,131 @@ describe('Dungeon: Ablauf', () => {
     expect(isClientMsg({ type: 'choose_category', gameId: 'dungeon', categoryId: 'dungeon', dungeon: { rooms: 9, doors: 3, formats: ['map'] } })).toBe(false);
     expectOk(answer(h, a, true));
     expect(dr(h).results[a]?.correct).toBe(true);
+  });
+});
+
+describe('Dungeon: Schlüssel, Spuren, Weiter von selbst', () => {
+  test('Ergebnis geht nach der Wartezeit von selbst weiter, am Ende zur Auswertung', () => {
+    const h = moderated(['A']);
+    const [, a] = h.ids as [string, string];
+    startDungeon(h, { rooms: 3, doors: 3 });
+    const r = dr(h);
+    expectOk(go(h, a, doorsOf(h, a)[0]!));
+    expectOk(answer(h, a, true));
+    expect(r.stage).toBe('result');
+    expect(viewOf(h, a).nextAt).toBe(h.room.now + DUNGEON_RESULT_MS);
+    h.scheduler.advance(DUNGEON_RESULT_MS - 1);
+    expect(r.stage).toBe('result');
+    h.scheduler.advance(1);
+    expect(r.stage).toBe('choosing');
+    expect(r.roundNo).toBe(2);
+    expect(viewOf(h, a).nextAt).toBeNull();
+    // Der Host kann früher weiter; der alte Timer greift danach nicht mehr.
+    expectOk(go(h, a, doorsOf(h, a)[0]!));
+    expectOk(answer(h, a, true));
+    expectOk(h.act(h.host, { type: 'dungeon_next' }));
+    expect(r.roundNo).toBe(3);
+    h.scheduler.advance(DUNGEON_RESULT_MS);
+    expect(r.stage).toBe('choosing');
+    expect(r.roundNo).toBe(3);
+    expectOk(go(h, a, doorsOf(h, a)[0]!));
+    expectOk(answer(h, a, true));
+    expect(r.players[a]!.status).toBe('out');
+    h.scheduler.advance(DUNGEON_RESULT_MS);
+    expect(h.room.phase).toBe('reveal');
+  });
+
+  test('zweiter Fehlversuch bringt einmal einen Schlüssel; er öffnet auch eine verschlossene Tür ohne Frage', () => {
+    const h = moderated(['A', 'B']);
+    const [, a, b] = h.ids as [string, string, string];
+    startDungeon(h, { rooms: 3, doors: 3 });
+    const r = dr(h);
+    const [d1, d2, d3] = doorsOf(h, a) as [DungeonDoor, DungeonDoor, DungeonDoor];
+    const round = (doorA: DungeonDoor, okA: boolean) => {
+      expectOk(go(h, a, doorA));
+      expectOk(go(h, b, doorsOf(h, b)[0]!));
+      expectOk(answer(h, a, okA));
+      expectOk(answer(h, b, true));
+      return viewOf(h, b);
+    };
+    round(d1, false);
+    expect(r.players[a]).toMatchObject({ key: false, keyFound: false });
+    expect(h.act(a, { type: 'dungeon_enter', key: true })).toMatchObject({ ok: false });
+    expectOk(h.act(h.host, { type: 'dungeon_next' }));
+    const v = round(d2, false);
+    expect(v.results?.[a]).toMatchObject({ correct: false, foundKey: true });
+    expect(v.players[a]).toMatchObject({ key: true, keyFound: true, wrong: 2 });
+    // Spuren an der Tür sind öffentlich, ohne Antwort.
+    expect(v.rooms[0]!.find((d) => d.id === d1.id)!.tries.filter((t) => t.playerId === a)).toEqual([{ playerId: a, correct: false }]);
+    expectOk(h.act(h.host, { type: 'dungeon_next' }));
+
+    // Ohne Schlüssel bleibt die verschlossene Tür zu, mit Schlüssel geht es hindurch, ganz ohne Frage.
+    expectOk(h.act(a, { type: 'dungeon_walk', doorId: d1.id }));
+    expect(h.act(a, { type: 'dungeon_enter' })).toMatchObject({ ok: false, message: 'Diese Tür ist für dich verschlossen' });
+    expectOk(h.act(a, { type: 'dungeon_enter', key: true }));
+    expect(viewOf(h, a).walk[a]).toEqual({ doorId: d1.id, confirmed: true, key: true });
+    expectOk(go(h, b, doorsOf(h, b)[0]!));
+    expect(r.stage).toBe('answering');
+    expect(viewOf(h, a).myQuestion).toBeUndefined();
+    expect(viewOf(h, a).myAnswer).toBe('Schlüssel');
+    expect(answer(h, a, true)).toMatchObject({ ok: false });
+    expectOk(answer(h, b, true));
+    expect(r.results[a]).toMatchObject({ correct: true, key: true });
+    expect(r.players[a]).toMatchObject({ room: 1, key: false, keyFound: true });
+    expect(viewOf(h, a).rooms[0]!.find((d) => d.id === d1.id)!.tries.filter((t) => t.playerId === a)).toEqual([
+      { playerId: a, correct: false },
+      { playerId: a, correct: true, key: true },
+    ]);
+    expect(d3).toBeDefined();
+    expect(isClientMsg({ type: 'dungeon_enter', key: 'ja' })).toBe(false);
+  });
+
+  test('mit Schlüssel scheidet man nicht aus, auch wenn alle Türen zu sind; nur Schlüssel heißt sofort Ergebnis', () => {
+    const h = moderated(['A']);
+    const [, a] = h.ids as [string, string];
+    startDungeon(h, { rooms: 3, doors: 3 });
+    const r = dr(h);
+    for (const door of doorsOf(h, a)) {
+      expectOk(go(h, a, door));
+      expectOk(answer(h, a, false));
+      expectOk(h.act(h.host, { type: 'dungeon_next' }));
+    }
+    expect(r.players[a]).toMatchObject({ status: 'in', key: true, wrong: 3 });
+    expect(r.players[a]!.locked).toHaveLength(3);
+    expectOk(h.act(a, { type: 'dungeon_walk', doorId: doorsOf(h, a)[2]!.id }));
+    expectOk(h.act(a, { type: 'dungeon_enter', key: true }));
+    expect(r.stage).toBe('result');
+    expect(r.players[a]).toMatchObject({ room: 1, key: false, status: 'in' });
+  });
+});
+
+describe('Dungeon: Lösungen in der Auswertung', () => {
+  test('Karte mit Ortsnamen statt Koordinaten, a/b/c/d mit allen Antworten, Top X mit ganzer Liste', () => {
+    const h = moderated(['A']);
+    startDungeon(h, { rooms: 7, doors: 5 });
+    expectOk(h.act(h.host, { type: 'end_round' }));
+    const v = viewOf(h, null);
+    const kinds = new Set<string>();
+    for (const door of dr(h).rooms.flat()) {
+      const sol = v.solutions![door.id]!;
+      const p = door.payload;
+      kinds.add(p.kind);
+      expect(sol.prompt).not.toContain('(bis');
+      expect(sol.prompt).not.toContain('Jahre)');
+      if (p.kind === 'map') {
+        expect(sol.solution).toBe(p.place.name);
+        expect(sol.solution).not.toContain('°');
+      }
+      if (p.kind === 'choice') {
+        expect(sol.choices).toEqual(p.choices);
+        expect(sol.choices![sol.correct!]).toBe(p.question.answer);
+      }
+      if (p.kind === 'topx') {
+        expect(sol.items).toEqual(p.items.map((it) => it.name));
+        expect(sol.n).toBe(door.tolerance!);
+        expect(sol.solution.split(', ')).toHaveLength(Math.min(door.tolerance!, p.items.length));
+      }
+    }
+    expect(kinds.has('map')).toBe(true);
   });
 });

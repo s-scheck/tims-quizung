@@ -305,15 +305,15 @@ export const towerSound = {
   mark(): void {
     const b = ready('mark', 300);
     if (!b) return;
-    bell(b, 1046.5, b.ctx.currentTime, 0.06, 0.8);
-    bell(b, 1568, b.ctx.currentTime + 0.09, 0.06, 1.1);
+    bell(b, 1046.5, 0, 0.06, 0.8);
+    bell(b, 1568, 0.09, 0.06, 1.1);
   },
 
   /** Ziel geschafft: Arpeggio mit Glocken, Akkord und Funkeln. */
   finish(): void {
     const b = ready('finish', 2000);
     if (!b) return;
-    const t = b.ctx.currentTime;
+    const t = 0; // Versatz ab jetzt, wie bei tone()
     [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => bell(b, f, t + i * 0.09, 0.07, 0.9, 0.4));
     for (const f of [523.25, 659.25, 783.99]) tone(b, { t: 0.36, f, gain: 0.04, attack: 0.04, decay: 1.4, type: 'triangle', wet: 0.4 });
     noise(b, { t: 0.36, gain: 0.03, attack: 0.05, decay: 1.2, filter: 'highpass', f: 6500, q: 0.5, wet: 0.5, am: 14 });
@@ -332,7 +332,7 @@ export const towerSound = {
   light(): void {
     const b = ready('choose', 300);
     if (!b) return;
-    const t = b.ctx.currentTime;
+    const t = 0; // Versatz ab jetzt, wie bei tone()
     [659.25, 830.6, 987.8, 1318.5].forEach((f, i) => bell(b, f, t + i * 0.06, 0.05, 0.7, 0.45));
     noise(b, { gain: 0.02, attack: 0.08, decay: 0.6, filter: 'highpass', f: 7000, wet: 0.5, am: 18 });
   },
@@ -365,7 +365,7 @@ export const towerSound = {
         break;
       case 'ice':
         for (let i = 0; i < 7; i++) tone(b, { t: i * 0.04, f: 2000 + Math.random() * 2400, gain: 0.025, decay: 0.35, wet: 0.5 });
-        bell(b, 2093, b.ctx.currentTime + 0.05, 0.035, 1.2, 0.5);
+        bell(b, 2093, 0.05, 0.035, 1.2, 0.5);
         break;
       case 'fog':
         noise(b, { gain: 0.09, attack: 0.35, decay: 0.9, filter: 'lowpass', f: 380, q: 0.7, wet: 0.4 });
@@ -428,7 +428,7 @@ export const towerSound = {
   heavy(): void {
     const b = ready('heavy', 250);
     if (!b) return;
-    const t = b.ctx.currentTime;
+    const t = 0; // Versatz ab jetzt, wie bei tone()
     bell(b, 220, t, 0.07, 1.1, 0.4);
     bell(b, 331, t + 0.01, 0.04, 0.9, 0.4);
     tone(b, { f: 70, to: 48, gain: 0.14, decay: 0.4 });
@@ -441,7 +441,7 @@ export const towerSound = {
     const k = Math.min(1, Math.max(0.3, impact));
     tone(b, { f: 58, to: 34, gain: 0.22 + 0.12 * k, attack: 0.005, decay: 0.45 });
     noise(b, { gain: 0.1 * k, attack: 0.005, decay: 0.3, filter: 'lowpass', f: 420, q: 0.8, wet: 0.25 });
-    bell(b, 180, b.ctx.currentTime + 0.01, 0.035 * k, 0.7, 0.35);
+    bell(b, 180, 0.01, 0.035 * k, 0.7, 0.35);
   },
 
   /** Steinwahl: zwei kurze, fragende Töne. */

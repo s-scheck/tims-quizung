@@ -152,7 +152,7 @@ export type ClientMsg =
   | { type: 'splash_next' }
   /** Dungeon: zur Tür laufen (null: zurück), Tür bestätigen, antworten, Wartende überspringen, nächste Türwahl. */
   | { type: 'dungeon_walk'; doorId: string | null }
-  | { type: 'dungeon_enter' }
+  | { type: 'dungeon_enter'; key?: boolean }
   | { type: 'dungeon_answer'; choice?: number; text?: string; pin?: { lat: number; lng: number }; year?: number }
   | { type: 'dungeon_skip'; playerId: string }
   | { type: 'dungeon_next' }

@@ -3,12 +3,18 @@
   import type { DungeonRoundView, RoomView } from '@quiz/shared';
   import { figureById, type Pose } from '../../lib/avatar.ts';
   import Figure from '../avatar/Figure.svelte';
+  import MiniHead from '../avatar/MiniHead.svelte';
   import { doorFormat, doorIcon, doorShort, ROOM_HUES } from './doorLabel.ts';
+  import { archPath, archStones, doorCx, doorTop, floorPlates, sceneGeo, seeded, wallStones } from './dungeonArt.ts';
+  import { DUNGEON_SUSPENSE_MS } from './dungeonFeedback.ts';
+  import { DUNGEON_REVEAL_MS, dungeonAnimationStart, dungeonRevealAt, dungeonRevealOrder } from './dungeonTiming.ts';
 
   /**
-   * Ein Raum des Dungeons in Schrägsicht: Steinwand mit Fackeln und schweren Holztüren, Steinboden in Perspektive.
-   * Die Figuren stehen unten und laufen per Übergang zu ihrer Tür; bestätigt stehen sie in der Öffnung.
-   * Im Ergebnis gehen die Richtigen durch die Tür, bei den Falschen schlägt sie zu.
+   * Ein Raum des Dungeons: Quaderwand im Fackellicht, Bodenplatten in Perspektive, schwere Holztüren in Rundbögen
+   * mit Schild darüber. Alles in echten Pixeln gezeichnet, daher passt es zu jedem Seitenverhältnis (`fill`).
+   * Figuren stehen unten und laufen per Übergang zu ihrer Tür; bestätigt warten sie davor.
+   * Im Ergebnis bleibt erst alles zu (Spannung), dann löst sich Spieler für Spieler auf: Tür auf, Licht, hindurch –
+   * oder Tür knallt, Gitter fällt, zurückgestoßen. Lädt man mitten im Ergebnis neu, steht gleich der Endzustand da.
    * `compact` ist die kleine Kachel für den Fernseher: nur Format auf dem Schild, keine Eingabe.
    */
   let {
@@ -19,6 +25,7 @@
     interactive = false,
     compact = false,
     selected = null,
+    fill = false,
     onPick,
   }: {
     view: RoomView;
@@ -28,14 +35,80 @@
     interactive?: boolean;
     compact?: boolean;
     selected?: string | null;
+    /** Füllt die Höhe des Elternelements statt fester Seitenverhältnisse (Handy ohne Scrollen). */
+    fill?: boolean;
     onPick?: (doorId: string) => void;
   } = $props();
 
+  const uid = `dg${Math.random().toString(36).slice(2, 8)}`;
   const doors = $derived(round.rooms[roomIndex] ?? []);
   const hue = $derived(ROOM_HUES[roomIndex % ROOM_HUES.length]!);
   const n = $derived(Math.max(1, doors.length));
-  const locked = $derived(new Set(meId ? (round.players[meId]?.locked ?? []) : []));
-  let height = $state(0);
+  const mine = $derived(meId ? round.players[meId] : undefined);
+  const lockedRaw = $derived(mine?.locked ?? []);
+  const hasKey = $derived(!!mine?.key && mine.status === 'in');
+
+  let W = $state(0);
+  let H = $state(0);
+  const g = $derived(sceneGeo(W, H, n, compact));
+  const stones = $derived(W > 0 ? wallStones(g, roomIndex + 1, compact) : []);
+  const plates = $derived(W > 0 ? floorPlates(g, roomIndex + 1) : []);
+  const torches = $derived(Array.from({ length: n + 1 }, (_, k) => ({ x: g.pad + k * g.slot, y: doorTop(g) + g.dh * 0.32 })));
+  const motes = $derived.by(() => {
+    const rnd = seeded(roomIndex * 31 + 5);
+    return Array.from({ length: compact ? 5 : 11 }, () => ({ x: rnd(), y: rnd(), r: 0.6 + rnd() * 1.1, d: 7 + rnd() * 8, delay: -rnd() * 12 }));
+  });
+
+  // ------------------------------------------------------------ Ergebnis-Takt
+
+  /** Lokale Startzeit der Ergebnis-Animation; null heißt: kein Ergebnis oder gleich Endzustand. */
+  let t0 = $state<number | null>(null);
+  let now = $state(Date.now());
+  let seen: string | null = null;
+  $effect(() => {
+    const stage = round.stage;
+    const rn = round.roundNo;
+    const key = `${rn}:${stage}`;
+    if (key === seen) return;
+    const live = seen !== null && seen.startsWith(`${rn}:`) && stage === 'result';
+    seen = key;
+    untrack(() => {
+      t0 = stage === 'result' ? dungeonAnimationStart(round, live) : null;
+      now = Date.now();
+    });
+  });
+  const order = $derived(round.stage === 'result' ? dungeonRevealOrder(round, roomIndex, meId) : []);
+  const animEnd = $derived(dungeonRevealAt(Math.max(0, order.length - 1)) + DUNGEON_REVEAL_MS + 400);
+  $effect(() => {
+    const start = t0;
+    const end = animEnd;
+    if (start === null) return;
+    const id = setInterval(() => {
+      now = Date.now();
+      if (now - start > end) clearInterval(id);
+    }, 80);
+    return () => clearInterval(id);
+  });
+  const elapsed = $derived(t0 === null ? Infinity : now - t0);
+  const suspense = $derived(round.stage === 'result' && elapsed < DUNGEON_SUSPENSE_MS);
+
+  type Phase = 'pending' | 'reveal' | 'done';
+  /** Verriegelte Türen, wie man sie gerade sieht: die eben gescheiterte erst nach ihrer Auflösung (keine Vorwegnahme). */
+  const locked = $derived.by(() => {
+    const set = new Set(lockedRaw);
+    const res = meId && round.stage === 'result' ? round.results?.[meId] : undefined;
+    if (res && !res.correct && phaseOf(meId!) === 'pending') set.delete(res.doorId);
+    return set;
+  });
+  function phaseOf(id: string): Phase {
+    const k = order.indexOf(id);
+    if (k < 0 || t0 === null) return 'done';
+    const at = dungeonRevealAt(k);
+    if (elapsed < at) return 'pending';
+    return elapsed < at + DUNGEON_REVEAL_MS ? 'reveal' : 'done';
+  }
+
+  // ------------------------------------------------------------ Figuren
 
   /** In welchem Raum jemand gerade zu sehen ist: im Ergebnis noch dort, wo seine Tür war. */
   function sceneRoom(id: string): number | null {
@@ -46,9 +119,6 @@
     return p.room;
   }
 
-  const doorX = (i: number) => 8 + ((i + 0.5) / n) * 84;
-  const doorW = $derived((84 / n) * (compact ? 0.78 : 0.7));
-
   interface Spot {
     id: string;
     x: number;
@@ -56,9 +126,15 @@
     pose: Pose;
     gone: boolean;
     dim: boolean;
+    /** Schlüssel in der Hand (mit Schlüssel bestätigt) oder in der Tasche. */
+    key: 'held' | 'pocket' | null;
+    phase: Phase;
   }
 
+  const doorIndex = (doorId: string | null | undefined) => (doorId ? doors.findIndex((d) => d.id === doorId) : -1);
+
   const spots = $derived.by((): Spot[] => {
+    if (W === 0) return [];
     const ids = round.turnOrder.filter((id) => sceneRoom(id) === roomIndex);
     const atDoor = new Map<string, string[]>();
     for (const id of ids) {
@@ -66,22 +142,30 @@
       const doorId = res?.doorId ?? round.walk[id]?.doorId ?? null;
       if (doorId) atDoor.set(doorId, [...(atDoor.get(doorId) ?? []), id]);
     }
+    const floor = g.h - g.hy;
     return ids.map((id, k) => {
       const p = round.players[id];
       const res = round.stage === 'result' ? round.results?.[id] : undefined;
       const w = round.walk[id];
       const doorId = res?.doorId ?? w?.doorId ?? null;
-      const i = doorId ? doors.findIndex((d) => d.id === doorId) : -1;
-      const startX = ids.length === 1 ? 50 : 18 + (k / (ids.length - 1)) * 64;
-      const start = { x: startX, y: compact ? 88 : 86 };
-      if (res && !res.correct) return { id, ...start, pose: 'sad', gone: false, dim: p?.status === 'eliminated' };
-      if (p?.status === 'eliminated') return { id, ...start, pose: 'sad', gone: false, dim: true };
-      if (i < 0) return { id, ...start, pose: 'idle', gone: false, dim: round.skipped.includes(id) };
+      const i = doorIndex(doorId);
+      const phase = res ? phaseOf(id) : 'done';
+      const startX = ids.length === 1 ? g.w / 2 : g.w * (0.14 + (k / (ids.length - 1)) * 0.72);
+      const start = { x: startX, y: g.front };
+      const pocket = p?.key ? ('pocket' as const) : null;
+      if (p?.status === 'eliminated' && !res) return { id, ...start, pose: 'sad', gone: false, dim: true, key: null, phase };
+      if (i < 0) return { id, ...start, pose: 'idle', gone: false, dim: round.skipped.includes(id), key: pocket, phase };
       const group = atDoor.get(doorId!) ?? [id];
-      const offset = (group.indexOf(id) - (group.length - 1) / 2) * Math.min(doorW / Math.max(group.length, 1), 5);
-      if (res?.correct) return { id, x: doorX(i) + offset, y: 34, pose: 'walk', gone: true, dim: false };
-      if (w?.confirmed) return { id, x: doorX(i) + offset, y: 40, pose: 'still', gone: false, dim: false };
-      return { id, x: doorX(i) + offset, y: 50, pose: 'idle', gone: false, dim: false };
+      const offset = (group.indexOf(id) - (group.length - 1) / 2) * Math.min(g.dw / Math.max(group.length, 1), g.dw * 0.42);
+      const x = doorCx(g, i) + offset;
+      if (res && phase !== 'pending') {
+        if (res.correct) return { id, x: doorCx(g, i), y: g.hy - g.dh * 0.06, pose: 'walk', gone: true, dim: false, key: null, phase };
+        // Zurückgestoßen: ein Stück in den Raum, leicht zur Seite.
+        return { id, x: x + (offset >= 0 ? 1 : -1) * g.dw * 0.25, y: g.hy + floor * 0.42, pose: 'sad', gone: false, dim: p?.status === 'eliminated', key: pocket, phase };
+      }
+      const held = res?.key || w?.key ? ('held' as const) : null;
+      if (res || w?.confirmed) return { id, x, y: g.hy + floor * 0.03, pose: 'still', gone: false, dim: false, key: held ?? pocket, phase };
+      return { id, x, y: g.hy + floor * 0.2, pose: 'idle', gone: false, dim: false, key: pocket, phase };
     });
   });
 
@@ -89,317 +173,695 @@
   let moving = $state<Record<string, number>>({});
   let lastKey: Record<string, string> = {};
   $effect(() => {
-    const now = Date.now();
+    const t = Date.now();
     const next: Record<string, number> = {};
     for (const s of spots) {
-      const key = `${s.x.toFixed(1)}:${s.y}`;
-      if (lastKey[s.id] !== undefined && lastKey[s.id] !== key) next[s.id] = now;
+      const key = `${Math.round(s.x / Math.max(1, W) * 200)}:${Math.round(s.y / Math.max(1, H) * 200)}`;
+      if (lastKey[s.id] !== undefined && lastKey[s.id] !== key) next[s.id] = t;
       lastKey[s.id] = key;
     }
     if (Object.keys(next).length === 0) return;
     untrack(() => (moving = { ...moving, ...next }));
     // Danach einmal neu zeichnen, damit die Pose wieder ruhig wird.
-    setTimeout(() => (moving = { ...moving }), 950);
+    const tm = setTimeout(() => (moving = { ...moving }), 950);
+    return () => clearTimeout(tm);
   });
   const isMoving = (id: string) => (moving[id] ?? 0) > Date.now() - 900;
 
-  /** Perspektive: weiter hinten kleiner. */
-  const scaleAt = (y: number) => 0.45 + ((y - 34) / (86 - 34)) * 0.55;
-  const baseSize = $derived(height * (compact ? 0.24 : 0.22));
+  /** Perspektive: Größe an der Tür bis vorn. */
+  const sizeDoor = $derived(g.dh * 0.66);
+  const sizeFront = $derived(Math.min(g.dh * 1.45, (g.h - g.hy) * 0.78, g.h * 0.34));
+  const scaleAt = (y: number) => {
+    const t = Math.min(1.1, Math.max(-0.1, (y - g.hy) / Math.max(1, g.front - g.hy)));
+    return (sizeDoor + (sizeFront - sizeDoor) * t) / Math.max(1, sizeFront);
+  };
 
-  const openDoors = $derived(
-    new Set(
-      spots.filter((s) => s.pose === 'still' || s.gone).map((s) => {
-        const res = round.results?.[s.id];
-        return res?.doorId ?? round.walk[s.id]?.doorId ?? '';
-      }),
-    ),
+  // ------------------------------------------------------------ Türzustand
+
+  interface DoorState {
+    open: boolean;
+    gate: boolean;
+    slam: boolean;
+    spark: boolean;
+    tense: boolean;
+    unlockable: boolean;
+  }
+
+  const doorStates = $derived.by((): DoorState[] =>
+    doors.map((door) => {
+      const here = round.stage === 'result' ? order.filter((id) => round.results?.[id]?.doorId === door.id) : [];
+      const res = (id: string) => round.results![id]!;
+      // Bei mehreren an derselben Tür zählt die zuletzt aufgelöste: ein Falscher knallt sie wieder zu.
+      const shown = here.filter((id) => phaseOf(id) !== 'pending');
+      const latest = shown.length > 0 ? res(shown[shown.length - 1]!) : null;
+      const open = !!latest?.correct;
+      const wrongShown = shown.filter((id) => !res(id).correct);
+      const gate = !open && (locked.has(door.id) || wrongShown.length > 0);
+      const standing = here.length > 0 || round.turnOrder.some((id) => round.walk[id]?.doorId === door.id && round.walk[id]?.confirmed && sceneRoom(id) === roomIndex);
+      return {
+        open,
+        gate,
+        slam: wrongShown.some((id) => phaseOf(id) === 'reveal'),
+        spark: here.some((id) => res(id).key && phaseOf(id) === 'reveal'),
+        tense: suspense && standing,
+        unlockable: hasKey && locked.has(door.id) && round.stage === 'choosing',
+      };
+    }),
   );
-  const slammed = $derived(new Set(round.stage === 'result' ? Object.values(round.results ?? {}).filter((r) => !r.correct && r.room === roomIndex).map((r) => r.doorId) : []));
-  const torches = $derived(Array.from({ length: n + 1 }, (_, i) => 8 + (i / n) * 84));
+
+  /** Gefundene Schlüssel, die gerade zur Figur fliegen. */
+  const flyingKeys = $derived(
+    round.stage === 'result' && t0 !== null
+      ? spots.filter((s) => round.results?.[s.id]?.foundKey && s.phase === 'reveal').map((s) => ({ s, i: doorIndex(round.results![s.id]!.doorId) }))
+      : [],
+  );
+
+  /** Spuren an der Tür ohne die Versuche, deren Auflösung noch aussteht (sonst verrät die Tür das Ergebnis). */
+  function visibleTries(door: (typeof doors)[number]) {
+    if (round.stage !== 'result') return door.tries;
+    const hide = order.filter((id) => round.results?.[id]?.doorId === door.id && phaseOf(id) === 'pending');
+    if (hide.length === 0) return door.tries;
+    const out = [...door.tries];
+    for (const id of hide) {
+      const k = out.findLastIndex((t) => t.playerId === id);
+      if (k >= 0) out.splice(k, 1);
+    }
+    return out;
+  }
+
+  function tryMark(t: { correct: boolean; key?: boolean }): string {
+    return t.key ? 'key' : t.correct ? 'ok' : 'bad';
+  }
 </script>
 
-<div class="scene relative w-full select-none overflow-hidden {compact ? 'rounded-xl' : 'rounded-2xl'}" style="aspect-ratio: {compact ? '1000 / 1000' : '1000 / 1120'}; --hue:{hue}" bind:clientHeight={height}>
-  <!-- Hintergrund: Wand, Boden, Fackeln -->
-  <svg class="absolute inset-0 h-full w-full" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
-    <defs>
-      <linearGradient id="dg-wall-{roomIndex}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="hsl({hue} 14% 9%)" />
-        <stop offset="1" stop-color="hsl({hue} 16% 21%)" />
-      </linearGradient>
-      <linearGradient id="dg-floor-{roomIndex}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="hsl({hue} 12% 15%)" />
-        <stop offset="1" stop-color="hsl({hue} 10% 27%)" />
-      </linearGradient>
-      <pattern id="dg-bricks-{roomIndex}" width="120" height="60" patternUnits="userSpaceOnUse">
-        <path d="M0 0H120M0 30H120M0 0V30M60 30V60" fill="none" stroke="rgb(0 0 0 / 0.45)" stroke-width="4" />
-        <path d="M4 4H56M64 34H116" stroke="rgb(255 255 255 / 0.05)" stroke-width="3" />
-      </pattern>
-      <radialGradient id="dg-glow-{roomIndex}">
-        <stop offset="0" stop-color="hsl(38 100% 62% / 0.55)" />
-        <stop offset="1" stop-color="hsl(38 100% 50% / 0)" />
-      </radialGradient>
-      <radialGradient id="dg-vignette-{roomIndex}" cx="0.5" cy="0.55" r="0.75">
-        <stop offset="0.55" stop-color="rgb(0 0 0 / 0)" />
-        <stop offset="1" stop-color="rgb(0 0 0 / 0.65)" />
-      </radialGradient>
-    </defs>
-    <rect width="1000" height="420" fill="url(#dg-wall-{roomIndex})" />
-    <rect width="1000" height="420" fill="url(#dg-bricks-{roomIndex})" />
-    <!-- Boden in Perspektive mit Fugen zum Fluchtpunkt -->
-    <polygon points="0,420 1000,420 1000,1000 0,1000" fill="url(#dg-floor-{roomIndex})" />
-    <g stroke="rgb(0 0 0 / 0.38)" stroke-width="4">
-      {#each Array.from({ length: 13 }, (_, i) => i) as i (i)}
-        <line x1={500 + (i - 6) * 95} y1="420" x2={500 + (i - 6) * 260} y2="1000" />
-      {/each}
-      {#each [470, 540, 630, 745, 885] as y (y)}<line x1="0" y1={y} x2="1000" y2={y} />{/each}
-    </g>
-    <rect y="412" width="1000" height="26" fill="rgb(0 0 0 / 0.45)" />
-    {#each torches as tx, i (i)}
-      <ellipse cx={tx * 10} cy="560" rx="150" ry="60" fill="url(#dg-glow-{roomIndex})" class="flicker" style="animation-delay:{-i * 0.37}s" />
-      <circle cx={tx * 10} cy="150" r="130" fill="url(#dg-glow-{roomIndex})" class="flicker" style="animation-delay:{-i * 0.37}s" />
-    {/each}
-    <rect width="1000" height="1000" fill="url(#dg-vignette-{roomIndex})" />
+{#snippet keyIcon(size: number)}
+  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" class="key-icon">
+    <circle cx="7" cy="12" r="4.6" fill="none" stroke="currentColor" stroke-width="2.6" />
+    <path d="M11.2 12H21.5M18 12v3.6M15 12v2.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
   </svg>
+{/snippet}
 
-  <!-- Fackeln (HTML, damit sie zwischen den Türen sauber sitzen) -->
-  {#each torches as tx, i (i)}
-    <div class="pointer-events-none absolute" style="left:{tx}%; top:{compact ? 11 : 10}%; transform: translateX(-50%); width:{compact ? 1.6 : 2.2}%">
-      <div class="flame" style="animation-delay:{-i * 0.29}s"></div>
-      <div class="mx-auto h-[1.4em] w-[45%] rounded-b bg-gradient-to-b from-stone-500 to-stone-800" style="font-size:{compact ? 6 : 9}px"></div>
-    </div>
-  {/each}
+<div
+  class="scene relative w-full select-none overflow-hidden {compact ? 'rounded-xl' : 'rounded-2xl'}"
+  class:tense-all={suspense}
+  style="{fill ? 'height: 100%' : `aspect-ratio: ${compact ? '1000 / 1000' : '1000 / 1120'}`}; --hue:{hue}"
+  bind:clientWidth={W}
+  bind:clientHeight={H}
+>
+  {#if W > 0 && H > 0}
+    <svg class="absolute inset-0 h-full w-full" viewBox="0 0 {W} {H}" aria-hidden="true">
+      <defs>
+        <linearGradient id="{uid}-wallshade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="rgb(4 3 2 / 0.92)" />
+          <stop offset={Math.max(0.05, (doorTop(g) - g.ph) / g.hy)} stop-color="rgb(4 3 2 / 0.45)" />
+          <stop offset="0.9" stop-color="rgb(4 3 2 / 0.12)" />
+          <stop offset="1" stop-color="rgb(0 0 0 / 0.55)" />
+        </linearGradient>
+        <linearGradient id="{uid}-floorshade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="rgb(0 0 0 / 0.7)" />
+          <stop offset="0.35" stop-color="rgb(0 0 0 / 0.2)" />
+          <stop offset="1" stop-color="rgb(0 0 0 / 0.5)" />
+        </linearGradient>
+        <radialGradient id="{uid}-torch">
+          <stop offset="0" stop-color="hsl(38 100% 64% / 0.85)" />
+          <stop offset="0.3" stop-color="hsl(30 95% 52% / 0.4)" />
+          <stop offset="0.65" stop-color="hsl(24 90% 45% / 0.12)" />
+          <stop offset="1" stop-color="hsl(22 90% 45% / 0)" />
+        </radialGradient>
+        <radialGradient id="{uid}-pool">
+          <stop offset="0" stop-color="hsl(34 100% 60% / 0.3)" />
+          <stop offset="1" stop-color="hsl(30 100% 50% / 0)" />
+        </radialGradient>
+        <radialGradient id="{uid}-flame" cx="0.5" cy="0.72" r="0.6">
+          <stop offset="0" stop-color="#fffbe0" />
+          <stop offset="0.3" stop-color="#ffd25a" />
+          <stop offset="0.7" stop-color="#ff7a1a" />
+          <stop offset="1" stop-color="rgb(255 70 0 / 0)" />
+        </radialGradient>
+        <linearGradient id="{uid}-wood" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#3b2312" />
+          <stop offset="0.5" stop-color="#5a3519" />
+          <stop offset="1" stop-color="#2e1b0d" />
+        </linearGradient>
+        <linearGradient id="{uid}-woodv" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="rgb(255 210 150 / 0.16)" />
+          <stop offset="0.5" stop-color="rgb(0 0 0 / 0)" />
+          <stop offset="1" stop-color="rgb(0 0 0 / 0.45)" />
+        </linearGradient>
+        <linearGradient id="{uid}-iron" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#6b6e74" />
+          <stop offset="1" stop-color="#25272b" />
+        </linearGradient>
+        <radialGradient id="{uid}-inside" cx="0.5" cy="0.95" r="0.9">
+          <stop offset="0" stop-color="hsl({hue} 20% 10%)" />
+          <stop offset="1" stop-color="#020101" />
+        </radialGradient>
+        <radialGradient id="{uid}-light" cx="0.5" cy="0.6" r="0.7">
+          <stop offset="0" stop-color="#fff6d8" />
+          <stop offset="0.5" stop-color="#ffd27a" />
+          <stop offset="1" stop-color="#d9861f" />
+        </radialGradient>
+        <linearGradient id="{uid}-spill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="hsl(42 100% 75% / 0.42)" />
+          <stop offset="1" stop-color="hsl(36 100% 60% / 0)" />
+        </linearGradient>
+        <radialGradient id="{uid}-vignette" cx="0.5" cy="0.55" r="0.75">
+          <stop offset="0.5" stop-color="rgb(0 0 0 / 0)" />
+          <stop offset="1" stop-color="rgb(0 0 0 / 0.72)" />
+        </radialGradient>
+        <filter id="{uid}-soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation={Math.max(1.5, g.dw * 0.18)} /></filter>
+        {#each doors as _, i (i)}
+          <clipPath id="{uid}-clip-{i}"><path d={archPath(doorCx(g, i), g.hy, g.dw, g.dh)} /></clipPath>
+        {/each}
+      </defs>
 
-  <!-- Türen mit Schild -->
-  {#each doors as door, i (door.id)}
-    {@const isLocked = locked.has(door.id)}
-    {@const open = openDoors.has(door.id)}
-    {@const isSel = selected === door.id}
-    <div class="absolute" style="left:{doorX(i)}%; top:{compact ? 3 : 2}%; width:{Math.min(doorW * 1.3, 84 / n - 1)}%; transform: translateX(-50%)">
-      <div
-        class="plaque mx-auto mb-[6%] rounded-md px-1 text-center leading-tight {isSel ? 'ring-2 ring-amber-300' : ''}"
-        class:opacity-40={isLocked}
-      >
-        <span class="block truncate font-black text-amber-100" style="font-size:{compact ? 'clamp(6px, 0.8vw, 11px)' : 'clamp(8px, 2.8vw, 13px)'}"><span class="mr-0.5 opacity-70">{doorIcon(door)}</span>{doorShort(door)}</span>
+      <!-- Wand: Quader mit Kante oben hell, unten dunkel -->
+      <rect width={W} height={g.hy} fill="hsl({hue} 10% 7%)" />
+      <g>
+        {#each stones as s, k (k)}
+          {@const gap = Math.max(0.8, s.h * 0.07)}
+          <rect x={s.x + gap} y={s.y + gap} width={Math.max(1, s.w - 2 * gap)} height={Math.max(1, s.h - 2 * gap)} rx={gap * 1.4} fill="hsl({hue} {7 + s.l * 9}% {13 + s.l * 13}%)" />
+          <rect x={s.x + gap * 1.6} y={s.y + gap} width={Math.max(1, s.w - 3.2 * gap)} height={gap} fill="rgb(255 240 220 / {0.05 + s.l * 0.06})" />
+          <rect x={s.x + gap} y={s.y + s.h - gap * 2} width={Math.max(1, s.w - 2 * gap)} height={gap} fill="rgb(0 0 0 / 0.35)" />
+        {/each}
+      </g>
+      <!-- Fackellicht auf der Wand -->
+      <g class="glow" style="mix-blend-mode: screen">
+        {#each torches as t, k (k)}
+          <ellipse cx={t.x} cy={t.y} rx={g.slot * 1.05} ry={g.dh * 1.1} fill="url(#{uid}-torch)" class="flicker" style="animation-delay:{-k * 0.53}s" />
+        {/each}
+      </g>
+      <rect width={W} height={g.hy} fill="url(#{uid}-wallshade)" />
+
+      <!-- Boden -->
+      <rect y={g.hy} width={W} height={g.h - g.hy} fill="hsl({hue} 8% 9%)" />
+      {#each plates as p, k (k)}
+        <path d={p.d} fill="hsl({hue} {6 + p.l * 6}% {12 + p.l * 7}%)" stroke="rgb(0 0 0 / 0.55)" stroke-width={compact ? 0.8 : 1.4} stroke-linejoin="round" />
+      {/each}
+      <g style="mix-blend-mode: screen">
+        {#each torches as t, k (k)}
+          <ellipse cx={t.x} cy={g.hy + (g.h - g.hy) * 0.12} rx={g.slot * 0.8} ry={(g.h - g.hy) * 0.16} fill="url(#{uid}-pool)" class="flicker" style="animation-delay:{-k * 0.53}s" />
+        {/each}
+      </g>
+      <rect y={g.hy} width={W} height={g.h - g.hy} fill="url(#{uid}-floorshade)" />
+      <rect y={g.hy - 1} width={W} height={Math.max(2, (g.h - g.hy) * 0.035)} fill="rgb(0 0 0 / 0.55)" />
+
+      <!-- Türen -->
+      {#each doors as door, i (door.id)}
+        {@const cx = doorCx(g, i)}
+        {@const st = doorStates[i]!}
+        {@const top = doorTop(g)}
+        {@const l = cx - g.dw / 2}
+        <!-- Licht aus der offenen Tür auf den Boden -->
+        <path
+          class="spill"
+          class:on={st.open}
+          d="M{l} {g.hy}L{l + g.dw} {g.hy}L{cx + g.dw * 1.25} {g.hy + (g.h - g.hy) * 0.55}L{cx - g.dw * 1.25} {g.hy + (g.h - g.hy) * 0.55}Z"
+          fill="url(#{uid}-spill)"
+          filter="url(#{uid}-soft)"
+        />
+        <g class:tense={st.tense} class:slam={st.slam} style="transform-origin: {cx}px {g.hy}px">
+          <!-- Rahmen aus Bogensteinen -->
+          <path d={archPath(cx, g.hy, g.dw + g.fw * 2.2, g.dh + g.fw * 1.1)} fill="rgb(0 0 0 / 0.5)" transform="translate(0 {g.fw * 0.3})" />
+          {#each archStones(cx, g.hy, g.dw, g.dh, g.fw) as s, k (k)}
+            <path d={s.d} fill="hsl({hue} 7% {27 - s.shade * 60}%)" stroke="rgb(0 0 0 / 0.6)" stroke-width={compact ? 0.6 : 1} />
+          {/each}
+          <!-- Öffnung: dunkel oder hell -->
+          <path d={archPath(cx, g.hy, g.dw, g.dh)} fill="url(#{uid}-inside)" />
+          <path class="inside-light" class:on={st.open} d={archPath(cx, g.hy, g.dw, g.dh)} fill="url(#{uid}-light)" />
+          <!-- Türblatt -->
+          <g clip-path="url(#{uid}-clip-{i})">
+            <g class="leaf" class:open={st.open} style="transform-origin: {l}px {g.hy}px">
+              <rect x={l} y={top} width={g.dw} height={g.dh} fill="url(#{uid}-wood)" />
+              {#each [1, 2, 3] as b (b)}
+                <rect x={l + (g.dw * b) / 4 - 0.6} y={top} width={compact ? 0.8 : 1.3} height={g.dh} fill="rgb(0 0 0 / 0.5)" />
+              {/each}
+              <rect x={l} y={top} width={g.dw} height={g.dh} fill="url(#{uid}-woodv)" />
+              {#each [0.3, 0.78] as f (f)}
+                <rect x={l} y={top + g.dh * f} width={g.dw} height={Math.max(1.5, g.dh * 0.055)} fill="url(#{uid}-iron)" />
+                {#if !compact}
+                  {#each [0.12, 0.38, 0.62, 0.88] as rx (rx)}
+                    <circle cx={l + g.dw * rx} cy={top + g.dh * (f + 0.0275)} r={Math.max(0.8, g.dw * 0.025)} fill="#9a9ca0" />
+                  {/each}
+                {/if}
+              {/each}
+              <circle cx={l + g.dw * 0.78} cy={top + g.dh * 0.57} r={g.dw * 0.075} fill="none" stroke="#b49a63" stroke-width={Math.max(1, g.dw * 0.03)} />
+              <rect x={l + g.dw * 0.73} y={top + g.dh * 0.46} width={g.dw * 0.1} height={g.dh * 0.06} rx={g.dw * 0.02} fill="#2a2420" />
+            </g>
+            <!-- Fallgitter -->
+            <g class="gate" class:down={st.gate} style="--lift:{-g.dh * 1.05}px">
+              {#each Array.from({ length: 5 }, (_, b) => b) as b (b)}
+                {@const bx = l + (g.dw * (b + 0.5)) / 5}
+                {@const bw = Math.max(1.2, g.dw * 0.055)}
+                <path d="M{bx - bw / 2} {top}V{g.hy - g.dh * 0.05}L{bx} {g.hy}L{bx + bw / 2} {g.hy - g.dh * 0.05}V{top}Z" fill="url(#{uid}-iron)" stroke="rgb(0 0 0 / 0.6)" stroke-width="0.6" />
+              {/each}
+              {#each [0.28, 0.55, 0.8] as f (f)}
+                <rect x={l} y={top + g.dh * f} width={g.dw} height={Math.max(1.2, g.dh * 0.04)} fill="url(#{uid}-iron)" stroke="rgb(0 0 0 / 0.5)" stroke-width="0.5" />
+              {/each}
+            </g>
+          </g>
+          {#if st.unlockable}
+            <!-- Mit Schlüssel aufschließbar: Schlüsselloch glänzt -->
+            <g class="keyglint">
+              <circle cx={cx} cy={top + g.dh * 0.58} r={g.dw * 0.28} fill="url(#{uid}-torch)" />
+              <circle cx={cx} cy={top + g.dh * 0.55} r={g.dw * 0.06} fill="#ffe28a" />
+              <path d="M{cx - g.dw * 0.04} {top + g.dh * 0.57}L{cx + g.dw * 0.04} {top + g.dh * 0.57}L{cx + g.dw * 0.025} {top + g.dh * 0.64}L{cx - g.dw * 0.025} {top + g.dh * 0.64}Z" fill="#ffe28a" />
+            </g>
+          {/if}
+          {#if st.spark}
+            <g class="spark" style="transform-origin: {cx}px {top + g.dh * 0.55}px">
+              {#each Array.from({ length: 8 }, (_, k) => k) as k (k)}
+                {@const a = (k / 8) * Math.PI * 2}
+                <line x1={cx} y1={top + g.dh * 0.55} x2={cx + Math.cos(a) * g.dw * 0.45} y2={top + g.dh * 0.55 + Math.sin(a) * g.dw * 0.45} stroke="#ffe7a0" stroke-width={Math.max(1, g.dw * 0.03)} stroke-linecap="round" />
+              {/each}
+              <circle cx={cx} cy={top + g.dh * 0.55} r={g.dw * 0.12} fill="#fff6d0" />
+            </g>
+          {/if}
+        </g>
+        {#if selected === door.id}
+          <path d={archPath(cx, g.hy, g.dw + g.fw * 2.6, g.dh + g.fw * 1.3)} fill="none" stroke="#fcd34d" stroke-width={compact ? 1.5 : 2.5} class="sel-ring" />
+        {/if}
+      {/each}
+
+      <!-- Fackeln: Halter, Flamme, Glut -->
+      {#each torches as t, k (k)}
+        {@const s = Math.max(compact ? 2.4 : 3.4, g.dw * 0.085)}
+        <path d="M{t.x - s * 0.9} {t.y + s * 2.6}L{t.x - s * 0.55} {t.y + s * 0.7}L{t.x + s * 0.55} {t.y + s * 0.7}L{t.x + s * 0.9} {t.y + s * 2.6}Z" fill="#3f3122" />
+        <rect x={t.x - s * 1.1} y={t.y + s * 2.5} width={s * 2.2} height={s * 0.7} rx={s * 0.2} fill="#2b2d31" />
+        <rect x={t.x - s * 0.4} y={t.y + s * 3.1} width={s * 0.8} height={s * 1.4} fill="#1d1e21" />
+        <circle cx={t.x} cy={t.y - s * 0.4} r={s * 3.2} fill="url(#{uid}-torch)" class="flicker" style="animation-delay:{-k * 0.41}s" />
+        <path
+          class="flame"
+          style="transform-origin: {t.x}px {t.y + s * 0.8}px; animation-delay:{-k * 0.29}s"
+          d="M{t.x} {t.y - s * 2.4}C{t.x + s * 0.5} {t.y - s * 1.2} {t.x + s * 1.1} {t.y - s * 0.4} {t.x + s * 0.9} {t.y + s * 0.3}C{t.x + s * 0.7} {t.y + s * 0.9} {t.x - s * 0.7} {t.y + s * 0.9} {t.x - s * 0.9} {t.y + s * 0.3}C{t.x - s * 1.1} {t.y - s * 0.4} {t.x - s * 0.4} {t.y - s * 1.1} {t.x} {t.y - s * 2.4}Z"
+          fill="url(#{uid}-flame)"
+        />
         {#if !compact}
-          <span class="line-clamp-2 block hyphens-auto break-words text-amber-200/75" lang="de" style="font-size: clamp(7px, 2.2vw, 10px)">{door.title}</span>
+          {#each [0, 1] as e (e)}
+            <circle class="ember" cx={t.x} cy={t.y - s} r={Math.max(0.7, s * 0.16)} fill="#ffb347" style="animation-delay:{-(k * 0.7 + e * 1.3)}s; --dx:{(e ? 1 : -1) * s * 1.5}px; --dy:{-g.dh * 0.45}px" />
+          {/each}
+        {/if}
+      {/each}
+
+      <!-- Staub im Licht -->
+      {#each motes as m, k (k)}
+        <circle class="mote" cx={m.x * W} cy={g.hy * 0.3 + m.y * (g.h - g.hy * 0.3) * 0.8} r={m.r * (compact ? 0.6 : 1)} fill="rgb(255 225 170 / 0.5)" style="animation-duration:{m.d}s; animation-delay:{m.delay}s" />
+      {/each}
+
+      <rect width={W} height={H} fill="url(#{uid}-vignette)" />
+    </svg>
+
+    <!-- Schilder über den Türen -->
+    {#each doors as door, i (door.id)}
+      {@const isLocked = locked.has(door.id)}
+      {@const cx = doorCx(g, i)}
+      <div
+        class="plaque pointer-events-none absolute text-center leading-tight {selected === door.id ? 'sel' : ''}"
+        class:dimmed={isLocked && !hasKey}
+        style="left:{cx}px; top:{doorTop(g) - g.fw * 1.25}px; width:{Math.min(g.slot * 0.94, g.dw * (compact ? 1.5 : 1.75))}px; max-height:{g.ph}px"
+      >
+        <span class="block truncate font-black text-amber-100" style="font-size:{compact ? Math.max(6, Math.min(11, g.ph * 0.62)) : Math.max(9, Math.min(13, g.slot * 0.15))}px"
+          ><span class="mr-0.5 opacity-70">{doorIcon(door)}</span>{doorShort(door)}</span
+        >
+        {#if !compact}
+          <span class="block hyphens-auto break-words text-amber-200/75 {g.ph >= 48 ? 'line-clamp-2' : 'line-clamp-1'}" lang="de" style="font-size:{Math.max(8, Math.min(10.5, g.slot * 0.12))}px">{door.title}</span>
         {/if}
       </div>
-    </div>
-    <button
-      class="door absolute {isSel ? 'selected' : ''} {slammed.has(door.id) ? 'slam' : ''}"
-      style="left:{doorX(i)}%; top:{compact ? 17 : 17}%; height:{compact ? 25 : 25}%; width:{doorW}%; transform: translateX(-50%)"
-      disabled={!interactive || isLocked}
-      aria-label="{door.title}, {doorFormat(door)}{isLocked ? ', verschlossen' : ''}"
-      onclick={() => onPick?.(door.id)}
-    >
-      <div class="frame">
-        <div class="opening"></div>
-        <div class="leaf" class:open>
-          <span class="band" style="top:22%"></span>
-          <span class="band" style="top:68%"></span>
-          <span class="ring"></span>
+      <!-- Spuren an der Tür: Kerben mit Kopf, wer durch ist und wer nicht -->
+      {@const tries = visibleTries(door)}
+      {#if tries.length > 0}
+        {@const shown = tries.slice(-(compact ? 6 : 3))}
+        <div
+          class="tries pointer-events-none absolute flex items-center justify-center"
+          class:compact
+          style="left:{cx}px; top:{doorTop(g) - g.fw * 1.25 + (compact ? 1 : 3)}px; width:{g.slot * 0.96}px; gap:{compact ? 1 : 2}px"
+        >
+          {#each shown as t, k (k)}
+            {@const parts = figureById(view, t.playerId)}
+            <span class="mark {tryMark(t)}" title={t.key ? 'mit Schlüssel' : t.correct ? 'geschafft' : 'gescheitert'}>
+              {#if !compact && parts}<MiniHead {parts} size={Math.min(13, g.slot * 0.15)} />{/if}
+              {#if t.key}{@render keyIcon(compact ? 6 : 10)}{:else}<i>{t.correct ? '✓' : '✗'}</i>{/if}
+            </span>
+          {/each}
+          {#if tries.length > shown.length}<span class="more">+{tries.length - shown.length}</span>{/if}
         </div>
-      </div>
-      {#if isLocked}
-        <div class="bars"><span></span><span></span></div>
       {/if}
-    </button>
-  {/each}
+      {#if !compact}
+        <button
+          class="door absolute"
+          style="left:{cx - g.dw / 2 - g.fw}px; top:{doorTop(g) - g.fw * 1.25 - g.ph}px; width:{g.dw + g.fw * 2}px; height:{g.dh + g.fw * 1.25 + g.ph}px"
+          disabled={!interactive || (isLocked && !hasKey)}
+          aria-label="{door.title}, {doorFormat(door)}{isLocked ? (hasKey ? ', verschlossen, mit Schlüssel zu öffnen' : ', verschlossen') : ''}"
+          onclick={() => onPick?.(door.id)}
+        ></button>
+      {/if}
+    {/each}
 
-  <!-- Figuren -->
-  {#if baseSize > 0}
+    <!-- Figuren -->
     {#each spots as s (s.id)}
       {@const parts = figureById(view, s.id) ?? {}}
       <div
         class="walker pointer-events-none absolute"
         class:gone={s.gone}
         class:dim={s.dim}
-        style="left:{s.x}%; top:{s.y}%; z-index:{Math.round(s.y)}; transform: translate(-50%, -100%) scale({scaleAt(s.y) * (s.gone ? 0.8 : 1)})"
+        class:pushed={s.phase === 'reveal' && s.pose === 'sad'}
+        style="left:{s.x}px; top:{s.y}px; z-index:{Math.round(s.y)}; transform: translate(-50%, -100%) scale({scaleAt(s.y) * (s.gone ? 0.82 : 1)})"
       >
-        <Figure {parts} size={baseSize} pose={isMoving(s.id) && s.pose !== 'sad' ? 'walk' : s.pose} seed={s.id.charCodeAt(0)} />
+        <Figure {parts} size={sizeFront} pose={isMoving(s.id) && s.pose !== 'sad' ? 'walk' : s.pose} seed={s.id.charCodeAt(0)} />
+        {#if s.key}
+          <span class="figure-key {s.key}" style="font-size:{sizeFront * 0.2}px">{@render keyIcon(sizeFront * (s.key === 'held' ? 0.2 : 0.14))}</span>
+        {/if}
         {#if s.id === meId && !compact}
-          <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-amber-300 px-1.5 text-[10px] font-black text-slate-900">Du</span>
+          <span class="me-tag absolute left-1/2 -translate-x-1/2 rounded-full bg-amber-300 px-1.5 font-black text-slate-900" style="top:{-Math.max(10, sizeFront * 0.1)}px; font-size:{Math.max(10, 10 / scaleAt(s.y))}px">Du</span>
         {/if}
       </div>
+    {/each}
+
+    <!-- Gefundener Schlüssel: blitzt über der Tür auf und fliegt zur Figur -->
+    {#each flyingKeys as f (f.s.id)}
+      {#if f.i >= 0}
+        <span
+          class="flying-key pointer-events-none absolute"
+          style="left:{doorCx(g, f.i)}px; top:{doorTop(g) + g.dh * 0.2}px; --tx:{f.s.x - doorCx(g, f.i)}px; --ty:{f.s.y - sizeFront * scaleAt(f.s.y) * 0.55 - doorTop(g) - g.dh * 0.2}px; z-index:999"
+          >{@render keyIcon(Math.max(14, g.dw * 0.42))}</span
+        >
+      {/if}
     {/each}
   {/if}
 </div>
 
 <style>
   .scene {
-    background: hsl(var(--hue) 12% 10%);
+    background: hsl(var(--hue) 10% 7%);
     box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+    --flicker-speed: 2.3s;
+  }
+  .scene.tense-all {
+    --flicker-speed: 0.7s;
   }
   .flicker {
-    animation: flicker 2.3s ease-in-out infinite;
+    animation: flicker var(--flicker-speed) ease-in-out infinite;
   }
   @keyframes flicker {
     0%,
     100% {
       opacity: 0.85;
     }
-    35% {
+    30% {
       opacity: 1;
     }
-    55% {
-      opacity: 0.7;
+    52% {
+      opacity: 0.68;
     }
-    80% {
+    78% {
       opacity: 0.95;
     }
   }
   .flame {
-    margin: 0 auto;
-    width: 70%;
-    aspect-ratio: 1 / 1.6;
-    border-radius: 50% 50% 45% 45% / 62% 62% 38% 38%;
-    background: radial-gradient(circle at 50% 70%, #fff7c2 0 18%, #ffcf4d 35%, #ff7a1a 65%, rgb(255 80 0 / 0) 72%);
-    filter: drop-shadow(0 0 6px rgb(255 160 40 / 0.9));
-    transform-origin: 50% 90%;
-    animation: flame 0.9s ease-in-out infinite alternate;
+    animation: flame 0.85s ease-in-out infinite alternate;
+  }
+  .tense-all .flame {
+    animation-duration: 0.32s;
   }
   @keyframes flame {
     from {
-      transform: scale(0.92, 1) rotate(-3deg);
+      transform: scale(0.9, 0.96) skewX(-4deg);
     }
     to {
-      transform: scale(1.06, 1.12) rotate(3deg);
+      transform: scale(1.06, 1.12) skewX(4deg);
     }
   }
+  .ember {
+    animation: ember 3.2s linear infinite;
+    opacity: 0;
+  }
+  @keyframes ember {
+    0% {
+      transform: translate(0, 0);
+      opacity: 0;
+    }
+    15% {
+      opacity: 0.9;
+    }
+    100% {
+      transform: translate(var(--dx), var(--dy));
+      opacity: 0;
+    }
+  }
+  .mote {
+    animation: mote 10s ease-in-out infinite alternate;
+  }
+  @keyframes mote {
+    0% {
+      transform: translate(0, 0);
+      opacity: 0.1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+    100% {
+      transform: translate(14px, -22px);
+      opacity: 0.15;
+    }
+  }
+  .leaf {
+    transition:
+      transform 750ms cubic-bezier(0.3, 0.7, 0.25, 1),
+      filter 750ms;
+  }
+  .leaf.open {
+    transform: scaleX(0.14) skewY(-6deg);
+    filter: brightness(0.5);
+  }
+  .inside-light,
+  .spill {
+    opacity: 0;
+    transition: opacity 600ms 150ms;
+  }
+  .inside-light.on {
+    opacity: 0.95;
+  }
+  .spill.on {
+    opacity: 1;
+  }
+  .gate {
+    transform: translateY(var(--lift));
+    transition: transform 700ms cubic-bezier(0.4, 0, 0.6, 1);
+  }
+  .gate.down {
+    transform: translateY(0);
+    transition: transform 380ms cubic-bezier(0.55, 0, 0.75, 0.4);
+  }
+  .tense {
+    animation: tense 0.18s linear infinite;
+  }
+  @keyframes tense {
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+    25% {
+      transform: translate(-0.6px, 0.3px) rotate(-0.25deg);
+    }
+    75% {
+      transform: translate(0.6px, -0.2px) rotate(0.25deg);
+    }
+  }
+  .slam {
+    animation: slam 520ms cubic-bezier(0.3, 0.8, 0.3, 1.4) 300ms;
+  }
+  @keyframes slam {
+    0%,
+    100% {
+      transform: none;
+    }
+    20% {
+      transform: translate(-3px, 1px) rotate(-1.2deg);
+    }
+    45% {
+      transform: translate(2.5px, 0) rotate(0.9deg);
+    }
+    70% {
+      transform: translate(-1px, 0);
+    }
+  }
+  .keyglint {
+    animation: glint 1.6s ease-in-out infinite;
+  }
+  @keyframes glint {
+    0%,
+    100% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  .spark {
+    animation: spark 600ms ease-out forwards;
+  }
+  @keyframes spark {
+    0% {
+      transform: scale(0.2);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  }
+  .sel-ring {
+    filter: drop-shadow(0 0 6px rgb(252 211 77 / 0.8));
+  }
   .plaque {
-    background: linear-gradient(#3a2a18, #24180c);
-    border: 1px solid #7a5a2a;
+    transform: translate(-50%, -100%);
+    overflow: hidden;
+    border-radius: 5px;
+    padding: 2px 3px;
+    background: linear-gradient(#3a2814, #20150a);
+    border: 1px solid #8a6a32;
     box-shadow:
-      0 0 10px rgb(255 190 80 / 0.25),
-      inset 0 1px 0 rgb(255 255 255 / 0.12);
-    padding-top: 2px;
-    padding-bottom: 2px;
+      0 2px 6px rgb(0 0 0 / 0.6),
+      0 0 12px rgb(255 180 70 / 0.18),
+      inset 0 1px 0 rgb(255 255 255 / 0.14);
+    transition: opacity 300ms;
+  }
+  .plaque.sel {
+    border-color: #fcd34d;
+    box-shadow:
+      0 0 0 1px #fcd34d,
+      0 0 14px rgb(252 211 77 / 0.55);
+  }
+  .plaque.dimmed {
+    opacity: 0.45;
+  }
+  .tries {
+    transform: translateX(-50%);
+  }
+  .mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    border-radius: 999px;
+    padding: 0 3px 0 1px;
+    background: rgb(15 10 5 / 0.72);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 14px;
+  }
+  .mark i {
+    font-style: normal;
+  }
+  .mark.ok {
+    color: #86efac;
+  }
+  .mark.bad {
+    color: #fda4af;
+  }
+  .mark.key {
+    color: #fcd34d;
+  }
+  .tries.compact .mark {
+    padding: 0 1px;
+    font-size: 6px;
+    line-height: 7px;
+  }
+  .more {
+    font-size: 9px;
+    font-weight: 800;
+    color: rgb(253 230 138 / 0.8);
   }
   .door {
-    perspective: 400px;
-    transition: filter 200ms;
+    border-radius: 999px 999px 6px 6px / 30% 30% 6px 6px;
+    background: transparent;
+    -webkit-tap-highlight-color: transparent;
   }
   .door:not(:disabled) {
     cursor: pointer;
   }
-  .door:not(:disabled):hover .leaf,
-  .door.selected .leaf {
-    filter: brightness(1.25);
-  }
-  .door.selected .frame {
-    box-shadow:
-      0 0 0 3px #fcd34d,
-      0 0 24px rgb(252 211 77 / 0.6);
-  }
-  .frame {
-    position: absolute;
-    inset: 0;
-    border-radius: 999px 999px 4px 4px / 40% 40% 4px 4px;
-    background: linear-gradient(#5b5b5b, #3a3a3a);
-    padding: 7%;
-    box-shadow:
-      0 6px 14px rgb(0 0 0 / 0.6),
-      inset 0 2px 0 rgb(255 255 255 / 0.15);
-  }
-  .opening {
-    position: absolute;
-    inset: 7%;
-    border-radius: inherit;
-    background: radial-gradient(ellipse at 50% 85%, rgb(255 200 120 / 0.35), #050403 70%);
-  }
-  .leaf {
-    position: absolute;
-    inset: 7%;
-    border-radius: 999px 999px 2px 2px / 40% 40% 2px 2px;
-    background:
-      repeating-linear-gradient(90deg, rgb(0 0 0 / 0.28) 0 2px, transparent 2px 22%),
-      linear-gradient(180deg, #7a4a22, #4e2c12);
-    box-shadow: inset 0 0 12px rgb(0 0 0 / 0.55);
-    transform-origin: 0% 50%;
-    transition: transform 650ms cubic-bezier(0.3, 0.7, 0.3, 1);
-  }
-  .leaf.open {
-    transform: rotateY(-72deg);
-  }
-  .band {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 7%;
-    background: linear-gradient(#5c6066, #2a2c30);
-    box-shadow: 0 1px 0 rgb(0 0 0 / 0.5);
-  }
-  .ring {
-    position: absolute;
-    right: 14%;
-    top: 50%;
-    width: 16%;
-    aspect-ratio: 1;
-    border-radius: 999px;
-    border: 2px solid #b8a272;
-  }
-  .bars {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 14%;
-    background: rgb(0 0 0 / 0.35);
-    border-radius: 999px 999px 4px 4px / 40% 40% 4px 4px;
-  }
-  .bars span {
-    display: block;
-    height: 9%;
-    margin: 0 -4%;
-    background: linear-gradient(#8b8f96, #3d4046);
-    box-shadow: 0 2px 4px rgb(0 0 0 / 0.6);
-    transform: rotate(-12deg);
-  }
-  .bars span + span {
-    transform: rotate(12deg);
-  }
-  .slam {
-    animation: slam 520ms cubic-bezier(0.3, 0.8, 0.3, 1.4);
-  }
-  @keyframes slam {
-    0% {
-      transform: translateX(-50%);
-    }
-    20% {
-      transform: translateX(calc(-50% - 5px)) rotate(-2deg);
-    }
-    45% {
-      transform: translateX(calc(-50% + 4px)) rotate(1.5deg);
-    }
-    70% {
-      transform: translateX(calc(-50% - 2px));
-    }
-    100% {
-      transform: translateX(-50%);
-    }
+  .door:focus-visible {
+    outline: 2px solid #fcd34d;
+    outline-offset: 2px;
   }
   .walker {
     transition:
       left 900ms cubic-bezier(0.45, 0.05, 0.4, 1),
       top 900ms cubic-bezier(0.45, 0.05, 0.4, 1),
       transform 900ms cubic-bezier(0.45, 0.05, 0.4, 1),
-      opacity 500ms 700ms;
+      opacity 450ms 650ms,
+      filter 400ms;
     transform-origin: 50% 100%;
     filter: drop-shadow(0 6px 6px rgb(0 0 0 / 0.55));
+  }
+  .walker.pushed {
+    transition:
+      left 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) 260ms,
+      top 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) 260ms,
+      transform 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) 260ms,
+      filter 400ms;
   }
   .walker.gone {
     opacity: 0;
   }
   .walker.dim {
-    filter: grayscale(1) brightness(0.6);
+    filter: grayscale(1) brightness(0.55);
+  }
+  .figure-key {
+    position: absolute;
+    right: -4%;
+    top: 46%;
+    color: #fcd34d;
+    filter: drop-shadow(0 0 4px rgb(252 211 77 / 0.7));
+  }
+  .figure-key.pocket {
+    top: 58%;
+    right: 2%;
+    opacity: 0.9;
+  }
+  .key-icon {
+    display: block;
+  }
+  .flying-key {
+    color: #fde68a;
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0 0 8px rgb(253 230 138 / 0.95));
+    animation: fly-key 1000ms cubic-bezier(0.5, 0, 0.3, 1) forwards;
+  }
+  @keyframes fly-key {
+    0% {
+      transform: translate(-50%, -50%) scale(0.2) rotate(-40deg);
+      opacity: 0;
+    }
+    30% {
+      transform: translate(-50%, -50%) scale(1.5) rotate(10deg);
+      opacity: 1;
+    }
+    45% {
+      transform: translate(-50%, -50%) scale(1.3) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0.5) rotate(20deg);
+      opacity: 0;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .flame,
     .flicker,
-    .slam {
+    .ember,
+    .mote,
+    .tense,
+    .slam,
+    .keyglint,
+    .spark,
+    .flying-key {
       animation: none;
+    }
+    .walker,
+    .leaf,
+    .gate {
+      transition: none;
     }
   }
 </style>

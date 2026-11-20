@@ -5,7 +5,7 @@ import { dungeonRoundView } from './view.ts';
 export const dungeonGame: GameModule = {
   id: 'dungeon',
   name: 'Dungeon',
-  description: 'Alle wählen gleichzeitig eine Tür mit Wissensgebiet. Richtig heißt nächster Raum, falsch heißt Tür zu. Wer zuerst draußen ist, gewinnt.',
+  description: 'Alle wählen gleichzeitig eine Tür mit Wissensgebiet. Richtig heißt nächster Raum, falsch heißt Tür zu. Ein Schlüssel hilft einmal aus der Klemme. Wer zuerst draußen ist, gewinnt.',
   turnBased: false,
   needsCategory: false,
   startRound: startDungeonRound,
