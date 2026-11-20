@@ -7,7 +7,8 @@
 
   /**
    * Dünne HUD-Zeile über dem Handy-Spielfeld (36 px): Menü, Höhe mit Rest bis zur Linie und Platz, rechts die
-   * laufenden Effekte als kleine Plaketten mit Restzeit-Ring und der nächste Stein.
+   * scharfen Stein-Zauber (Ranken, Vergrößern, Mini-Steine, Schwerer Stein) als kleine, überlappende Plaketten, die
+   * laufenden Effekte mit Restzeit-Ring und der nächste Stein (bei Steinwahl zwei Formen zum Antippen).
    */
   let {
     height,
@@ -16,9 +17,11 @@
     total,
     showRank,
     effects,
-    glue = false,
-    boulder = false,
+    armed = [],
     next,
+    pick = null,
+    picked = 0,
+    onPick,
     color,
     fog = false,
     offline = false,
@@ -31,9 +34,13 @@
     showRank: boolean;
     /** Laufende Effekte auf mir: `value` ist die Restzeit von 1 bis 0. */
     effects: { id: number; special: TowerSpecial; value: number }[];
-    glue?: boolean;
-    boulder?: boolean;
+    /** Zauber, die auf die nächsten Steine wirken (scharf). */
+    armed?: TowerSpecial[];
     next: number;
+    /** Steinwahl: die zwei Formen und die gewählte. */
+    pick?: readonly [number, number] | null;
+    picked?: 0 | 1;
+    onPick?: (i: 0 | 1) => void;
     color: string;
     fog?: boolean;
     offline?: boolean;
@@ -75,11 +82,12 @@
   {/if}
 
   <div class="ml-auto flex min-w-0 items-center gap-1">
-    {#if glue}
-      <span class="fx glass" title="{TOWER_SPECIALS.glue.name} bereit"><TowerBadge special="glue" size={24} /></span>
-    {/if}
-    {#if boulder}
-      <span class="fx glass" title="{TOWER_SPECIALS.boulder.name} kommt"><TowerBadge special="boulder" size={24} /></span>
+    {#if armed.length > 0}
+      <span class="armed flex shrink-0 items-center">
+        {#each armed as a (a)}
+          <span class="fx-sm glass" title="{TOWER_SPECIALS[a].name} wirkt auf die nächsten Steine"><TowerBadge special={a} size={22} /></span>
+        {/each}
+      </span>
     {/if}
     {#each effects as e (e.id)}
       <span class="fx glass" title={TOWER_SPECIALS[e.special].name}>
@@ -88,7 +96,7 @@
         </TowerRing>
       </span>
     {/each}
-    <TowerNext form={next} {color} {fog} />
+    <TowerNext form={next} {color} {fog} options={pick} chosen={picked} onChoose={onPick} />
   </div>
 </div>
 
@@ -99,6 +107,17 @@
     -webkit-backdrop-filter: blur(10px);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
     -webkit-tap-highlight-color: transparent;
+  }
+  .fx-sm {
+    display: inline-grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    flex-shrink: 0;
+    border-radius: 999px;
+  }
+  .armed > :global(* + *) {
+    margin-left: -0.5rem;
   }
   .fx {
     display: inline-grid;

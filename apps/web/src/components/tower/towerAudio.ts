@@ -376,9 +376,10 @@ export const towerSound = {
         tone(b, { f: 110, to: 440, gain: 0.04, attack: 0.03, decay: 0.45, glide: 0.45, type: 'sawtooth', wet: 0.1 });
         for (let i = 0; i < 4; i++) noise(b, { t: i * 0.07, gain: 0.05, decay: 0.015, f: 3000, q: 5 });
         break;
-      case 'boulder':
-        tone(b, { f: 62, to: 40, gain: 0.2, attack: 0.01, decay: 0.7 });
-        noise(b, { gain: 0.12, attack: 0.02, decay: 0.7, filter: 'lowpass', f: 260, q: 0.7, wet: 0.3 });
+      case 'mini':
+        // Alles schnurrt zusammen: hohe, fallende Piepser
+        for (let i = 0; i < 3; i++) tone(b, { t: i * 0.07, f: 1320 - i * 260, to: 1700 - i * 200, gain: 0.03, decay: 0.12, glide: 0.08, type: 'triangle', wet: 0.3 });
+        noise(b, { gain: 0.05, attack: 0.02, decay: 0.25, f: 3200, to: 1200, q: 3 });
         break;
       case 'round':
         noise(b, { gain: 0.08, attack: 0.08, decay: 0.7, filter: 'bandpass', f: 380, q: 2, am: 11, wet: 0.2 });
@@ -388,24 +389,6 @@ export const towerSound = {
         tone(b, { f: 233, gain: 0.05, decay: 0.4, type: 'triangle', wet: 0.3 });
         tone(b, { f: 220, gain: 0.05, decay: 0.5, type: 'triangle', wet: 0.3 });
     }
-  },
-
-  /** Schutzschild hat einen dunklen Zauber abgefangen: metallisches Klingen. */
-  shieldBlock(): void {
-    const b = ready('shield', 200);
-    if (!b) return;
-    const t = b.ctx.currentTime;
-    bell(b, 1760, t, 0.07, 1.0, 0.5);
-    bell(b, 2637, t + 0.02, 0.05, 0.8, 0.5);
-    noise(b, { gain: 0.05, decay: 0.08, filter: 'highpass', f: 4000 });
-  },
-
-  /** Schild aufgespannt: aufsteigendes Summen. */
-  shieldUp(): void {
-    const b = ready('shieldUp', 300);
-    if (!b) return;
-    tone(b, { f: 330, to: 660, gain: 0.04, attack: 0.1, decay: 0.5, glide: 0.4, type: 'triangle', wet: 0.4 });
-    tone(b, { f: 495, to: 990, gain: 0.025, attack: 0.1, decay: 0.5, glide: 0.4, wet: 0.4 });
   },
 
   /** Versteinern: Mahlen, ein tiefer Schlag und Knistern. */
@@ -433,14 +416,43 @@ export const towerSound = {
     tone(b, { f: 600, to: 1500, gain: 0.035, decay: 0.08, glide: 0.06 });
   },
 
-  /** Schrumpfen: Ton, der zusammenfällt. */
-  shrink(): void {
-    const b = ready('shrink', 200);
+  /** Vergrößern: Ton, der aufbläht und tief landet. */
+  grow(): void {
+    const b = ready('grow', 200);
     if (!b) return;
-    tone(b, { f: 880, to: 1760, gain: 0.035, decay: 0.22, glide: 0.2, type: 'triangle', wet: 0.3 });
+    tone(b, { f: 330, to: 165, gain: 0.05, attack: 0.03, decay: 0.45, glide: 0.35, type: 'triangle', wet: 0.35 });
+    tone(b, { f: 495, to: 247, gain: 0.03, attack: 0.03, decay: 0.45, glide: 0.35, wet: 0.35 });
   },
 
-  /** Stützbalken: schwerer Holzbalken setzt auf. */
+  /** Schwerer Stein bereit: tiefer Amboss-Klang. */
+  heavy(): void {
+    const b = ready('heavy', 250);
+    if (!b) return;
+    const t = b.ctx.currentTime;
+    bell(b, 220, t, 0.07, 1.1, 0.4);
+    bell(b, 331, t + 0.01, 0.04, 0.9, 0.4);
+    tone(b, { f: 70, to: 48, gain: 0.14, decay: 0.4 });
+  },
+
+  /** Schwerer Stein setzt auf: dumpfer Eisen-Schlag mit Nachklang. */
+  thud(impact: number): void {
+    const b = ready('thud', 120);
+    if (!b) return;
+    const k = Math.min(1, Math.max(0.3, impact));
+    tone(b, { f: 58, to: 34, gain: 0.22 + 0.12 * k, attack: 0.005, decay: 0.45 });
+    noise(b, { gain: 0.1 * k, attack: 0.005, decay: 0.3, filter: 'lowpass', f: 420, q: 0.8, wet: 0.25 });
+    bell(b, 180, b.ctx.currentTime + 0.01, 0.035 * k, 0.7, 0.35);
+  },
+
+  /** Steinwahl: zwei kurze, fragende Töne. */
+  pick(): void {
+    const b = ready('pick', 200);
+    if (!b) return;
+    tone(b, { f: 660, gain: 0.035, decay: 0.12, type: 'triangle', wet: 0.3 });
+    tone(b, { t: 0.1, f: 880, gain: 0.035, decay: 0.18, type: 'triangle', wet: 0.3 });
+  },
+
+  /** Stützbalken: schwerer Stahlträger rastet ein. */
   beam(): void {
     const b = ready('beam', 300);
     if (!b) return;

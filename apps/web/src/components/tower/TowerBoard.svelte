@@ -4,14 +4,19 @@
     FX_BOULDER,
     FX_FOG,
     FX_GLUE,
+    FX_HEAVY,
     specialTargetsOthers,
     STONE_FALLING,
+    TOWER_LUCK_MAX_MS,
+    TOWER_LUCK_MIN_MS,
     TOWER_SPECIALS,
+    TOWER_STOCK_MAX,
     type RoomView,
     type TowerEffectView,
     type TowerRoundView,
     type TowerSide,
     type TowerSpecial,
+    type TowerSpellSource,
   } from '@quiz/shared';
   import { client } from '../../lib/client.svelte.ts';
   import { playerColor } from '../../lib/format.ts';
@@ -23,15 +28,17 @@
   import TowerCountdown from './TowerCountdown.svelte';
   import TowerHold from './TowerHold.svelte';
   import TowerHud from './TowerHud.svelte';
+  import TowerInfo, { type TowerInfoRow } from './TowerInfo.svelte';
+  import TowerLuck from './TowerLuck.svelte';
   import TowerMenu from './TowerMenu.svelte';
   import TowerNotice, { noticeStrong, type TowerNoticeItem } from './TowerNotice.svelte';
   import TowerOverview from './TowerOverview.svelte';
   import TowerRail from './TowerRail.svelte';
-  import { TowerSim } from './TowerSim.ts';
   import TowerSpecialCard from './TowerSpecialCard.svelte';
   import TowerTarget from './TowerTarget.svelte';
   import { type TowerScene } from './towerDraw.ts';
   import { towerFeed } from './towerFeed.svelte.ts';
+  import { openTowerSim, towerPersistKey } from './towerPersist.ts';
   import { towerCastFeedback, towerEffectFeedback, towerOfferFeedback, towerSimFeedback } from './towerFeedback.ts';
   import { groupOf, toneOf } from './towerStyle.ts';
   import type { TickerItem } from './towerTicker.ts';
@@ -39,7 +46,8 @@
 
   /**
    * Hochstapler. Am Handy: der eigene Turm mit Physik im Vollbild, eine dünne HUD-Zeile oben, flache Steuerleiste
-   * unten mit der Zauber-Taste in der Mitte. Alles andere (Angebot, Meldungen, Alarm) bleibt schmal am Rand.
+   * unten mit zwei runden Tasten in der Mitte: groß der Vorrat aus Höhenmarken (der Reihe nach), klein daneben der
+   * Glücks-Slot. Alles andere (Angebot, Meldungen, Alarm) bleibt schmal am Rand.
    * Am Fernseher (`readonly`) und für den moderierenden Host: alle Türme in der Übersicht (TowerOverview).
    */
   let { view, round, readonly = false }: { view: RoomView; round: TowerRoundView; readonly?: boolean } = $props();
@@ -52,12 +60,14 @@
 
   // ---------------------------------------------------------------- Handy: eigener Turm
 
-  // Die Physik entsteht einmal pro Runde; spätere Server-Stände ändern nur Effekte und Vorrat.
-  const sim = untrack(() => {
+  // Die Physik entsteht einmal pro Runde; spätere Server-Stände ändern nur Effekte und Vorrat. Nach Neuladen
+  // (oder wenn iOS die Seite verworfen hat) kommt der Turm aus sessionStorage zurück.
+  const persist = untrack(() => {
     const id = client.myId;
     if (readonly || !id || !round.my || !round.turnOrder.includes(id)) return null;
-    return new TowerSim({ seed: round.my.seed, goalHeight: round.goalHeight, marks: round.marks, reachedMarks: round.players[id]?.marks ?? [] });
+    return openTowerSim(towerPersistKey(view.code, round.startedAt, id), { seed: round.my.seed, goalHeight: round.goalHeight, marks: round.marks, reachedMarks: round.players[id]?.marks ?? [] });
   });
+  const sim = persist?.sim ?? null;
   const myColor = untrack(() => colorOf(client.myId ?? ''));
 
   // Was der Bildschirm-Takt braucht, ohne die Animation an Props zu binden.
@@ -67,17 +77,18 @@
   });
 
   /** `fall`: Lage des fallenden Steins (−1 links, 0 Mitte, 1 rechts), damit Meldungen ausweichen. */
-  let ui = $state({ height: 0, hold: 0, next: 0, glue: false, boulder: false, fog: false, fall: 0 });
+  let ui = $state({ height: 0, hold: 0, next: 0, glue: false, boulder: false, heavy: false, fog: false, fall: 0, pickA: -1, pickB: -1, picked: 0 as 0 | 1 });
+  /** Welcher Größenzauber zuletzt auf mich kam (Vergrößern oder Mini-Steine), für die Plakette im HUD. */
+  let sizeSpell = $state<'grow' | 'mini'>('grow');
   let gust: { at: number; dir: number } | null = null;
   let lastSent = 0;
   let lastUi = 0;
-  const seen = new Set<number>();
+  const seen = persist?.seen ?? new Set<number>();
 
   function apply(e: TowerEffectView, time: number) {
     if (!sim) return;
     towerEffectFeedback(e, me);
-    // Vom Schutzschild abgefangen: wirkt nicht.
-    if (e.blocked) return;
+    if (e.special === 'grow' || e.special === 'mini') sizeSpell = e.special;
     const dir = e.id % 2 === 0 ? 1 : -1;
     sim.applySpecial(e.special, dir);
     if (e.special === 'gust') gust = { at: time, dir };
@@ -87,14 +98,11 @@
     // Vor „Los!“ (Start-Countdown, Serverzeit) fällt nichts.
     if (!sim || !latest.playing || client.serverNow() < latest.goAt) return;
     const now = client.serverNow();
-    // Abgefangene Zauber laufen trotzdem durch `apply` (Klang „Schild blockt“), wirken aber nie.
     const mine = latest.effects.filter((e) => e.target === me);
-    const active = (s: TowerSpecial) => mine.some((e) => e.special === s && !e.blocked && e.until > now);
+    const active = (s: TowerSpecial) => mine.some((e) => e.special === s && e.until > now);
     sim.setIce(active('ice'));
     sim.turbo = active('turbo');
-    sim.shield = active('shield');
     const fog = active('fog');
-    if (sim.beam && !active('beam')) sim.removeBeam();
     for (const e of mine) {
       if (seen.has(e.id)) continue;
       seen.add(e.id);
@@ -112,16 +120,30 @@
       if (client.status === 'open') client.send({ type: 'tower_frame', frame });
     }
     for (const ev of events) {
-      if (ev.type === 'special') client.send({ type: 'tower_mark', height: ev.height, piece: ev.index });
-      else if (ev.type === 'mark') client.send({ type: 'tower_mark', height: ev.height });
+      if (ev.type === 'mark') client.send({ type: 'tower_mark', height: ev.height });
       else if (ev.type === 'finish') client.send({ type: 'tower_finish', height: ev.height });
     }
+    persist?.save(time);
     if (time - lastUi >= 90) {
       lastUi = time;
       const fx = sim.effectFlags();
       const x = sim.stones().find((s) => s.flags & STONE_FALLING)?.x ?? 0;
       const fall = x < -1.2 ? -1 : x > 1.2 ? 1 : 0;
-      ui = { height: sim.height, hold: sim.holdMs / 3000, next: sim.peekNext(), glue: (fx & FX_GLUE) !== 0, boulder: (fx & FX_BOULDER) !== 0, fog, fall };
+      const next = sim.peekNext();
+      const opts = sim.pickOptions();
+      ui = {
+        height: sim.height,
+        hold: sim.holdMs / 3000,
+        next,
+        glue: (fx & FX_GLUE) !== 0,
+        boulder: (fx & FX_BOULDER) !== 0,
+        heavy: (fx & FX_HEAVY) !== 0,
+        fog,
+        fall,
+        pickA: opts?.[0] ?? -1,
+        pickB: opts?.[1] ?? -1,
+        picked: opts && next === opts[1] ? 1 : 0,
+      };
     }
   }
 
@@ -150,8 +172,24 @@
 
   // Klang zu Zauber-Angebot und Wahl (reagiert nur auf Wechsel). Tastatur steuert TowerControls.
   $effect(() => {
-    if (sim) towerOfferFeedback(round.my?.offer ?? null, round.my?.stock ?? null);
+    if (sim) towerOfferFeedback(round.my?.offer ?? null, round.my?.stock.at(-1) ?? null);
   });
+
+  /** Steinwahl: zwei Formen für den nächsten Stein, solange der Zauber wirkt. */
+  const pick = $derived<readonly [number, number] | null>(ui.pickA >= 0 && ui.pickB >= 0 ? [ui.pickA, ui.pickB] : null);
+  function choosePiece(i: 0 | 1) {
+    if (!sim || !pick) return;
+    sim.choosePick(i);
+    ui = { ...ui, next: sim.peekNext(), picked: i };
+  }
+  /** Am Rechner: 1 und 2 wählen die Form, E setzt den Vorrat ein, Q das Glück. */
+  function onKey(e: KeyboardEvent) {
+    const t = e.target as HTMLElement | null;
+    if (!sim || e.repeat || e.metaKey || e.ctrlKey || e.altKey || (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA'))) return;
+    if (pick && (e.key === '1' || e.key === '2')) choosePiece(e.key === '1' ? 0 : 1);
+    else if (e.key === 'e' || e.key === 'E') cast('stock');
+    else if (e.key === 'q' || e.key === 'Q') cast('luck');
+  }
 
   /** Ziele für Störer: alle anderen, der Höchste zuerst. */
   const targets = $derived.by(() => {
@@ -160,14 +198,14 @@
       .filter((id) => id !== me && round.players[id])
       .map((id) => {
         const f = towerFeed.frame(id, round.startedAt);
-        return { id, height: f?.h ?? round.players[id]?.height ?? 0, color: colorOf(id), holding: (f?.hold ?? 0) > 0, hold: f?.hold ?? 0, shielded: round.players[id]?.shielded ?? false };
+        return { id, height: f?.h ?? round.players[id]?.height ?? 0, color: colorOf(id), holding: (f?.hold ?? 0) > 0, hold: f?.hold ?? 0 };
       })
       .sort((a, b) => b.height - a.height);
   });
 
-  function useSpecial(special: TowerSpecial, targetId?: string) {
+  function useSpecial(special: TowerSpecial, from: TowerSpellSource, targetId?: string) {
     towerCastFeedback();
-    client.send({ type: 'tower_special_use', special, ...(targetId ? { targetId } : {}) });
+    client.send({ type: 'tower_special_use', special, from, ...(targetId ? { targetId } : {}) });
   }
 
 
@@ -214,22 +252,83 @@
 
   let menuOpen = $state(false);
 
-  const stock = $derived(round.my?.stock ?? null);
-  let picking = $state<TowerSpecial | null>(null);
+  // Zwei Plätze für Zauber: der Vorrat aus Höhenmarken (der Reihe nach, `stock[0]` kommt dran) und der Glücks-Slot.
+  const stock = $derived(round.my?.stock ?? []);
+  const luck = $derived(round.my?.luck ?? null);
+  const spellIn = (from: TowerSpellSource): TowerSpecial | null => (from === 'stock' ? (stock[0] ?? null) : luck);
+
+  let picking = $state<{ special: TowerSpecial; from: TowerSpellSource } | null>(null);
   $effect(() => {
-    // Vorrat weg (eingesetzt oder Runde vorbei): Zielwahl schließen.
-    if (picking && stock !== picking) untrack(() => (picking = null));
+    // Zauber weg (eingesetzt, ersetzt oder Runde vorbei): Zielwahl schließen.
+    if (picking && spellIn(picking.from) !== picking.special) untrack(() => (picking = null));
   });
-  function tapSpecial() {
-    if (!stock || !started) return;
-    if (!specialTargetsOthers(stock)) useSpecial(stock);
-    else if (targets.length === 1) useSpecial(stock, targets[0]!.id);
-    else if (targets.length > 0) picking = stock;
+  /** Tipp auf eine der Tasten: helle Magie wirkt sofort, dunkle fragt nach dem Ziel (bei nur einem Gegner nicht). */
+  function cast(from: TowerSpellSource) {
+    const s = spellIn(from);
+    if (!s || !started) return;
+    info = null;
+    if (!specialTargetsOthers(s)) useSpecial(s, from);
+    else if (targets.length === 1) useSpecial(s, from, targets[0]!.id);
+    else if (targets.length > 0) picking = { special: s, from };
   }
-  function pick(id: string) {
-    if (picking) useSpecial(picking, id);
+  function pickTarget(id: string) {
+    if (picking) useSpecial(picking.special, picking.from, id);
     picking = null;
   }
+
+  // Info-Popover nach langem Druck auf eine Taste oder einen Chip; schließt beim nächsten Tipp oder nach ein paar Sekunden.
+  let info = $state<{ rows: TowerInfoRow[]; foot: string | null } | null>(null);
+  let infoTimer: ReturnType<typeof setTimeout> | null = null;
+  function showInfo(rows: TowerInfoRow[], foot: string | null = null) {
+    if (infoTimer) clearTimeout(infoTimer);
+    info = { rows, foot };
+    infoTimer = setTimeout(() => (info = null), 5000);
+  }
+  function stockInfo() {
+    const rows: TowerInfoRow[] = stock.map((s, i) => ({ special: s, tag: i === 0 ? 'jetzt' : `${i + 1}.` }));
+    if (luck) rows.push({ special: luck, tag: 'Glück', luck: true });
+    const foot =
+      stock.length === 0
+        ? nextMark !== null
+          ? `Vorrat leer. Bei ${nextMark} m gibt es Magie zur Wahl.`
+          : 'Vorrat leer.'
+        : `Vorrat ${stock.length} von ${TOWER_STOCK_MAX}, der Reihe nach. Ist er voll, verdrängt neue Magie die vorderste.`;
+    showInfo(rows, foot);
+  }
+  function luckInfo() {
+    const left = round.my?.luckAt ? Math.max(0, Math.ceil((round.my.luckAt - clock.now) / 1000)) : null;
+    const when = left !== null ? `Nächstes Glück in ${left} s` : 'Glück kommt alle 10 bis 20 s';
+    showInfo(luck ? [{ special: luck, tag: 'Glück', luck: true }] : [], luck ? `${when}, es ersetzt diesen Zauber.` : `Glücks-Slot leer. ${when}.`);
+  }
+  $effect(() => {
+    if (!info) return;
+    // Der nächste Tipp irgendwo schließt das Popover (ohne ihn abzufangen).
+    const close = () => untrack(() => (info = null));
+    const id = setTimeout(() => window.addEventListener('pointerdown', close, { capture: true, once: true }), 0);
+    return () => {
+      clearTimeout(id);
+      window.removeEventListener('pointerdown', close, { capture: true });
+    };
+  });
+
+  // Glücks-Ring: Fortschritt bis zum nächsten Glücks-Zauber. Beginn ist der letzte Glückszeitpunkt (bzw. „Los!“).
+  let luckFrom = $state(0);
+  let luckSeen: number | null | undefined = undefined;
+  $effect(() => {
+    const at = round.my?.luckAt ?? null;
+    const goAt = round.goAt;
+    untrack(() => {
+      if (at === luckSeen) return;
+      if (typeof luckSeen === 'number') luckFrom = Math.min(luckSeen, client.serverNow());
+      else luckFrom = at !== null && at - goAt > TOWER_LUCK_MAX_MS ? at - (TOWER_LUCK_MIN_MS + TOWER_LUCK_MAX_MS) / 2 : goAt;
+      luckSeen = at;
+    });
+  });
+  const luckProgress = $derived.by(() => {
+    const at = round.my?.luckAt ?? null;
+    if (at === null || !started) return 0;
+    return Math.min(1, Math.max(0, (clock.now - luckFrom) / Math.max(1, at - luckFrom)));
+  });
 
   // Magie-Angebot an Marken und Spezialsteinen: hell oder dunkel, genau eins.
   const offer = $derived(round.my?.offer ?? null);
@@ -240,15 +339,22 @@
 
   /** Gegner, der gerade über der Linie hält (der knappste zuerst): Jetzt zählt dunkle Magie. */
   const holder = $derived(started ? ([...targets].filter((t) => t.holding).sort((a, b) => b.hold - a.hold)[0] ?? null) : null);
-  const darkStock = $derived(stock && groupOf(stock) === 'dark' ? stock : null);
+  /**
+   * Dunkle Magie für Alarm und Höhenleiste: zuerst das Glück (ein neues würde es ohnehin ersetzen), sonst der
+   * vorderste Zauber im Vorrat.
+   */
+  const darkSpell = $derived.by((): { special: TowerSpecial; from: TowerSpellSource } | null => {
+    if (luck && groupOf(luck) === 'dark') return { special: luck, from: 'luck' };
+    const s = stock[0];
+    return s && groupOf(s) === 'dark' ? { special: s, from: 'stock' } : null;
+  });
   function strike() {
-    if (darkStock && holder) useSpecial(darkStock, holder.id);
+    if (darkSpell && holder) useSpecial(darkSpell.special, darkSpell.from, holder.id);
   }
   /** Dunkle Magie per Tipp auf einen Kopf in der Höhenleiste. */
   function railPick(id: string) {
-    if (darkStock && started) useSpecial(darkStock, id);
+    if (darkSpell && started) useSpecial(darkSpell.special, darkSpell.from, id);
   }
-  const shielded = $derived(me ? (round.players[me]?.shielded ?? false) : false);
 
   /** Platz live: eigener Turm gegen die letzten Frames der anderen. */
   const rank = $derived(1 + targets.filter((t) => t.height > ui.height + 0.05).length);
@@ -266,12 +372,17 @@
   /** Laufende Effekte auf mir mit Restzeit; Kleber und Brocken zeigt das HUD, solange sie scharf sind. */
   const myEffects = $derived(
     round.effects
-      .filter((e) => e.target === me && !e.blocked && e.until > clock.now && TOWER_SPECIALS[e.special].durationMs > 0)
+      .filter((e) => e.target === me && e.until > clock.now && TOWER_SPECIALS[e.special].durationMs > 0)
       .map((e) => ({ id: e.id, special: e.special, value: (e.until - clock.now) / Math.max(1, e.until - e.at) })),
   );
 
+  /** Scharfe Stein-Zauber auf mir, für die Plaketten im HUD. */
+  const armed = $derived(
+    [ui.glue ? 'glue' : null, ui.boulder ? sizeSpell : null, ui.heavy ? 'heavy' : null].filter((x): x is TowerSpecial => x !== null),
+  );
+
   const railEntries = $derived([
-    ...targets.map((t) => ({ id: t.id, height: t.height, color: t.color, holding: t.holding, shielded: t.shielded })),
+    ...targets.map((t) => ({ id: t.id, height: t.height, color: t.color, holding: t.holding })),
     ...(me ? [{ id: me, height: ui.height, color: myColor }] : []),
   ]);
 
@@ -307,7 +418,7 @@
         return i.player !== me || i.kind === 'lead';
       };
       const fresh = ticker.feed(input, keep);
-      for (const i of fresh) if (i.kind === 'effect' && i.target === me && i.player !== me) hit = { id: i.id, kind: 'hit', at: i.at, by: i.player, special: i.special, blocked: i.blocked };
+      for (const i of fresh) if (i.kind === 'effect' && i.target === me && i.player !== me) hit = { id: i.id, kind: 'hit', at: i.at, by: i.player, special: i.special };
     });
   });
   $effect(() => {
@@ -332,11 +443,11 @@
   <div class="tower-full fixed inset-0 z-40 flex select-none justify-center overflow-hidden bg-[#0b1220]">
     <!-- Spielfläche mit Gesten über den ganzen Bildschirm (auf breiten Schirmen als Hochformat-Spalte);
          alles andere liegt schmal am Rand darüber -->
-    <div class="field relative h-full w-full max-w-[min(100%,72dvh)] overflow-hidden {shielded ? 'field-shield' : ''} {holder ? 'field-alarm' : ''}" use:towerGestures={handlers}>
+    <div class="field relative h-full w-full max-w-[min(100%,72dvh)] overflow-hidden {holder ? 'field-alarm' : ''}" use:towerGestures={handlers}>
       <TowerCanvas class="h-full w-full" scene={myScene} onTick={tick} worldWidth={13} headroom={9.5} insetBottom={bottomInset} insetTop={topInset} />
 
       {#key hit?.id}
-        {#if hit && hit.kind === 'hit' && !hit.blocked}
+        {#if hit && hit.kind === 'hit'}
           <div class="hit-flash pointer-events-none absolute inset-0" style="--c:{toneOf(hit.special).glow}"></div>
         {/if}
       {/key}
@@ -350,9 +461,11 @@
           {total}
           {showRank}
           effects={myEffects}
-          glue={ui.glue}
-          boulder={ui.boulder}
+          {armed}
           next={ui.next}
+          {pick}
+          picked={ui.picked}
+          onPick={choosePiece}
           color={myColor}
           fog={ui.fog}
           offline={client.status !== 'open'}
@@ -372,7 +485,7 @@
       <!-- Rechts: Höhenrennen als schmaler Strich -->
       {#if total > 1}
         <div class="pointer-events-none absolute right-1 z-10 w-6" style="top:{topHeight + 22}px; bottom:{bottomHeight + 18}px">
-          <TowerRail {view} goal={round.goalHeight} marks={round.marks} entries={railEntries} {me} vertical head={16} armed={!!darkStock && started} onPick={railPick} />
+          <TowerRail {view} goal={round.goalHeight} marks={round.marks} entries={railEntries} {me} vertical head={16} armed={!!darkSpell && started} onPick={railPick} />
         </div>
       {/if}
 
@@ -387,17 +500,23 @@
       <div class="pointer-events-none absolute inset-x-0 bottom-0 z-30" bind:clientHeight={bottomHeight}>
         {#if holder && view.phase === 'playing'}
           <div class="flex justify-center px-2 pb-1.5">
-            <TowerAlert {view} holder={holder.id} hold={holder.hold} shielded={holder.shielded} dark={darkStock} offerOpen={offer !== null} onStrike={strike} />
+            <TowerAlert {view} holder={holder.id} hold={holder.hold} dark={darkSpell?.special ?? null} offerOpen={offer !== null} onStrike={strike} />
           </div>
         {/if}
         {#if choosing && offer}
           <div class="pointer-events-auto px-2 pb-1.5">
-            <TowerOffer {offer} {stock} urge={holder !== null} onChoose={choose} />
+            <TowerOffer
+              {offer}
+              replaces={stock.length >= TOWER_STOCK_MAX ? (stock[0] ?? null) : null}
+              urge={holder !== null}
+              onChoose={choose}
+              onInfo={(s) => showInfo([{ special: s }], stock.length >= TOWER_STOCK_MAX ? `Vorrat voll: ersetzt ${TOWER_SPECIALS[stock[0]!].name}.` : null)}
+            />
           </div>
         {/if}
         {#if gestures}
           <div class="flex justify-end px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-            <div class="float pointer-events-auto rounded-full">{@render magic()}</div>
+            <div class="float pointer-events-auto rounded-full p-1">{@render magic()}</div>
           </div>
         {/if}
         <div class={gestures ? '' : 'strip pointer-events-auto px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2'}>
@@ -406,7 +525,11 @@
       </div>
 
       {#if picking}
-        <TowerTarget {view} special={picking} {targets} bottom={bottomHeight + 6} onPick={pick} onCancel={() => (picking = null)} />
+        <TowerTarget {view} special={picking.special} {targets} bottom={bottomHeight + 6} onPick={pickTarget} onCancel={() => (picking = null)} />
+      {/if}
+
+      {#if info && !picking}
+        <TowerInfo rows={info.rows} foot={info.foot} bottom={bottomHeight + 6} />
       {/if}
 
       {#if menuOpen}
@@ -423,8 +546,13 @@
 {/if}
 
 {#snippet magic()}
-  <TowerSpecialCard {stock} {nextMark} progress={markProgress} disabled={!started} onTap={tapSpecial} />
+  <div class="flex items-center gap-1.5">
+    <TowerSpecialCard {stock} {nextMark} progress={markProgress} disabled={!started} onTap={() => cast('stock')} onInfo={stockInfo} />
+    <TowerLuck {luck} progress={luckProgress} disabled={!started} onTap={() => cast('luck')} onInfo={luckInfo} />
+  </div>
 {/snippet}
+
+<svelte:window onkeydown={onKey} />
 
 <style>
   :global(html.tower-lock),
@@ -450,20 +578,12 @@
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
-  /* Schutzschild aktiv: goldener Saum um das Spielfeld. */
-  .field-shield::after,
   .field-alarm::before {
     content: '';
     position: absolute;
     inset: 0;
     pointer-events: none;
     z-index: 5;
-  }
-  .field-shield::after {
-    box-shadow:
-      inset 0 0 0 2px rgba(255, 214, 110, 0.85),
-      inset 0 0 28px -6px rgba(250, 196, 70, 0.65);
-    animation: shield 2.4s ease-in-out infinite;
   }
   /* Ein Gegner hält über der Linie: grünes Leuchten vom Rand. */
   .field-alarm::before {
@@ -476,13 +596,6 @@
     box-shadow: inset 0 0 60px 10px var(--c);
     animation: hit 900ms ease-out forwards;
   }
-  @keyframes shield {
-    50% {
-      box-shadow:
-        inset 0 0 0 3px rgba(255, 230, 150, 1),
-        inset 0 0 40px -4px rgba(250, 196, 70, 0.6);
-    }
-  }
   @keyframes alarm {
     50% {
       box-shadow: inset 0 0 50px 10px rgba(62, 224, 143, 0.75);
@@ -494,7 +607,6 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .field-shield::after,
     .field-alarm::before {
       animation: none;
     }

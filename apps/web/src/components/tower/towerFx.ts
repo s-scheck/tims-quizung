@@ -1,19 +1,19 @@
 import {
   formCells,
   FX_BEAM,
-  FX_BOULDER,
   FX_FOG,
   FX_GLUE,
+  FX_HEAVY,
   FX_ICE,
-  FX_SHIELD,
+  FX_PICK,
   FX_TURBO,
   STONE_FALLING,
   STONE_GIANT,
   STONE_GLUED,
+  STONE_HEAVY,
   STONE_ICY,
   STONE_PETRIFIED,
   STONE_SHRUNK,
-  STONE_SPECIAL,
   TOWER_BEAM,
   TOWER_BEAM_HALF,
   TOWER_ROUND,
@@ -28,9 +28,9 @@ import { Backdrop, leafSprite, softDot } from './towerArt.ts';
  * eigenen Physik genauso wie am Fernseher, der nur Schnappschüsse bekommt.
  */
 
-/** Riesenstein: so groß wird gezeichnet (die Physik nutzt denselben Wert). */
+/** Vergrößern und Mini-Steine: so groß wird gezeichnet (die Physik nutzt dieselben Werte). */
 export const GIANT_SCALE = 1.5;
-export const SHRINK_SCALE = 0.7;
+export const SHRINK_SCALE = 0.6;
 
 export function stoneScale(flags: number): number {
   return flags & STONE_SHRUNK ? SHRINK_SCALE : flags & STONE_GIANT ? GIANT_SCALE : 1;
@@ -102,13 +102,10 @@ export class FxState {
   won = false;
   reached = new Set<number>();
   markFlash = new Map<number, number>();
-  shrinkAt = new Map<number, number>();
-  shieldAt = -1e9;
   shake = { amp: 0, at: 0, dx: 0, dy: 1 };
   /** Weich überblendete Stärken. */
   fogA = 0;
   iceA = 0;
-  shieldA = 0;
   holdA = 0;
   goalA = 0;
   backdrop: Backdrop | null = null;
@@ -225,10 +222,12 @@ export function observe(st: FxState, o: Observe): void {
     if (!p) {
       st.tracks.set(s.id, { x: s.x, y: s.y, a: s.a, vx: 0, vy: 0, vmax: 0, flags: s.flags, form: s.form, t: time, trail: [], trailAt: time });
       if (!st.primed || resync) continue;
+      // Neuer Stein mit Magie: hell (golden) für Vergrößern und Schwer, dunkel (violett) für Mini und Rund.
       if (s.form === TOWER_BEAM) burst(st, s.x, s.y, 22, LIGHT_MAGIC, 3.2, 0.4);
-      else if (s.flags & STONE_GIANT) burst(st, s.x, s.y, 16, DARK_MAGIC, 1.6);
+      else if (s.flags & STONE_GIANT) burst(st, s.x, s.y, 16, LIGHT_MAGIC, 1.6);
+      else if (s.flags & STONE_SHRUNK) burst(st, s.x, s.y, 12, DARK_MAGIC, 0.8, 0.3);
       else if (s.form === TOWER_ROUND) burst(st, s.x, s.y, 14, DARK_MAGIC, 1.2);
-      else if (s.flags & STONE_SPECIAL) burst(st, s.x, s.y, 8, LIGHT_MAGIC, 0.9, 0.4);
+      else if (s.flags & STONE_HEAVY) burst(st, s.x, s.y, 10, LIGHT_MAGIC, 1, 0.2);
       else if (!(s.flags & STONE_FALLING)) dust(st, stoneBoxes(s), 0.2);
       continue;
     }
@@ -240,21 +239,23 @@ export function observe(st: FxState, o: Observe): void {
     }
     const added = s.flags & ~p.flags;
     if (p.flags & STONE_FALLING && !(s.flags & STONE_FALLING)) {
-      // Landung: Staub, bei harten Landungen Kamerawackeln, beim Spezialstein Funken.
+      // Landung: Staub, bei harten Landungen Kamerawackeln. Große und schwere Steine schlagen spürbar ein.
       const strength = Math.min(1, Math.max(0.12, (p.vmax - 1.2) / 5.5));
       const boxes = stoneBoxes(s);
-      dust(st, boxes, strength * (s.flags & STONE_GIANT ? 1.6 : 1));
-      if (strength > 0.38 || s.flags & STONE_GIANT) shakeCamera(st, time, 4.5 * o.s * Math.min(1, strength + (s.flags & STONE_GIANT ? 0.4 : 0)));
-      if (s.flags & STONE_SPECIAL) {
-        for (let i = 0; i < 16; i++) {
-          const a = rand(0, Math.PI);
-          st.add({ k: Kind.Spark, x: s.x, y: s.y, vx: Math.cos(a) * rand(1.5, 4), vy: Math.sin(a) * rand(1.5, 4.5), life: rand(450, 850), size: rand(0.1, 0.2), color: pick(LIGHT_MAGIC) });
+      const heavy = (s.flags & STONE_HEAVY) !== 0;
+      const big = heavy || (s.flags & STONE_GIANT) !== 0;
+      dust(st, boxes, strength * (big ? 1.6 : 1));
+      if (strength > 0.38 || big) shakeCamera(st, time, 4.5 * o.s * Math.min(1.3, strength + (big ? 0.4 : 0) + (heavy ? 0.3 : 0)));
+      if (heavy) {
+        // Gusseisen: Funken und Splitter vom Aufprall
+        for (let i = 0; i < 12; i++) {
+          const a = rand(0.1, Math.PI - 0.1);
+          let lo = Infinity;
+          for (const b of boxes) lo = Math.min(lo, b.y - b.ey);
+          st.add({ k: Kind.Spark, x: s.x + rand(-0.6, 0.6), y: lo + 0.05, vx: Math.cos(a) * rand(1.5, 3.5), vy: Math.sin(a) * rand(1, 3), life: rand(300, 600), size: rand(0.06, 0.12), color: pick(['#ffb15a', '#ffd9a0', '#ff8a3d']) });
         }
+        crumbs(st, s.x, s.y - 0.4, 6, '#6d6a66');
       }
-    }
-    if (added & STONE_SHRUNK) {
-      st.shrinkAt.set(s.id, time);
-      burst(st, s.x, s.y, 12, LIGHT_MAGIC, 0.8, 0.3);
     }
     if (added & STONE_GLUED) burst(st, s.x, s.y, 7, VINE_MAGIC, 0.8, 0.6);
     if (added & STONE_PETRIFIED) {
@@ -309,12 +310,10 @@ export function observe(st: FxState, o: Observe): void {
   const fxAdded = o.fx & ~st.fxPrev;
   if (st.primed && fxAdded) {
     const top = Math.max(1, o.height);
-    if (fxAdded & FX_SHIELD) {
-      st.shieldAt = time;
-      burst(st, 0, top * 0.6, 26, LIGHT_MAGIC, 3, 0.6);
-    }
-    if (fxAdded & (FX_GLUE | FX_BEAM)) burst(st, 0, top, 10, LIGHT_MAGIC, 1.5);
-    if (fxAdded & (FX_ICE | FX_TURBO | FX_FOG | FX_BOULDER)) burst(st, 0, top + 1, 22, DARK_MAGIC, 2.4, 0.2);
+    // Größenzauber (FX_BOULDER) ist hell oder dunkel; den zeigt erst der neue Stein selbst.
+    if (fxAdded & (FX_GLUE | FX_BEAM | FX_HEAVY | FX_PICK)) burst(st, 0, top, 10, LIGHT_MAGIC, 1.5);
+    if (fxAdded & FX_GLUE) burst(st, 0, top, 8, VINE_MAGIC, 1.5, 0.8);
+    if (fxAdded & (FX_ICE | FX_TURBO | FX_FOG)) burst(st, 0, top + 1, 22, DARK_MAGIC, 2.4, 0.2);
   }
   st.fxPrev = o.fx;
 
@@ -352,19 +351,18 @@ export function observe(st: FxState, o: Observe): void {
   st.primed = true;
 }
 
-/** Laufende Erzeugung (Lichtregen beim Sieg, Funkeln an Spezialsteinen). */
-export function emit(st: FxState, o: { won: boolean; w: number; h: number; s: number; dt: number; specials: TowerStone[] }): void {
+/** Laufende Erzeugung (Lichtregen beim Sieg, Pollen an Rankensteinen). */
+export function emit(st: FxState, o: { won: boolean; w: number; h: number; s: number; dt: number; vines: TowerStone[] }): void {
   st.emitAcc += o.dt;
   if (st.emitAcc < 50) return;
   const steps = Math.min(4, Math.floor(st.emitAcc / 50));
   st.emitAcc -= steps * 50;
   for (let k = 0; k < steps; k++) {
     if (o.won) st.add({ k: Kind.Mote, x: rand(0, o.w), y: rand(-10, o.h * 0.4), vx: rand(-6, 6), vy: rand(14, 34), life: rand(1800, 3000), size: rand(2, 4.5) * o.s, color: pick(LIGHT_MAGIC) });
-    for (const s of o.specials) {
-      if (Math.random() > 0.18) continue;
-      const b = stoneBoxes(s);
-      const c = pick(b);
-      st.add({ k: Kind.Spark, x: c.x + rand(-0.5, 0.5), y: c.y + rand(-0.5, 0.5), vx: 0, vy: rand(0.2, 0.6), life: rand(400, 700), size: rand(0.08, 0.15), color: pick(LIGHT_MAGIC) });
+    for (const s of o.vines) {
+      if (Math.random() > 0.05) continue;
+      const c = pick(stoneBoxes(s));
+      st.add({ k: Kind.Spark, x: c.x + rand(-0.5, 0.5), y: c.y + rand(-0.4, 0.5), vx: rand(-0.15, 0.15), vy: rand(0.15, 0.4), life: rand(700, 1100), size: rand(0.06, 0.1), color: pick(VINE_MAGIC) });
     }
   }
 }

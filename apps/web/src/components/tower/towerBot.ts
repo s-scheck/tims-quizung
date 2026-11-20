@@ -179,7 +179,6 @@ export function runBot(seed: number, goalHeight: number, bot: TowerBot, maxMs: n
     const on = (sp: TowerSpecial) => active.some((x) => x.special === sp && x.until > sim.time);
     sim.setIce(on('ice'));
     sim.turbo = on('turbo');
-    if (sim.beam && !on('beam')) sim.removeBeam();
     bot.step(sim);
     sim.advance(STEP_MS);
     sim.drain();

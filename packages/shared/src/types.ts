@@ -1073,10 +1073,12 @@ export interface TowerPlayerView {
   height: number;
   /** Schon überbaute Höhenmarken. */
   marks: number[];
-  /** Hat ein Spezial im Vorrat; welches, sieht nur der Spieler selbst. */
+  /** Hat einen Zauber im Vorrat oder im Glücks-Slot; welche, sieht nur der Spieler selbst. */
   hasStock: boolean;
-  /** Schutzschild aktiv (blockt den nächsten dunklen Zauber). */
-  shielded: boolean;
+  /** Zahl der Zauber im Vorrat aus Höhenmarken (0 bis `TOWER_STOCK_MAX`). */
+  stockCount: number;
+  /** Ein Glücks-Zauber liegt bereit. */
+  hasLuck: boolean;
   /** Serverzeit, zu der der Turm ruhig über der Linie stand. */
   finishedAt: number | null;
 }
@@ -1089,8 +1091,6 @@ export interface TowerEffectView {
   target: string;
   at: number;
   until: number;
-  /** Vom Schutzschild des Ziels abgefangen, wirkt nicht. */
-  blocked?: boolean;
 }
 
 export interface TowerRoundView extends BaseRoundView {
@@ -1108,8 +1108,11 @@ export interface TowerRoundView extends BaseRoundView {
   winners: string[];
   /** Die Zauber dieser Partie (je Seite eine Auswahl). */
   pool: TowerSpecial[];
-  /** Nur für den Spieler selbst: Steinstrom, Vorrat und offenes Angebot (hell oder dunkel wählen). */
-  my?: { seed: number; stock: TowerSpecial | null; offer: TowerOffer | null };
+  /**
+   * Nur für den Spieler selbst: Steinstrom, Vorrat aus Höhenmarken (der Reihe nach, `stock[0]` kommt als
+   * Nächstes dran), Glücks-Slot mit dem Zeitpunkt des nächsten Glücks-Zaubers und offenes Angebot.
+   */
+  my?: { seed: number; stock: TowerSpecial[]; luck: TowerSpecial | null; luckAt: number | null; offer: TowerOffer | null };
   /** Ab der Auflösung: Rangliste und Punktevorschlag. */
   ranking?: TowerRanked[];
   points?: Record<string, number>;

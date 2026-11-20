@@ -4,25 +4,30 @@ import {
   packFrame,
   STONE_FALLING,
   STONE_GIANT,
+  STONE_HEAVY,
   STONE_PETRIFIED,
   STONE_GLUED,
   STONE_ICY,
   STONE_SHRUNK,
-  STONE_SPECIAL,
   FX_BEAM,
   FX_BOULDER,
+  FX_GLUE,
+  FX_HEAVY,
   FX_ICE,
-  FX_SHIELD,
+  FX_PICK,
   FX_TURBO,
   TOWER_BASE_HALF,
+  TOWER_BASIC_FORMS,
   TOWER_BEAM,
   TOWER_BEAM_HALF,
   TOWER_ROUND,
   TOWER_ROUND_RADIUS,
   TOWER_FIELD_HALF,
   TOWER_HOLD_MS,
+  towerAltForm,
   towerPiece,
   towerSpawn,
+  TOWER_SPECIALS,
   TOWER_STEERED_WINDOW,
   type TowerFrame,
   type TowerSpecial,
@@ -111,11 +116,23 @@ export const LOST_DELAY_MS = 900;
 const LOST_DELAY_MAX_MS = 1800;
 /** Eingaben in der Pause zwischen zwei Steinen gelten für den nächsten. */
 const INPUT_BUFFER_MS = 400;
-const SHRINK = 0.7;
-/** Riesenstein: die nächste Form anderthalbfach. */
-const GIANT = 1.5;
-/** Ranken verbinden alle Steine, deren Oberkante höchstens so weit unter der Spitze liegt. */
-const VINE_DEPTH = 3;
+/** Mini-Steine (dunkle Magie): so klein. Der Renderer nutzt denselben Wert (`SHRINK_SCALE`). */
+export const MINI = 0.6;
+/** Vergrößern (helle Magie): so groß. Der Renderer nutzt denselben Wert (`GIANT_SCALE`). */
+export const GIANT = 1.5;
+/**
+ * Schwerer Stein: so viel dichter, griffiger und gedämpfter als ein normaler. Wind drückt auf die Fläche, nicht
+ * auf die Masse, ein schwerer Stein bekommt also nur einen Bruchteil des Schwungs.
+ */
+const HEAVY_DENSITY = 6;
+const HEAVY_FRICTION = 1.6;
+const HEAVY_ICE_FRICTION = 0.3;
+const HEAVY_LINEAR_DAMPING = 0.9;
+const HEAVY_ANGULAR_DAMPING = 4;
+/** Eine Ranke greift nach allem, was der Stein so lange nach dem Aufsetzen berührt (auch Nachrutschen). */
+const VINE_WINDOW_MS = 600;
+/** Kennungen für Verbindungen im Schnappschuss: Sockel und Balken sind keine Steine. */
+const BASE_REF = -1;
 /** Versteinern erfasst alles, was ganz unterhalb von Spitze minus diesem Abstand liegt. */
 const PETRIFY_DEPTH = 2;
 /** Steine liegen genau auf dem Raster; Grenzfälle bei Ranken und Versteinern nicht dem Rundungsfehler überlassen. */
@@ -139,19 +156,21 @@ const WOBBLE_GAP_MS = 700;
  * Was in der Simulation passiert, für Klang, Vibration, Anzeige und Server. Alle Koordinaten in Steineinheiten.
  * - `spawn`: neuer fallender Stein (Startlage aus dem Seed).
  * - `shift` / `turn`: der fallende Stein wurde verschoben bzw. gedreht (nicht gemeldet, wenn am Rand blockiert).
- * - `land`: der fallende Stein hat etwas berührt; `impact` 0 bis 1 ist die Aufprallstärke.
+ * - `land`: der fallende Stein hat etwas berührt; `impact` 0 bis 1 ist die Aufprallstärke, dazu Größe und Gewicht.
  * - `bump`: zwei liegende Steine (oder Stein und Sockel) stoßen spürbar zusammen, gedrosselt.
  * - `lost`: ein Stein ist heruntergefallen; `delayMs` ist die Strafpause bis zum nächsten Stein.
  * - `wobble`: der Turm gerät ins Wanken, `amount` 0 bis 1.
  * - `hold`: Fortschritt der Ruheprüfung über der Linie stieg (Zwölftel-Schritte), `holdLost`: abgebrochen.
- * - `vines`, `petrify`, `vanish`: helle Magie hat gewirkt (Anzahl Steine bzw. der weggezauberte Stein).
- * - `special`, `mark`, `finish`: wie gehabt, gehen an den Server.
+ * - `vines`: ein Rankenstein hat sich an `count` Nachbarn gerankt (Sockel und Balken zählen mit).
+ * - `petrify`, `vanish`: helle Magie hat gewirkt (Anzahl Steine bzw. der weggezauberte Stein).
+ * - `beam`: ein Stützbalken ist dazugekommen.
+ * - `mark`, `finish`: gehen an den Server.
  */
 export type SimEvent =
   | { type: 'spawn'; index: number; form: number; x: number }
   | { type: 'shift'; dir: -1 | 1; x: number }
   | { type: 'turn'; dir: -1 | 1 }
-  | { type: 'land'; index: number; form: number; x: number; y: number; impact: number }
+  | { type: 'land'; index: number; form: number; x: number; y: number; impact: number; scale: number; heavy: boolean }
   | { type: 'bump'; x: number; y: number; impact: number }
   | { type: 'lost'; index: number; x: number; falling: boolean; delayMs: number }
   | { type: 'wobble'; amount: number }
@@ -160,7 +179,7 @@ export type SimEvent =
   | { type: 'vines'; count: number }
   | { type: 'petrify'; count: number }
   | { type: 'vanish'; id: number; form: number; x: number; y: number; a: number }
-  | { type: 'special'; index: number; height: number }
+  | { type: 'beam'; x: number; y: number }
   | { type: 'mark'; height: number }
   | { type: 'finish'; height: number };
 
@@ -170,22 +189,100 @@ interface Piece {
   index: number;
   form: number;
   body: Body;
-  special: boolean;
-  glued: boolean;
+  /** Rankenstein: rankt sich beim Aufsetzen an alle Nachbarn. */
+  vine: boolean;
+  /** Seit wann der Rankenstein liegt (simulierte Zeit), sonst null. */
+  vineAt: number | null;
+  heavy: boolean;
   petrified: boolean;
   scale: number;
+  /** Aus der Steinwahl: die zweite Form wurde genommen. */
+  picked: boolean;
+  /** Mit einer Steinwahl-Ladung gekommen (für die Rückgabe beim Wiederherstellen). */
+  pickUsed: boolean;
+  /** Hat eine Ladung Vergrößern bzw. Mini-Steine verbraucht (ebenso). */
+  growUsed: boolean;
+  miniUsed: boolean;
   /** Vom Spieler verschoben oder gedreht. */
   steered: boolean;
   /** Hitbox für gerade Vierteldrehung (x-Achse waagrecht) gebaut, sonst für ungerade. */
   upright: boolean;
 }
 
+interface Beam {
+  id: number;
+  body: Body;
+}
+
 export interface StreamPiece {
   form: number;
-  special: boolean;
+  /** Nur der Form halber (Spezialsteine gibt es nicht mehr), wird ignoriert. */
+  special?: boolean;
   /** Startversatz und Vierteldrehungen im Uhrzeigersinn, sonst mittig und gerade. */
   x?: number;
   turns?: number;
+}
+
+/** Ladungen der steinweisen Zauber: so viele der nächsten Steine sind noch betroffen. */
+export interface TowerCharges {
+  glue: number;
+  grow: number;
+  heavy: number;
+  pick: number;
+  mini: number;
+}
+
+/** Ein Stein im Schnappschuss. */
+export interface TowerSnapStone {
+  id: number;
+  index: number;
+  form: number;
+  x: number;
+  y: number;
+  a: number;
+  scale: number;
+  /** Nur zur Auskunft, maßgeblich sind die Verbindungen (`welds`). */
+  glued: boolean;
+  vine: boolean;
+  heavy: boolean;
+  petrified: boolean;
+  steered: boolean;
+}
+
+/**
+ * Serialisierbarer Stand eines Turms (JSON), für die Wiederherstellung nach Neuladen oder wenn iOS die Seite
+ * verwirft. Der fallende Stein ist nicht dabei: Er kommt nach dem Wiederherstellen noch einmal, samt der
+ * Ladungen, die er verbraucht hatte.
+ */
+export interface TowerSnapshot {
+  v: 1;
+  seed: number;
+  goalHeight: number;
+  time: number;
+  nextIndex: number;
+  nextId: number;
+  lostCount: number;
+  reached: number[];
+  charges: TowerCharges;
+  roundArmed: boolean;
+  pickChoice: 0 | 1;
+  recentSteered: boolean[];
+  stones: TowerSnapStone[];
+  beams: { id: number; x: number; y: number }[];
+  /** Verbindungen der Ranken: Kennung A, Kennung B (`-1` = Sockel), Ankerpunkt in der Welt. */
+  welds: [number, number, number, number][];
+  lastLandedId: number | null;
+}
+
+const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
+const isFin = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
+
+/** Grobe Prüfung eines gelesenen Schnappschusses (aus sessionStorage, also nie blind vertrauen). */
+export function isTowerSnapshot(x: unknown): x is TowerSnapshot {
+  if (!isObj(x) || x.v !== 1 || !isFin(x.seed) || !isFin(x.goalHeight) || !isFin(x.time) || !isFin(x.nextIndex) || !isFin(x.nextId)) return false;
+  if (!Array.isArray(x.stones) || !Array.isArray(x.beams) || !Array.isArray(x.welds) || !Array.isArray(x.reached) || !isObj(x.charges)) return false;
+  const stoneOk = (s: unknown) => isObj(s) && isFin(s.id) && isFin(s.index) && isFin(s.form) && isFin(s.x) && isFin(s.y) && isFin(s.a) && isFin(s.scale) && s.scale > 0;
+  return x.stones.every(stoneOk) && x.beams.every((b) => isObj(b) && isFin(b.id) && isFin(b.x) && isFin(b.y)) && x.welds.every((w) => Array.isArray(w) && w.length === 4 && w.every(isFin));
 }
 
 export interface TowerSimOptions {
@@ -307,10 +404,12 @@ function glide(err: number, current: number, accel: number, brake: number, max: 
   return Math.abs(want - from) <= dv ? want : from + Math.sign(want - from) * dv;
 }
 
+
 export class TowerSim {
   readonly world: World;
   readonly base: Body;
   readonly goalHeight: number;
+  readonly seed: number;
   pieces: Piece[] = [];
   current: Piece | null = null;
   /** Simulierte Zeit in ms. */
@@ -332,14 +431,12 @@ export class TowerSim {
   // Effekte
   ice = false;
   turbo = false;
-  /** Nächster Stein wird ein Riesenstein (dunkle Magie). */
-  boulderArmed = false;
   /** Nächster Stein ist rund (dunkle Magie). */
   roundArmed = false;
-  shrinkArmed = false;
-  /** Schutzschild aktiv (nur Anzeige, das Abfangen erledigt der Server). */
-  shield = false;
-  beam: Body | null = null;
+  /** Ladungen der steinweisen Zauber (Ranken, Vergrößern, Schwerer Stein, Steinwahl, Mini-Steine). */
+  charges: TowerCharges = { glue: 0, grow: 0, heavy: 0, pick: 0, mini: 0 };
+  /** Stützbalken, dauerhaft: jeder Einsatz legt einen weiteren dazu. */
+  beams: Beam[] = [];
 
   private nextIndex = 0;
   private nextId = 1;
@@ -363,9 +460,12 @@ export class TowerSim {
   private recentSteered: boolean[] = [];
   /** Zuletzt aufgesetzter Stein, für Wegzaubern. */
   private lastLanded: Piece | null = null;
+  /** Steinwahl für den nächsten Stein: 0 die normale Form, 1 die zweite. */
+  private pickChoice: 0 | 1 = 0;
 
   constructor(opts: TowerSimOptions) {
     this.goalHeight = opts.goalHeight;
+    this.seed = opts.seed;
     this.marks = opts.marks ?? [];
     this.reached = new Set(opts.reachedMarks ?? []);
     this.stream = opts.stream ?? ((i) => ({ ...towerPiece(opts.seed, i), ...towerSpawn(opts.seed, i) }));
@@ -374,6 +474,18 @@ export class TowerSim {
     this.base = this.world.createBody({ type: 'static', position: Vec2(0, -0.5 - HIT_INSET_STACK) });
     this.base.createFixture({ shape: Box(TOWER_BASE_HALF, 0.5), friction: FRICTION });
     this.world.on('begin-contact', (c: Contact) => this.onContact(c));
+  }
+
+  /**
+   * Baut einen Turm aus einem Schnappschuss wieder auf (nach Neuladen). Die Steine starten ruhend, der fallende
+   * Stein von damals kommt noch einmal. Passt der Schnappschuss nicht zur Runde (anderer Seed oder andere
+   * Ziellinie), beginnt der Turm frisch.
+   */
+  static restore(opts: TowerSimOptions, snap: TowerSnapshot): TowerSim {
+    if (!isTowerSnapshot(snap) || snap.seed !== opts.seed || snap.goalHeight !== opts.goalHeight) return new TowerSim(opts);
+    const sim = new TowerSim({ ...opts, reachedMarks: [...(opts.reachedMarks ?? []), ...snap.reached] });
+    sim.load(snap);
+    return sim;
   }
 
   // ------------------------------------------------------------ Steuerung
@@ -415,27 +527,57 @@ export class TowerSim {
     this.bufAt = this.time;
   }
 
+  // ----------------------------------------------------------- Steinwahl
+
+  /** Die beiden Formen für den nächsten Stein, solange Steinwahl-Ladungen da sind (sonst null). */
+  pickOptions(): [number, number] | null {
+    if (this.charges.pick <= 0 || this.roundArmed) return null;
+    return [this.stream(this.nextIndex).form, this.altForm(this.nextIndex)];
+  }
+
+  /** Wählt die Form des nächsten Steins aus `pickOptions()`; ohne Wahl kommt die erste. */
+  choosePick(i: 0 | 1): void {
+    this.pickChoice = i === 1 ? 1 : 0;
+  }
+
+  /** Zweite Form für Stein `index`, nie gleich der eigentlichen (auch bei einem Test-Steinstrom). */
+  private altForm(index: number): number {
+    const main = this.stream(index).form;
+    const alt = towerAltForm(this.seed, index);
+    return alt === main ? (main + 1) % TOWER_BASIC_FORMS : alt;
+  }
+
   // -------------------------------------------------------------- Effekte
 
   setIce(on: boolean): void {
     if (this.ice === on) return;
     this.ice = on;
-    // Sockel und Steine zugleich, Reibung wird je Kontakt aus beiden Seiten gemischt.
-    for (const body of [this.base, ...this.pieces.map((p) => p.body)]) for (let f = body.getFixtureList(); f; f = f.getNext()) f.setFriction(on ? ICE_FRICTION : FRICTION);
+    // Sockel, Balken und Steine zugleich, Reibung wird je Kontakt aus beiden Seiten gemischt.
+    const plain = on ? ICE_FRICTION : FRICTION;
+    for (const body of [this.base, ...this.beams.map((b) => b.body)]) for (let f = body.getFixtureList(); f; f = f.getNext()) f.setFriction(plain);
+    for (const p of this.pieces) for (let f = p.body.getFixtureList(); f; f = f.getNext()) f.setFriction(this.frictionOf(p));
     for (let c = this.world.getContactList(); c; c = c.getNext()) c.resetFriction();
   }
 
+  private frictionOf(p: Piece): number {
+    if (p.heavy) return this.ice ? HEAVY_ICE_FRICTION : HEAVY_FRICTION;
+    return this.ice ? ICE_FRICTION : FRICTION;
+  }
+
   /**
-   * Wirkt einen Zauber auf diesen Turm, so wie er beim Ziel ankommt (abgefangene nicht übergeben).
-   * Dauer-Effekte (Glatteis, Turbo, Nebel, Schild, Balken-Ende) steuert der Aufrufer über die Laufzeit.
+   * Wirkt einen Zauber auf diesen Turm, so wie er beim Ziel ankommt (einmal je Effekt).
+   * Steinweise Zauber laden auf, mehrere addieren sich (zweimal Ranken: 10 Steine). Dauer-Effekte (Glatteis,
+   * Turbo, Nebel) steuert der Aufrufer über die Laufzeit.
    */
   applySpecial(special: TowerSpecial, dir: -1 | 1 = 1): void {
     switch (special) {
       case 'glue':
-        this.vines();
-        break;
-      case 'shrink':
-        this.shrink();
+      case 'grow':
+      case 'heavy':
+      case 'pick':
+      case 'mini':
+        this.charges[special] += TOWER_SPECIALS[special].charges;
+        this.chargeCurrent();
         break;
       case 'beam':
         this.addBeam();
@@ -445,9 +587,6 @@ export class TowerSim {
         break;
       case 'vanish':
         this.vanish();
-        break;
-      case 'boulder':
-        this.boulderArmed = true;
         break;
       case 'round':
         this.roundArmed = true;
@@ -461,12 +600,33 @@ export class TowerSim {
       case 'turbo':
         this.turbo = true;
         break;
-      case 'shield':
-        this.shield = true;
-        break;
       case 'fog':
         break;
     }
+  }
+
+  /**
+   * Ranken und Schwerer Stein wirken schon auf den Stein, der gerade fällt (Form und Größe stehen da schon fest,
+   * Vergrößern, Mini-Steine und Steinwahl warten auf den nächsten).
+   */
+  private chargeCurrent(): void {
+    const p = this.current;
+    if (!p) return;
+    if (this.charges.glue > 0 && !p.vine) {
+      this.charges.glue--;
+      p.vine = true;
+    }
+    if (this.charges.heavy > 0 && !p.heavy) {
+      this.charges.heavy--;
+      this.makeHeavy(p);
+    }
+  }
+
+  private makeHeavy(p: Piece): void {
+    p.heavy = true;
+    p.body.setLinearDamping(HEAVY_LINEAR_DAMPING);
+    p.body.setAngularDamping(HEAVY_ANGULAR_DAMPING);
+    this.rebuild(p, p.scale);
   }
 
   /** Liegende Steine (ohne den fallenden und ohne heruntergefallene). */
@@ -474,31 +634,34 @@ export class TowerSim {
     return this.pieces.filter((p) => p !== this.current && p.body.getPosition().y > -0.5);
   }
 
-  /** Ranken: Die oberen Steine werden dort, wo sie sich berühren, fest miteinander und mit ihrer Auflage verschweißt. */
-  vines(): number {
-    const top = this.settled().filter((p) => this.topOf(p) > this.height - VINE_DEPTH + DEPTH_TOLERANCE);
-    const set = new Set(top.map((p) => p.body));
-    for (let c = this.world.getContactList(); c; c = c.getNext()) {
-      if (!c.isTouching()) continue;
-      const a = c.getFixtureA().getBody();
-      const b = c.getFixtureB().getBody();
-      if (!set.has(a) && !set.has(b)) continue;
-      if (a === this.current?.body || b === this.current?.body || a === this.beam || b === this.beam) continue;
-      if (this.welded(a, b)) continue;
-      const pt = c.getWorldManifold(null)?.points[0] ?? b.getWorldCenter();
-      this.world.createJoint(new WeldJoint({ frequencyHz: 0, dampingRatio: 0 }, a, b, pt));
-    }
-    for (const p of top) {
-      p.glued = true;
-      p.body.setAwake(true);
-    }
-    this.events.push({ type: 'vines', count: top.length });
-    return top.length;
-  }
-
   private welded(a: Body, b: Body): boolean {
     for (let j = a.getJointList(); j; j = j.next) if (j.other === b) return true;
     return false;
+  }
+
+  /**
+   * Ranken: Ein Rankenstein verschweißt sich nach dem Aufsetzen mit allem, was er berührt (Steine, Sockel,
+   * Balken), und greift eine kurze Weile auch nach allem, woran er noch heranrutscht.
+   */
+  private growVines(): void {
+    const cur = this.current?.body;
+    for (const p of this.pieces) {
+      if (p.vineAt === null) continue;
+      if (this.time - p.vineAt > VINE_WINDOW_MS) {
+        p.vineAt = null;
+        continue;
+      }
+      let count = 0;
+      for (let e = p.body.getContactList(); e; e = e.next) {
+        const other = e.other;
+        if (!other || other === cur || !e.contact.isTouching() || this.welded(p.body, other)) continue;
+        const pt = e.contact.getWorldManifold(null)?.points[0] ?? p.body.getWorldCenter();
+        this.world.createJoint(new WeldJoint({ frequencyHz: 0, dampingRatio: 0 }, p.body, other, pt));
+        other.setAwake(true);
+        count++;
+      }
+      if (count > 0) this.events.push({ type: 'vines', count });
+    }
   }
 
   /** Versteinern: alles, was ganz unterhalb von Spitze − 2 ruht, wird fester Fels wie ein neuer Sockel. */
@@ -519,7 +682,7 @@ export class TowerSim {
     return count;
   }
 
-  /** Wegzaubern: der zuletzt gesetzte liegende Stein verschwindet einfach aus der Welt. */
+  /** Wegzaubern: der zuletzt gesetzte liegende Stein verschwindet einfach aus der Welt (samt seinen Ranken). */
   vanish(): boolean {
     let p = this.lastLanded && this.pieces.includes(this.lastLanded) && this.lastLanded !== this.current ? this.lastLanded : null;
     if (!p || p.petrified) {
@@ -536,70 +699,62 @@ export class TowerSim {
     return true;
   }
 
-  /** Aktuellen Stein auf 70 % schrumpfen, sonst den nächsten. */
-  shrink(): void {
-    const p = this.current;
-    if (!p || p.scale < 1) {
-      this.shrinkArmed = true;
-      return;
-    }
-    this.rebuild(p, p.scale * SHRINK);
-  }
-
-  /** Seitlicher Stoß gegen den Turm, oben stärker als unten. */
+  /**
+   * Seitlicher Stoß gegen den Turm, oben stärker als unten. Wind drückt auf die Fläche: Ein normaler Stein bekommt
+   * den vollen Schwung, ein schwerer nur einen Bruchteil.
+   */
   gust(dir: -1 | 1): void {
     for (const p of this.pieces) {
       if (p === this.current) continue;
       const pos = p.body.getPosition();
       const dv = dir * (0.45 + 0.05 * Math.max(0, pos.y));
-      p.body.applyLinearImpulse(Vec2(p.body.getMass() * dv, 0), p.body.getWorldCenter(), true);
+      const area = p.body.getMass() / (p.heavy ? HEAVY_DENSITY : DENSITY);
+      p.body.applyLinearImpulse(Vec2(area * dv, 0), p.body.getWorldCenter(), true);
     }
   }
 
   /**
-   * Fester Balken an der Turmspitze, kollidiert mit allen Steinen. Er wird von oben auf den Turm gesenkt, bis er
-   * gleich etwas berühren würde, und zwar dort (um die Mitte der oberen Steine), wo er am tiefsten einsinkt.
-   * So überlappt er nie einen liegenden Stein und schiebt nichts weg.
+   * Fester Balken knapp unter der Turmspitze, kollidiert mit allen Steinen und bleibt für immer. Er wird von oben
+   * auf den Turm gesenkt, bis er gleich etwas berühren würde (auch einen früheren Balken), und zwar dort (um die
+   * Mitte der oberen Steine), wo er am tiefsten einsinkt. So überlappt er nie etwas und schiebt nichts weg.
    */
   addBeam(): void {
-    this.removeBeam();
     const settled = this.pieces.filter((p) => p !== this.current);
     const near = settled.filter((p) => p.body.getPosition().y > this.height - 2.5);
     const cx = near.length > 0 ? near.reduce((s, p) => s + p.body.getPosition().x, 0) / near.length : 0;
     const shape = Box(TOWER_BEAM_HALF.w, TOWER_BEAM_HALF.h);
     const hh = TOWER_BEAM_HALF.h;
+    const bodies = [...settled.map((p) => p.body), ...this.beams.map((b) => b.body)];
     let best: { x: number; y: number } | null = null;
     for (const dx of [0, -0.5, 0.5, -1, 1, -1.5, 1.5]) {
       const x = clamp(Math.round((cx + dx) * 2) / 2, -3, 3);
-      let y = Math.max(this.height, 0) + hh + 0.03;
-      while (y - hh > 0.03 && !this.beamOverlaps(shape, x, y - 0.05, settled)) y -= 0.05;
+      let y = Math.max(this.height, ...this.beams.map((b) => b.body.getPosition().y + hh), 0) + hh + 0.03;
+      while (y - hh > 0.03 && !this.beamOverlaps(shape, x, y - 0.05, bodies)) y -= 0.05;
       if (!best || y < best.y - 0.01) best = { x, y };
     }
-    const beam = this.world.createBody({ type: 'static', position: Vec2(best!.x, best!.y) });
-    beam.createFixture({ shape, friction: this.ice ? ICE_FRICTION : FRICTION });
-    this.beam = beam;
+    this.createBeam(this.nextId++, best!.x, best!.y);
     for (const p of settled) p.body.setAwake(true);
+    this.events.push({ type: 'beam', x: best!.x, y: best!.y });
   }
 
-  private beamOverlaps(shape: Shape, x: number, y: number, pieces: Piece[]): boolean {
+  private createBeam(id: number, x: number, y: number): void {
+    const body = this.world.createBody({ type: 'static', position: Vec2(x, y) });
+    body.createFixture({ shape: Box(TOWER_BEAM_HALF.w, TOWER_BEAM_HALF.h), friction: this.ice ? ICE_FRICTION : FRICTION });
+    this.beams.push({ id, body });
+  }
+
+  private beamOverlaps(shape: Shape, x: number, y: number, bodies: Body[]): boolean {
     const xf = Transform(Vec2(x, y), 0);
     const lo = { x: x - TOWER_BEAM_HALF.w, y: y - TOWER_BEAM_HALF.h };
     const hi = { x: x + TOWER_BEAM_HALF.w, y: y + TOWER_BEAM_HALF.h };
-    for (const p of pieces) {
-      for (let f: Fixture | null = p.body.getFixtureList(); f; f = f.getNext()) {
+    for (const body of bodies) {
+      for (let f: Fixture | null = body.getFixtureList(); f; f = f.getNext()) {
         const a = f.getAABB(0);
         if (a.upperBound.x < lo.x || a.lowerBound.x > hi.x || a.upperBound.y < lo.y || a.lowerBound.y > hi.y) continue;
-        if (testOverlap(shape, 0, f.getShape(), 0, xf, p.body.getTransform())) return true;
+        if (testOverlap(shape, 0, f.getShape(), 0, xf, body.getTransform())) return true;
       }
     }
     return false;
-  }
-
-  removeBeam(): void {
-    if (!this.beam) return;
-    this.world.destroyBody(this.beam);
-    this.beam = null;
-    for (const p of this.pieces) p.body.setAwake(true);
   }
 
   // ------------------------------------------------------------ Simulation
@@ -620,9 +775,11 @@ export class TowerSim {
     return e;
   }
 
-  /** Form des nächsten Steins für die Vorschau. */
+  /** Form des nächsten Steins für die Vorschau (bei Steinwahl die gewählte). */
   peekNext(): number {
-    return this.roundArmed ? TOWER_ROUND : this.stream(this.nextIndex).form;
+    if (this.roundArmed) return TOWER_ROUND;
+    if (this.charges.pick > 0 && this.pickChoice === 1) return this.altForm(this.nextIndex);
+    return this.stream(this.nextIndex).form;
   }
 
   /**
@@ -647,6 +804,7 @@ export class TowerSim {
     this.world.step(STEP_S, VELOCITY_ITERATIONS, POSITION_ITERATIONS);
     if (this.current && this.landOn !== undefined) this.land(this.current);
     this.time += STEP_MS;
+    this.growVines();
     this.cleanup();
     this.measure();
   }
@@ -750,17 +908,30 @@ export class TowerSim {
 
   private spawn(): void {
     const index = this.nextIndex++;
-    let { form, special, x = 0, turns = 0 } = this.stream(index);
-    let scale = 1;
+    const sp = this.stream(index);
+    let form = sp.form;
+    let { x = 0, turns = 0 } = sp;
+    const c = this.charges;
+    let pickUsed = false;
+    let picked = false;
     if (this.roundArmed) {
       form = TOWER_ROUND;
-      special = false;
       this.roundArmed = false;
-    } else if (this.boulderArmed) {
-      scale = GIANT;
-      special = false;
-      this.boulderArmed = false;
+    } else if (c.pick > 0) {
+      c.pick--;
+      pickUsed = true;
+      if (this.pickChoice === 1) {
+        form = this.altForm(index);
+        picked = true;
+      }
     }
+    this.pickChoice = 0;
+    // Vergrößern und Mini-Steine verbrauchen je eine Ladung; treffen beide zusammen, heben sie sich auf.
+    const growUsed = c.grow > 0;
+    const miniUsed = c.mini > 0;
+    if (growUsed) c.grow--;
+    if (miniUsed) c.mini--;
+    const scale = growUsed && !miniUsed ? GIANT : miniUsed && !growUsed ? MINI : 1;
     // Gepufferte Eingaben aus der Pause gelten für diesen Stein.
     let steered = false;
     if (this.time - this.bufAt <= INPUT_BUFFER_MS && (this.bufShift !== 0 || this.bufTurns !== 0)) {
@@ -774,32 +945,58 @@ export class TowerSim {
     x = clamp(x, -TOWER_FIELD_HALF, TOWER_FIELD_HALF);
     const angle = -((((turns % 4) + 4) % 4) * Math.PI) / 2;
     const y = Math.max(this.height, 0) + SPAWN_GAP;
-    const body = this.world.createBody({
-      type: 'dynamic',
-      position: Vec2(x, y),
-      angle,
-      gravityScale: 0,
-      bullet: true,
-      linearDamping: LINEAR_DAMPING,
-      angularDamping: form === TOWER_ROUND ? ROUND_ANGULAR_DAMPING : ANGULAR_DAMPING,
-    });
-    const piece: Piece = { id: this.nextId++, index, form, body, special, glued: false, petrified: false, scale, steered, upright: isUpright(angle) };
+    const piece = this.createPiece({ id: this.nextId++, index, form, x, y, a: angle, scale, heavy: false, vine: false, petrified: false, steered }, true);
+    piece.picked = picked;
+    piece.pickUsed = pickUsed;
+    piece.growUsed = growUsed;
+    piece.miniUsed = miniUsed;
     this.targetX = x;
     this.targetAngle = angle;
-    this.addFixtures(piece, scale);
-    this.pieces.push(piece);
     this.current = piece;
-    body.setLinearVelocity(Vec2(0, -this.fallSpeed()));
-    if (this.shrinkArmed) {
-      this.shrinkArmed = false;
-      this.rebuild(piece, SHRINK);
-    }
+    piece.body.setLinearVelocity(Vec2(0, -this.fallSpeed()));
+    this.chargeCurrent();
     this.events.push({ type: 'spawn', index, form, x });
   }
 
+  /** Legt einen Stein in die Welt, fallend (ohne Schwerkraft, gesteuert) oder liegend und ruhend. */
+  private createPiece(s: Omit<TowerSnapStone, 'glued'>, falling: boolean): Piece {
+    const round = s.form === TOWER_ROUND;
+    const body = this.world.createBody({
+      type: s.petrified ? 'static' : 'dynamic',
+      position: Vec2(s.x, s.y),
+      angle: s.a,
+      gravityScale: falling ? 0 : 1,
+      bullet: falling,
+      linearDamping: s.heavy ? HEAVY_LINEAR_DAMPING : LINEAR_DAMPING,
+      angularDamping: s.heavy ? HEAVY_ANGULAR_DAMPING : round ? ROUND_ANGULAR_DAMPING : ANGULAR_DAMPING,
+    });
+    const piece: Piece = {
+      id: s.id,
+      index: s.index,
+      form: s.form,
+      body,
+      vine: s.vine,
+      vineAt: null,
+      heavy: s.heavy,
+      petrified: s.petrified,
+      scale: s.scale,
+      picked: false,
+      pickUsed: false,
+      growUsed: false,
+      miniUsed: false,
+      steered: s.steered,
+      upright: isUpright(s.a),
+    };
+    this.addFixtures(piece, s.scale);
+    this.pieces.push(piece);
+    return piece;
+  }
+
   private addFixtures(p: Piece, scale: number): void {
+    const friction = this.frictionOf(p);
+    const density = p.heavy ? HEAVY_DENSITY : DENSITY;
     if (p.form === TOWER_ROUND) {
-      p.body.createFixture({ shape: Circle(TOWER_ROUND_RADIUS * scale), density: DENSITY, friction: this.ice ? ICE_FRICTION : FRICTION, restitution: 0 });
+      p.body.createFixture({ shape: Circle(TOWER_ROUND_RADIUS * scale), density, friction, restitution: 0 });
       p.scale = scale;
       return;
     }
@@ -807,8 +1004,8 @@ export class TowerSim {
     for (const r of formHitRects(p.form)) {
       p.body.createFixture({
         shape: Polygon(hitPolygon(r, scale, p.upright)),
-        density: r.joint ? 0 : DENSITY,
-        friction: this.ice ? ICE_FRICTION : FRICTION,
+        density: r.joint ? 0 : density,
+        friction,
         restitution: 0,
       });
     }
@@ -841,17 +1038,14 @@ export class TowerSim {
     // Kein Wegschießen: Seitenschwung fast ganz weg, nach unten höchstens das Grundtempo.
     p.body.setLinearVelocity(Vec2(v.x * 0.2, Math.max(v.y, -FALL_SPEED)));
     p.body.setAngularVelocity(p.body.getAngularVelocity() * 0.2);
+    if (p.vine) p.vineAt = this.time;
     this.lastLanded = p;
     this.recentSteered = [...this.recentSteered, p.steered].slice(-TOWER_STEERED_WINDOW);
     this.spawnAt = this.time + SPAWN_DELAY_MS + this.pendingDelay;
     this.pendingDelay = 0;
     const pos = p.body.getPosition();
     const speed = Math.hypot(this.preVel.x * 0.5, this.preVel.y);
-    this.events.push({ type: 'land', index: p.index, form: p.form, x: pos.x, y: pos.y, impact: clamp(speed / 7, 0, 1) });
-    if (p.special) {
-      p.special = false;
-      this.events.push({ type: 'special', index: p.index, height: this.height });
-    }
+    this.events.push({ type: 'land', index: p.index, form: p.form, x: pos.x, y: pos.y, impact: clamp(speed / 7, 0, 1), scale: p.scale, heavy: p.heavy });
   }
 
   private cleanup(): void {
@@ -950,31 +1144,139 @@ export class TowerSim {
     return top;
   }
 
+  // ------------------------------------------------------- Wiederherstellung
+
+  /**
+   * Stand für die Wiederherstellung. Der fallende Stein fehlt; sein Platz im Steinstrom und die Ladungen, die er
+   * verbraucht hat, gehen zurück, damit er nach dem Wiederherstellen genau so noch einmal kommt.
+   */
+  snapshot(): TowerSnapshot {
+    const cur = this.current;
+    const charges = { ...this.charges };
+    let roundArmed = this.roundArmed;
+    let pickChoice = this.pickChoice;
+    let nextIndex = this.nextIndex;
+    if (cur) {
+      nextIndex = cur.index;
+      if (cur.vine) charges.glue++;
+      if (cur.heavy) charges.heavy++;
+      if (cur.growUsed) charges.grow++;
+      if (cur.miniUsed) charges.mini++;
+      if (cur.pickUsed) {
+        charges.pick++;
+        pickChoice = cur.picked ? 1 : 0;
+      }
+      if (cur.form === TOWER_ROUND) roundArmed = true;
+    }
+    const ref = new Map<Body, number>([[this.base, BASE_REF]]);
+    for (const b of this.beams) ref.set(b.body, b.id);
+    const stones: TowerSnapStone[] = [];
+    for (const p of this.pieces) {
+      if (p === cur) continue;
+      ref.set(p.body, p.id);
+      const pos = p.body.getPosition();
+      stones.push({ id: p.id, index: p.index, form: p.form, x: pos.x, y: pos.y, a: p.body.getAngle(), scale: p.scale, glued: p.body.getJointList() !== null, vine: p.vine, heavy: p.heavy, petrified: p.petrified, steered: p.steered });
+    }
+    const welds: [number, number, number, number][] = [];
+    for (let j = this.world.getJointList(); j; j = j.getNext()) {
+      const a = ref.get(j.getBodyA());
+      const b = ref.get(j.getBodyB());
+      if (a === undefined || b === undefined) continue;
+      const pt = j.getAnchorA();
+      welds.push([a, b, pt.x, pt.y]);
+    }
+    return {
+      v: 1,
+      seed: this.seed,
+      goalHeight: this.goalHeight,
+      time: this.time,
+      nextIndex,
+      nextId: this.nextId,
+      lostCount: this.lostCount,
+      reached: [...this.reached],
+      charges,
+      roundArmed,
+      pickChoice,
+      recentSteered: [...this.recentSteered],
+      stones,
+      beams: this.beams.map((b) => ({ id: b.id, x: b.body.getPosition().x, y: b.body.getPosition().y })),
+      welds,
+      lastLandedId: this.lastLanded && this.lastLanded !== cur ? this.lastLanded.id : null,
+    };
+  }
+
+  private load(snap: TowerSnapshot): void {
+    this.time = snap.time;
+    this.nextIndex = Math.max(0, Math.floor(snap.nextIndex));
+    this.nextId = Math.max(1, Math.floor(snap.nextId));
+    this.lostCount = snap.lostCount | 0;
+    const ch = snap.charges;
+    const n = (v: unknown) => (typeof v === 'number' && v > 0 ? Math.floor(v) : 0);
+    this.charges = { glue: n(ch.glue), grow: n(ch.grow), heavy: n(ch.heavy), pick: n(ch.pick), mini: n(ch.mini) };
+    this.roundArmed = snap.roundArmed === true;
+    this.pickChoice = snap.pickChoice === 1 ? 1 : 0;
+    this.recentSteered = Array.isArray(snap.recentSteered) ? snap.recentSteered.map(Boolean).slice(-TOWER_STEERED_WINDOW) : [];
+    const bodies = new Map<number, Body>([[BASE_REF, this.base]]);
+    for (const b of snap.beams) {
+      this.createBeam(b.id, b.x, b.y);
+      bodies.set(b.id, this.beams.at(-1)!.body);
+    }
+    for (const s of snap.stones) {
+      if (s.form < 0 || s.form === TOWER_BEAM || s.form > TOWER_ROUND) continue;
+      const p = this.createPiece({ ...s, vine: s.vine === true, heavy: s.heavy === true, petrified: s.petrified === true, steered: s.steered === true }, false);
+      bodies.set(p.id, p.body);
+      this.nextId = Math.max(this.nextId, p.id + 1);
+    }
+    for (const b of this.beams) this.nextId = Math.max(this.nextId, b.id + 1);
+    for (const [ia, ib, x, y] of snap.welds) {
+      const a = bodies.get(ia);
+      const b = bodies.get(ib);
+      if (!a || !b || a === b || this.welded(a, b)) continue;
+      this.world.createJoint(new WeldJoint({ frequencyHz: 0, dampingRatio: 0 }, a, b, Vec2(x, y)));
+    }
+    this.lastLanded = this.pieces.find((p) => p.id === snap.lastLandedId) ?? null;
+    // Kurz durchatmen, bevor der nächste Stein kommt.
+    this.spawnAt = this.time + SPAWN_DELAY_MS + 400;
+    this.height = this.cornerTop();
+  }
+
   // ------------------------------------------------------------ Ausgabe
 
   stones(): TowerStone[] {
     const out: TowerStone[] = [];
+    // Balken zuerst, damit sie bei sehr vielen Steinen nicht aus dem Frame fallen.
+    for (const b of this.beams) {
+      const pos = b.body.getPosition();
+      out.push({ id: b.id, form: TOWER_BEAM, x: pos.x, y: pos.y, a: 0, flags: 0 });
+    }
     for (const p of this.pieces) {
       const pos = p.body.getPosition();
       let flags = 0;
       if (p === this.current) flags |= STONE_FALLING;
-      if (p.glued) flags |= STONE_GLUED;
-      if (p.special) flags |= STONE_SPECIAL;
+      // Ranke: der Rankenstein selbst (auch schon im Fallen) und alle, an denen eine Ranke hängt.
+      if (p.vine || p.body.getJointList() !== null) flags |= STONE_GLUED;
       if (p.scale < 1) flags |= STONE_SHRUNK;
       if (p.scale > 1) flags |= STONE_GIANT;
+      if (p.heavy) flags |= STONE_HEAVY;
       if (p.petrified) flags |= STONE_PETRIFIED;
       if (this.ice && p !== this.current) flags |= STONE_ICY;
       out.push({ id: p.id, form: p.form, x: pos.x, y: pos.y, a: p.body.getAngle(), flags });
-    }
-    if (this.beam) {
-      const pos = this.beam.getPosition();
-      out.push({ id: 0, form: TOWER_BEAM, x: pos.x, y: pos.y, a: 0, flags: 0 });
     }
     return out;
   }
 
   effectFlags(): number {
-    return (this.ice ? FX_ICE : 0) | (this.turbo ? FX_TURBO : 0) | (this.beam ? FX_BEAM : 0) | (this.boulderArmed ? FX_BOULDER : 0) | (this.shield ? FX_SHIELD : 0);
+    const c = this.charges;
+    const cur = this.current;
+    let fx = 0;
+    if (this.ice) fx |= FX_ICE;
+    if (this.turbo) fx |= FX_TURBO;
+    if (this.beams.length > 0) fx |= FX_BEAM;
+    if (c.glue > 0 || cur?.vine) fx |= FX_GLUE;
+    if (c.grow > 0 || c.mini > 0) fx |= FX_BOULDER;
+    if (c.heavy > 0 || cur?.heavy) fx |= FX_HEAVY;
+    if (c.pick > 0) fx |= FX_PICK;
+    return fx;
   }
 
   /** Schnappschuss für die Leitung. `extraFx` ergänzt Effekte, die nur die Anzeige betreffen (Nebel). */

@@ -263,7 +263,7 @@ export function isClientMsg(x: unknown): x is ClientMsg {
     case 'tower_frame':
       return isTowerFrame(x.frame);
     case 'tower_special_use':
-      return isTowerSpecial(x.special) && (x.targetId === undefined || isStr(x.targetId, 100));
+      return isTowerSpecial(x.special) && (x.from === 'stock' || x.from === 'luck') && (x.targetId === undefined || isStr(x.targetId, 100));
     case 'tower_mark':
       return isHeight(x.height) && (x.piece === undefined || (isInt(x.piece) && x.piece >= 0 && x.piece <= 1e6));
     case 'tower_finish':

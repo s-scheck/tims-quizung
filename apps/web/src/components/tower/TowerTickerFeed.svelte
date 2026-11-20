@@ -6,7 +6,7 @@
   import { playerName } from '../../lib/format.ts';
   import PlayerHead from '../PlayerHead.svelte';
   import TowerBadge from './TowerBadge.svelte';
-  import { genitive, GOLD, meters, ms, toneOf } from './towerStyle.ts';
+  import { effectHint, GOLD, meters, ms, toneOf } from './towerStyle.ts';
   import type { TickerItem } from './towerTicker.ts';
 
   /**
@@ -34,16 +34,7 @@
       out:fade={{ duration: ms(300) }}
       animate:flip={{ duration: ms(260) }}
     >
-      {#if it.kind === 'effect' && it.blocked}
-        <!-- „Annas Schild blockt Bens Windstoß“ -->
-        <TowerBadge special="shield" size={Math.round(head * 0.95)} />
-        <PlayerHead {view} id={it.target} size={head} />
-        <span>
-          {it.target === me ? 'Dein' : genitive(playerName(view, it.target))} Schild blockt
-          {it.player === me ? 'deinen' : genitive(playerName(view, it.player))}
-          <span class="font-black" style="color:{glass ? toneOf(it.special).text : toneOf(it.special).ink}">{TOWER_SPECIALS[it.special]?.name ?? it.special}</span>
-        </span>
-      {:else if it.kind === 'effect'}
+      {#if it.kind === 'effect'}
         <PlayerHead {view} id={it.player} size={head} />
         <span class="whitespace-nowrap">{who(it.player)}</span>
         {#if it.target !== it.player}
@@ -54,7 +45,11 @@
           <span class="opacity-70">{it.player === me ? 'wirkst' : 'wirkt'}</span>
         {/if}
         <span class="ml-auto flex items-center gap-1.5 whitespace-nowrap pl-1" style="color:{glass ? toneOf(it.special).text : toneOf(it.special).ink}">
-          <TowerBadge special={it.special} size={Math.round(head * 0.95)} />{TOWER_SPECIALS[it.special]?.name ?? it.special}
+          <TowerBadge special={it.special} size={Math.round(head * 0.95)} />
+          <span class="flex flex-col leading-tight">
+            {TOWER_SPECIALS[it.special]?.name ?? it.special}
+            {#if size !== 'sm'}<span class="text-[0.72em] font-semibold opacity-75">{effectHint(it.special)}</span>{/if}
+          </span>
         </span>
       {:else if it.kind === 'mark'}
         <PlayerHead {view} id={it.player} size={head} />

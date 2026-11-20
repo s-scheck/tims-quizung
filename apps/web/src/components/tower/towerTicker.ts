@@ -7,7 +7,7 @@ import type { TowerEffectView, TowerSpecial } from '@quiz/shared';
  */
 
 export type TickerItem =
-  | { id: number; kind: 'effect'; at: number; player: string; target: string; special: TowerSpecial; blocked: boolean }
+  | { id: number; kind: 'effect'; at: number; player: string; target: string; special: TowerSpecial }
   | { id: number; kind: 'mark'; at: number; player: string; value: number }
   | { id: number; kind: 'lead'; at: number; player: string }
   | { id: number; kind: 'close'; at: number; player: string; value: number }
@@ -62,7 +62,7 @@ export class TowerTickerState {
     for (const e of s.effects) {
       if (this.effects.has(e.id)) continue;
       this.effects.add(e.id);
-      push({ kind: 'effect', player: e.by, target: e.target, special: e.special, blocked: e.blocked === true });
+      push({ kind: 'effect', player: e.by, target: e.target, special: e.special });
     }
 
     for (const id of s.players) {

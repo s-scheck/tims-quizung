@@ -22,7 +22,7 @@
     view: RoomView;
     special: TowerSpecial;
     /** Der Höchste zuerst. */
-    targets: { id: string; height: number; color: string; holding?: boolean; shielded?: boolean }[];
+    targets: { id: string; height: number; color: string; holding?: boolean }[];
     /** Abstand des Popovers vom unteren Rand der Spielfläche in CSS-Pixeln. */
     bottom?: number;
     onPick: (id: string) => void;
@@ -64,11 +64,6 @@
               <span class="font-mono text-white/60">{meters(t.height)} m</span>
               {#if t.holding}<span class="uppercase tracking-wider" style="color:{HOLD_GREEN}">hält</span>
               {:else if t.id === leaderId}<span class="uppercase tracking-wider" style="color:{GOLD}">führt</span>{/if}
-              {#if t.shielded}
-                <span class="text-[#ffe29a]" title="Schutzschild: blockt deinen Zauber">
-                  <svg viewBox="0 0 24 24" class="h-3 w-3" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6z" fill="currentColor" /></svg>
-                </span>
-              {/if}
             </span>
           </span>
         </button>

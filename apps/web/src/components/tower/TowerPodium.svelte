@@ -12,7 +12,16 @@
    * Siegertreppchen 2-1-3: über jeder Stufe der Turm im Endstand, auf der Stufe Platz, Kopf, Name, Höhe und Punkte.
    * Die Stufen fahren nacheinander hoch (erst Bronze, dann Silber, dann Gold).
    */
-  let { view, round, top, big = false }: { view: RoomView; round: TowerRoundView; top: TowerRanked[]; big?: boolean } = $props();
+  let {
+    view,
+    round,
+    top,
+    big = false,
+    compact = false,
+  }: { view: RoomView; round: TowerRoundView; top: TowerRanked[]; big?: boolean; /** Flache Stufen (Handy ohne Scrollen). */ compact?: boolean } = $props();
+
+  /** Stufenhöhe in rem: fester Sockel für Kopf, Name und Höhe plus Anteil je Platz. */
+  const stepRem = (h: number) => (big ? 9.5 * h + 4.5 : compact ? 2.4 * h + 4.4 : 6.2 * h + 3.2);
 
   const colorOf = (id: string) => playerColor(view.players.findIndex((p) => p.id === id));
   const STEP = [
@@ -53,7 +62,7 @@
       </div>
       <div
         class="step relative flex flex-col items-center justify-start {big ? 'gap-1 px-3 pt-3' : 'gap-0.5 px-1.5 pt-2'}"
-        style="height: {(big ? 9.5 : 6.2) * step.h + (big ? 4.5 : 3.2)}rem; color:{step.ink}; --from:{step.from}; --to:{step.to}; animation-delay:{step.delay}ms"
+        style="height: {stepRem(step.h)}rem; color:{step.ink}; --from:{step.from}; --to:{step.to}; animation-delay:{step.delay}ms"
       >
         <span class="relative">
           <span class="block rounded-full" style="box-shadow: 0 0 0 {big ? 3 : 2}px rgba(255,255,255,0.85), 0 6px 14px -6px rgba(0,0,0,0.5)">

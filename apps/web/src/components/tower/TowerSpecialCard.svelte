@@ -1,15 +1,18 @@
 <script lang="ts">
   import { backOut } from 'svelte/easing';
   import { scale } from 'svelte/transition';
-  import { specialTargetsOthers, TOWER_SPECIALS, type TowerSpecial } from '@quiz/shared';
+  import { specialTargetsOthers, TOWER_SPECIALS, TOWER_STOCK_MAX, type TowerSpecial } from '@quiz/shared';
   import TowerBadge from './TowerBadge.svelte';
   import TowerRing from './TowerRing.svelte';
+  import { longPress } from './towerLongPress.ts';
   import { groupOf, ms } from './towerStyle.ts';
 
   /**
-   * Runde Zauber-Taste in der Mitte der Steuerleiste. Mit Vorrat: die Plakette des Zaubers mit leuchtendem Ring,
-   * ein Tipp setzt ihn ein (dunkle Magie fragt nach dem Ziel). Leer: unauffällig, der Ring zeigt den Weg zur
-   * nächsten Magie-Marke und darunter steht klein ihre Höhe.
+   * Runde Zauber-Taste in der Mitte der Steuerleiste: der Vorrat aus Höhenmarken. Sie zeigt immer den Zauber, der
+   * als Nächstes drankommt (`stock[0]`), darunter drei Punkte für die Plätze im Vorrat, gefüllt in der Farbe der
+   * Zauber (gold hell, violett dunkel) und von links nach rechts in der Reihenfolge, in der sie drankommen.
+   * Ein Tipp setzt den vordersten ein (dunkle Magie fragt nach dem Ziel), langer Druck zeigt den ganzen Vorrat.
+   * Leer: unauffällig, der Ring zeigt den Weg zur nächsten Höhenmarke und darunter steht klein ihre Höhe.
    */
   let {
     stock,
@@ -17,27 +20,53 @@
     progress = 0,
     disabled = false,
     onTap,
-  }: { stock: TowerSpecial | null; nextMark?: number | null; progress?: number; disabled?: boolean; onTap: () => void } = $props();
+    onInfo,
+  }: {
+    stock: readonly TowerSpecial[];
+    nextMark?: number | null;
+    progress?: number;
+    disabled?: boolean;
+    onTap: () => void;
+    onInfo?: () => void;
+  } = $props();
 
-  const dark = $derived(stock ? groupOf(stock) === 'dark' : false);
+  const head = $derived(stock[0] ?? null);
+  const dark = $derived(head ? groupOf(head) === 'dark' : false);
+  const slots = $derived(Array.from({ length: TOWER_STOCK_MAX }, (_, i) => stock[i] ?? null));
+  const info = $derived(onInfo ? { onLong: onInfo } : null);
 </script>
 
-{#if stock}
-  {#key stock}
-    <button
-      class="magic magic-{dark ? 'dark' : 'light'} relative grid h-[3.25rem] w-[3.25rem] place-items-center rounded-full"
-      {disabled}
-      onpointerdown={(e) => e.stopPropagation()}
-      onclick={onTap}
-      aria-label="Zauber {TOWER_SPECIALS[stock]?.name ?? stock} einsetzen"
-      title="{TOWER_SPECIALS[stock]?.name ?? stock}{specialTargetsOthers(stock) ? ': Ziel wählen' : ''}"
-      in:scale={{ start: 0.4, duration: ms(420), easing: backOut }}
-    >
-      <TowerBadge special={stock} size={40} glow />
-    </button>
-  {/key}
+{#if head}
+  <div class="relative">
+    {#key head}
+      <button
+        class="magic magic-{dark ? 'dark' : 'light'} relative grid h-[3.25rem] w-[3.25rem] place-items-center rounded-full"
+        {disabled}
+        use:longPress={info}
+        onpointerdown={(e) => e.stopPropagation()}
+        onclick={onTap}
+        aria-label="Zauber {TOWER_SPECIALS[head]?.name ?? head} einsetzen"
+        title="{TOWER_SPECIALS[head]?.name ?? head}{specialTargetsOthers(head) ? ': Ziel wählen' : ''} · {TOWER_SPECIALS[head]?.hint ?? ''}"
+        in:scale={{ start: 0.4, duration: ms(420), easing: backOut }}
+      >
+        <TowerBadge special={head} size={40} glow />
+      </button>
+    {/key}
+    <!-- Vorrat: drei Plätze, der linke ist der in der Taste -->
+    <span class="dots pointer-events-none absolute -bottom-[5px] left-1/2 flex -translate-x-1/2 items-center gap-[3px] rounded-full px-[4px] py-[2.5px]" aria-label="{stock.length} von {TOWER_STOCK_MAX} im Vorrat">
+      {#each slots as s, i (i)}
+        <span class="dot {s ? (groupOf(s) === 'dark' ? 'dot-dark' : 'dot-light') : 'dot-empty'} {i === 0 ? 'dot-now' : ''}"></span>
+      {/each}
+    </span>
+  </div>
 {:else}
-  <div class="empty grid h-[3.25rem] w-[3.25rem] place-items-center rounded-full" title={nextMark !== null ? `Nächste Magie bei ${nextMark} m` : 'Spezialsteine bringen Magie'}>
+  <div
+    class="empty grid h-[3.25rem] w-[3.25rem] place-items-center rounded-full"
+    use:longPress={info}
+    role="img"
+    aria-label={nextMark !== null ? `Vorrat leer, nächste Magie bei ${nextMark} m` : 'Vorrat leer'}
+    title={nextMark !== null ? `Nächste Magie bei ${nextMark} m` : 'Höhenmarken bringen Magie'}
+  >
     <TowerRing value={nextMark !== null ? progress : 0} size={52} stroke={2} color="rgba(255, 214, 110, 0.85)" track="rgba(255,255,255,0.12)">
       <span class="flex flex-col items-center leading-none text-white/70">
         <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" aria-hidden="true"
@@ -52,6 +81,7 @@
 <style>
   .magic {
     -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
     transition: transform 90ms ease;
     animation: ready 1.8s ease-in-out infinite;
   }
@@ -74,8 +104,34 @@
     opacity: 0.55;
     animation: none;
   }
+  .dots {
+    background: rgba(8, 12, 26, 0.85);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+  }
+  .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    transition: background-color 200ms ease;
+  }
+  .dot-now {
+    width: 6px;
+    height: 6px;
+  }
+  .dot-light {
+    background: #ffd36b;
+    box-shadow: 0 0 4px rgba(255, 211, 107, 0.8);
+  }
+  .dot-dark {
+    background: #b9a2ff;
+    box-shadow: 0 0 4px rgba(185, 162, 255, 0.8);
+  }
+  .dot-empty {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  }
   .empty {
     background: rgba(255, 255, 255, 0.06);
+    -webkit-touch-callout: none;
   }
   @keyframes ready {
     50% {

@@ -25,12 +25,13 @@ describe('Hochstapler-Ticker', () => {
     expect(items.find((i) => i.kind === 'lead')).toMatchObject({ player: 'b' });
   });
 
-  test('abgefangene Zauber kommen als blockiert', () => {
+  test('jeder neue Zauber kommt genau einmal', () => {
     const t = new TowerTickerState();
     t.observe(base());
-    const items = t.observe(base({ now: 10, effects: [{ ...effect(3), blocked: true }] }));
+    const items = t.observe(base({ now: 10, effects: [{ ...effect(3), special: 'mini' }] }));
     expect(items).toHaveLength(1);
-    expect(items[0]).toMatchObject({ kind: 'effect', player: 'a', target: 'b', blocked: true });
+    expect(items[0]).toMatchObject({ kind: 'effect', player: 'a', target: 'b', special: 'mini' });
+    expect(t.observe(base({ now: 20, effects: [{ ...effect(3), special: 'mini' }] }))).toEqual([]);
   });
 
   test('Führung flackert nicht: Vorsprung und Abklingzeit', () => {

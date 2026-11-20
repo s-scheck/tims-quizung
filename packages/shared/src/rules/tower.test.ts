@@ -6,6 +6,7 @@ import {
   isTowerFrame,
   isTowerOptions,
   packFrame,
+  luckFor,
   offerFor,
   STONE_FALLING,
   TOWER_BASIC_FORMS,
@@ -15,6 +16,7 @@ import {
   TOWER_SPECIAL_IDS,
   TOWER_SPECIALS,
   towerMarks,
+  towerAltForm,
   towerPiece,
   towerSpawn,
   TOWER_SPAWN_SPREAD,
@@ -84,17 +86,22 @@ describe('Hochstapler: Steinstrom, Ziel und Marken', () => {
     expect(Math.abs(a.reduce((s, x) => s + x.x, 0) / a.length)).toBeLessThan(0.4);
   });
 
-  test('etwa jeder zwölfte Stein ist ein Spezialstein', () => {
-    let specials = 0;
-    const n = 6000;
-    for (let i = 0; i < n; i++) if (towerPiece(7, i).special) specials++;
-    expect(specials / n).toBeGreaterThan(1 / 16);
-    expect(specials / n).toBeLessThan(1 / 9);
+  test('keine Spezialsteine mehr; Steinwahl-Form ist immer eine andere', () => {
+    for (let i = 0; i < 2000; i++) {
+      expect(towerPiece(7, i).special).toBe(false);
+      const alt = towerAltForm(7, i);
+      expect(alt).not.toBe(towerPiece(7, i).form);
+      expect(alt).toBeGreaterThanOrEqual(0);
+      expect(alt).toBeLessThan(TOWER_BASIC_FORMS);
+    }
   });
 
   test('Ziellinien und Höhenmarken', () => {
     expect(TOWER_GOAL_HEIGHT.low).toBeLessThan(TOWER_GOAL_HEIGHT.mid);
     expect(TOWER_GOAL_HEIGHT.mid).toBeLessThan(TOWER_GOAL_HEIGHT.high);
+    expect(TOWER_GOAL_HEIGHT.high).toBeLessThan(TOWER_GOAL_HEIGHT.xhigh);
+    expect(TOWER_GOAL_HEIGHT.sky).toBe(40);
+    expect(isTowerOptions({ goal: 'sky' })).toBe(true);
     expect(towerMarks(11)).toEqual([3, 6, 9]);
     expect(towerMarks(7)).toEqual([3, 6]);
     expect(isTowerOptions({ goal: 'low' })).toBe(true);
@@ -121,6 +128,21 @@ describe('Hochstapler: Magie', () => {
       expect(pool).toContain(o.light);
       expect(pool).toContain(o.dark);
     }
+  });
+
+  test('Glück: wer vorne liegt, bekommt öfter dunkle Magie, wer hinten liegt, öfter helle', () => {
+    const rnd = seededRandom(11);
+    const pool = towerPool(rnd);
+    const lightShare = (rank: number) => {
+      let light = 0;
+      for (let i = 0; i < 3000; i++) {
+        const s = luckFor(rank, 4, pool, rnd);
+        expect(pool).toContain(s);
+        if (TOWER_SPECIALS[s].group === 'light') light++;
+      }
+      return light / 3000;
+    };
+    expect(lightShare(4)).toBeGreaterThan(lightShare(1) + 0.3);
   });
 
   test('Aufholhilfe: wer hinten liegt, bekommt im Schnitt stärkere helle Zauber', () => {
@@ -192,7 +214,7 @@ describe('Hochstapler: Frame', () => {
     expect(isTowerFrame({ ...ok, s: [1, 2, 3] })).toBe(false);
     expect(isTowerFrame({ ...ok, s: [1, 99, 0, 0, 0, 0] })).toBe(false);
     expect(isTowerFrame({ ...ok, s: [1, 0, Number.NaN, 0, 0, 0] })).toBe(false);
-    expect(isTowerFrame({ ...ok, s: [1, 0, 0, 0, 0, 128] })).toBe(false);
+    expect(isTowerFrame({ ...ok, s: [1, 0, 0, 0, 0, 256] })).toBe(false);
     expect(isTowerFrame({ ...ok, s: new Array((TOWER_FRAME_MAX_STONES + 1) * 6).fill(0) })).toBe(false);
     expect(isTowerFrame({ ...ok, h: -1 })).toBe(false);
     expect(isTowerFrame({ ...ok, next: 10 })).toBe(false);

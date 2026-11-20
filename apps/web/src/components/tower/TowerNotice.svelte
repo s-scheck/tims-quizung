@@ -3,9 +3,9 @@
   import type { TickerItem } from './towerTicker.ts';
 
   /** Eine Meldung am Handy: ein Zauber trifft mich (`hit`) oder ein Eintrag aus dem Ticker. */
-  export type TowerNoticeItem = { id: number; kind: 'hit'; at: number; by: string; special: TowerSpecial; blocked: boolean } | TickerItem;
+  export type TowerNoticeItem = { id: number; kind: 'hit'; at: number; by: string; special: TowerSpecial } | TickerItem;
 
-  /** Wichtig für mich (kräftig, etwas länger): Treffer, mein Schild, meine Zauber. Alles andere läuft dezent. */
+  /** Wichtig für mich (kräftig, etwas länger): Treffer und meine Zauber. Alles andere läuft dezent. */
   export function noticeStrong(n: TowerNoticeItem, me: string | null): boolean {
     return n.kind === 'hit' || (n.kind === 'effect' && n.player === me);
   }
@@ -18,7 +18,7 @@
   import { playerName } from '../../lib/format.ts';
   import PlayerHead from '../PlayerHead.svelte';
   import TowerBadge from './TowerBadge.svelte';
-  import { GOLD, GROUP_TONE, genitive, meters, ms, toneOf } from './towerStyle.ts';
+  import { effectHint, GOLD, meters, ms, toneOf } from './towerStyle.ts';
 
   /**
    * Höchstens eine kurze, einzeilige Meldung über dem Spielfeld. Was mich betrifft, kommt kräftig mit farbiger
@@ -27,9 +27,7 @@
   let { view, item, me, align = 'left' }: { view: RoomView; item: TowerNoticeItem; me: string | null; align?: 'left' | 'right' } = $props();
 
   const strong = $derived(noticeStrong(item, me));
-  const edge = $derived(
-    item.kind === 'hit' ? (item.blocked ? GROUP_TONE.light.to : toneOf(item.special).to) : item.kind === 'effect' ? (item.blocked ? GROUP_TONE.light.to : toneOf(item.special).to) : 'transparent',
-  );
+  const edge = $derived(item.kind === 'hit' || item.kind === 'effect' ? toneOf(item.special).to : 'transparent');
   const name = (id: string) => playerName(view, id);
   const spell = (s: TowerSpecial) => TOWER_SPECIALS[s]?.name ?? s;
 </script>
@@ -42,17 +40,16 @@
   role="status"
 >
   {#if item.kind === 'hit'}
-    <TowerBadge special={item.blocked ? 'shield' : item.special} size={22} />
+    <TowerBadge special={item.special} size={22} />
     <span class="min-w-0 break-words font-semibold">
-      {#if item.blocked}Schild blockt <b class="font-black">{spell(item.special)}</b> von {name(item.by)}
-      {:else}<b class="font-black" style="color:{toneOf(item.special).text}">{spell(item.special)}</b> von {name(item.by)}{/if}
+      <b class="font-black" style="color:{toneOf(item.special).text}">{spell(item.special)}</b> von {name(item.by)}
+      <span class="font-semibold text-white/60">· {effectHint(item.special)}</span>
     </span>
   {:else if item.kind === 'effect'}
-    <TowerBadge special={item.blocked ? 'shield' : item.special} size={strong ? 22 : 18} />
+    <TowerBadge special={item.special} size={strong ? 22 : 18} />
     <span class="min-w-0 break-words font-semibold">
-      {#if item.player === me && item.blocked}{genitive(name(item.target))} Schild blockt deinen <b class="font-black">{spell(item.special)}</b>
+      {#if item.player === me && item.target === me}<b class="font-black" style="color:{toneOf(item.special).text}">{spell(item.special)}</b> wirkt
       {:else if item.player === me}<b class="font-black" style="color:{toneOf(item.special).text}">{spell(item.special)}</b> trifft {name(item.target)}
-      {:else if item.blocked}{genitive(name(item.target))} Schild blockt {spell(item.special)}
       {:else if item.target === item.player}{name(item.player)} wirkt {spell(item.special)}
       {:else}{name(item.player)} → {name(item.target)}: {spell(item.special)}{/if}
     </span>

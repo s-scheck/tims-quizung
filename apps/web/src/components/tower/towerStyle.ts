@@ -34,15 +34,16 @@ export const toneOf = (s: TowerSpecial): Tone => GROUP_TONE[groupOf(s)];
 export const GOLD = '#f6c453';
 export const HOLD_GREEN = '#3ee08f';
 
-/** Kurze Wirkung (Langtext beim Antippen und Halten). Fehlt ein Eintrag (neuer Zauber), gilt der Hinweis aus den Regeln. */
+/** Kurze Wirkung (Zeile im Info-Popover und am Fernseher). Fehlt ein Eintrag (neuer Zauber), gilt der Hinweis aus den Regeln. */
 const SHORT: Partial<Record<TowerSpecial, string>> = {
-  glue: 'Ranken halten deine Spitze zusammen',
-  shrink: 'Aktueller Stein schrumpft',
-  beam: 'Fester Balken für eine Weile',
+  glue: 'Nächste 5 Steine verketten sich',
+  grow: 'Nächste 3 Steine anderthalbmal so groß',
+  heavy: 'Nächster Stein bleischwer',
+  pick: 'Nächste 3 Steine aus zwei Formen wählen',
+  beam: 'Fester Balken, dauerhaft',
   petrify: 'Dein Turm wird zu Fels',
-  shield: 'Blockt den nächsten dunklen Zauber',
   vanish: 'Letzter Stein verschwindet',
-  boulder: 'Ziel bekommt einen Riesenstein',
+  mini: 'Ziel bekommt 3 winzige Steine',
   ice: 'Steine des Ziels werden glatt',
   gust: 'Stoß gegen den Turm des Ziels',
   fog: 'Ziel sieht kurz fast nichts',
@@ -52,21 +53,31 @@ const SHORT: Partial<Record<TowerSpecial, string>> = {
 export const shortHint = (s: TowerSpecial): string => SHORT[s] ?? TOWER_SPECIALS[s]?.hint ?? '';
 
 /** Ganz kurze Wirkung für die schlanken Angebots-Chips am Handy (eine Zeile auf schmalen Geräten). */
-const TINY: Partial<Record<TowerSpecial, string>> = {
-  glue: 'Hält deine Spitze',
-  shrink: 'Stein schrumpft',
-  beam: 'Fester Balken',
+export const tinyHint = (s: TowerSpecial): string => TOWER_SPECIALS[s]?.short ?? shortHint(s);
+
+/** Wirkung ohne „Gegner:“, für Ticker und Treffer-Meldung („Mini-Steine von Ben · 3 winzige Steine“). */
+const EFFECT: Partial<Record<TowerSpecial, string>> = {
+  glue: '5 Steine verketten sich',
+  grow: '3 große Steine',
+  heavy: 'bleischwerer Stein',
+  pick: '3 Steine zur Wahl',
+  beam: 'fester Balken',
   petrify: 'Turm wird Fels',
-  shield: 'Blockt nächsten Zauber',
-  vanish: 'Letzter Stein weg',
-  boulder: 'Gegner: Riesenstein',
-  ice: 'Gegner: glatte Steine',
-  gust: 'Gegner: Windstoß',
-  fog: 'Gegner: Nebel',
-  turbo: 'Gegner: fällt schneller',
-  round: 'Gegner: Kugelstein',
+  vanish: 'letzter Stein weg',
+  mini: '3 winzige Steine',
+  ice: 'glatte Steine',
+  gust: 'Stoß von der Seite',
+  fog: 'Nebel',
+  turbo: 'fällt doppelt schnell',
+  round: 'rollender Stein',
 };
-export const tinyHint = (s: TowerSpecial): string => TINY[s] ?? shortHint(s);
+export const effectHint = (s: TowerSpecial): string => EFFECT[s] ?? tinyHint(s).replace(/^Gegner:\s*/, '');
+
+/**
+ * Glücks-Slot: eigene Farbe (Türkis wie ein Glücksklee im Mondlicht), klar getrennt von Gold (hell), Violett (dunkel)
+ * und dem Grün des Halte-Alarms.
+ */
+export const LUCK = { ring: '#4fe3d2', glow: 'rgba(79, 227, 210, 0.55)', soft: 'rgba(79, 227, 210, 0.16)', text: '#9ff5ea' } as const;
 
 /** Wünscht das Gerät weniger Bewegung? Svelte-Übergänge laufen per Skript, die globale CSS-Regel greift dort nicht. */
 export const reducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;

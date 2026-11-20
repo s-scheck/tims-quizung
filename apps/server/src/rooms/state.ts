@@ -533,16 +533,18 @@ export interface DungeonRound extends BaseRound {
 export interface TowerPlayerState {
   /** Steinstrom des Spielers. */
   seed: number;
-  /** Höchstens ein Spezial im Vorrat. */
-  stock: TowerSpecial | null;
+  /** Vorrat aus Höhenmarken, der Reihe nach (höchstens `TOWER_STOCK_MAX`, der älteste zuerst). */
+  stock: TowerSpecial[];
+  /** Glücks-Slot: ein zufälliger Zauber, nicht stapelbar. */
+  luck: TowerSpecial | null;
+  /** Serverzeit des nächsten Glücks-Zaubers. */
+  luckAt: number;
   /** Offenes Angebot (hell oder dunkel), bis der Spieler wählt; ein neues ersetzt es. */
   offer: TowerOffer | null;
   /** Zuletzt gemeldete Höhe (Frames und Meldungen). */
   height: number;
   /** Schon überbaute Höhenmarken, jede bringt nur einmal ein Spezial. */
   marks: number[];
-  /** Eingelöste Spezialsteine (Index im Steinstrom). */
-  claimed: number[];
   finishedAt: number | null;
 }
 
@@ -553,8 +555,6 @@ export interface TowerEffect {
   target: string;
   at: number;
   until: number;
-  /** Vom Schutzschild des Ziels abgefangen. */
-  blocked?: boolean;
 }
 
 export interface TowerRound extends BaseRound {

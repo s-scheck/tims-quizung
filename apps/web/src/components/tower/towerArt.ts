@@ -219,10 +219,11 @@ export function formOutlinePath(form: number): Path2D {
 
 // ------------------------------------------------------------------ Steine
 
-export const V_SPECIAL = 1;
 export const V_ICY = 2;
 export const V_GLUED = 4;
 export const V_STONE = 8;
+/** Schwerer Stein: dunkles Gusseisen mit Hammerschlag und Nieten. */
+export const V_HEAVY = 16;
 
 const stones = new SpriteCache<Sprite>(360);
 
@@ -264,8 +265,9 @@ function cellBounds(cells: CellPoint[]): { minX: number; maxX: number; minY: num
   return { minX, maxX, minY, maxY };
 }
 
-const GOLD: Rgb = [232, 178, 52];
 const GRANITE: Rgb = [132, 128, 124];
+/** Gusseisen, leicht bläulich; die Spielerfarbe schimmert nur schwach durch. */
+const IRON: Rgb = [50, 54, 62];
 const LEAF: Rgb = [74, 140, 62];
 
 /** Granitkorn und ein paar Haarrisse, für versteinerte Steine. */
@@ -292,6 +294,56 @@ function granite(g: CanvasRenderingContext2D, cells: CellPoint[], rnd: () => num
       g.stroke();
     }
   }
+}
+
+/**
+ * Gusseisen: Hammerschlag (kleine Mulden mit Licht- und Schattenkante), feiner Rost-Hauch und eine Niete in jeder
+ * Zellecke. So wirkt der Stein schwer und anders als alle glasierten.
+ */
+function iron(g: CanvasRenderingContext2D, cells: CellPoint[], rnd: () => number, L: Pt): void {
+  for (const c of cells) {
+    for (let i = 0; i < 9; i++) {
+      const x = c.x - 0.36 + rnd() * 0.72;
+      const y = c.y - 0.36 + rnd() * 0.72;
+      const r = 0.06 + rnd() * 0.07;
+      const d = g.createRadialGradient(x - L[0] * r * 0.4, y - L[1] * r * 0.4, 0, x, y, r);
+      d.addColorStop(0, 'rgba(8,10,16,0.32)');
+      d.addColorStop(0.7, 'rgba(8,10,16,0.08)');
+      d.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = d;
+      g.beginPath();
+      g.arc(x, y, r, 0, Math.PI * 2);
+      g.fill();
+      // Lichtkante der Mulde auf der abgewandten Seite
+      g.strokeStyle = 'rgba(220,228,240,0.16)';
+      g.lineWidth = 0.012;
+      const ang = Math.atan2(-L[1], -L[0]);
+      g.beginPath();
+      g.arc(x, y, r * 0.85, ang - 0.9, ang + 0.9);
+      g.stroke();
+    }
+    for (let i = 0; i < 18; i++) {
+      const s = 0.012 + rnd() * 0.02;
+      g.fillStyle = rnd() < 0.3 ? 'rgba(150,84,46,0.22)' : rnd() < 0.6 ? 'rgba(210,220,235,0.10)' : 'rgba(0,0,0,0.18)';
+      g.fillRect(c.x - 0.46 + rnd() * 0.92, c.y - 0.46 + rnd() * 0.92, s, s);
+    }
+  }
+}
+
+/** Niete mit Lichtpunkt. */
+function rivet(g: CanvasRenderingContext2D, x: number, y: number, r: number, L: Pt): void {
+  g.fillStyle = 'rgba(4,6,12,0.5)';
+  g.beginPath();
+  g.arc(x - L[0] * r * 0.3, y - L[1] * r * 0.45, r * 1.1, 0, Math.PI * 2);
+  g.fill();
+  const rv = g.createRadialGradient(x + L[0] * r * 0.4, y + L[1] * r * 0.4, 0, x, y, r);
+  rv.addColorStop(0, '#dfe5ee');
+  rv.addColorStop(0.45, css(lift(IRON, 0.35)));
+  rv.addColorStop(1, css(lift(IRON, -0.4)));
+  g.fillStyle = rv;
+  g.beginPath();
+  g.arc(x, y, r, 0, Math.PI * 2);
+  g.fill();
 }
 
 /** Ranken: eine Ranke folgt einem Teil der Kontur, eine zweite quert die Fläche, dazu Blätter und Locken. */
@@ -398,14 +450,15 @@ function bakeStone(form: number, q: number, color: string, px: number, variant: 
   const up = rot90([0, 1], -q);
   const icy = (variant & V_ICY) !== 0;
   const rock = (variant & V_STONE) !== 0;
-  const base = rock ? mix(GRANITE, hexRgb(color), 0.2) : hexRgb(color);
+  const heavy = !rock && (variant & V_HEAVY) !== 0;
+  const base = rock ? mix(GRANITE, hexRgb(color), 0.2) : heavy ? mix(IRON, hexRgb(color), 0.16) : hexRgb(color);
   const body = icy ? mix(lift(base, 0.08), [196, 232, 255], 0.35) : lift(base, -0.04);
-  const outer = roundedPath(loop.pts, rock ? 0.05 : 0.085);
+  const outer = roundedPath(loop.pts, rock ? 0.05 : heavy ? 0.06 : 0.085);
   const rnd = seededRandom(form * 31 + q * 7 + 3);
 
-  // Schlagschatten nach rechts unten und dichter Kontaktschatten direkt darunter.
-  castShadow(g, outer, px, 0.3, 0.06, 0.14, 'rgba(14,20,44,0.36)');
-  castShadow(g, outer, px, 0.07, 0.015, 0.05, 'rgba(10,14,34,0.42)');
+  // Schlagschatten nach rechts unten und dichter Kontaktschatten direkt darunter (Eisen wirft einen tieferen).
+  castShadow(g, outer, px, 0.3, 0.06, 0.14, heavy ? 'rgba(10,14,34,0.5)' : 'rgba(14,20,44,0.36)');
+  castShadow(g, outer, px, 0.07, 0.015, 0.05, heavy ? 'rgba(6,8,22,0.6)' : 'rgba(10,14,34,0.42)');
 
   g.save();
   g.clip(outer);
@@ -429,8 +482,9 @@ function bakeStone(form: number, q: number, color: string, px: number, variant: 
     g.fillRect(c.x - 0.5, c.y - 0.5, 1, 1);
   }
 
-  // Feine Körnung der Glasur, beim Fels grobes Granitkorn mit Rissen.
+  // Feine Körnung der Glasur, beim Fels grobes Granitkorn mit Rissen, beim Eisen Hammerschlag.
   if (rock) granite(g, cells, rnd);
+  else if (heavy) iron(g, cells, rnd, L);
   else
     for (const c of cells) {
       for (let i = 0; i < 26; i++) {
@@ -502,10 +556,21 @@ function bakeStone(form: number, q: number, color: string, px: number, variant: 
   g.lineWidth = 0.016;
   g.stroke(face);
 
-  // Glasur: breiter Glanz zum Licht hin und ein kleiner Spitzlicht-Punkt (Fels bleibt matt).
+  // Glasur: breiter Glanz zum Licht hin und ein kleiner Spitzlicht-Punkt (Fels bleibt matt, Eisen hat einen
+  // schmalen, kühlen Metallschimmer und Nieten in den Zellecken).
   g.save();
   g.clip(face);
-  if (!rock) {
+  if (heavy) {
+    const sh = g.createLinearGradient(cx - L[0] * ext, cy - L[1] * ext, cx + L[0] * ext, cy + L[1] * ext);
+    sh.addColorStop(0, 'rgba(190,205,230,0)');
+    sh.addColorStop(0.62, 'rgba(190,205,230,0)');
+    sh.addColorStop(0.7, 'rgba(200,214,236,0.2)');
+    sh.addColorStop(0.78, 'rgba(190,205,230,0.02)');
+    sh.addColorStop(1, 'rgba(190,205,230,0.1)');
+    g.fillStyle = sh;
+    g.fillRect(minX - 1, minY - 1, maxX - minX + 2, maxY - minY + 2);
+    for (const c of cells) for (const [dx, dy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) rivet(g, c.x + dx * 0.25, c.y + dy * 0.25, 0.045, L);
+  } else if (!rock) {
     const gl = g.createLinearGradient(cx - L[0] * ext, cy - L[1] * ext, cx + L[0] * ext, cy + L[1] * ext);
     gl.addColorStop(0, 'rgba(255,255,255,0)');
     gl.addColorStop(0.58, 'rgba(255,255,255,0)');
@@ -558,47 +623,11 @@ function bakeStone(form: number, q: number, color: string, px: number, variant: 
   }
   g.restore();
 
-  if (variant & V_SPECIAL) {
-    // Goldene Einlage nahe der Fase und ein geschliffener Edelstein.
-    const inlay = polyPath(insetLoop(loop, bevel + 0.06));
-    const gg = g.createLinearGradient(cx - L[0] * ext, cy - L[1] * ext, cx + L[0] * ext, cy + L[1] * ext);
-    gg.addColorStop(0, css(lift(GOLD, -0.35)));
-    gg.addColorStop(0.55, css(GOLD));
-    gg.addColorStop(1, css(lift(GOLD, 0.55)));
-    g.strokeStyle = gg;
-    g.lineWidth = 0.045;
-    g.lineJoin = 'miter';
-    g.stroke(inlay);
-    let mid = cells[0]!;
-    for (const c of cells) if (Math.hypot(c.x - cx, c.y - cy) < Math.hypot(mid.x - cx, mid.y - cy)) mid = c;
-    const r = 0.25;
-    const tips: Pt[] = [rot90([0, r], -q), rot90([r * 0.8, 0], -q), rot90([0, -r], -q), rot90([-r * 0.8, 0], -q)];
-    for (let i = 0; i < 4; i++) {
-      const a = tips[i]!;
-      const b = tips[(i + 1) % 4]!;
-      const nx = a[0] + b[0];
-      const ny = a[1] + b[1];
-      const d = (nx * L[0] + ny * L[1]) / Math.hypot(nx, ny);
-      g.fillStyle = css(d >= 0 ? lift(GOLD, 0.15 + 0.6 * d) : lift(GOLD, 0.45 * d - 0.05));
-      g.beginPath();
-      g.moveTo(mid.x, mid.y);
-      g.lineTo(mid.x + a[0], mid.y + a[1]);
-      g.lineTo(mid.x + b[0], mid.y + b[1]);
-      g.closePath();
-      g.fill();
-    }
-    g.strokeStyle = css(lift(GOLD, -0.5), 0.8);
-    g.lineWidth = 0.018;
-    g.beginPath();
-    tips.forEach((t, i) => (i === 0 ? g.moveTo(mid.x + t[0], mid.y + t[1]) : g.lineTo(mid.x + t[0], mid.y + t[1])));
-    g.closePath();
-    g.stroke();
-  }
   g.restore();
 
   // Kontur: trennt den Stein klar vom Himmel und vom Nachbarn.
-  g.strokeStyle = css(lift(base, -0.66), icy ? 0.45 : 0.62);
-  g.lineWidth = 1.15 / px + 0.012;
+  g.strokeStyle = css(lift(base, -0.66), icy ? 0.45 : heavy ? 0.85 : 0.62);
+  g.lineWidth = 1.15 / px + (heavy ? 0.02 : 0.012);
   g.lineJoin = 'round';
   g.stroke(outer);
   if (icy) {
@@ -641,7 +670,8 @@ function bakeRound(color: string, R: number, px: number, variant: number): Round
   };
   const rock = (variant & V_STONE) !== 0;
   const icy = (variant & V_ICY) !== 0;
-  const base = rock ? mix(GRANITE, hexRgb(color), 0.2) : hexRgb(color);
+  const heavy = !rock && (variant & V_HEAVY) !== 0;
+  const base = rock ? mix(GRANITE, hexRgb(color), 0.2) : heavy ? mix(IRON, hexRgb(color), 0.16) : hexRgb(color);
   const body = icy ? mix(lift(base, 0.08), [196, 232, 255], 0.35) : lift(base, -0.04);
   const disc = new Path2D();
   disc.arc(0, 0, R, 0, Math.PI * 2);
@@ -709,12 +739,12 @@ function bakeRound(color: string, R: number, px: number, variant: number): Round
   g.beginPath();
   g.arc(0, 0, 0.09, 0, Math.PI * 2);
   g.fill();
-  if (variant & V_SPECIAL) {
-    g.strokeStyle = css(GOLD);
-    g.lineWidth = 0.045;
-    g.beginPath();
-    g.arc(0, 0, R - 0.19, 0, Math.PI * 2);
-    g.stroke();
+  if (heavy) {
+    // Eisenrad: Nietenkranz
+    for (let i = 0; i < 10; i++) {
+      const ang = (i / 10) * Math.PI * 2;
+      rivet(g, Math.cos(ang) * (R - 0.2), Math.sin(ang) * (R - 0.2), 0.04, LIGHT);
+    }
   }
   // Drehmarke: helle Einlage nahe am Rand
   g.fillStyle = css(lift(base, 0.6));
@@ -730,7 +760,7 @@ function bakeRound(color: string, R: number, px: number, variant: number): Round
 
   // Obere Lage: Spitzlicht, Lichtkante, Kontur
   const gl = layer();
-  if (!rock) {
+  if (!rock && !heavy) {
     const sx = LIGHT[0] * R * 0.45;
     const sy = LIGHT[1] * R * 0.45;
     const spec = gl.g.createRadialGradient(sx, sy, 0, sx, sy, R * 0.45);
@@ -761,82 +791,23 @@ function bakeRound(color: string, R: number, px: number, variant: number): Round
   return { base: anchor(b.img), spin: anchor(sp.img), gloss: anchor(gl.img) };
 }
 
-// ------------------------------------------------------------ Schutzschild
-
-let dome: HTMLCanvasElement | null = null;
-/**
- * Schutzschild 512×256: flache Lichtkuppel, die sich wie ein Schirm über die Turmspitze legt. Oben ein klarer
- * goldener Rand, nach unten blendet alles aus (kein Boden, keine Kontur unten). Wird gestreckt.
- */
-export function shieldDome(): HTMLCanvasElement {
-  if (dome) return dome;
-  const W = 512;
-  const H = 256;
-  const c = makeCanvas(W, H);
-  const g = ctx2d(c);
-  const rx = W / 2 - 14;
-  const ry = H - 14;
-  const path = new Path2D();
-  path.ellipse(W / 2, H, rx, ry, 0, Math.PI, Math.PI * 2);
-  path.closePath();
-  g.save();
-  g.clip(path);
-  const fill = g.createLinearGradient(0, 14, 0, H);
-  fill.addColorStop(0, 'rgba(255,232,170,0.30)');
-  fill.addColorStop(0.5, 'rgba(255,232,170,0.10)');
-  fill.addColorStop(1, 'rgba(255,232,170,0)');
-  g.fillStyle = fill;
-  g.fillRect(0, 0, W, H);
-  // Waben
-  g.strokeStyle = 'rgba(255,244,210,0.28)';
-  g.lineWidth = 1.3;
-  const r = 16;
-  for (let row = 0; row * r * 1.5 < H + r; row++) {
-    for (let col = 0; col * r * Math.sqrt(3) < W + r; col++) {
-      const cx = col * r * Math.sqrt(3) + (row % 2 ? (r * Math.sqrt(3)) / 2 : 0);
-      const cy = row * r * 1.5;
-      g.beginPath();
-      for (let k = 0; k < 6; k++) {
-        const ang = Math.PI / 6 + (k * Math.PI) / 3;
-        const x = cx + Math.cos(ang) * r;
-        const y = cy + Math.sin(ang) * r;
-        if (k === 0) g.moveTo(x, y);
-        else g.lineTo(x, y);
-      }
-      g.closePath();
-      g.stroke();
-    }
-  }
-  g.restore();
-  // Rand mit Leuchten (nur beim Backen), danach nach unten ausblenden
-  g.save();
-  g.shadowColor = 'rgba(255,214,120,0.95)';
-  g.shadowBlur = 16;
-  g.strokeStyle = 'rgba(255,244,210,1)';
-  g.lineWidth = 4;
-  g.beginPath();
-  g.ellipse(W / 2, H, rx, ry, 0, Math.PI, Math.PI * 2);
-  g.stroke();
-  g.restore();
-  g.globalCompositeOperation = 'destination-in';
-  const fade = g.createLinearGradient(0, 0, 0, H);
-  fade.addColorStop(0, 'rgba(0,0,0,1)');
-  fade.addColorStop(0.55, 'rgba(0,0,0,0.85)');
-  fade.addColorStop(1, 'rgba(0,0,0,0)');
-  g.fillStyle = fade;
-  g.fillRect(0, 0, W, H);
-  g.globalCompositeOperation = 'source-over';
-  dome = c;
-  return c;
-}
-
 // ------------------------------------------------------------- Stützbalken
 
-const beams = new SpriteCache<Sprite>(8);
+const beams = new SpriteCache<Sprite>(12);
+/** Leicht verschiedene Stahltöne, damit mehrere Balken übereinander nicht wie kopiert aussehen. */
+const STEELS: readonly Rgb[] = [
+  [116, 132, 158],
+  [124, 128, 146],
+  [108, 128, 150],
+];
 
-/** Stahlträger mit Flanschen, Steifen und Nieten. */
-export function beamSprite(px: number): Sprite {
-  return beams.get(String(px), () => {
+/**
+ * Stahlträger mit Flanschen, Steifen und Nieten. `kind` (0–2) wählt Stahlton und Kratzer, damit mehrere Balken
+ * verschieden aussehen; die Mitte trägt eine goldene Rune als Zeichen heller Magie.
+ */
+export function beamSprite(px: number, kind = 0): Sprite {
+  const k = ((kind % STEELS.length) + STEELS.length) % STEELS.length;
+  return beams.get(`${px}|${k}`, () => {
     const { w, h } = TOWER_BEAM_HALF;
     const pad = 0.45;
     const img = makeCanvas((2 * w + 2 * pad) * px, (2 * h + 2 * pad) * px);
@@ -848,7 +819,7 @@ export function beamSprite(px: number): Sprite {
     outline.rect(-w, -h, 2 * w, 2 * h);
     castShadow(g, outline, px, 0.3, 0.06, 0.16, 'rgba(14,20,44,0.4)');
     castShadow(g, outline, px, 0.06, 0.01, 0.05, 'rgba(10,14,34,0.4)');
-    const steel: Rgb = [116, 132, 158];
+    const steel: Rgb = STEELS[k]!;
     // Steg
     const web = g.createLinearGradient(0, -h, 0, h);
     web.addColorStop(0, css(lift(steel, -0.42)));
@@ -874,7 +845,7 @@ export function beamSprite(px: number): Sprite {
     g.fillStyle = 'rgba(255,255,255,0.8)';
     g.fillRect(-w + 0.02, h - 0.022, 2 * w - 0.04, 0.016);
     // Gebürstete Struktur
-    const rnd = seededRandom(77);
+    const rnd = seededRandom(77 + k * 131);
     for (let i = 0; i < 90; i++) {
       g.fillStyle = rnd() < 0.5 ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)';
       g.fillRect(-w + rnd() * 2 * w, -h + 0.09 + rnd() * (2 * h - 0.18), 0.2 + rnd() * 0.6, 0.008);
@@ -901,6 +872,25 @@ export function beamSprite(px: number): Sprite {
       g.fillStyle = css(lift(steel, -0.35));
       g.fillRect(x, -h, 0.07, 2 * h);
     }
+    // Goldene Rune in der Mitte: Plakette mit Raute
+    const pw = 0.34;
+    const pl = g.createLinearGradient(0, -h, 0, h);
+    pl.addColorStop(0, '#9c6a12');
+    pl.addColorStop(0.55, '#e8b234');
+    pl.addColorStop(1, '#ffe39a');
+    g.fillStyle = pl;
+    g.fillRect(-pw / 2, -h + 0.07, pw, 2 * h - 0.14);
+    g.fillStyle = '#fff4d6';
+    g.beginPath();
+    g.moveTo(0, h - 0.11);
+    g.lineTo(0.07, 0);
+    g.lineTo(0, -h + 0.11);
+    g.lineTo(-0.07, 0);
+    g.closePath();
+    g.fill();
+    g.strokeStyle = 'rgba(90,60,10,0.6)';
+    g.lineWidth = 0.012;
+    g.strokeRect(-pw / 2, -h + 0.07, pw, 2 * h - 0.14);
     g.strokeStyle = css(lift(steel, -0.7), 0.7);
     g.lineWidth = 1.1 / px;
     g.strokeRect(-w, -h, 2 * w, 2 * h);

@@ -1,19 +1,23 @@
 import {
+  luckFor,
   offerFor,
   specialTargetsOthers,
   towerPool,
   TOWER_EFFECT_SHOW_MS,
   TOWER_GOAL_HEIGHT,
+  TOWER_LUCK_MAX_MS,
+  TOWER_LUCK_MIN_MS,
+  TOWER_STOCK_MAX,
   TOWER_MAX_HEIGHT,
   TOWER_SPECIALS,
   towerMarks,
-  towerPiece,
   towerRanking,
   type ClientMsg,
   type TowerFrame,
   type TowerRanked,
   type TowerSide,
   type TowerSpecial,
+  type TowerSpellSource,
 } from '@quiz/shared';
 import type { Room } from '../../rooms/room.ts';
 import type { PseudoCategory, TowerEffect, TowerPlayerState, TowerRound } from '../../rooms/state.ts';
@@ -38,7 +42,7 @@ export function startTowerRound(room: Room, _category: unknown, opts: StartRound
   room.towerOptions = options;
   const players: Record<string, TowerPlayerState> = {};
   for (const id of turnOrder) {
-    players[id] = { seed: Math.floor(room.random() * 0xffffffff), stock: null, offer: null, height: 0, marks: [], claimed: [], finishedAt: null };
+    players[id] = { seed: Math.floor(room.random() * 0xffffffff), stock: [], luck: null, luckAt: 0, offer: null, height: 0, marks: [], finishedAt: null };
   }
   room.round = {
     ...baseRound(TOWER_CATEGORY, turnOrder),
@@ -58,15 +62,47 @@ export function startTowerRound(room: Room, _category: unknown, opts: StartRound
     frames: {},
   };
   room.phase = 'playing';
+  const r = room.round;
+  for (const id of turnOrder) r.players[id]!.luckAt = r.goAt + luckGap(room);
+  scheduleLuck(room, r);
   return OK;
+}
+
+/** Zufälliger Abstand bis zum nächsten Glücks-Zauber. */
+function luckGap(room: Room): number {
+  return Math.round(TOWER_LUCK_MIN_MS + room.random() * (TOWER_LUCK_MAX_MS - TOWER_LUCK_MIN_MS));
+}
+
+/**
+ * Glücks-Takt: Ein Timer weckt zum frühesten fälligen Glücks-Zauber, verteilt alle fälligen (ein neuer ersetzt einen
+ * ungenutzten) und plant den nächsten. Endet die Runde, verfällt er von selbst.
+ */
+function scheduleLuck(room: Room, r: TowerRound): void {
+  room.cancelTimer('placement');
+  const due = Object.values(r.players).map((p) => p.luckAt);
+  if (due.length === 0) return;
+  const next = Math.min(...due);
+  room.timers.placement = room.scheduler.schedule(Math.max(0, next - room.now), () => {
+    room.timers.placement = null;
+    if (room.round !== r || room.phase !== 'playing') return;
+    const ranking = currentRanking(r);
+    for (const [id, p] of Object.entries(r.players)) {
+      if (p.luckAt > room.now || p.finishedAt !== null) continue;
+      const rank = ranking.find((x) => x.playerId === id)?.rank ?? 1;
+      p.luck = luckFor(rank, ranking.length, r.pool, room.random);
+      p.luckAt = room.now + luckGap(room);
+    }
+    scheduleLuck(room, r);
+    room.emit();
+  });
 }
 
 export function handleTowerMessage(room: Room, playerId: string, msg: ClientMsg): Result {
   switch (msg.type) {
     case 'tower_special_use':
-      return useSpecial(room, playerId, msg.special, msg.targetId);
+      return useSpecial(room, playerId, msg.special, msg.from, msg.targetId);
     case 'tower_mark':
-      return mark(room, playerId, msg.height, msg.piece);
+      return mark(room, playerId, msg.height);
     case 'tower_finish':
       return finish(room, playerId, msg.height);
     case 'tower_choose':
@@ -110,66 +146,52 @@ function grant(room: Room, r: TowerRound, playerId: string): void {
   r.players[playerId]!.offer = offerFor(rank, ranking.length, r.pool, room.random);
 }
 
-/** Nimmt hell oder dunkel aus dem Angebot; ein Zauber im Vorrat wird dabei ersetzt. */
+/** Nimmt hell oder dunkel aus dem Angebot in den Vorrat; ist er voll, verdrängt der neue den ältesten. */
 function choose(room: Room, playerId: string, side: TowerSide): Result {
   const b = builder(room, playerId);
   if ('error' in b) return b.error;
   const { p } = b;
-  if (!p.offer) return fail('invalid_action', 'Gerade gibt es keine Zauber zur Wahl');
-  p.stock = p.offer[side];
+  // Doppelt geschickt (z. B. Doppeltipp): nichts zu tun, aber auch kein Fehler.
+  if (!p.offer) return OK;
+  p.stock = [...p.stock, p.offer[side]].slice(-TOWER_STOCK_MAX);
   p.offer = null;
   return OK;
 }
 
-/** Aktiver Schutzschild des Spielers. */
-export function activeShield(r: TowerRound, playerId: string, now: number): TowerEffect | undefined {
-  return r.effects.find((e) => e.special === 'shield' && e.target === playerId && e.until > now);
-}
-
-/** Höhenmarke zum ersten Mal überbaut oder Spezialstein verbaut (`piece` = Index im Steinstrom). */
-function mark(room: Room, playerId: string, height: number, piece: number | undefined): Result {
+/**
+ * Höhenmarke zum ersten Mal überbaut: neues Angebot. Meldungen sind idempotent, eine schon bekannte Marke (etwa nach
+ * Neuladen oder doppelt gesendet) ist kein Fehler. Wer etwas bekommt, bekommt es immer.
+ */
+function mark(room: Room, playerId: string, height: number): Result {
   const b = builder(room, playerId);
   if ('error' in b) return b.error;
   const { r, p } = b;
   p.height = Math.min(height, TOWER_MAX_HEIGHT);
-  if (piece !== undefined) {
-    if (p.claimed.includes(piece)) return fail('invalid_action', 'Diesen Spezialstein gab es schon');
-    if (!towerPiece(p.seed, piece).special) return fail('invalid_action', 'Das ist kein Spezialstein');
-    p.claimed.push(piece);
-    grant(room, r, playerId);
-    return OK;
-  }
   const fresh = towerMarks(r.goalHeight).filter((m) => m <= height && !p.marks.includes(m));
-  if (fresh.length === 0) return fail('invalid_action', 'Keine neue Höhenmarke');
+  if (fresh.length === 0) return OK;
   p.marks.push(...fresh);
   grant(room, r, playerId);
   return OK;
 }
 
-function useSpecial(room: Room, playerId: string, special: TowerSpecial, targetId: string | undefined): Result {
+function useSpecial(room: Room, playerId: string, special: TowerSpecial, from: TowerSpellSource, targetId: string | undefined): Result {
   const b = builder(room, playerId);
   if ('error' in b) return b.error;
   const { r, p } = b;
-  if (room.now < r.goAt) return fail('invalid_action', 'Es geht gleich los');
-  if (p.stock !== special) return fail('invalid_action', 'Dieses Spezial hast du nicht');
+  if (room.now < r.goAt) return fail('invalid_action', 'Erst nach dem Start');
+  if (from === 'stock' ? p.stock[0] !== special : p.luck !== special) return fail('invalid_action', 'Diesen Zauber hast du nicht');
   let target = playerId;
   if (specialTargetsOthers(special)) {
     if (!targetId || targetId === playerId) return fail('invalid_action', 'Bitte einen Mitspieler als Ziel wählen');
     if (!r.players[targetId]) return fail('invalid_action', 'Dieses Ziel baut nicht mit');
     target = targetId;
   } else if (targetId !== undefined && targetId !== playerId) {
-    return fail('invalid_action', 'Helfer wirken nur auf den eigenen Turm');
+    return fail('invalid_action', 'Helle Magie wirkt nur auf den eigenen Turm');
   }
+  if (from === 'stock') p.stock = p.stock.slice(1);
+  else p.luck = null;
   const duration = TOWER_SPECIALS[special].durationMs;
   r.effects = r.effects.filter((e) => e.until > room.now);
-  p.stock = null;
-  const shield = target !== playerId ? activeShield(r, target, room.now) : undefined;
-  if (shield) {
-    // Der Schild fängt den dunklen Zauber ab und ist danach verbraucht; der abgefangene Zauber bleibt kurz als Hinweis.
-    r.effects = r.effects.filter((e) => e !== shield);
-    r.effects.push({ id: r.nextEffectId++, special, by: playerId, target, at: room.now, until: room.now + TOWER_EFFECT_SHOW_MS, blocked: true });
-    return OK;
-  }
   r.effects.push({ id: r.nextEffectId++, special, by: playerId, target, at: room.now, until: room.now + (duration > 0 ? duration : TOWER_EFFECT_SHOW_MS) });
   return OK;
 }

@@ -131,7 +131,7 @@
         </div>
       </div>
     {:else if readonly}
-      <p class="text-right text-sm text-slate-500">Drei Sekunden ruhig über der Linie gewinnt.<br />An jeder Marke: helle oder dunkle Magie.</p>
+      <p class="text-right text-sm text-slate-500">Drei Sekunden ruhig über der Linie gewinnt.<br />Magie an jeder Marke und als Glück zwischendurch.</p>
     {/if}
     {#if !readonly}<EndCategoryButton {view} label="Rennen beenden" title="Das Rennen endet sofort, gewertet wird nach Höhe." />{/if}
   </div>
@@ -157,8 +157,8 @@
             leader={leader === id}
             effects={effectsOn(id)}
             now={clock.now}
-            hasStock={round.players[id]?.hasStock ?? false}
-            shielded={round.players[id]?.shielded ?? false}
+            stockCount={round.players[id]?.stockCount ?? 0}
+            hasLuck={round.players[id]?.hasLuck ?? false}
             labels={builders.length <= 4}
             big={readonly && builders.length <= 4}
             minVisible={round.goalHeight + 4}

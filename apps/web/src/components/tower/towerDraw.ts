@@ -1,15 +1,16 @@
 import {
   FX_ICE,
-  FX_SHIELD,
   FX_TURBO,
   STONE_FALLING,
   STONE_GIANT,
   STONE_GLUED,
+  STONE_HEAVY,
   STONE_ICY,
   STONE_PETRIFIED,
-  STONE_SPECIAL,
+  STONE_SHRUNK,
   TOWER_BASE_HALF,
   TOWER_BEAM,
+  TOWER_BEAM_HALF,
   TOWER_FORM_COUNT,
   TOWER_ROUND,
   TOWER_ROUND_RADIUS,
@@ -23,22 +24,22 @@ import {
   formOutlinePath,
   glowSprite,
   hexRgb,
+  leafSprite,
   lift,
   lightColumn,
   plinthSprite,
   roundSprites,
-  shieldDome,
   softDot,
   stoneSprite,
   Backdrop,
   CAM_START,
   V_GLUED,
+  V_HEAVY,
   V_ICY,
-  V_SPECIAL,
   V_STONE,
   windStreak,
 } from './towerArt.ts';
-import { DARK_MAGIC, drawParticles, emit, FxState, observe, shakeOffset, step, stoneBoxes, stoneScale, type CellBox, type View } from './towerFx.ts';
+import { DARK_MAGIC, LIGHT_MAGIC, drawParticles, emit, FxState, observe, shakeOffset, step, stoneBoxes, stoneScale, type CellBox, type View } from './towerFx.ts';
 
 export { GIANT_SCALE } from './towerFx.ts';
 
@@ -121,7 +122,7 @@ const approach = (cur: number, target: number, dt: number, ms: number) => cur + 
 
 function variantOf(flags: number): number {
   let v = 0;
-  if (flags & STONE_SPECIAL) v |= V_SPECIAL;
+  if (flags & STONE_HEAVY) v |= V_HEAVY;
   if (flags & STONE_PETRIFIED) v |= V_STONE;
   else if (flags & STONE_ICY) v |= V_ICY;
   if (flags & STONE_GLUED) v |= V_GLUED;
@@ -135,7 +136,7 @@ function variantOf(flags: number): number {
 function blitStone(ctx: CanvasRenderingContext2D, st: TowerStone, color: string, X: number, Y: number, ppd: number, scale: number): void {
   const variant = variantOf(st.flags);
   if (st.form === TOWER_BEAM) {
-    const sp = beamSprite(bucketPx(ppd));
+    const sp = beamSprite(bucketPx(ppd), st.id);
     const k = ppd / sp.px;
     const c = Math.cos(-st.a) * k;
     const s = Math.sin(-st.a) * k;
@@ -169,7 +170,7 @@ function blitStone(ctx: CanvasRenderingContext2D, st: TowerStone, color: string,
   ctx.drawImage(sp.img, -sp.ox, -sp.oy);
 }
 
-/** Lichthof hinter einem Stein (Spezialstein golden, dunkle Magie violett). */
+/** Lichthof hinter einem Stein (helle Magie golden, dunkle violett). */
 function blitGlow(ctx: CanvasRenderingContext2D, st: TowerStone, color: string, X: number, Y: number, ppd: number, scale: number): void {
   const target = ppd * scale;
   const px = bucketPx(Math.min(target, 72));
@@ -210,6 +211,199 @@ function dropDistance(falling: CellBox[], support: CellBox[]): number | null {
     if (best === null || d < best) best = d;
   }
   return best === null ? null : Math.max(0, best);
+}
+
+// ------------------------------------------------------------ Stützbalken
+
+/**
+ * Mehrere Balken als Gerüst: Von den Enden jedes Balkens laufen schlanke Stahlstreben zum Balken darunter (oder auf
+ * den Sockel), dazwischen ein Kreuzverband aus Seilen. Hinter dem Turm und halb durchsichtig, die Steine liegen davor.
+ */
+function drawBeamStruts(ctx: CanvasRenderingContext2D, stones: readonly TowerStone[], X: (x: number) => number, Y: (y: number) => number, ppd: number, dpr: number): void {
+  const beams = stones.filter((b) => b.form === TOWER_BEAM).sort((a, b) => a.y - b.y);
+  if (beams.length === 0) return;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.lineCap = 'round';
+  const inset = 0.3;
+  let below: { x0: number; x1: number; y: number } = { x0: -TOWER_BASE_HALF + 0.25, x1: TOWER_BASE_HALF - 0.25, y: 0 };
+  for (const b of beams) {
+    const hw = TOWER_BEAM_HALF.w - inset;
+    const top = { x0: b.x - hw, x1: b.x + hw, y: b.y - TOWER_BEAM_HALF.h };
+    // Füße auf der Auflage darunter, nicht weiter draußen als deren Enden
+    const fx0 = Math.max(below.x0, Math.min(below.x1, top.x0));
+    const fx1 = Math.max(below.x0, Math.min(below.x1, top.x1));
+    const legs: [number, number, number, number][] = [
+      [top.x0, top.y, fx0, below.y],
+      [top.x1, top.y, fx1, below.y],
+    ];
+    if (top.y - below.y > 0.4) {
+      // Streben: dunkler Kern mit heller Kante
+      for (const [w, col] of [
+        [0.16, 'rgba(30,38,58,0.38)'],
+        [0.1, 'rgba(120,136,162,0.55)'],
+        [0.03, 'rgba(236,242,250,0.5)'],
+      ] as const) {
+        ctx.lineWidth = Math.max(dpr, w * ppd);
+        ctx.strokeStyle = col;
+        ctx.beginPath();
+        for (const [x0, y0, x1, y1] of legs) {
+          ctx.moveTo(X(x0), Y(y0));
+          ctx.lineTo(X(x1), Y(y1));
+        }
+        ctx.stroke();
+      }
+      // Kreuzverband aus Seilen
+      ctx.lineWidth = Math.max(dpr * 0.8, 0.035 * ppd);
+      ctx.strokeStyle = 'rgba(70,82,104,0.42)';
+      ctx.beginPath();
+      ctx.moveTo(X(top.x0), Y(top.y));
+      ctx.lineTo(X(fx1), Y(below.y));
+      ctx.moveTo(X(top.x1), Y(top.y));
+      ctx.lineTo(X(fx0), Y(below.y));
+      ctx.stroke();
+      // Fußplatten
+      ctx.fillStyle = 'rgba(40,48,68,0.55)';
+      for (const fx of [fx0, fx1]) ctx.fillRect(X(fx) - 0.12 * ppd, Y(below.y) - 0.05 * ppd, 0.24 * ppd, 0.06 * ppd);
+    }
+    below = { x0: b.x - TOWER_BEAM_HALF.w + 0.2, x1: b.x + TOWER_BEAM_HALF.w - 0.2, y: b.y + TOWER_BEAM_HALF.h };
+  }
+  ctx.lineCap = 'butt';
+}
+
+// ------------------------------------------------------------------ Ranken
+
+const vineBoxes: CellBox[] = [];
+const vineOwner: number[] = [];
+const VINE_GREEN = ['#5f9e46', '#78b453', '#4c8a3c'] as const;
+
+/** Kleine, feste Zufallszahl 0 bis 1 aus zwei Kennungen (die Ranke sieht in jedem Bild gleich aus). */
+function hash01(a: number, b: number): number {
+  let h = Math.imul(a ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35);
+  h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d);
+  return ((h ^ (h >>> 13)) >>> 0) / 4294967296;
+}
+
+/**
+ * Ranken zwischen verketteten Steinen: Wo zwei berankte Steine (oder ein berankter Stein und Sockel oder Balken)
+ * aneinanderstoßen, kreuzt eine Ranke die Fuge, mit Blättern genau darüber. Die Lage ergibt sich allein aus den
+ * Steinen, so sieht es am Fernseher genauso aus wie am Handy.
+ */
+function drawVineLinks(ctx: CanvasRenderingContext2D, stones: readonly TowerStone[], X: (x: number) => number, Y: (y: number) => number, ppd: number, dpr: number, time: number): void {
+  vineBoxes.length = 0;
+  vineOwner.length = 0;
+  let glued = 0;
+  for (const s of stones) {
+    const isBeam = s.form === TOWER_BEAM;
+    if (!isBeam && !(s.flags & STONE_GLUED)) continue;
+    if (!isBeam) glued++;
+    const before = vineBoxes.length;
+    stoneBoxes(s, vineBoxes);
+    for (let i = before; i < vineBoxes.length; i++) vineOwner.push(isBeam ? -1000 - s.id : s.id);
+  }
+  if (glued === 0) return;
+  // Beste Fuge je Steinpaar: die längste gemeinsame Kante.
+  const best = new Map<string, { px: number; py: number; nx: number; ny: number; len: number; a: number; b: number }>();
+  const consider = (a: number, b: number, px: number, py: number, nx: number, ny: number, len: number) => {
+    const key = a < b ? `${a}|${b}` : `${b}|${a}`;
+    const cur = best.get(key);
+    if (!cur || len > cur.len) best.set(key, { px, py, nx, ny, len, a: Math.min(a, b), b: Math.max(a, b) });
+  };
+  const n = vineBoxes.length;
+  for (let i = 0; i < n; i++) {
+    const A = vineBoxes[i]!;
+    const oa = vineOwner[i]!;
+    if (oa <= -1000) continue;
+    // Sockel: die Unterkante liegt auf y = 0.
+    if (Math.abs(A.y - A.ey) < 0.15 && Math.abs(A.x) < TOWER_BASE_HALF) consider(oa, -1, A.x, 0, 0, 1, A.ex * 2);
+    for (let j = 0; j < n; j++) {
+      const ob = vineOwner[j]!;
+      if (ob === oa || (ob > -1000 && ob < oa)) continue;
+      const B = vineBoxes[j]!;
+      // B über A
+      const ox = Math.min(A.x + A.ex, B.x + B.ex) - Math.max(A.x - A.ex, B.x - B.ex);
+      const gy = B.y - B.ey - (A.y + A.ey);
+      if (ox > 0.3 && Math.abs(gy) < 0.15) consider(oa, ob, (Math.max(A.x - A.ex, B.x - B.ex) + Math.min(A.x + A.ex, B.x + B.ex)) / 2, A.y + A.ey + gy / 2, 0, 1, ox);
+      const gyd = A.y - A.ey - (B.y + B.ey);
+      if (ox > 0.3 && Math.abs(gyd) < 0.15) consider(oa, ob, (Math.max(A.x - A.ex, B.x - B.ex) + Math.min(A.x + A.ex, B.x + B.ex)) / 2, B.y + B.ey + gyd / 2, 0, -1, ox);
+      // B rechts neben A
+      const oy = Math.min(A.y + A.ey, B.y + B.ey) - Math.max(A.y - A.ey, B.y - B.ey);
+      const gx = B.x - B.ex - (A.x + A.ex);
+      if (oy > 0.3 && Math.abs(gx) < 0.15) consider(oa, ob, A.x + A.ex + gx / 2, (Math.max(A.y - A.ey, B.y - B.ey) + Math.min(A.y + A.ey, B.y + B.ey)) / 2, 1, 0, oy);
+      // B links neben A
+      const gxl = A.x - A.ex - (B.x + B.ex);
+      if (oy > 0.3 && Math.abs(gxl) < 0.15) consider(oa, ob, B.x + B.ex + gxl / 2, (Math.max(A.y - A.ey, B.y - B.ey) + Math.min(A.y + A.ey, B.y + B.ey)) / 2, -1, 0, oy);
+    }
+  }
+  if (best.size === 0) return;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (const f of best.values()) {
+    const r = hash01(f.a, f.b);
+    const tx = -f.ny;
+    const ty = f.nx;
+    // Entlang der Fuge leicht versetzt, damit nicht jede Ranke genau in der Mitte sitzt.
+    const shift = (r - 0.5) * Math.min(0.6, f.len * 0.4);
+    const px = f.px + tx * shift;
+    const py = f.py + ty * shift;
+    const reach = 0.42;
+    const bend = (r > 0.5 ? 1 : -1) * 0.22;
+    const sx = X(px - f.nx * reach + tx * bend * 0.5);
+    const sy = Y(py - f.ny * reach + ty * bend * 0.5);
+    const ex = X(px + f.nx * reach - tx * bend * 0.5);
+    const ey = Y(py + f.ny * reach - ty * bend * 0.5);
+    const c1x = X(px - f.nx * reach * 0.3 - tx * bend * 1.6);
+    const c1y = Y(py - f.ny * reach * 0.3 - ty * bend * 1.6);
+    const c2x = X(px + f.nx * reach * 0.3 + tx * bend * 1.6);
+    const c2y = Y(py + f.ny * reach * 0.3 + ty * bend * 1.6);
+    for (const [w, col] of [
+      [0.12, 'rgba(16,40,18,0.35)'],
+      [0.075, '#3f7a34'],
+      [0.026, 'rgba(196,232,150,0.85)'],
+    ] as const) {
+      ctx.lineWidth = Math.max(dpr * 0.8, w * ppd);
+      ctx.strokeStyle = col;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.bezierCurveTo(c1x, c1y, c2x, c2y, ex, ey);
+      ctx.stroke();
+    }
+    // Locken an beiden Enden
+    ctx.lineWidth = Math.max(dpr * 0.7, 0.018 * ppd);
+    ctx.strokeStyle = '#4f8e3e';
+    for (const [cx, cy, d] of [[sx, sy, -1], [ex, ey, 1]] as const) {
+      ctx.beginPath();
+      for (let k = 0; k <= 12; k++) {
+        const t = k / 12;
+        const rr = 0.08 * ppd * (1 - t);
+        const ang = d * t * Math.PI * 2.6 + r * 6;
+        const x = cx + Math.cos(ang) * rr;
+        const y = cy + Math.sin(ang) * rr;
+        if (k === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    // Blätter über der Fuge, sanft im Wind
+    const leaves = 2 + Math.floor(r * 2);
+    const size = 0.3 * ppd;
+    for (let k = 0; k < leaves; k++) {
+      const u = (k + 0.5) / leaves - 0.5;
+      const lx = X(px + tx * u * 0.5);
+      const ly = Y(py + ty * u * 0.5);
+      const sway = Math.sin(time / 900 + r * 9 + k * 2.1) * 0.12;
+      const ang = Math.atan2(-(f.ny), f.nx) + (k % 2 ? 1 : -1) * (0.9 + r * 0.5) + sway;
+      const img = leafSprite(VINE_GREEN[(k + Math.floor(r * 3)) % VINE_GREEN.length]!);
+      const sc = (size * (0.85 + 0.3 * hash01(f.a + k, f.b))) / img.width;
+      const c = Math.cos(ang) * sc;
+      const sn = Math.sin(ang) * sc;
+      ctx.setTransform(c, sn, -sn, c, lx, ly);
+      ctx.drawImage(img, 0, -img.height / 2);
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  ctx.lineCap = 'butt';
+  ctx.lineJoin = 'miter';
 }
 
 // ------------------------------------------------------------- Gesamtbild
@@ -272,10 +466,9 @@ export function drawTower(ctx: CanvasRenderingContext2D, w: number, h: number, d
   observe(st, { stones: scene.stones, fx: scene.fx, reached: scene.reached, gust: scene.gust, won: !!scene.won, height: scene.height, color: scene.color, time, s, w, h });
   const gustT = scene.gust ? (time - scene.gust.at) / 1600 : 2;
   step(st, dt, gustT < 1 ? (scene.gust?.dir ?? 0) : 0);
-  emit(st, { won: !!scene.won, w, h, s, dt, specials: sorted.filter((x) => x.flags & STONE_SPECIAL) });
+  emit(st, { won: !!scene.won, w, h, s, dt, vines: sorted.filter((x) => x.flags & STONE_GLUED) });
   st.fogA = approach(st.fogA, scene.fog ? 1 : 0, dt, 350);
   st.iceA = approach(st.iceA, scene.fx & FX_ICE ? 1 : 0, dt, 400);
-  st.shieldA = approach(st.shieldA, scene.fx & FX_SHIELD ? 1 : 0, dt, 300);
   st.holdA = scene.hold > st.holdA ? approach(st.holdA, scene.hold, dt, 120) : approach(st.holdA, scene.hold, dt, 250);
   st.goalA = approach(st.goalA, scene.won ? 1 : 0, dt, 500);
 
@@ -398,26 +591,17 @@ export function drawTower(ctx: CanvasRenderingContext2D, w: number, h: number, d
     }
   }
 
-  // Ruhende Steine mit Spuren, Lichthöfen und Schimmer
+  drawBeamStruts(ctx, sorted, X, Y, ppd, dpr);
+
+  // Ruhende Steine mit Spuren und Schimmer
   for (const stn of sorted) {
     const tr = st.tracks.get(stn.id);
-    let scale = stoneScale(stn.flags);
-    const sAt = st.shrinkAt.get(stn.id);
-    if (sAt !== undefined) {
-      const t = (time - sAt) / 380;
-      if (t >= 1) st.shrinkAt.delete(stn.id);
-      else scale = 1 + (scale - 1) * (1 - Math.pow(1 - t, 3)) + Math.sin(t * Math.PI) * 0.08;
-    }
+    const scale = stoneScale(stn.flags);
     if (tr && tr.trail.length) {
       tr.trail.forEach((p, i) => {
         ctx.globalAlpha = 0.22 / (i + 1);
         blitStone(ctx, { ...stn, x: p.x, y: p.y, a: p.a }, scene.color, X(p.x), Y(p.y), ppd, scale);
       });
-      ctx.globalAlpha = 1;
-    }
-    if (stn.flags & STONE_SPECIAL) {
-      ctx.globalAlpha = 0.45 + 0.25 * Math.sin(time / 260 + stn.id);
-      blitGlow(ctx, stn, '#ffd36b', X(stn.x), Y(stn.y), ppd, scale);
       ctx.globalAlpha = 1;
     }
     blitStone(ctx, stn, scene.color, X(stn.x), Y(stn.y), ppd, scale);
@@ -439,6 +623,9 @@ export function drawTower(ctx: CanvasRenderingContext2D, w: number, h: number, d
     }
   }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  // Ranken über den Fugen zwischen verketteten Steinen
+  drawVineLinks(ctx, sorted, X, Y, ppd, dpr, time);
 
   // Geister: herunterfallende Steine und weggezauberte, die sich auflösen
   for (const g of st.ghosts) {
@@ -512,34 +699,16 @@ export function drawTower(ctx: CanvasRenderingContext2D, w: number, h: number, d
       }
       ctx.globalAlpha = 1;
     }
-    if (falling.flags & (STONE_SPECIAL | STONE_GIANT) || falling.form === TOWER_ROUND) {
+    // Lichthof um den fallenden Stein, wenn Magie auf ihm liegt: hell golden, dunkel violett.
+    const dark = falling.flags & STONE_SHRUNK || falling.form === TOWER_ROUND;
+    const light = falling.flags & (STONE_GIANT | STONE_HEAVY | STONE_GLUED);
+    if (dark || light) {
       ctx.globalAlpha = 0.55 + 0.25 * Math.sin(time / 200);
-      blitGlow(ctx, falling, falling.flags & STONE_SPECIAL ? '#ffd36b' : DARK_MAGIC[1], fx, fy, ppd, sc);
+      blitGlow(ctx, falling, dark ? DARK_MAGIC[1] : falling.flags & STONE_GLUED && !(falling.flags & (STONE_GIANT | STONE_HEAVY)) ? '#b9e07a' : LIGHT_MAGIC[1], fx, fy, ppd, sc);
       ctx.globalAlpha = 1;
     }
     blitStone(ctx, falling, scene.color, fx, fy, ppd, sc);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-  }
-
-  // Schutzschild: flache Lichtkuppel über der Turmspitze
-  if (st.shieldA > 0.01) {
-    const grow = clamp((time - st.shieldAt) / 600, 0, 1);
-    const e = 1 - Math.pow(1 - grow, 3);
-    const half = Math.max(3.4, spanX + 1.4) * (0.7 + 0.3 * e);
-    const dw = half * 2 * ppd;
-    const dh = half * 0.62 * ppd;
-    const base = Y(Math.max(0.5, scene.height) + 0.5) + dh * 0.55;
-    ctx.globalAlpha = st.shieldA * e * (0.82 + 0.18 * Math.sin(time / 520));
-    ctx.drawImage(shieldDome(), X(0) - dw / 2, base - dh, dw, dh);
-    // Lichtpunkt, der über die Kuppel wandert
-    const t = ((time / 2400) % 1) * Math.PI;
-    const gx = X(0) - Math.cos(t) * dw * 0.47;
-    const gy2 = base - Math.sin(t) * dh * 0.95;
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = st.shieldA * e * 0.85 * Math.sin(t);
-    ctx.drawImage(softDot('#fff1c4'), gx - 12 * S, gy2 - 12 * S, 24 * S, 24 * S);
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1;
   }
 
   // Windstoß: Streifen in Windrichtung

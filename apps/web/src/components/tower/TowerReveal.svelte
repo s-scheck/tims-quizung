@@ -34,6 +34,18 @@
   });
   onDestroy(() => timer && clearTimeout(timer));
 
+  // Am Handy passt die Auswertung ohne Scrollen: Höhe = Bildschirm minus alles darüber und der Abstand darunter.
+  let root = $state<HTMLDivElement | null>(null);
+  let offsetTop = $state(0);
+  $effect(() => {
+    const el = root;
+    if (!el) return;
+    const measure = () => (offsetTop = el.getBoundingClientRect().top + window.scrollY);
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  });
+
   /** Zauber der Runde, so wie dieses Gerät sie gesehen hat. */
   const facts = $derived.by(() => {
     const spells = towerFeed.spellsOf(round.startedAt).filter((e) => round.players[e.by] !== undefined || ranking.some((r) => r.playerId === e.by));
@@ -46,15 +58,13 @@
       const best = [...m.entries()].sort((a, b) => b[1] - a[1])[0];
       return best ? { id: best[0], n: best[1] } : null;
     };
-    const out: { label: string; id: string; n: number; special: 'gust' | 'shield' | 'beam' }[] = [];
+    const out: { label: string; short: string; id: string; n: number; special: 'gust' | 'ice' | 'beam' }[] = [];
     const dark = count((e) => (groupOf(e.special) === 'dark' ? e.by : null));
-    if (dark) out.push({ label: 'Meiste dunkle Magie', ...dark, special: 'gust' });
+    if (dark) out.push({ label: 'Meiste dunkle Magie', short: 'Dunkle Magie', ...dark, special: 'gust' });
     const light = count((e) => (groupOf(e.special) === 'light' ? e.by : null));
-    if (light) out.push({ label: 'Meiste helle Magie', ...light, special: 'beam' });
-    const hit = count((e) => (groupOf(e.special) === 'dark' && !e.blocked ? e.target : null));
-    if (hit) out.push({ label: 'Am häufigsten getroffen', ...hit, special: 'gust' });
-    const blocks = count((e) => (e.blocked ? e.target : null));
-    if (blocks) out.push({ label: 'Schild-Paraden', ...blocks, special: 'shield' });
+    if (light) out.push({ label: 'Meiste helle Magie', short: 'Helle Magie', ...light, special: 'beam' });
+    const hit = count((e) => (groupOf(e.special) === 'dark' ? e.target : null));
+    if (hit) out.push({ label: 'Am häufigsten getroffen', short: 'Oft getroffen', ...hit, special: 'ice' });
     return out;
   });
 </script>
@@ -80,7 +90,8 @@
   </button>
 {/if}
 
-<div class="flex flex-col {readonly ? 'gap-4' : 'gap-4'}" style={readonly ? 'height: calc(100dvh - 5.75rem)' : undefined}>
+{#if readonly}
+<div class="flex flex-col gap-4" style="height: calc(100dvh - 5.75rem)">
   <header class="flex items-center gap-3 {readonly ? 'justify-center text-center' : ''}">
     <div class="min-w-0">
       <p class="text-xs font-extrabold uppercase tracking-[0.25em] text-slate-500">Hochstapler · Ziellinie {round.goalHeight} m</p>
@@ -148,6 +159,64 @@
     </div>
   </div>
 </div>
+{:else}
+  <!-- Handy: alles auf einen Bildschirm, das Treppchen nimmt den Rest der Höhe -->
+  <div bind:this={root} class="flex flex-col gap-3" style={offsetTop > 0 ? `height: calc(100dvh - ${offsetTop}px - 2rem)` : undefined}>
+    <header class="min-w-0">
+      <p class="text-[0.65rem] font-extrabold uppercase tracking-[0.22em] text-slate-500">
+        Hochstapler · {round.goalHeight} m{winner ? '' : ' · nach Höhe'}
+      </p>
+      {#if winner}
+        <h2 class="flex items-center gap-1.5 text-xl font-black leading-tight">
+          <svg viewBox="0 0 24 24" class="h-5 w-5 shrink-0" aria-hidden="true"><path d="M3 18 5 7l4.5 4L12 4l2.5 7L19 7l2 11z" fill={GOLD} stroke="#a8740a" stroke-width="1.2" stroke-linejoin="round" /></svg>
+          <span class="min-w-0 break-words">{playerName(view, winner)} gewinnt!</span>
+        </h2>
+      {:else}
+        <h2 class="text-xl font-black leading-tight">Niemand hat die Linie gehalten</h2>
+      {/if}
+    </header>
+
+    <div class="min-h-[8.5rem] flex-1">
+      <TowerPodium {view} {round} {top} compact />
+    </div>
+
+    {#if rest.length > 0}
+      {@const dense = rest.length > 2}
+      <ol class={dense ? 'grid grid-cols-2 gap-1.5 text-sm' : 'space-y-1.5 text-sm'}>
+        {#each rest as r (r.playerId)}
+          <li class="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-2 py-1">
+            <span class="w-5 text-center font-black text-slate-500">{r.rank}.</span>
+            <PlayerHead {view} id={r.playerId} size={20} />
+            <span class="flex-1 truncate font-bold {r.playerId === client.myId ? 'text-indigo-500' : ''}" style="min-width:0">{playerName(view, r.playerId)}</span>
+            <span class="text-right font-mono font-black tabular-nums">{meters(r.height)} m</span>
+            {#if round.points?.[r.playerId] !== undefined && !dense}<span class="w-7 text-right font-black text-slate-500">+{round.points[r.playerId]}</span>{/if}
+          </li>
+        {/each}
+      </ol>
+    {/if}
+
+    {#if facts.length > 0 && rest.length <= 4}
+      <!-- Zauber der Runde als drei kleine Kacheln nebeneinander -->
+      <ul class="grid gap-1.5" style="grid-template-columns: repeat({facts.length}, minmax(0, 1fr))" aria-label="Zauber der Runde">
+        {#each facts as f (f.label)}
+          <li class="flex min-w-0 flex-col gap-1 rounded-xl border border-slate-800 bg-slate-900 px-2 py-1.5">
+            <span class="flex items-center gap-1">
+              <TowerBadge special={f.special} size={16} />
+              <span class="min-w-0 flex-1 truncate text-[0.62rem] font-bold leading-tight text-slate-500" title={f.label}>{f.short}</span>
+            </span>
+            <span class="flex min-w-0 items-center gap-1 text-xs font-bold">
+              <PlayerHead {view} id={f.id} size={18} />
+              <span class="min-w-0 flex-1 truncate">{playerName(view, f.id)}</span>
+              <span class="font-mono font-black text-slate-500">×{f.n}</span>
+            </span>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+
+    <ScoringHandoff {view} />
+  </div>
+{/if}
 
 <style>
   .intro {

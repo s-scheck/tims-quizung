@@ -23,7 +23,7 @@
     view: RoomView;
     goal: number;
     marks: number[];
-    entries: { id: string; height: number; color: string; holding?: boolean; shielded?: boolean }[];
+    entries: { id: string; height: number; color: string; holding?: boolean }[];
     me?: string | null;
     leader?: string | null;
     vertical?: boolean;
@@ -33,7 +33,8 @@
     onPick?: (id: string) => void;
   } = $props();
 
-  const pos = (h: number) => Math.min(1.04, Math.max(0, h / goal));
+  /** Senkrecht darf ein Kopf knapp über die Fahne, waagerecht endet die Leiste an der Ziellinie (sonst rutscht er aus dem Bild). */
+  const pos = (h: number) => Math.min(vertical ? 1.04 : 1, Math.max(0, h / goal));
   let width = $state(0);
 
   /** Waagerecht: Köpfe, die sich überdecken würden, weichen abwechselnd nach oben und unten aus. */
@@ -79,7 +80,6 @@
             onclick={() => onPick?.(e.id)}
           >
             <span class="pick-ring block rounded-full" style="box-shadow: 0 0 0 2px #b9a2ff, 0 0 12px 2px rgba(124, 88, 245, 0.7)"><PlayerHead {view} id={e.id} size={head} /></span>
-            {#if e.shielded}<span class="absolute -right-0.5 top-0.5 text-[#ffe29a]"><svg viewBox="0 0 24 24" class="h-3 w-3" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6z" fill="currentColor" /></svg></span>{/if}
           </button>
         {:else}
           <span class="block rounded-full {e.holding ? 'holding' : ''}" style="box-shadow: 0 0 0 1.5px {e.color}, 0 2px 6px -1px rgba(0,0,0,0.5)"><PlayerHead {view} id={e.id} size={head} /></span>

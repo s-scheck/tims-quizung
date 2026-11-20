@@ -5,13 +5,15 @@
   import TowerBadge from './TowerBadge.svelte';
   import TowerCanvas from './TowerCanvas.svelte';
   import TowerHold from './TowerHold.svelte';
+  import TowerIcon from './TowerIcon.svelte';
   import TowerRing from './TowerRing.svelte';
   import type { TowerScene } from './towerDraw.ts';
-  import { GOLD, meters } from './towerStyle.ts';
+  import { GOLD, LUCK, meters } from './towerStyle.ts';
 
   /**
    * Kachel eines Turms in der Übersicht (Fernseher, Host): Live-Turm, Platz, Effekte mit Restzeit, Namensschild mit Höhe.
-   * Der Führende bekommt Gold und Krone, wer über der Linie hält, pulsiert grün mit Countdown.
+   * Der Führende bekommt Gold und Krone, wer über der Linie hält, pulsiert grün mit Countdown. Dezent oben rechts:
+   * wie viele Zauber im Vorrat liegen (Sterne) und ob ein Glücks-Zauber bereitliegt (Kleeblatt); welche, bleibt geheim.
    */
   let {
     view,
@@ -25,8 +27,8 @@
     leader = false,
     effects,
     now,
-    hasStock = false,
-    shielded = false,
+    stockCount = 0,
+    hasLuck = false,
     labels = true,
     big = false,
     minVisible,
@@ -43,9 +45,10 @@
     effects: TowerEffectView[];
     /** Serverzeit für die Restzeit-Ringe. */
     now: number;
-    hasStock?: boolean;
-    /** Schutzschild aktiv: goldener Saum. */
-    shielded?: boolean;
+    /** Zauber im Vorrat (0 bis 3). */
+    stockCount?: number;
+    /** Ein Glücks-Zauber liegt bereit. */
+    hasLuck?: boolean;
     labels?: boolean;
     big?: boolean;
     minVisible: number;
@@ -57,7 +60,6 @@
 </script>
 
 <div class="tile relative flex min-h-0 flex-col overflow-hidden rounded-[1.25rem] {leader ? 'tile-lead' : ''} {holding ? 'tile-hold' : ''}" style="--c:{color}; min-width: 0">
-  {#if shielded}<div class="shield pointer-events-none absolute inset-0 z-10 rounded-[1.25rem]" aria-hidden="true"></div>{/if}
   <div class="relative min-h-0 flex-1" bind:clientHeight={canvasH}>
     <TowerCanvas class="h-full w-full" {scene} worldWidth={13} headroom={5} {minVisible} {labels} />
 
@@ -74,24 +76,30 @@
     <!-- Effekte und Vorrat -->
     <div class="absolute right-2 top-2 flex flex-col items-end gap-1.5">
       {#each effects as e (e.id)}
-        {@const timed = TOWER_SPECIALS[e.special].durationMs > 0 && !e.blocked}
+        {@const timed = TOWER_SPECIALS[e.special].durationMs > 0}
         <span class="fx glass flex items-center gap-1.5 rounded-full p-0.5 {big ? 'pr-2.5 text-sm' : 'pr-2 text-xs'} font-bold text-white">
-          {#if e.blocked}
-            <TowerBadge special="shield" size={badge} />
-            <span class="line-through decoration-2 opacity-70">{TOWER_SPECIALS[e.special].name}</span><span class="text-[#ffe29a]">abgewehrt</span>
-          {:else if timed}
+          {#if timed}
             <TowerRing value={(e.until - now) / (e.until - e.at)} size={badge + 6} stroke={3} color="#ffffff">
               <TowerBadge special={e.special} size={badge - 2} />
             </TowerRing>
           {:else}
             <TowerBadge special={e.special} size={badge} />
           {/if}
-          {#if !e.blocked}{TOWER_SPECIALS[e.special].name}{/if}
+          {TOWER_SPECIALS[e.special].name}
         </span>
       {/each}
-      {#if hasStock}
-        <span class="glass grid place-items-center rounded-full {big ? 'h-8 w-8' : 'h-7 w-7'}" title="Zauber im Vorrat">
-          <svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z" fill={GOLD} /></svg>
+      {#if stockCount > 0 || hasLuck}
+        <span
+          class="stash glass flex items-center gap-1 rounded-full {big ? 'h-8 px-2.5' : 'h-7 px-2'}"
+          title="{stockCount} im Vorrat{hasLuck ? ', Glück bereit' : ''}"
+          aria-label="{stockCount} Zauber im Vorrat{hasLuck ? ', Glück bereit' : ''}"
+        >
+          {#each Array.from({ length: stockCount }) as _, i (i)}
+            <svg viewBox="0 0 24 24" class={big ? 'h-4 w-4' : 'h-3.5 w-3.5'} aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z" fill={GOLD} /></svg>
+          {/each}
+          {#if hasLuck}
+            <span class={stockCount > 0 ? 'ml-0.5' : ''} style="color:{LUCK.ring}"><TowerIcon special="luck" size={big ? 17 : 15} /></span>
+          {/if}
         </span>
       {/if}
     </div>
@@ -134,17 +142,6 @@
   }
   .tile-hold {
     animation: hold 1s ease-in-out infinite;
-  }
-  /* Schutzschild: weiches, helles Leuchten von innen (kein harter Rand, der wäre mit der Führung zu verwechseln). */
-  .shield {
-    background: radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(255, 240, 190, 0.32));
-    box-shadow: inset 0 0 44px -6px rgba(255, 226, 150, 0.85);
-    animation: shield 2.4s ease-in-out infinite;
-  }
-  @keyframes shield {
-    50% {
-      box-shadow: inset 0 0 64px -2px rgba(255, 236, 170, 0.95);
-    }
   }
   .plate {
     background: linear-gradient(180deg, #151d33, #0e1426);

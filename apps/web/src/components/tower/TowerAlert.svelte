@@ -16,7 +16,6 @@
     view,
     holder,
     hold,
-    shielded = false,
     dark = null,
     offerOpen = false,
     onStrike,
@@ -24,7 +23,6 @@
     view: RoomView;
     holder: string;
     hold: number;
-    shielded?: boolean;
     /** Dunkler Zauber im Vorrat, sonst null. */
     dark?: TowerSpecial | null;
     /** Ein Angebot ist offen: Hinweis auf den dunklen Chip. */
@@ -49,8 +47,7 @@
   <p class="min-w-0 flex-1 text-[0.78rem] font-extrabold leading-tight">
     <span class="break-words">{name} hält</span>
     <span class="font-mono font-bold tabular-nums text-[#7ef0b6]">{left.toFixed(1).replace('.', ',')} s</span>
-    {#if shielded}<span class="block text-[0.64rem] font-semibold text-white/65">mit Schild</span>
-    {:else if !dark && offerOpen}<span class="block text-[0.64rem] font-semibold text-[#c9b8ff]">Nimm die dunkle Magie!</span>{/if}
+    {#if !dark && offerOpen}<span class="block text-[0.64rem] font-semibold text-[#c9b8ff]">Nimm die dunkle Magie!</span>{/if}
   </p>
   {#if dark}
     <button class="strike flex shrink-0 items-center gap-1.5 rounded-xl py-1.5 pl-1.5 pr-2.5 text-[0.75rem] font-black" onclick={onStrike}>

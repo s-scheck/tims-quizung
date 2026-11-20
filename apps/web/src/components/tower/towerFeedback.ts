@@ -18,7 +18,7 @@ export function setTowerMuted(on: boolean): void {
 setTowerHaptics(!isTowerMuted());
 
 /** Größe eines Steins für die Tonhöhe beim Aufsetzen. */
-const SIZE: Record<number, number> = { 0: 1.2, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1.3, 9: 1.1 };
+const SIZE: Record<number, number> = { 0: 1.2, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 9: 1.1 };
 
 let finished = false;
 
@@ -36,8 +36,11 @@ export function towerSimFeedback(events: readonly SimEvent[]): void {
         towerSound.turn(e.dir);
         break;
       case 'land':
-        towerSound.land(e.impact, SIZE[e.form] ?? 1);
-        towerHaptics.land(e.impact);
+        towerSound.land(e.impact, (SIZE[e.form] ?? 1) * e.scale);
+        if (e.heavy) {
+          towerSound.thud(e.impact);
+          towerHaptics.thud();
+        } else towerHaptics.land(e.impact);
         break;
       case 'bump':
         towerSound.bump(e.impact);
@@ -80,31 +83,29 @@ export function towerSimFeedback(events: readonly SimEvent[]): void {
         towerSound.vanish();
         towerHaptics.magic();
         break;
+      case 'beam':
+        towerSound.beam();
+        towerHaptics.magic();
+        break;
     }
   }
 }
 
 /**
- * Ein Zauber kommt laut Server an (einmal je Effekt, wenn er mich betrifft). Abgefangene klingen nach Schild,
- * dunkle Treffer nach ihrer Art; eigene helle Zauber ohne eigenes Sim-Ereignis bekommen hier ihren Klang.
+ * Ein Zauber kommt laut Server an (einmal je Effekt, wenn er mich betrifft). Dunkle Treffer klingen nach ihrer
+ * Art; eigene helle Zauber, die erst mit den nächsten Steinen wirken, bekommen hier ihren Klang.
  */
-export function towerEffectFeedback(e: { special: TowerSpecial; by: string; target: string; blocked?: boolean }, me: string | null): void {
-  if (e.blocked) {
-    if (e.target === me || e.by === me) {
-      towerSound.shieldBlock();
-      towerHaptics.shield();
-    }
-    return;
-  }
+export function towerEffectFeedback(e: { special: TowerSpecial; by: string; target: string }, me: string | null): void {
   if (e.target !== me) return;
   if (e.by !== me && TOWER_SPECIALS[e.special].group === 'dark') {
     towerSound.hit(e.special);
     towerHaptics.hit();
     return;
   }
-  if (e.special === 'shield') towerSound.shieldUp();
-  else if (e.special === 'beam') towerSound.beam();
-  else if (e.special === 'shrink') towerSound.shrink();
+  if (e.special === 'grow') towerSound.grow();
+  else if (e.special === 'heavy') towerSound.heavy();
+  else if (e.special === 'pick') towerSound.pick();
+  else if (e.special === 'glue') towerSound.vines();
 }
 
 /** Eigenen Zauber abgeschickt. */
@@ -118,7 +119,8 @@ let lastOffer: TowerOffer | null = null;
  * Angebot und Vorrat aus dem Server-Stand: klingt, wenn ein neues Angebot erscheint, und je nach Wahl hell
  * oder dunkel, sobald es zum Vorrat wird. Darf bei jedem Stand aufgerufen werden, reagiert nur auf Wechsel.
  */
-export function towerOfferFeedback(offer: TowerOffer | null, stock: TowerSpecial | null): void {
+export function towerOfferFeedback(offer: TowerOffer | null, newest: TowerSpecial | null): void {
+  const stock = newest;
   const prev = lastOffer;
   lastOffer = offer ? { ...offer } : null;
   if (offer && (!prev || prev.light !== offer.light || prev.dark !== offer.dark)) {

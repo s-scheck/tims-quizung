@@ -9,8 +9,8 @@ import { seededRandom } from './splash.ts';
 
 // ---------------------------------------------------------------- Optionen
 
-export type TowerGoal = 'low' | 'mid' | 'high';
-export const TOWER_GOALS: readonly TowerGoal[] = ['low', 'mid', 'high'];
+export type TowerGoal = 'low' | 'mid' | 'high' | 'xhigh' | 'sky';
+export const TOWER_GOALS: readonly TowerGoal[] = ['low', 'mid', 'high', 'xhigh', 'sky'];
 
 /** Vom Host vor der Runde gewählt; der Raum merkt sich die letzte Wahl. */
 export interface TowerOptions {
@@ -25,8 +25,8 @@ export function isTowerOptions(x: unknown): x is TowerOptions {
 }
 
 /** Höhe der Ziellinie über dem Sockel je Stufe. */
-export const TOWER_GOAL_HEIGHT: Record<TowerGoal, number> = { low: 10, mid: 16, high: 24 };
-export const TOWER_GOAL_LABELS: Record<TowerGoal, string> = { low: 'Niedrig', mid: 'Mittel', high: 'Hoch' };
+export const TOWER_GOAL_HEIGHT: Record<TowerGoal, number> = { low: 10, mid: 16, high: 24, xhigh: 32, sky: 40 };
+export const TOWER_GOAL_LABELS: Record<TowerGoal, string> = { low: 'Niedrig', mid: 'Mittel', high: 'Hoch', xhigh: 'Sehr hoch', sky: 'Wolkenkratzer' };
 
 /** Abstand der Höhenmarken; wer eine Marke zum ersten Mal überbaut, bekommt ein Spezial. */
 export const TOWER_MARK_STEP = 3;
@@ -117,8 +117,6 @@ export function formOutline(form: number): [number, number, number, number, numb
 
 // --------------------------------------------------------------- Steinstrom
 
-/** Ungefähr jeder zwölfte Stein ist ein Spezialstein. */
-export const TOWER_SPECIAL_STONE_CHANCE = 1 / 12;
 
 function mix(a: number, b: number): number {
   let h = (a ^ 0x85ebca6b) >>> 0;
@@ -129,7 +127,8 @@ function mix(a: number, b: number): number {
 
 /**
  * Stein Nummer `index` (ab 0) im Strom eines Spielers. In jedem Siebenerblock kommt jede Grundform genau einmal,
- * so gibt es keine langen Durststrecken. Der erste Stein ist nie ein Spezialstein.
+ * so gibt es keine langen Durststrecken. Spezialsteine gibt es nicht mehr (zufällige Magie kommt über den
+ * Glücks-Slot vom Server); `special` bleibt nur der Form halber und ist immer false.
  */
 export function towerPiece(seed: number, index: number): { form: number; special: boolean } {
   const block = Math.floor(index / TOWER_BASIC_FORMS);
@@ -139,8 +138,14 @@ export function towerPiece(seed: number, index: number): { form: number; special
     const j = Math.floor(rnd() * (i + 1));
     [bag[i], bag[j]] = [bag[j]!, bag[i]!];
   }
-  const special = index > 0 && seededRandom(mix(seed ^ 0x5bd1e995, index))() < TOWER_SPECIAL_STONE_CHANCE;
-  return { form: bag[index % TOWER_BASIC_FORMS]!, special };
+  return { form: bag[index % TOWER_BASIC_FORMS]!, special: false };
+}
+
+/** Zweite Form für die Steinwahl bei Stein Nummer `index`: deterministisch und nie gleich der eigentlichen Form. */
+export function towerAltForm(seed: number, index: number): number {
+  const main = towerPiece(seed, index).form;
+  const k = 1 + Math.floor(seededRandom(mix(seed ^ 0x3c6ef372, index))() * (TOWER_BASIC_FORMS - 1));
+  return (main + k) % TOWER_BASIC_FORMS;
 }
 
 /** So weit (in Einheiten) erscheint ein neuer Stein höchstens neben der Mitte. */
@@ -166,52 +171,71 @@ export const TOWER_STEERED_WINDOW = 3;
 // ----------------------------------------------------------------- Spezials
 
 /**
- * Magie. Helle Zauber wirken auf den eigenen Turm, dunkle auf einen gewählten Gegner. An jeder Höhenmarke
- * (und bei Spezialsteinen) bietet der Server ein Paar an, einen hellen und einen dunklen Zauber; der Spieler
- * nimmt genau einen davon (`tower_choose`). Pro Partie ist nur eine Auswahl aller Zauber im Spiel (`pool`).
+ * Magie. Helle Zauber wirken auf den eigenen Turm, dunkle auf einen gewählten Gegner.
+ * - Höhenmarken: Der Server bietet ein Paar an (hell oder dunkel, `tower_choose`). Der gewählte Zauber kommt in den
+ *   Vorrat (`stock`, höchstens `TOWER_STOCK_MAX`, eingesetzt wird der Reihe nach, der älteste zuerst; ist der Vorrat
+ *   voll, verdrängt ein neuer den ältesten).
+ * - Glücks-Slot: Alle 10–20 s schenkt der Server einen zufälligen Zauber (`luck`, nicht stapelbar, ein neuer ersetzt
+ *   den alten). Aufholhilfe: Wer hinten liegt, bekommt öfter Starkes für sich, wer vorne liegt, öfter dunkle Magie.
+ * Pro Partie ist nur eine Auswahl aller Zauber im Spiel (`pool`). Zauber mit `charges` wirken auf die nächsten
+ * N Steine, Zauber mit `durationMs` eine Zeit lang, alle anderen sofort und einmalig.
  */
 export type TowerSpecial =
   | 'glue'
-  | 'shrink'
+  | 'grow'
+  | 'heavy'
+  | 'pick'
   | 'beam'
   | 'petrify'
-  | 'shield'
   | 'vanish'
-  | 'boulder'
+  | 'mini'
   | 'ice'
   | 'gust'
   | 'fog'
   | 'turbo'
   | 'round';
-export const TOWER_SPECIAL_IDS: readonly TowerSpecial[] = ['glue', 'shrink', 'beam', 'petrify', 'shield', 'vanish', 'boulder', 'ice', 'gust', 'fog', 'turbo', 'round'];
+export const TOWER_SPECIAL_IDS: readonly TowerSpecial[] = ['glue', 'grow', 'heavy', 'pick', 'beam', 'petrify', 'vanish', 'mini', 'ice', 'gust', 'fog', 'turbo', 'round'];
 export type TowerSpecialGroup = 'light' | 'dark';
 export type TowerSide = TowerSpecialGroup;
 
 export interface TowerSpecialInfo {
   name: string;
   group: TowerSpecialGroup;
-  /** Wirkdauer; 0 heißt einmalig. */
+  /** Wirkdauer; 0 heißt einmalig bzw. über `charges`. */
   durationMs: number;
+  /** Wirkt auf so viele der nächsten Steine (0 = nicht steinweise). */
+  charges: number;
   hint: string;
+  /** Ganz kurz für Chips und Knöpfe. */
+  short: string;
   /** Wie viel es dem Nutzer bringt, 1 bis 3. Grundlage der Aufholhilfe. */
   value: number;
 }
 
 /** Werte (Dauer, Stärke, Texte) darf der Spielgefühl-Feinschliff anpassen; Ids und Gruppen sind fest. */
 export const TOWER_SPECIALS: Record<TowerSpecial, TowerSpecialInfo> = {
-  glue: { name: 'Ranken', group: 'light', durationMs: 0, value: 3, hint: 'Ranken überwuchern deine oberen Steine und halten sie fest zusammen.' },
-  shrink: { name: 'Schrumpfen', group: 'light', durationMs: 0, value: 2, hint: 'Dein aktueller Stein schrumpft, gut zum Stopfen von Lücken.' },
-  beam: { name: 'Stützbalken', group: 'light', durationMs: 20_000, value: 3, hint: 'Ein fester Balken knapp unter deiner Turmspitze, 20 Sekunden lang.' },
-  petrify: { name: 'Versteinern', group: 'light', durationMs: 0, value: 3, hint: 'Dein Turm bis knapp unter die Spitze wird zu festem Fels.' },
-  shield: { name: 'Schutzschild', group: 'light', durationMs: 30_000, value: 2, hint: 'Blockt den nächsten dunklen Zauber gegen dich.' },
-  vanish: { name: 'Wegzaubern', group: 'light', durationMs: 0, value: 2, hint: 'Dein zuletzt gesetzter Stein verschwindet.' },
-  boulder: { name: 'Riesenstein', group: 'dark', durationMs: 0, value: 2, hint: 'Der nächste Stein deines Ziels ist übergroß.' },
-  ice: { name: 'Glatteis', group: 'dark', durationMs: 10_000, value: 2, hint: 'Die Steine deines Ziels werden 10 Sekunden lang spiegelglatt.' },
-  gust: { name: 'Windstoß', group: 'dark', durationMs: 0, value: 2, hint: 'Ein kräftiger Stoß von der Seite gegen den Turm deines Ziels.' },
-  fog: { name: 'Nebel', group: 'dark', durationMs: 8_000, value: 1, hint: 'Eine Wolke verdeckt deinem Ziel 8 Sekunden lang Turm und Vorschau.' },
-  turbo: { name: 'Turbo', group: 'dark', durationMs: 10_000, value: 1, hint: 'Die Steine deines Ziels fallen 10 Sekunden doppelt so schnell.' },
-  round: { name: 'Rundstein', group: 'dark', durationMs: 0, value: 2, hint: 'Der nächste Stein deines Ziels ist rund und rollt.' },
+  glue: { name: 'Ranken', group: 'light', durationMs: 0, charges: 5, value: 3, short: 'Steine verketten sich', hint: 'Deine nächsten 5 Steine ranken sich beim Aufsetzen an alle Nachbarn und verketten den Turm.' },
+  grow: { name: 'Vergrößern', group: 'light', durationMs: 0, charges: 3, value: 2, short: 'große Steine', hint: 'Deine nächsten 3 Steine sind anderthalbmal so groß, ideal für eine breite Basis.' },
+  heavy: { name: 'Schwerer Stein', group: 'light', durationMs: 0, charges: 1, value: 2, short: 'liegt bombenfest', hint: 'Dein nächster Stein ist bleischwer und griffig, er rutscht und kippt kaum.' },
+  pick: { name: 'Steinwahl', group: 'light', durationMs: 0, charges: 3, value: 2, short: 'Form aussuchen', hint: 'Bei deinen nächsten 3 Steinen wählst du aus zwei Formen.' },
+  beam: { name: 'Stützbalken', group: 'light', durationMs: 0, charges: 0, value: 3, short: 'fester Balken', hint: 'Ein fester Balken knapp unter deiner Turmspitze, dauerhaft.' },
+  petrify: { name: 'Versteinern', group: 'light', durationMs: 0, charges: 0, value: 3, short: 'Turm wird Fels', hint: 'Dein Turm bis knapp unter die Spitze wird zu festem Fels.' },
+  vanish: { name: 'Wegzaubern', group: 'light', durationMs: 0, charges: 0, value: 2, short: 'letzter Stein weg', hint: 'Dein zuletzt gesetzter Stein verschwindet.' },
+  mini: { name: 'Mini-Steine', group: 'dark', durationMs: 0, charges: 3, value: 2, short: 'Gegner: winzige Steine', hint: 'Die nächsten 3 Steine deines Ziels sind winzig und schwer zu stapeln.' },
+  ice: { name: 'Glatteis', group: 'dark', durationMs: 10_000, charges: 0, value: 2, short: 'Gegner: glatte Steine', hint: 'Die Steine deines Ziels werden 10 Sekunden lang spiegelglatt.' },
+  gust: { name: 'Windstoß', group: 'dark', durationMs: 0, charges: 0, value: 2, short: 'Gegner: Windstoß', hint: 'Ein kräftiger Stoß von der Seite gegen den Turm deines Ziels.' },
+  fog: { name: 'Nebel', group: 'dark', durationMs: 8_000, charges: 0, value: 1, short: 'Gegner: Nebel', hint: 'Eine Wolke verdeckt deinem Ziel 8 Sekunden lang Turm und Vorschau.' },
+  turbo: { name: 'Turbo', group: 'dark', durationMs: 10_000, charges: 0, value: 1, short: 'Gegner: fällt schneller', hint: 'Die Steine deines Ziels fallen 10 Sekunden doppelt so schnell.' },
+  round: { name: 'Rundstein', group: 'dark', durationMs: 0, charges: 0, value: 2, short: 'Gegner: rollender Stein', hint: 'Der nächste Stein deines Ziels ist rund und rollt.' },
 };
+
+/** Höchstens so viele Zauber aus Höhenmarken im Vorrat. */
+export const TOWER_STOCK_MAX = 3;
+/** Abstand der Glücks-Zauber je Spieler (zufällig dazwischen). */
+export const TOWER_LUCK_MIN_MS = 10_000;
+export const TOWER_LUCK_MAX_MS = 20_000;
+/** Herkunft eines eingesetzten Zaubers. */
+export type TowerSpellSource = 'stock' | 'luck';
 
 export const TOWER_GROUP_LABELS: Record<TowerSpecialGroup, string> = { light: 'Helle Magie', dark: 'Dunkle Magie' };
 
@@ -261,6 +285,16 @@ export function offerFor(rank: number, n: number, pool: readonly TowerSpecial[],
     return list[list.length - 1]!;
   };
   return { light: draw('light'), dark: draw('dark') };
+}
+
+/**
+ * Glücks-Zauber nach Rang: hell oder dunkel gemischt. Wer hinten liegt, bekommt öfter hellen (und starken),
+ * wer vorne liegt, öfter dunklen Zauber.
+ */
+export function luckFor(rank: number, n: number, pool: readonly TowerSpecial[], random: () => number): TowerSpecial {
+  const t = n <= 1 ? 0.5 : Math.min(1, Math.max(0, (rank - 1) / (n - 1)));
+  const offer = offerFor(rank, n, pool, random);
+  return random() < 0.3 + 0.5 * t ? offer.light : offer.dark;
 }
 
 // ---------------------------------------------------------------- Rangliste
@@ -327,20 +361,26 @@ export const STONE_SHRUNK = 8;
 export const STONE_ICY = 16;
 /** Versteinert: fest, bewegt sich nicht mehr. */
 export const STONE_PETRIFIED = 32;
-/** Riesenstein: übergroß gezeichnet und simuliert. */
+/** Vergrößern: anderthalbmal so groß gezeichnet und simuliert. (Mini-Steine nutzen `STONE_SHRUNK`.) */
 export const STONE_GIANT = 64;
-const STONE_FLAGS_MAX = 127;
+/** Schwerer Stein: viel Masse und Reibung, sieht dunkel-metallisch aus. */
+export const STONE_HEAVY = 128;
+const STONE_FLAGS_MAX = 255;
 
 /** Effekt-Flags des ganzen Turms */
 export const FX_ICE = 1;
 export const FX_FOG = 2;
 export const FX_TURBO = 4;
 export const FX_BEAM = 8;
+/** Ranken scharf (die nächsten Steine ranken sich an). */
 export const FX_GLUE = 16;
+/** Größenzauber scharf (Vergrößern oder Mini-Steine für die nächsten Steine). */
 export const FX_BOULDER = 32;
-/** Schutzschild aktiv. */
-export const FX_SHIELD = 64;
-const FX_MAX = 127;
+/** Schwerer Stein scharf. */
+export const FX_HEAVY = 64;
+/** Steinwahl aktiv. */
+export const FX_PICK = 128;
+const FX_MAX = 255;
 
 export interface TowerStone {
   id: number;

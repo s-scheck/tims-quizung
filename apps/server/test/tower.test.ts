@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { isClientMsg, packFrame, TOWER_EFFECT_SHOW_MS, TOWER_GOAL_HEIGHT, TOWER_SPECIALS, towerPiece, type TowerSpecial } from '@quiz/shared';
+import { isClientMsg, packFrame, TOWER_EFFECT_SHOW_MS, TOWER_GOAL_HEIGHT, TOWER_LUCK_MAX_MS, TOWER_LUCK_MIN_MS, TOWER_SPECIALS, TOWER_STOCK_MAX, type TowerSpecial } from '@quiz/shared';
 import { toView } from '../src/rooms/view.ts';
 import type { TowerRound } from '../src/rooms/state.ts';
 import { acceptTowerFrame, TOWER_COUNTDOWN_MS, TOWER_MIN_FINISH_MS } from '../src/games/tower/reducer.ts';
@@ -23,16 +23,9 @@ function moderated(names: string[]): Harness {
   return h;
 }
 
-/** Gibt einem Spieler ein bestimmtes Spezial in den Vorrat. */
+/** Legt einem Spieler genau diesen Zauber in den Vorrat. */
 function give(h: Harness, id: string, special: TowerSpecial) {
-  tr(h).players[id]!.stock = special;
-}
-
-/** Erster Spezialstein im Strom eines Spielers. */
-function specialPiece(h: Harness, id: string): number {
-  const seed = tr(h).players[id]!.seed;
-  for (let i = 0; i < 1000; i++) if (towerPiece(seed, i).special) return i;
-  throw new Error('kein Spezialstein');
+  tr(h).players[id]!.stock = [special];
 }
 
 const frame = (h: number) => packFrame({ t: 1, h, fx: 0, hold: 0, next: 1, stones: [{ id: 1, form: 0, x: 0, y: 0.5, a: 0, flags: 0 }] });
@@ -51,12 +44,23 @@ describe('Hochstapler: Start', () => {
 
     const va = viewRound(h, a);
     expect(va.my?.seed).toBe(r.players[a]!.seed);
-    expect(va.my?.stock).toBeNull();
+    expect(va.my?.stock).toEqual([]);
+    expect(va.my?.luck).toBeNull();
+    expect(va.my?.luckAt).toBe(r.players[a]!.luckAt);
     expect(viewRound(h, b).my?.seed).toBe(r.players[b]!.seed);
     expect(viewRound(h, null).my).toBeUndefined();
     expect(viewRound(h, h.host).my).toBeUndefined();
     expect(va.marks).toEqual([3, 6, 9, 12, 15, 18, 21]);
+    expect(va.players[a]).toMatchObject({ hasStock: false, stockCount: 0, hasLuck: false });
     expect(va.ranking).toBeUndefined();
+  });
+
+  test('fünf Ziellinien bis 40 m', () => {
+    const h = makeHarness(['A', 'B']);
+    startTower(h, 'sky');
+    expect(tr(h).goalHeight).toBe(40);
+    expect(viewRound(h, h.ids[0]!).marks.at(-1)).toBe(39);
+    expect(isClientMsg({ type: 'choose_category', gameId: 'tower', categoryId: 'tower', tower: { goal: 'xhigh' } })).toBe(true);
   });
 
   test('ohne Angabe gilt die zuletzt gewählte Linie', () => {
@@ -80,9 +84,9 @@ describe('Hochstapler: Start-Countdown', () => {
     expect(viewRound(h, a).goAt).toBe(r.goAt);
     expect(viewRound(h, null).goAt).toBe(r.goAt);
     give(h, a, 'fog');
-    expect(h.act(a, { type: 'tower_special_use', special: 'fog', targetId: b }).ok).toBe(false);
+    expect(h.act(a, { type: 'tower_special_use', from: 'stock', special: 'fog', targetId: b }).ok).toBe(false);
     h.scheduler.advance(TOWER_COUNTDOWN_MS);
-    expectOk(h.act(a, { type: 'tower_special_use', special: 'fog', targetId: b }));
+    expectOk(h.act(a, { type: 'tower_special_use', from: 'stock', special: 'fog', targetId: b }));
     // Mindestzeit fürs Ziel läuft erst ab „Los!“.
     h.scheduler.advance(TOWER_MIN_FINISH_MS - 1);
     expect(h.act(a, { type: 'tower_finish', height: TOWER_GOAL_HEIGHT.low + 0.2 }).ok).toBe(false);
@@ -96,49 +100,58 @@ describe('Hochstapler: Marken und Spezials', () => {
     const h = makeHarness(['A', 'B']);
     const [a] = h.ids as [string, string];
     startTower(h, 'mid');
-    expect(h.act(a, { type: 'tower_mark', height: 2.5 }).ok).toBe(false);
+    // Unter der ersten Marke: kein Fehler, aber auch nichts.
+    expectOk(h.act(a, { type: 'tower_mark', height: 2.5 }));
+    expect(tr(h).players[a]!.offer).toBeNull();
     expectOk(h.act(a, { type: 'tower_mark', height: 3.4 }));
     const p = tr(h).players[a]!;
     expect(p.marks).toEqual([3]);
     expect(p.offer).not.toBeNull();
     expectOk(h.act(a, { type: 'tower_choose', side: 'light' }));
     expect(p.offer).toBeNull();
-    expect(p.stock).not.toBeNull();
-    expect(viewRound(h, a).my?.stock).toBe(p.stock);
-    // Andere sehen nur, dass etwas im Vorrat liegt.
+    expect(p.stock).toHaveLength(1);
+    expect(viewRound(h, a).my?.stock).toEqual(p.stock);
+    // Andere sehen nur, wie viel im Vorrat liegt.
     const vb = viewRound(h, h.ids[1]!);
-    expect(vb.players[a]?.hasStock).toBe(true);
-    expect(JSON.stringify(vb.players)).not.toContain(String(p.stock));
-    // Dieselbe Marke nach Einsturz und Neubau zählt nicht noch einmal.
-    expect(h.act(a, { type: 'tower_mark', height: 3.2 }).ok).toBe(false);
+    expect(vb.players[a]).toMatchObject({ hasStock: true, stockCount: 1 });
+    expect(JSON.stringify(vb.players)).not.toContain(String(p.stock[0]));
+    // Dieselbe Marke nach Einsturz und Neubau (oder doppelt gemeldet) zählt nicht noch einmal, ist aber kein Fehler.
+    expectOk(h.act(a, { type: 'tower_mark', height: 3.2 }));
+    expect(p.offer).toBeNull();
     // Zwei Marken auf einmal: beide gelten als erreicht.
     expectOk(h.act(a, { type: 'tower_mark', height: 9.1 }));
     expect(p.marks).toEqual([3, 6, 9]);
   });
 
-  test('Vorrat höchstens eins: ein neues Spezial verfällt', () => {
+  test('Vorrat bis drei, der Reihe nach; voll verdrängt der neue den ältesten', () => {
     const h = makeHarness(['A', 'B']);
-    const [a] = h.ids as [string, string];
-    startTower(h, 'mid');
-    give(h, a, 'fog');
-    expectOk(h.act(a, { type: 'tower_mark', height: 3.1 }));
-    expect(tr(h).players[a]!.stock).toBe('fog');
-    expect(tr(h).players[a]!.marks).toEqual([3]);
+    const [a, b] = h.ids as [string, string];
+    startTower(h, 'xhigh');
+    const p = tr(h).players[a]!;
+    const took: TowerSpecial[] = [];
+    for (const height of [3.1, 6.1, 9.1, 12.1]) {
+      expectOk(h.act(a, { type: 'tower_mark', height }));
+      took.push(p.offer!.light);
+      expectOk(h.act(a, { type: 'tower_choose', side: 'light' }));
+    }
+    expect(p.stock).toEqual(took.slice(-TOWER_STOCK_MAX));
+    expect(viewRound(h, b).players[a]?.stockCount).toBe(TOWER_STOCK_MAX);
+    // Nur der älteste ist dran.
+    const [first, second] = p.stock as [TowerSpecial, TowerSpecial];
+    if (first !== second) expect(h.act(a, { type: 'tower_special_use', from: 'stock', special: second, ...(TOWER_SPECIALS[second].group === 'dark' ? { targetId: b } : {}) }).ok).toBe(false);
+    expectOk(h.act(a, { type: 'tower_special_use', from: 'stock', special: first, ...(TOWER_SPECIALS[first].group === 'dark' ? { targetId: b } : {}) }));
+    expect(p.stock).toEqual(took.slice(-TOWER_STOCK_MAX + 1));
   });
 
-  test('Spezialstein: nur echte Spezialsteine aus dem Strom, jeder nur einmal', () => {
+  test('alte Spezialstein-Meldungen und Doppelwahl sind harmlos', () => {
     const h = makeHarness(['A', 'B']);
     const [a] = h.ids as [string, string];
     startTower(h);
-    const seed = tr(h).players[a]!.seed;
-    const plain = Array.from({ length: 50 }, (_, i) => i).find((i) => !towerPiece(seed, i).special)!;
-    expect(h.act(a, { type: 'tower_mark', height: 1, piece: plain }).ok).toBe(false);
-    const piece = specialPiece(h, a);
-    expectOk(h.act(a, { type: 'tower_mark', height: 1, piece }));
-    expect(tr(h).players[a]!.offer).not.toBeNull();
-    tr(h).players[a]!.offer = null;
-    expect(h.act(a, { type: 'tower_mark', height: 1, piece }).ok).toBe(false);
+    expectOk(h.act(a, { type: 'tower_mark', height: 1, piece: 5 }));
+    expectOk(h.act(a, { type: 'tower_mark', height: 1, piece: 5 }));
     expect(tr(h).players[a]!.offer).toBeNull();
+    expectOk(h.act(a, { type: 'tower_choose', side: 'light' }));
+    expect(tr(h).players[a]!.stock).toEqual([]);
   });
 
   test('Aufholhilfe: wer hinten liegt, bekommt stärkere helle Zauber angeboten', () => {
@@ -165,7 +178,6 @@ describe('Hochstapler: Marken und Spezials', () => {
     const h = makeHarness(['A', 'B']);
     const [a, b] = h.ids as [string, string];
     startTower(h);
-    expect(h.act(a, { type: 'tower_choose', side: 'light' }).ok).toBe(false);
     expectOk(h.act(a, { type: 'tower_mark', height: 3.1 }));
     const offer = viewRound(h, a).my!.offer!;
     expect(TOWER_SPECIALS[offer.light].group).toBe('light');
@@ -174,33 +186,49 @@ describe('Hochstapler: Marken und Spezials', () => {
     expect(viewRound(h, null).my).toBeUndefined();
     expect(viewRound(h, null).pool).toHaveLength(8);
     expectOk(h.act(a, { type: 'tower_choose', side: 'dark' }));
-    expect(tr(h).players[a]!.stock).toBe(offer.dark);
+    expect(tr(h).players[a]!.stock).toEqual([offer.dark]);
     expect(tr(h).players[a]!.offer).toBeNull();
-    expect(h.act(a, { type: 'tower_choose', side: 'light' }).ok).toBe(false);
-    // Wählen bei vollem Vorrat ersetzt den alten Zauber.
+    // Ein neues Angebot kommt hinten in den Vorrat.
     expectOk(h.act(a, { type: 'tower_mark', height: 6.2 }));
     const second = tr(h).players[a]!.offer!;
     expectOk(h.act(a, { type: 'tower_choose', side: 'light' }));
-    expect(tr(h).players[a]!.stock).toBe(second.light);
+    expect(tr(h).players[a]!.stock).toEqual([offer.dark, second.light]);
   });
 
-  test('Schutzschild fängt den nächsten dunklen Zauber ab', () => {
+  test('Glücks-Slot: alle 10–20 s ein Zauber, nicht stapelbar, Einsatz aus dem Glück', () => {
     const h = makeHarness(['A', 'B']);
     const [a, b] = h.ids as [string, string];
     startTower(h);
-    give(h, b, 'shield');
-    expectOk(h.act(b, { type: 'tower_special_use', special: 'shield' }));
-    expect(viewRound(h, null).players[b]!.shielded).toBe(true);
-    give(h, a, 'ice');
-    expectOk(h.act(a, { type: 'tower_special_use', special: 'ice', targetId: b }));
-    const ice = viewRound(h, b).effects.find((e) => e.special === 'ice')!;
-    expect(ice.blocked).toBe(true);
-    expect(ice.until - ice.at).toBe(TOWER_EFFECT_SHOW_MS);
-    expect(viewRound(h, null).players[b]!.shielded).toBe(false);
-    // Der nächste trifft.
+    const p = tr(h).players[a]!;
+    expect(p.luckAt - tr(h).goAt).toBeGreaterThanOrEqual(TOWER_LUCK_MIN_MS);
+    expect(p.luckAt - tr(h).goAt).toBeLessThanOrEqual(TOWER_LUCK_MAX_MS);
+    h.scheduler.advance(TOWER_LUCK_MAX_MS);
+    expect(p.luck).not.toBeNull();
+    expect(tr(h).players[b]!.luck).not.toBeNull();
+    expect(viewRound(h, b).players[a]?.hasLuck).toBe(true);
+    expect(viewRound(h, b).my?.luck).toBe(tr(h).players[b]!.luck);
+    // Der nächste ersetzt den ungenutzten, es bleibt einer.
+    const next = p.luckAt;
+    expect(next - h.room.now).toBeGreaterThan(0);
+    h.scheduler.advance(next - h.room.now);
+    expect(p.luck).not.toBeNull();
+    expect(p.luckAt).toBeGreaterThan(next);
+    // Einsetzen aus dem Glück leert nur den Glücks-Slot.
     give(h, a, 'fog');
-    expectOk(h.act(a, { type: 'tower_special_use', special: 'fog', targetId: b }));
-    expect(viewRound(h, b).effects.find((e) => e.special === 'fog')!.blocked).toBeUndefined();
+    const luck = p.luck!;
+    expectOk(h.act(a, { type: 'tower_special_use', from: 'luck', special: luck, ...(TOWER_SPECIALS[luck].group === 'dark' ? { targetId: b } : {}) }));
+    expect(p.luck).toBeNull();
+    expect(p.stock).toEqual(['fog']);
+    expect(h.act(a, { type: 'tower_special_use', from: 'luck', special: luck, ...(TOWER_SPECIALS[luck].group === 'dark' ? { targetId: b } : {}) }).ok).toBe(false);
+  });
+
+  test('Glücks-Slot endet mit der Runde', () => {
+    const h = makeHarness(['A', 'B']);
+    const [a] = h.ids as [string, string];
+    startTower(h);
+    expectOk(h.act(a, { type: 'end_round' }));
+    h.scheduler.advance(TOWER_LUCK_MAX_MS * 2);
+    expect(tr(h).players[a]!.luck).toBeNull();
   });
 
   test('Störer kommt beim Ziel an, Helfer wirkt auf sich selbst', () => {
@@ -208,22 +236,22 @@ describe('Hochstapler: Marken und Spezials', () => {
     const [a, b, c] = h.ids as [string, string, string];
     startTower(h);
     give(h, a, 'ice');
-    expect(h.act(a, { type: 'tower_special_use', special: 'ice' }).ok).toBe(false);
-    expect(h.act(a, { type: 'tower_special_use', special: 'ice', targetId: a }).ok).toBe(false);
-    expect(h.act(a, { type: 'tower_special_use', special: 'gust', targetId: b }).ok).toBe(false);
-    expectOk(h.act(a, { type: 'tower_special_use', special: 'ice', targetId: b }));
-    expect(tr(h).players[a]!.stock).toBeNull();
+    expect(h.act(a, { type: 'tower_special_use', from: 'stock', special: 'ice' }).ok).toBe(false);
+    expect(h.act(a, { type: 'tower_special_use', from: 'stock', special: 'ice', targetId: a }).ok).toBe(false);
+    expect(h.act(a, { type: 'tower_special_use', from: 'stock', special: 'gust', targetId: b }).ok).toBe(false);
+    expectOk(h.act(a, { type: 'tower_special_use', from: 'stock', special: 'ice', targetId: b }));
+    expect(tr(h).players[a]!.stock).toEqual([]);
     const effect = viewRound(h, b).effects[0]!;
     expect(effect).toMatchObject({ special: 'ice', by: a, target: b });
     expect(effect.until - effect.at).toBe(TOWER_SPECIALS.ice.durationMs);
     // Alle sehen den Effekt, auch der Fernseher.
     expect(viewRound(h, null).effects).toHaveLength(1);
     // Kein zweites Einsetzen ohne Vorrat.
-    expect(h.act(a, { type: 'tower_special_use', special: 'ice', targetId: c }).ok).toBe(false);
+    expect(h.act(a, { type: 'tower_special_use', from: 'stock', special: 'ice', targetId: c }).ok).toBe(false);
 
     give(h, c, 'glue');
-    expect(h.act(c, { type: 'tower_special_use', special: 'glue', targetId: a }).ok).toBe(false);
-    expectOk(h.act(c, { type: 'tower_special_use', special: 'glue' }));
+    expect(h.act(c, { type: 'tower_special_use', from: 'stock', special: 'glue', targetId: a }).ok).toBe(false);
+    expectOk(h.act(c, { type: 'tower_special_use', from: 'stock', special: 'glue' }));
     const glue = viewRound(h, c).effects.find((e) => e.special === 'glue')!;
     expect(glue.target).toBe(c);
     expect(glue.until - glue.at).toBe(TOWER_EFFECT_SHOW_MS);
@@ -299,7 +327,7 @@ describe('Hochstapler: Ziel und Rangliste', () => {
     startTower(h);
     acceptTowerFrame(h.room, b, frame(2));
     give(h, b, 'turbo');
-    expectOk(h.act(b, { type: 'tower_special_use', special: 'turbo', targetId: c }));
+    expectOk(h.act(b, { type: 'tower_special_use', from: 'stock', special: 'turbo', targetId: c }));
     expectOk(h.room.leave(b));
     const r = tr(h);
     expect(r.turnOrder).toEqual([a, c]);
@@ -309,7 +337,7 @@ describe('Hochstapler: Ziel und Rangliste', () => {
     expect(h.room.phase).toBe('playing');
     // Störer gegen jemanden, der weg ist, gehen nicht.
     give(h, a, 'gust');
-    expect(h.act(a, { type: 'tower_special_use', special: 'gust', targetId: b }).ok).toBe(false);
+    expect(h.act(a, { type: 'tower_special_use', from: 'stock', special: 'gust', targetId: b }).ok).toBe(false);
     expectOk(h.room.leave(c));
     expectOk(h.room.leave(a));
   });
@@ -327,8 +355,11 @@ describe('Hochstapler: Ziel und Rangliste', () => {
 
 describe('Hochstapler: Validierung', () => {
   test('Nachrichten', () => {
-    expect(isClientMsg({ type: 'tower_special_use', special: 'ice', targetId: 'x' })).toBe(true);
-    expect(isClientMsg({ type: 'tower_special_use', special: 'laser' })).toBe(false);
+    expect(isClientMsg({ type: 'tower_special_use', from: 'stock', special: 'ice', targetId: 'x' })).toBe(true);
+    expect(isClientMsg({ type: 'tower_special_use', from: 'luck', special: 'heavy' })).toBe(true);
+    expect(isClientMsg({ type: 'tower_special_use', special: 'ice', targetId: 'x' })).toBe(false);
+    expect(isClientMsg({ type: 'tower_special_use', from: 'stock', special: 'shield' })).toBe(false);
+    expect(isClientMsg({ type: 'tower_special_use', from: 'stock', special: 'laser' })).toBe(false);
     expect(isClientMsg({ type: 'tower_mark', height: 3 })).toBe(true);
     expect(isClientMsg({ type: 'tower_mark', height: 3, piece: 4 })).toBe(true);
     expect(isClientMsg({ type: 'tower_mark', height: -1 })).toBe(false);
@@ -349,6 +380,6 @@ describe('Hochstapler: Validierung', () => {
     expectOk(h.act(a, { type: 'end_round' }));
     expect(h.act(a, { type: 'tower_mark', height: 4 }).ok).toBe(false);
     give(h, a, 'fog');
-    expect(h.act(a, { type: 'tower_special_use', special: 'fog', targetId: h.ids[1] }).ok).toBe(false);
+    expect(h.act(a, { type: 'tower_special_use', from: 'stock', special: 'fog', targetId: h.ids[1] }).ok).toBe(false);
   });
 });
