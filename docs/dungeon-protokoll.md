@@ -83,3 +83,11 @@ Auftrag (2026-11-20): Dungeon mit derselben Sorgfalt wie Hochstapler überarbeit
 - Die Szene auf sehr hohen Handys hat viel Boden unter den Türen.
 - Ohne gewählte Figur erscheinen Strichmännchen.
 - Bei 6 Rausgekommenen wird das Ausgangstor eng.
+
+## Nachtrag 2026-11-20: Schlüssel und automatisches Weiter wieder entfernt
+
+Auf Wunsch des Nutzers sind die Entscheidungen 1 (Ergebnis läuft von selbst weiter) und 2 (Schlüssel als Aufholhilfe) zurückgenommen:
+- Nach dem Ergebnis schaltet wieder nur der Host weiter. Auf dem Handy des Hosts steht dafür ein großer Knopf „Nächste Türwahl“ oder „Auswertung“, die anderen sehen „Der Host startet gleich …“.
+- Den Schlüssel gibt es nicht mehr: kein Fund beim zweiten Fehlversuch, kein Aufschließen, keine Anzeige in Kopfzeile, Szene, Ticker und Auswertung. Sind alle Türen eines Raums zu, ist man wie früher raus.
+- Für den Takt des Spannungsmoments meldet der Server jetzt `resultAt`, die Serverzeit, seit der das Ergebnis steht (vorher aus `nextAt` abgeleitet).
+- Spuren an den Türen, Spannungsmoment, Klang, Handy-Ansicht, Fernseher und Auswertung bleiben.

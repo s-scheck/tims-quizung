@@ -45,7 +45,7 @@ function solutionOf(door: DungeonDoor): DungeonSolutionView {
 
 /** Spuren an einer Tür aus den abgeschlossenen Fragerunden: nur wer und ob, nie die Antwort. */
 function triesAt(r: DungeonRound, doorId: string) {
-  return r.attempts.filter((a) => a.doorId === doorId).map((a) => ({ playerId: a.playerId, correct: a.correct, ...(a.key ? { key: true } : {}) }));
+  return r.attempts.filter((a) => a.doorId === doorId).map((a) => ({ playerId: a.playerId, correct: a.correct }));
 }
 
 export function rankingOf(r: DungeonRound) {
@@ -68,7 +68,7 @@ export function dungeonRoundView(room: Room, revealed: boolean, viewerId: string
   const r = dungeonRound(room);
   if (!r) return null;
   const mine = viewerId ? r.walk[viewerId] : undefined;
-  const myDoor = r.stage !== 'choosing' && mine?.confirmed && !mine.key && mine.doorId ? doorOf(r, mine.doorId) : undefined;
+  const myDoor = r.stage !== 'choosing' && mine?.confirmed && mine.doorId ? doorOf(r, mine.doorId) : undefined;
   const myAnswer = viewerId ? r.answers[viewerId] : undefined;
 
   const view: DungeonRoundView = {
@@ -91,7 +91,7 @@ export function dungeonRoundView(room: Room, revealed: boolean, viewerId: string
     answered: Object.keys(r.answers),
     skipped: [...r.skipped],
     ...(r.stage === 'result' ? { results: Object.fromEntries(Object.entries(r.results).map(([id, x]) => [id, { ...x }])) } : {}),
-    nextAt: r.stage === 'result' ? r.nextAt : null,
+    resultAt: r.stage === 'result' ? r.resultAt : null,
     ...(myDoor && !revealed ? { myQuestion: questionOf(myDoor) } : {}),
     ...(myAnswer && !revealed ? { myAnswer: myAnswer.text } : {}),
     ranking: rankingOf(r),
@@ -105,7 +105,6 @@ export function dungeonRoundView(room: Room, revealed: boolean, viewerId: string
             answer: a.text,
             correct: a.correct,
             ...(a.detail !== undefined ? { detail: a.detail } : {}),
-            ...(a.key ? { key: true } : {}),
           })),
           solutions: Object.fromEntries(r.rooms.flat().map((d) => [d.id, solutionOf(d)])),
         }

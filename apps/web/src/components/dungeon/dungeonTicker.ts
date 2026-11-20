@@ -13,8 +13,6 @@ export type DungeonTickerEvent =
   | { kind: 'exit'; player: string; place: number }
   /** Als Erster in einem neuen Raum (ab Raum 2, ab 0 gezählt also ab 1). */
   | { kind: 'first'; player: string; room: number }
-  | { kind: 'keyFound'; player: string }
-  | { kind: 'keyUsed'; player: string; door: string }
   | { kind: 'eliminated'; player: string }
   /** An dieser Tür sind jetzt schon `fails` gescheitert. */
   | { kind: 'doorFails'; door: string; fails: number }
@@ -53,7 +51,7 @@ export function dungeonTicker(prev: DungeonRoundView | null, next: DungeonRoundV
   if (next.stage === 'choosing') {
     for (const id of next.turnOrder) {
       const w = next.walk[id];
-      if (!w?.confirmed || !w.doorId || w.key) continue;
+      if (!w?.confirmed || !w.doorId) continue;
       const was = prev.roundNo === next.roundNo && prev.stage === 'choosing' ? prev.walk[id] : undefined;
       if (was?.confirmed) continue;
       const fails = failsAt(next, w.doorId);
@@ -74,16 +72,10 @@ export function dungeonTicker(prev: DungeonRoundView | null, next: DungeonRoundV
   for (const [id, r] of results) {
     const p = next.players[id];
     if (!p) continue;
-    if (r.correct) {
-      if (r.key) push({ kind: 'keyUsed', player: id, door: doorTitle(next, r.doorId) });
-      if (p.status === 'out') {
-        const place = next.ranking.find((x) => x.playerId === id)?.place ?? 1;
-        push({ kind: 'exit', player: id, place });
-      }
-    } else {
-      if (r.foundKey) push({ kind: 'keyFound', player: id });
-      if (p.status === 'eliminated') push({ kind: 'eliminated', player: id });
-    }
+    if (r.correct && p.status === 'out') {
+      const place = next.ranking.find((x) => x.playerId === id)?.place ?? 1;
+      push({ kind: 'exit', player: id, place });
+    } else if (!r.correct && p.status === 'eliminated') push({ kind: 'eliminated', player: id });
   }
 
   if (deepest > before && deepest >= 1) {
@@ -98,7 +90,6 @@ export function dungeonTicker(prev: DungeonRoundView | null, next: DungeonRoundV
     if (fails >= DOOR_FAILS_MIN) push({ kind: 'doorFails', door: doorTitle(next, doorId), fails });
   }
 
-  const answered = results.filter(([, r]) => !r.key);
-  if (answered.length >= 2 && answered.every(([, r]) => !r.correct)) push({ kind: 'allWrong', count: answered.length });
+  if (results.length >= 2 && results.every(([, r]) => !r.correct)) push({ kind: 'allWrong', count: results.length });
   return out;
 }

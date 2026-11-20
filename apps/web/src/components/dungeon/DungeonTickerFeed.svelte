@@ -7,15 +7,13 @@
   import PlayerHead from '../PlayerHead.svelte';
   import type { DungeonTickerItem } from './dungeonTicker.ts';
 
-  /** Ereignis-Ticker am Fernseher: „Anna ist draußen – Platz 1!“, Schlüssel, berüchtigte Türen. Neueste oben. */
+  /** Ereignis-Ticker am Fernseher: „Anna ist draußen – Platz 1!“, Führung, berüchtigte Türen. Neueste oben. */
   let { view, items, head = 24 }: { view: RoomView; items: DungeonTickerItem[]; head?: number } = $props();
 
   const who = (id: string) => playerName(view, id);
   const tone: Record<DungeonTickerItem['kind'], string> = {
     exit: 'tone-gold',
     first: 'tone-amber',
-    keyFound: 'tone-amber',
-    keyUsed: 'tone-amber',
     eliminated: 'tone-red',
     doorFails: 'tone-red',
     allWrong: 'tone-red',
@@ -39,14 +37,6 @@
         <span class="ico" aria-hidden="true">➜</span>
         <PlayerHead {view} id={it.player} size={head} />
         <span class="mw0">{who(it.player)} geht in Führung – Raum {it.room + 1}</span>
-      {:else if it.kind === 'keyFound'}
-        <span class="ico" aria-hidden="true">🗝</span>
-        <PlayerHead {view} id={it.player} size={head} />
-        <span class="mw0">{who(it.player)} findet einen Schlüssel</span>
-      {:else if it.kind === 'keyUsed'}
-        <span class="ico" aria-hidden="true">🗝</span>
-        <PlayerHead {view} id={it.player} size={head} />
-        <span class="mw0">{who(it.player)} schließt „{it.door}“ mit Schlüssel auf</span>
       {:else if it.kind === 'eliminated'}
         <span class="ico" aria-hidden="true">✕</span>
         <PlayerHead {view} id={it.player} size={head} />

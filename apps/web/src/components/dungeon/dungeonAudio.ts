@@ -1,7 +1,7 @@
 /**
  * Dungeon-Klänge, komplett mit WebAudio synthetisiert (keine Dateien): Schritte auf Stein, knarrendes Holz,
  * Herzschlag und gedämpfte Trommel in der Spannung, Glocke mit leisem Chor bei richtig, dumpfer Schlag mit
- * Kettenrasseln bei falsch, Schlüsselklimpern. Alles über einen Bus mit Kompressor und einem dunklen Gewölbehall,
+ * Kettenrasseln bei falsch. Alles über einen Bus mit Kompressor und einem dunklen Gewölbehall,
  * leise und gedeckt, damit es atmosphärisch bleibt und nie nervt.
  *
  * Browser starten Audio erst nach einer Nutzergeste: `wakeDungeonAudio()` in pointerdown/keydown aufrufen.
@@ -218,15 +218,6 @@ function chains(b: Bus, t: number, gain: number, count = 9, span = 0.45): void {
   }
 }
 
-/** Schlüsselbund: helle, leicht verstimmte Plings. */
-function jingle(b: Bus, t: number, gain: number, count = 5): void {
-  for (let i = 0; i < count; i++) {
-    const at = t + i * 0.055 + Math.random() * 0.02;
-    const f = 2600 + Math.random() * 1800;
-    bell(b, f, at, gain * (0.7 + Math.random() * 0.3), 0.35, 0.35);
-  }
-}
-
 const semis = (base: number, n: number) => base * Math.pow(2, n / 12);
 
 // ------------------------------------------------------------- Klänge
@@ -286,22 +277,6 @@ export const dungeonSound = {
     if (gain < 0.8) return;
     tone(b, { t: 0.15, f: 196, to: 185, gain: 0.03, attack: 0.05, decay: 0.9, type: 'triangle', wet: 0.4 });
     tone(b, { t: 0.15, f: 233, to: 220, gain: 0.025, attack: 0.05, decay: 0.9, type: 'triangle', wet: 0.4 });
-  },
-
-  /** Schlüssel gefunden oder aufgeschlossen. */
-  key(unlock = false): void {
-    const b = ready(`key${unlock}`, 300);
-    if (!b) return;
-    jingle(b, 0, 0.03, unlock ? 3 : 6);
-    if (unlock) {
-      // Schloss schnappt: zwei Metallklicks und ein Riegel.
-      tone(b, { t: 0.22, f: 1200, gain: 0.05, decay: 0.03 });
-      noise(b, { t: 0.22, gain: 0.08, decay: 0.03, f: 3000, q: 3 });
-      noise(b, { t: 0.34, gain: 0.1, decay: 0.08, filter: 'lowpass', f: 900, q: 0.8, wet: 0.2 });
-    } else {
-      bell(b, 1568, 0.2, 0.035, 1.2, 0.6);
-      bell(b, 2093, 0.32, 0.03, 1.4, 0.6);
-    }
   },
 
   /** Ausgang erreicht: kleine Fanfare aus Glocken und Bläser-Akkord. */

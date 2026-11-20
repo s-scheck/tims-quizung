@@ -28,6 +28,5 @@ export const dungeonHaptics = {
   heartbeat: () => buzz([18, 140, 12], 400),
   correct: () => buzz([20, 60, 40], 300),
   wrong: () => buzz([70, 40, 30], 300),
-  key: () => buzz([8, 40, 8, 40, 8], 200),
   exit: () => buzz([40, 60, 40, 60, 140], 500),
 };

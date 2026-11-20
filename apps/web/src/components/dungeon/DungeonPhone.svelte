@@ -8,11 +8,10 @@
   import DungeonScene from './DungeonScene.svelte';
   import DungeonQuestion from './DungeonQuestion.svelte';
   import DungeonHud from './DungeonHud.svelte';
-  import DungeonKeyIcon from './DungeonKeyIcon.svelte';
   import DungeonPhoneHeads from './DungeonPhoneHeads.svelte';
   import DungeonPhoneMenu from './DungeonPhoneMenu.svelte';
   import DungeonPhoneOverview from './DungeonPhoneOverview.svelte';
-  import DungeonPhoneCountdown from './DungeonPhoneCountdown.svelte';
+  import DungeonPhoneNext from './DungeonPhoneNext.svelte';
   import { doorFormat, doorHint, doorIcon } from './doorLabel.ts';
   import {
     DUNGEON_SUSPENSE_MS,
@@ -135,34 +134,16 @@
 
   function pick(doorId: string) {
     if (!canChoose || myWalk?.doorId === doorId) return;
-    if (mine?.locked.includes(doorId) && !mine.key) return;
+    if (mine?.locked.includes(doorId)) return;
     pickedAt = Date.now();
     now = pickedAt;
     dungeonTapFeedback('door');
     client.send({ type: 'dungeon_walk', doorId });
   }
 
-  // Kurze Erklärung zum Schlüssel, bis man ihn einmal vor einer Tür in der Hand hatte.
-  const KEY_TIP = 'quiz.dungeon.keyTip';
-  let keyTipSeen = $state(readTip());
-  function readTip(): boolean {
-    try {
-      return localStorage.getItem(KEY_TIP) === '1';
-    } catch {
-      return false;
-    }
-  }
-  function enter(key: boolean) {
-    dungeonTapFeedback(key ? 'key' : 'enter');
-    if (mine?.key && !keyTipSeen) {
-      keyTipSeen = true;
-      try {
-        localStorage.setItem(KEY_TIP, '1');
-      } catch {
-        // egal, dann kommt die Erklärung eben noch einmal
-      }
-    }
-    client.send(key ? { type: 'dungeon_enter', key: true } : { type: 'dungeon_enter' });
+  function enter() {
+    dungeonTapFeedback('enter');
+    client.send({ type: 'dungeon_enter' });
   }
 
   function skip(id: string) {
@@ -214,7 +195,6 @@
       out={mine?.status === 'out' && (!myResult || revealed)}
       eliminated={mine?.status === 'eliminated' && (!myResult || revealed)}
       wrong={mine && myResult && !revealed && !myResult.correct ? mine.wrong - 1 : (mine?.wrong ?? 0)}
-      hasKey={!!mine?.key && !(myResult?.foundKey && !revealed)}
       title="Dungeon · Fragerunde {round.roundNo}"
       {muted}
       offline={client.status !== 'open'}
@@ -257,38 +237,20 @@
                 </p>
                 <p class="truncate text-[0.95rem] font-black leading-tight text-amber-50">{selectedDoor.title}</p>
                 <p class="truncate text-[0.72rem] text-amber-50/55">
-                  {selectedLocked ? 'Für dich verschlossen. Nur der Schlüssel öffnet sie.' : doorHint(selectedDoor)}
+                  {selectedLocked ? 'Für dich verschlossen.' : doorHint(selectedDoor)}
                 </p>
               </div>
             </div>
             <div class="flex gap-2">
-              {#if !selectedLocked}
-                <button class="go min-w-0 flex-1 rounded-2xl px-3 py-3.5 text-[0.95rem] font-extrabold" disabled={!arrived} onclick={() => enter(false)}>
+              <button class="go min-w-0 flex-1 rounded-2xl px-3 py-3.5 text-[0.95rem] font-extrabold" disabled={!arrived} onclick={enter}>
                   {arrived ? 'Durch die Tür gehen' : 'Unterwegs …'}
                 </button>
-              {/if}
-              {#if mine.key}
-                <button
-                  class="key flex items-center justify-center gap-1.5 rounded-2xl px-3 py-3.5 text-[0.9rem] font-extrabold {selectedLocked ? 'flex-1' : 'shrink-0'}"
-                  disabled={!arrived}
-                  aria-label="Mit Schlüssel aufschließen"
-                  onclick={() => enter(true)}
-                >
-                  <DungeonKeyIcon size={18} class="-rotate-45" />
-                  {selectedLocked ? 'Mit Schlüssel aufschließen' : 'Aufschließen'}
-                </button>
-              {/if}
             </div>
-            {#if mine.key && !keyTipSeen}
-              <p class="mt-2 text-center text-[0.7rem] font-semibold text-amber-200/70">Der Schlüssel öffnet jede Tür ohne Frage, aber nur einmal.</p>
-            {/if}
           {:else}
             <div class="flex h-full flex-col items-center justify-center gap-1 py-2 text-center">
               <p class="text-[1rem] font-black text-amber-50">Wähle eine Tür</p>
               <p class="text-[0.75rem] text-amber-50/55">
-                {#if mine.key}
-                  Du hast einen Schlüssel: er öffnet jede Tür ohne Frage, nur einmal.
-                {:else if mine.locked.length > 0}
+                {#if mine.locked.length > 0}
                   {openCount} von {myDoors.length} Türen sind für dich noch offen.
                 {:else}
                   Tippe sie an. Auf dem Schild steht, was dahinter wartet.
@@ -299,12 +261,10 @@
         {:else if round.stage === 'choosing' && iSkip}
           {@render info('Du setzt diese Runde aus', 'Der Host ist ohne dich weitergegangen. Gleich bist du wieder dabei.')}
         {:else if round.stage === 'choosing'}
-          {@render info(myWalk?.key ? 'Der Schlüssel steckt' : 'Du stehst in der Tür', waiting.length > 0 ? 'Es geht los, sobald alle gewählt haben.' : 'Gleich geht es los …', waiting)}
+          {@render info('Du stehst in der Tür', waiting.length > 0 ? 'Es geht los, sobald alle gewählt haben.' : 'Gleich geht es los …', waiting)}
         {:else if round.stage === 'answering'}
           {#if iSkip}
             {@render info('Du setzt diese Runde aus', 'Warte auf die anderen …', waiting)}
-          {:else if myWalk?.key}
-            {@render info('Aufgeschlossen', 'Du kommst ohne Frage durch. Warte auf die anderen …', waiting)}
           {:else}
             <div class="flex flex-col items-center gap-1.5 py-1 text-center">
               <p class="text-[0.75rem] font-semibold text-amber-50/55">Deine Antwort liegt hinter der Tür …</p>
@@ -320,9 +280,7 @@
           {:else if myResult}
             <div class="mb-2 flex items-center gap-3" in:fade={{ duration: 220 }}>
               <span class="verdict grid h-11 w-11 shrink-0 place-items-center rounded-2xl {myResult.correct ? 'verdict-ok' : 'verdict-bad'}">
-                {#if myResult.key}
-                  <DungeonKeyIcon size={22} class="-rotate-45" />
-                {:else if myResult.correct}
+                {#if myResult.correct}
                   <svg viewBox="0 0 24 24" class="h-6 w-6" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 {:else}
                   <svg viewBox="0 0 24 24" class="h-6 w-6" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg>
@@ -330,24 +288,21 @@
               </span>
               <div class="min-w-0 flex-1">
                 {#if myResult.correct}
-                  <p class="text-[1.15rem] font-black leading-tight text-emerald-300">{myResult.key ? 'Aufgeschlossen!' : 'Richtig!'}</p>
+                  <p class="text-[1.15rem] font-black leading-tight text-emerald-300">Richtig!</p>
                   <p class="text-[0.8rem] font-semibold text-amber-50/70">{mine.status === 'out' ? 'Du hast den Ausgang erreicht!' : `Weiter in Raum ${mine.room + 1} von ${rooms}`}</p>
                 {:else if mine.status === 'eliminated'}
                   <p class="text-[1.15rem] font-black leading-tight text-rose-300">Falsch. Alle Türen zu.</p>
                   <p class="text-[0.8rem] font-semibold text-amber-50/70">Du bist ausgeschieden und schaust jetzt zu.</p>
-                {:else if myResult.foundKey}
-                  <p class="text-[1.15rem] font-black leading-tight text-rose-300">Falsch, Tür zu.</p>
-                  <p class="flex items-center gap-1 text-[0.8rem] font-bold text-amber-300"><DungeonKeyIcon size={15} class="-rotate-45" /> Aber du hast einen Schlüssel gefunden!</p>
                 {:else}
                   <p class="text-[1.15rem] font-black leading-tight text-rose-300">Falsch. Die Tür bleibt zu.</p>
                   <p class="text-[0.8rem] font-semibold text-amber-50/70">Noch {openCount} {openCount === 1 ? 'Tür' : 'Türen'} in Raum {mine.room + 1} offen.</p>
                 {/if}
               </div>
             </div>
-            <DungeonPhoneCountdown nextAt={round.nextAt} label={nextLabel} onNext={isHost && playing ? next : null} />
+            <DungeonPhoneNext label={nextLabel} onNext={isHost && playing ? next : null} />
           {:else}
             <p class="mb-2 text-center text-[0.85rem] font-semibold text-amber-50/70">Du hast diese Runde ausgesetzt.</p>
-            <DungeonPhoneCountdown nextAt={round.nextAt} label={nextLabel} onNext={isHost && playing ? next : null} />
+            <DungeonPhoneNext label={nextLabel} onNext={isHost && playing ? next : null} />
           {/if}
         {/if}
       </div>
@@ -377,7 +332,7 @@
       </div>
       <div class="panel shrink-0 rounded-2xl px-3 py-2.5">
         {#if round.stage === 'result' && revealed}
-          <DungeonPhoneCountdown nextAt={round.nextAt} label={nextLabel} onNext={isHost && playing ? next : null} />
+          <DungeonPhoneNext label={nextLabel} onNext={isHost && playing ? next : null} />
         {:else}
           <div class="flex items-center gap-2">
             <p class="min-w-0 flex-1 truncate text-[0.85rem] font-bold text-amber-50/80">{stageText}</p>
@@ -462,21 +417,6 @@
     background: rgba(255, 236, 200, 0.08);
     color: rgba(255, 236, 200, 0.4);
     box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
-  }
-  .key {
-    background: rgba(246, 196, 83, 0.1);
-    color: #ffd36b;
-    box-shadow:
-      inset 0 0 0 1.5px rgba(246, 196, 83, 0.55),
-      0 3px 0 rgba(0, 0, 0, 0.4);
-    -webkit-tap-highlight-color: transparent;
-  }
-  .key:active:not(:disabled) {
-    transform: translateY(3px);
-    box-shadow: inset 0 0 0 1.5px rgba(246, 196, 83, 0.7);
-  }
-  .key:disabled {
-    opacity: 0.45;
   }
   .answer {
     background: rgba(246, 196, 83, 0.1);

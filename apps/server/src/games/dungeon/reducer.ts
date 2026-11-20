@@ -1,4 +1,4 @@
-import { DUNGEON_DEFAULTS, DUNGEON_KEY_AT_WRONG, DUNGEON_RESULT_MS, judgeChoice, judgeFree, judgeMap, judgeTopX, judgeYear, type ClientMsg } from '@quiz/shared';
+import { DUNGEON_DEFAULTS, judgeChoice, judgeFree, judgeMap, judgeTopX, judgeYear, type ClientMsg } from '@quiz/shared';
 import type { Room } from '../../rooms/room.ts';
 import type { DungeonAnswer, DungeonDoor, DungeonRound, PseudoCategory } from '../../rooms/state.ts';
 import { fail, OK, type Result } from '../../rooms/result.ts';
@@ -35,13 +35,13 @@ export function startDungeonRound(room: Room, _category: unknown, opts: StartRou
     rooms,
     stage: 'choosing',
     roundNo: 1,
-    players: Object.fromEntries(turnOrder.map((id) => [id, { room: 0, locked: [], wrong: 0, status: 'in' as const, exitRound: null, key: false, keyFound: false }])),
+    players: Object.fromEntries(turnOrder.map((id) => [id, { room: 0, locked: [], wrong: 0, status: 'in' as const, exitRound: null }])),
     walk: {},
     answers: {},
     skipped: [],
     results: {},
     attempts: [],
-    nextAt: null,
+    resultAt: null,
   };
   room.round = round;
   room.phase = 'playing';
@@ -66,7 +66,7 @@ export function handleDungeonMessage(room: Room, playerId: string, msg: ClientMs
     case 'dungeon_walk':
       return walk(room, playerId, msg.doorId);
     case 'dungeon_enter':
-      return enter(room, playerId, msg.key === true);
+      return enter(room, playerId);
     case 'dungeon_answer':
       return answer(room, playerId, msg);
     case 'dungeon_skip':
@@ -95,46 +95,31 @@ function walk(room: Room, playerId: string, doorId: string | null): Result {
   if (doorId !== null) {
     const doors = r.rooms[p.room] ?? [];
     if (!doors.some((d) => d.id === doorId)) return fail('invalid_action', 'Diese Tür ist nicht in deinem Raum');
-    // Mit Schlüssel darf man auch vor eine verschlossene Tür treten, er schließt jede auf.
-    if (p.locked.includes(doorId) && !p.key) return fail('invalid_action', 'Diese Tür ist für dich verschlossen');
+    if (p.locked.includes(doorId)) return fail('invalid_action', 'Diese Tür ist für dich verschlossen');
   }
   r.walk[playerId] = { doorId, confirmed: false };
   return OK;
 }
 
-function enter(room: Room, playerId: string, key: boolean): Result {
+function enter(room: Room, playerId: string): Result {
   const r = playing(room);
   if (!r || r.stage !== 'choosing') return fail('invalid_action', 'Gerade wird keine Tür gewählt');
-  const p = r.players[playerId];
-  if (p?.status !== 'in' || r.skipped.includes(playerId)) return fail('invalid_action', 'Du bist gerade nicht dran');
+  if (r.players[playerId]?.status !== 'in' || r.skipped.includes(playerId)) return fail('invalid_action', 'Du bist gerade nicht dran');
   const w = r.walk[playerId];
   if (!w?.doorId) return fail('invalid_action', 'Erst eine Tür antippen');
   if (w.confirmed) return fail('invalid_action', 'Du stehst schon in der Tür');
-  if (key && !p.key) return fail('invalid_action', 'Du hast keinen Schlüssel');
-  if (!key && p.locked.includes(w.doorId)) return fail('invalid_action', 'Diese Tür ist für dich verschlossen');
   w.confirmed = true;
-  if (key) w.key = true;
   checkChoosing(room, r);
   return OK;
 }
 
-/**
- * Alle Aktiven stehen in ihrer Tür: die Fragerunde beginnt. Wer mit Schlüssel kommt, ist sofort durch (der Schlüssel
- * ist weg). Ohne Aktive oder wenn nur Schlüssel im Spiel sind, geht es gleich zum Ergebnis.
- */
+/** Alle Aktiven stehen in ihrer Tür: die Fragerunde beginnt. Ohne Aktive geht es gleich zum Ergebnis. */
 function checkChoosing(room: Room, r: DungeonRound): void {
   if (r.stage !== 'choosing') return;
   const active = activeIds(r);
   if (!active.every((id) => r.walk[id]?.confirmed)) return;
   r.stage = 'answering';
   r.answers = {};
-  for (const id of active) {
-    const w = r.walk[id];
-    const p = r.players[id];
-    if (!w?.key || !w.doorId || !p) continue;
-    p.key = false;
-    r.answers[id] = { doorId: w.doorId, text: 'Schlüssel', correct: true, key: true };
-  }
   checkAnswering(room, r);
 }
 
@@ -191,10 +176,7 @@ function checkAnswering(room: Room, r: DungeonRound): void {
   if (activeIds(r).every((id) => r.answers[id])) resolve(room, r);
 }
 
-/**
- * Alle haben geantwortet: richtig heißt weiter, falsch heißt Tür zu. Beim zweiten Fehlversuch liegt einmal je Dungeon
- * ein Schlüssel bereit. Alle Türen zu und kein Schlüssel heißt ausgeschieden. Danach läuft die Uhr zur nächsten Türwahl.
- */
+/** Alle haben geantwortet: richtig heißt weiter, falsch heißt Tür zu, alle Türen zu heißt ausgeschieden. */
 function resolve(room: Room, r: DungeonRound): void {
   r.results = {};
   for (const id of activeIds(r)) {
@@ -202,8 +184,7 @@ function resolve(room: Room, r: DungeonRound): void {
     const p = r.players[id];
     if (!a || !p) continue;
     r.attempts.push({ ...a, roundNo: r.roundNo, room: p.room, playerId: id });
-    const result: DungeonRound['results'][string] = { doorId: a.doorId, room: p.room, correct: a.correct, ...(a.key ? { key: true } : {}) };
-    r.results[id] = result;
+    r.results[id] = { doorId: a.doorId, room: p.room, correct: a.correct };
     if (a.correct) {
       p.room++;
       p.locked = [];
@@ -214,23 +195,11 @@ function resolve(room: Room, r: DungeonRound): void {
     } else {
       p.wrong++;
       if (!p.locked.includes(a.doorId)) p.locked.push(a.doorId);
-      if (!p.keyFound && p.wrong >= DUNGEON_KEY_AT_WRONG) {
-        p.key = true;
-        p.keyFound = true;
-        result.foundKey = true;
-      }
-      if (p.locked.length >= (r.rooms[p.room]?.length ?? 0) && !p.key) p.status = 'eliminated';
+      if (p.locked.length >= (r.rooms[p.room]?.length ?? 0)) p.status = 'eliminated';
     }
   }
   r.stage = 'result';
-  r.nextAt = room.now + DUNGEON_RESULT_MS;
-  room.cancelTimer('placement');
-  room.timers.placement = room.scheduler.schedule(DUNGEON_RESULT_MS, () => {
-    room.timers.placement = null;
-    if (room.round !== r || room.phase !== 'playing' || r.stage !== 'result') return;
-    advance(room, r);
-    room.emit();
-  });
+  r.resultAt = room.now;
 }
 
 // --------------------------------------------------------------- Host
@@ -259,8 +228,7 @@ function next(room: Room, hostId: string): Result {
 
 /** Vom Ergebnis zur nächsten Türwahl, oder zur Auswertung, wenn niemand mehr drin ist. */
 function advance(room: Room, r: DungeonRound): void {
-  room.cancelTimer('placement');
-  r.nextAt = null;
+  r.resultAt = null;
   if (!r.turnOrder.some((id) => r.players[id]?.status === 'in')) {
     toReveal(room);
     return;

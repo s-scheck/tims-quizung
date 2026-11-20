@@ -46,7 +46,6 @@
   const n = $derived(Math.max(1, doors.length));
   const mine = $derived(meId ? round.players[meId] : undefined);
   const lockedRaw = $derived(mine?.locked ?? []);
-  const hasKey = $derived(!!mine?.key && mine.status === 'in');
 
   let W = $state(0);
   let H = $state(0);
@@ -126,8 +125,6 @@
     pose: Pose;
     gone: boolean;
     dim: boolean;
-    /** Schlüssel in der Hand (mit Schlüssel bestätigt) oder in der Tasche. */
-    key: 'held' | 'pocket' | null;
     phase: Phase;
   }
 
@@ -152,20 +149,18 @@
       const phase = res ? phaseOf(id) : 'done';
       const startX = ids.length === 1 ? g.w / 2 : g.w * (0.14 + (k / (ids.length - 1)) * 0.72);
       const start = { x: startX, y: g.front };
-      const pocket = p?.key ? ('pocket' as const) : null;
-      if (p?.status === 'eliminated' && !res) return { id, ...start, pose: 'sad', gone: false, dim: true, key: null, phase };
-      if (i < 0) return { id, ...start, pose: 'idle', gone: false, dim: round.skipped.includes(id), key: pocket, phase };
+      if (p?.status === 'eliminated' && !res) return { id, ...start, pose: 'sad', gone: false, dim: true, phase };
+      if (i < 0) return { id, ...start, pose: 'idle', gone: false, dim: round.skipped.includes(id), phase };
       const group = atDoor.get(doorId!) ?? [id];
       const offset = (group.indexOf(id) - (group.length - 1) / 2) * Math.min(g.dw / Math.max(group.length, 1), g.dw * 0.42);
       const x = doorCx(g, i) + offset;
       if (res && phase !== 'pending') {
-        if (res.correct) return { id, x: doorCx(g, i), y: g.hy - g.dh * 0.06, pose: 'walk', gone: true, dim: false, key: null, phase };
+        if (res.correct) return { id, x: doorCx(g, i), y: g.hy - g.dh * 0.06, pose: 'walk', gone: true, dim: false, phase };
         // Zurückgestoßen: ein Stück in den Raum, leicht zur Seite.
-        return { id, x: x + (offset >= 0 ? 1 : -1) * g.dw * 0.25, y: g.hy + floor * 0.42, pose: 'sad', gone: false, dim: p?.status === 'eliminated', key: pocket, phase };
+        return { id, x: x + (offset >= 0 ? 1 : -1) * g.dw * 0.25, y: g.hy + floor * 0.42, pose: 'sad', gone: false, dim: p?.status === 'eliminated', phase };
       }
-      const held = res?.key || w?.key ? ('held' as const) : null;
-      if (res || w?.confirmed) return { id, x, y: g.hy + floor * 0.03, pose: 'still', gone: false, dim: false, key: held ?? pocket, phase };
-      return { id, x, y: g.hy + floor * 0.2, pose: 'idle', gone: false, dim: false, key: pocket, phase };
+      if (res || w?.confirmed) return { id, x, y: g.hy + floor * 0.03, pose: 'still', gone: false, dim: false, phase };
+      return { id, x, y: g.hy + floor * 0.2, pose: 'idle', gone: false, dim: false, phase };
     });
   });
 
@@ -202,9 +197,7 @@
     open: boolean;
     gate: boolean;
     slam: boolean;
-    spark: boolean;
     tense: boolean;
-    unlockable: boolean;
   }
 
   const doorStates = $derived.by((): DoorState[] =>
@@ -222,18 +215,9 @@
         open,
         gate,
         slam: wrongShown.some((id) => phaseOf(id) === 'reveal'),
-        spark: here.some((id) => res(id).key && phaseOf(id) === 'reveal'),
         tense: suspense && standing,
-        unlockable: hasKey && locked.has(door.id) && round.stage === 'choosing',
       };
     }),
-  );
-
-  /** Gefundene Schlüssel, die gerade zur Figur fliegen. */
-  const flyingKeys = $derived(
-    round.stage === 'result' && t0 !== null
-      ? spots.filter((s) => round.results?.[s.id]?.foundKey && s.phase === 'reveal').map((s) => ({ s, i: doorIndex(round.results![s.id]!.doorId) }))
-      : [],
   );
 
   /** Spuren an der Tür ohne die Versuche, deren Auflösung noch aussteht (sonst verrät die Tür das Ergebnis). */
@@ -249,17 +233,11 @@
     return out;
   }
 
-  function tryMark(t: { correct: boolean; key?: boolean }): string {
-    return t.key ? 'key' : t.correct ? 'ok' : 'bad';
+  function tryMark(t: { correct: boolean }): string {
+    return t.correct ? 'ok' : 'bad';
   }
 </script>
 
-{#snippet keyIcon(size: number)}
-  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" class="key-icon">
-    <circle cx="7" cy="12" r="4.6" fill="none" stroke="currentColor" stroke-width="2.6" />
-    <path d="M11.2 12H21.5M18 12v3.6M15 12v2.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
-  </svg>
-{/snippet}
 
 <div
   class="scene relative w-full select-none overflow-hidden {compact ? 'rounded-xl' : 'rounded-2xl'}"
@@ -420,23 +398,6 @@
               {/each}
             </g>
           </g>
-          {#if st.unlockable}
-            <!-- Mit Schlüssel aufschließbar: Schlüsselloch glänzt -->
-            <g class="keyglint">
-              <circle cx={cx} cy={top + g.dh * 0.58} r={g.dw * 0.28} fill="url(#{uid}-torch)" />
-              <circle cx={cx} cy={top + g.dh * 0.55} r={g.dw * 0.06} fill="#ffe28a" />
-              <path d="M{cx - g.dw * 0.04} {top + g.dh * 0.57}L{cx + g.dw * 0.04} {top + g.dh * 0.57}L{cx + g.dw * 0.025} {top + g.dh * 0.64}L{cx - g.dw * 0.025} {top + g.dh * 0.64}Z" fill="#ffe28a" />
-            </g>
-          {/if}
-          {#if st.spark}
-            <g class="spark" style="transform-origin: {cx}px {top + g.dh * 0.55}px">
-              {#each Array.from({ length: 8 }, (_, k) => k) as k (k)}
-                {@const a = (k / 8) * Math.PI * 2}
-                <line x1={cx} y1={top + g.dh * 0.55} x2={cx + Math.cos(a) * g.dw * 0.45} y2={top + g.dh * 0.55 + Math.sin(a) * g.dw * 0.45} stroke="#ffe7a0" stroke-width={Math.max(1, g.dw * 0.03)} stroke-linecap="round" />
-              {/each}
-              <circle cx={cx} cy={top + g.dh * 0.55} r={g.dw * 0.12} fill="#fff6d0" />
-            </g>
-          {/if}
         </g>
         {#if selected === door.id}
           <path d={archPath(cx, g.hy, g.dw + g.fw * 2.6, g.dh + g.fw * 1.3)} fill="none" stroke="#fcd34d" stroke-width={compact ? 1.5 : 2.5} class="sel-ring" />
@@ -477,7 +438,7 @@
       {@const cx = doorCx(g, i)}
       <div
         class="plaque pointer-events-none absolute text-center leading-tight {selected === door.id ? 'sel' : ''}"
-        class:dimmed={isLocked && !hasKey}
+        class:dimmed={isLocked}
         style="left:{cx}px; top:{doorTop(g) - g.fw * 1.25}px; width:{Math.min(g.slot * 0.94, g.dw * (compact ? 1.5 : 1.75))}px; max-height:{g.ph}px"
       >
         <span class="block truncate font-black text-amber-100" style="font-size:{compact ? Math.max(6, Math.min(11, g.ph * 0.62)) : Math.max(9, Math.min(13, g.slot * 0.15))}px"
@@ -498,9 +459,9 @@
         >
           {#each shown as t, k (k)}
             {@const parts = figureById(view, t.playerId)}
-            <span class="mark {tryMark(t)}" title={t.key ? 'mit Schlüssel' : t.correct ? 'geschafft' : 'gescheitert'}>
+            <span class="mark {tryMark(t)}" title={t.correct ? 'geschafft' : 'gescheitert'}>
               {#if !compact && parts}<MiniHead {parts} size={Math.min(13, g.slot * 0.15)} />{/if}
-              {#if t.key}{@render keyIcon(compact ? 6 : 10)}{:else}<i>{t.correct ? '✓' : '✗'}</i>{/if}
+              <i>{t.correct ? '✓' : '✗'}</i>
             </span>
           {/each}
           {#if tries.length > shown.length}<span class="more">+{tries.length - shown.length}</span>{/if}
@@ -510,8 +471,8 @@
         <button
           class="door absolute"
           style="left:{cx - g.dw / 2 - g.fw}px; top:{doorTop(g) - g.fw * 1.25 - g.ph}px; width:{g.dw + g.fw * 2}px; height:{g.dh + g.fw * 1.25 + g.ph}px"
-          disabled={!interactive || (isLocked && !hasKey)}
-          aria-label="{door.title}, {doorFormat(door)}{isLocked ? (hasKey ? ', verschlossen, mit Schlüssel zu öffnen' : ', verschlossen') : ''}"
+          disabled={!interactive || isLocked}
+          aria-label="{door.title}, {doorFormat(door)}{isLocked ? ', verschlossen' : ''}"
           onclick={() => onPick?.(door.id)}
         ></button>
       {/if}
@@ -528,25 +489,12 @@
         style="left:{s.x}px; top:{s.y}px; z-index:{Math.round(s.y)}; transform: translate(-50%, -100%) scale({scaleAt(s.y) * (s.gone ? 0.82 : 1)})"
       >
         <Figure {parts} size={sizeFront} pose={isMoving(s.id) && s.pose !== 'sad' ? 'walk' : s.pose} seed={s.id.charCodeAt(0)} />
-        {#if s.key}
-          <span class="figure-key {s.key}" style="font-size:{sizeFront * 0.2}px">{@render keyIcon(sizeFront * (s.key === 'held' ? 0.2 : 0.14))}</span>
-        {/if}
         {#if s.id === meId && !compact}
           <span class="me-tag absolute left-1/2 -translate-x-1/2 rounded-full bg-amber-300 px-1.5 font-black text-slate-900" style="top:{-Math.max(10, sizeFront * 0.1)}px; font-size:{Math.max(10, 10 / scaleAt(s.y))}px">Du</span>
         {/if}
       </div>
     {/each}
 
-    <!-- Gefundener Schlüssel: blitzt über der Tür auf und fliegt zur Figur -->
-    {#each flyingKeys as f (f.s.id)}
-      {#if f.i >= 0}
-        <span
-          class="flying-key pointer-events-none absolute"
-          style="left:{doorCx(g, f.i)}px; top:{doorTop(g) + g.dh * 0.2}px; --tx:{f.s.x - doorCx(g, f.i)}px; --ty:{f.s.y - sizeFront * scaleAt(f.s.y) * 0.55 - doorTop(g) - g.dh * 0.2}px; z-index:999"
-          >{@render keyIcon(Math.max(14, g.dw * 0.42))}</span
-        >
-      {/if}
-    {/each}
   {/if}
 </div>
 
@@ -685,31 +633,6 @@
       transform: translate(-1px, 0);
     }
   }
-  .keyglint {
-    animation: glint 1.6s ease-in-out infinite;
-  }
-  @keyframes glint {
-    0%,
-    100% {
-      opacity: 0.55;
-    }
-    50% {
-      opacity: 1;
-    }
-  }
-  .spark {
-    animation: spark 600ms ease-out forwards;
-  }
-  @keyframes spark {
-    0% {
-      transform: scale(0.2);
-      opacity: 1;
-    }
-    100% {
-      transform: scale(1.5);
-      opacity: 0;
-    }
-  }
   .sel-ring {
     filter: drop-shadow(0 0 6px rgb(252 211 77 / 0.8));
   }
@@ -759,9 +682,6 @@
   .mark.bad {
     color: #fda4af;
   }
-  .mark.key {
-    color: #fcd34d;
-  }
   .tries.compact .mark {
     padding: 0 1px;
     font-size: 6px;
@@ -807,55 +727,13 @@
   .walker.dim {
     filter: grayscale(1) brightness(0.55);
   }
-  .figure-key {
-    position: absolute;
-    right: -4%;
-    top: 46%;
-    color: #fcd34d;
-    filter: drop-shadow(0 0 4px rgb(252 211 77 / 0.7));
-  }
-  .figure-key.pocket {
-    top: 58%;
-    right: 2%;
-    opacity: 0.9;
-  }
-  .key-icon {
-    display: block;
-  }
-  .flying-key {
-    color: #fde68a;
-    transform: translate(-50%, -50%);
-    filter: drop-shadow(0 0 8px rgb(253 230 138 / 0.95));
-    animation: fly-key 1000ms cubic-bezier(0.5, 0, 0.3, 1) forwards;
-  }
-  @keyframes fly-key {
-    0% {
-      transform: translate(-50%, -50%) scale(0.2) rotate(-40deg);
-      opacity: 0;
-    }
-    30% {
-      transform: translate(-50%, -50%) scale(1.5) rotate(10deg);
-      opacity: 1;
-    }
-    45% {
-      transform: translate(-50%, -50%) scale(1.3) rotate(0deg);
-      opacity: 1;
-    }
-    100% {
-      transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0.5) rotate(20deg);
-      opacity: 0;
-    }
-  }
   @media (prefers-reduced-motion: reduce) {
     .flame,
     .flicker,
     .ember,
     .mote,
     .tense,
-    .slam,
-    .keyglint,
-    .spark,
-    .flying-key {
+    .slam {
       animation: none;
     }
     .walker,

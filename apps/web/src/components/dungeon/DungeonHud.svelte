@@ -1,9 +1,8 @@
 <script lang="ts">
-  import DungeonKeyIcon from './DungeonKeyIcon.svelte';
 
   /**
-   * Dünne Kopfzeile über dem Handy-Dungeon (40 px): Menü, Fortschritt als Raum-Leiste mit Ausgang, Fehlversuche,
-   * der Schlüssel (leuchtet, solange man ihn hat) und der Stummschalter. Ohne `room` (Host, Zuschauer) steht dort
+   * Dünne Kopfzeile über dem Handy-Dungeon (40 px): Menü, Fortschritt als Raum-Leiste mit Ausgang, Fehlversuche
+   * und Stummschalter. Ohne `room` (Host, Zuschauer) steht dort
    * nur die Überschrift.
    */
   let {
@@ -12,7 +11,6 @@
     out = false,
     eliminated = false,
     wrong = 0,
-    hasKey = false,
     title = '',
     muted,
     offline = false,
@@ -25,7 +23,6 @@
     out?: boolean;
     eliminated?: boolean;
     wrong?: number;
-    hasKey?: boolean;
     title?: string;
     muted: boolean;
     offline?: boolean;
@@ -70,11 +67,6 @@
       <span class="glass flex h-10 items-center gap-0.5 rounded-xl px-2.5 text-[0.8rem] font-black text-rose-300" aria-label="{wrong} Fehlversuche">
         <svg viewBox="0 0 12 12" class="h-2.5 w-2.5" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></svg>
         <span class="tabular-nums">{wrong}</span>
-      </span>
-    {/if}
-    {#if hasKey}
-      <span class="key glass grid h-10 w-10 place-items-center rounded-xl" title="Du hast einen Schlüssel" aria-label="Schlüssel">
-        <DungeonKeyIcon size={22} class="-rotate-45" />
       </span>
     {/if}
     <button class="glass grid h-10 w-10 place-items-center rounded-xl text-amber-50/75" aria-label={muted ? 'Ton an' : 'Ton aus'} onclick={onMute}>
@@ -124,25 +116,5 @@
   .gate-open {
     background: linear-gradient(#fff4c8, #f6c453);
     box-shadow: 0 0 8px rgba(255, 220, 120, 0.8);
-  }
-  .key {
-    color: #ffd36b;
-    background: radial-gradient(circle, rgba(246, 196, 83, 0.28), rgba(18, 14, 10, 0.62) 70%);
-    box-shadow:
-      inset 0 0 0 1px rgba(255, 211, 107, 0.55),
-      0 0 14px rgba(246, 196, 83, 0.35);
-    animation: key-glow 2.4s ease-in-out infinite;
-  }
-  @keyframes key-glow {
-    50% {
-      box-shadow:
-        inset 0 0 0 1px rgba(255, 211, 107, 0.8),
-        0 0 20px rgba(246, 196, 83, 0.55);
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .key {
-      animation: none;
-    }
   }
 </style>

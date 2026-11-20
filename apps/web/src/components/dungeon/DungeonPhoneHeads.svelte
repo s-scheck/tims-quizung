@@ -10,9 +10,8 @@
     const res = round.stage === 'result' ? round.results?.[id] : undefined;
     if (res) {
       if (!revealed) return { badge: 'busy', text: 'Tür öffnet sich …', waiting: false };
-      if (res.key) return { badge: 'right', text: p.status === 'out' ? 'aufgeschlossen, draußen!' : `aufgeschlossen, weiter in Raum ${p.room + 1}`, waiting: false };
       if (res.correct) return { badge: 'right', text: p.status === 'out' ? 'richtig, draußen!' : `richtig, weiter in Raum ${p.room + 1}`, waiting: false };
-      return { badge: 'wrong', text: p.status === 'eliminated' ? 'falsch, ausgeschieden' : res.foundKey ? 'falsch, hat einen Schlüssel gefunden' : 'falsch, Tür zu', waiting: false };
+      return { badge: 'wrong', text: p.status === 'eliminated' ? 'falsch, ausgeschieden' : 'falsch, Tür zu', waiting: false };
     }
     if (p.status === 'out') return { badge: 'out', text: `draußen nach ${p.exitRound} Fragerunden`, waiting: false };
     if (p.status === 'eliminated') return { badge: 'dead', text: `ausgeschieden in Raum ${p.room + 1}`, waiting: false };
@@ -23,7 +22,7 @@
       return { badge: 'busy', text: w?.doorId ? `geht zu einer Tür · Raum ${p.room + 1}` : `wählt eine Tür · Raum ${p.room + 1}`, waiting: true };
     }
     if (round.stage === 'answering') {
-      if (round.answered.includes(id)) return { badge: 'ready', text: round.walk[id]?.key ? 'hat aufgeschlossen' : 'hat geantwortet', waiting: false };
+      if (round.answered.includes(id)) return { badge: 'ready', text: 'hat geantwortet', waiting: false };
       return { badge: 'busy', text: 'antwortet …', waiting: true };
     }
     return { badge: 'none', text: `Raum ${p.room + 1}`, waiting: false };
@@ -35,7 +34,6 @@
   import type { RoomView } from '@quiz/shared';
   import { playerName } from '../../lib/format.ts';
   import PlayerHead from '../PlayerHead.svelte';
-  import DungeonKeyIcon from './DungeonKeyIcon.svelte';
 
   /**
    * Kompakte Reihe Köpfe mit Status-Abzeichen (✓ bereit, … wählt, ✓/✗ Ergebnis). Antippen zeigt Name und Status,
@@ -83,9 +81,6 @@
         onclick={() => (open = open === id ? null : id)}
       >
         <PlayerHead {view} {id} size={size} />
-        {#if p?.key}
-          <span class="absolute -left-1 -top-1 grid h-3.5 w-3.5 place-items-center rounded-full bg-[#2a1d08] text-[#ffd36b] ring-1 ring-[#ffd36b]/60"><DungeonKeyIcon size={10} /></span>
-        {/if}
         {#if st.badge !== 'none'}
           <span class="badge-{st.badge} absolute -bottom-0.5 -right-1 grid h-[15px] min-w-[15px] place-items-center rounded-full px-[2px] text-[9px] font-black leading-none">
             {#if st.badge === 'ready' || st.badge === 'right'}

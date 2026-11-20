@@ -254,7 +254,6 @@ export function isClientMsg(x: unknown): x is ClientMsg {
     case 'dungeon_skip':
       return isStr(x.playerId, 100);
     case 'dungeon_enter':
-      return x.key === undefined || typeof x.key === 'boolean';
     case 'dungeon_next':
     case 'splash_close':
     case 'splash_release':

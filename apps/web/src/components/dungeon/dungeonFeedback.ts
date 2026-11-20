@@ -44,7 +44,7 @@ interface Snapshot {
 
 let prev: Snapshot | null = null;
 let timers: ReturnType<typeof setTimeout>[] = [];
-let lastTap: Partial<Record<'door' | 'enter' | 'key' | 'answer', number>> = {};
+let lastTap: Partial<Record<'door' | 'enter' | 'answer', number>> = {};
 
 function later(ms: number, fn: () => void): void {
   if (ms <= 0) fn();
@@ -58,7 +58,7 @@ function clearLater(): void {
 
 const tappedRecently = (kind: keyof typeof lastTap, ms = 1500) => Date.now() - (lastTap[kind] ?? 0) < ms;
 
-/** Bei jedem neuen Stand aufrufen: erkennt Wechsel (Laufen, Bestätigen, Ergebnis, Schlüssel) und spielt passend. */
+/** Bei jedem neuen Stand aufrufen: erkennt Wechsel (Laufen, Bestätigen, Ergebnis) und spielt passend. */
 export function dungeonRoundFeedback(round: DungeonRoundView, me: string | null): void {
   const mine = me ? round.players[me] : undefined;
   const myRoom = me && round.results?.[me] ? round.results[me]!.room : (mine?.room ?? -1);
@@ -86,7 +86,7 @@ export function dungeonRoundFeedback(round: DungeonRoundView, me: string | null)
     if (stageChanged && before.stage === 'result') dungeonSound.newRound();
     if (snap.myDoor && snap.myDoor !== before.myDoor && !tappedRecently('door')) dungeonSound.steps(4, 0.07);
     else if (snap.others !== before.others && before.roundNo === snap.roundNo) dungeonSound.steps(3, 0.03);
-    if (snap.myConfirmed && !before.myConfirmed && !tappedRecently('enter') && !tappedRecently('key')) {
+    if (snap.myConfirmed && !before.myConfirmed && !tappedRecently('enter')) {
       dungeonSound.creak();
       dungeonHaptics.enter();
     }
@@ -114,7 +114,6 @@ function playResult(round: DungeonRoundView, me: string | null, live: boolean): 
     const own = id === me;
     const gain = own ? 1 : 0.45;
     later(dungeonRevealAt(k) - offset, () => {
-      if (res.key) dungeonSound.key(true);
       if (res.correct) {
         dungeonSound.correct(gain);
         if (own) dungeonHaptics.correct();
@@ -123,12 +122,6 @@ function playResult(round: DungeonRoundView, me: string | null, live: boolean): 
         if (own) dungeonHaptics.wrong();
       }
     });
-    if (own && res.foundKey) {
-      later(dungeonRevealAt(k) - offset + 750, () => {
-        dungeonSound.key(false);
-        dungeonHaptics.key();
-      });
-    }
     if (own && res.correct && round.players[id]?.status === 'out') later(dungeonRevealAt(k) - offset + 900, () => {
       dungeonSound.exit();
       dungeonHaptics.exit();
@@ -137,7 +130,7 @@ function playResult(round: DungeonRoundView, me: string | null, live: boolean): 
 }
 
 /** Eigene Handlungen sofort hörbar machen, ohne auf den Server zu warten. */
-export function dungeonTapFeedback(kind: 'door' | 'enter' | 'key' | 'answer'): void {
+export function dungeonTapFeedback(kind: 'door' | 'enter' | 'answer'): void {
   wakeAudio();
   lastTap = { ...lastTap, [kind]: Date.now() };
   switch (kind) {
@@ -148,10 +141,6 @@ export function dungeonTapFeedback(kind: 'door' | 'enter' | 'key' | 'answer'): v
     case 'enter':
       dungeonSound.creak();
       dungeonHaptics.enter();
-      break;
-    case 'key':
-      dungeonSound.key(true);
-      dungeonHaptics.key();
       break;
     case 'answer':
       dungeonSound.answer();

@@ -49,9 +49,8 @@
     return out;
   });
 
-  /** Antwort kurz: Karte nur mit Entfernung (Koordinaten sagen niemandem etwas), Schlüssel als solcher. */
+  /** Antwort kurz: Karte nur mit Entfernung (Koordinaten sagen niemandem etwas). */
   function answerText(a: DungeonAttemptView, door: DungeonDoorView): string {
-    if (a.key) return 'mit Schlüssel';
     if (door.kind === 'map') return a.detail ?? 'Pin gesetzt';
     return a.detail ? `${a.answer} · ${a.detail}` : a.answer;
   }
@@ -112,14 +111,14 @@
       {#each l.attempts as a, i (i)}
         {#if tv}
           <li class="chip inline-flex max-w-full items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-semibold {a.correct ? 'ok' : 'bad'}">
-            <span class="font-black">{a.key ? '🗝' : a.correct ? '✓' : '✗'}</span>
+            <span class="font-black">{a.correct ? '✓' : '✗'}</span>
             <PlayerHead {view} id={a.playerId} size={16} />
             <span class="truncate">{playerName(view, a.playerId)}</span>
-            {#if !a.key && (l.door.kind === 'map' || l.door.kind === 'timeline') && a.detail}<span class="opacity-70">· {a.detail.replace(' entfernt', '')}</span>{/if}
+            {#if (l.door.kind === 'map' || l.door.kind === 'timeline') && a.detail}<span class="opacity-70">· {a.detail.replace(' entfernt', '')}</span>{/if}
           </li>
         {:else}
           <li class="flex items-start gap-1.5 {a.correct ? 'text-emerald-200' : 'text-stone-400'}">
-            <span class="w-4 shrink-0 text-center font-black">{a.key ? '🗝' : a.correct ? '✓' : '✗'}</span>
+            <span class="w-4 shrink-0 text-center font-black">{a.correct ? '✓' : '✗'}</span>
             <PlayerHead {view} id={a.playerId} size={16} />
             <span class="mw0 break-words"><span class="font-semibold">{playerName(view, a.playerId)}:</span> {answerText(a, l.door)}</span>
           </li>

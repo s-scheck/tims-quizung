@@ -39,11 +39,6 @@ export interface DungeonOptions {
   formats: DungeonFormat[];
 }
 
-/** So lange steht das Ergebnis einer Fragerunde, dann geht es von selbst zur nächsten Türwahl (der Host kann früher). */
-export const DUNGEON_RESULT_MS = 9000;
-/** Beim wievielten Fehlversuch man einen Schlüssel findet (einmal je Dungeon, Aufholhilfe). */
-export const DUNGEON_KEY_AT_WRONG = 2;
-
 export const DUNGEON_DEFAULTS: DungeonOptions = { rooms: 5, doors: 4, formats: [...DUNGEON_FORMATS] };
 
 export function isDungeonOptions(x: unknown): x is DungeonOptions {

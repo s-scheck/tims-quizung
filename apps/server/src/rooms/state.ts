@@ -497,10 +497,6 @@ export interface DungeonPlayer {
   wrong: number;
   status: DungeonStatus;
   exitRound: number | null;
-  /** Hält einen Schlüssel. */
-  key: boolean;
-  /** Schlüssel schon gefunden (nur einer je Dungeon). */
-  keyFound: boolean;
 }
 
 export interface DungeonAnswer {
@@ -509,8 +505,6 @@ export interface DungeonAnswer {
   text: string;
   correct: boolean;
   detail?: string;
-  /** Mit Schlüssel aufgeschlossen. */
-  key?: boolean;
 }
 
 export interface DungeonAttempt extends DungeonAnswer {
@@ -527,13 +521,13 @@ export interface DungeonRound extends BaseRound {
   stage: 'choosing' | 'answering' | 'result';
   roundNo: number;
   players: Record<string, DungeonPlayer>;
-  walk: Record<string, { doorId: string | null; confirmed: boolean; key?: boolean }>;
+  walk: Record<string, { doorId: string | null; confirmed: boolean }>;
   answers: Record<string, DungeonAnswer>;
   skipped: string[];
-  results: Record<string, { doorId: string; room: number; correct: boolean; key?: boolean; foundKey?: boolean }>;
+  results: Record<string, { doorId: string; room: number; correct: boolean }>;
   attempts: DungeonAttempt[];
-  /** Serverzeit, zu der das Ergebnis von selbst zur nächsten Türwahl weitergeht. */
-  nextAt: number | null;
+  /** Serverzeit, seit der das Ergebnis steht. */
+  resultAt: number | null;
 }
 
 // -------------------------------------------------------------- Hochstapler

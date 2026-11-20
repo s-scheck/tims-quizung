@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount, untrack } from 'svelte';
-  import { DUNGEON_RESULT_MS, dungeonRanking, type DungeonDoorTry, type DungeonPlayerView, type DungeonRoundView, type RoomView } from '@quiz/shared';
+  import { dungeonRanking, type DungeonDoorTry, type DungeonPlayerView, type DungeonRoundView, type RoomView } from '@quiz/shared';
   import { client } from '../../lib/client.svelte.ts';
   import { playerName } from '../../lib/format.ts';
   import PlayerHead from '../PlayerHead.svelte';
@@ -32,10 +32,8 @@
   onDestroy(() => timer && clearInterval(timer));
 
   /** Seit wann (Serverzeit) das Ergebnis steht; daraus folgt das Ende der Spannung, auch nach dem Neuladen. */
-  const resultStart = $derived(round.stage === 'result' && round.nextAt !== null ? round.nextAt - DUNGEON_RESULT_MS : null);
+  const resultStart = $derived(round.stage === 'result' ? round.resultAt : null);
   const suspense = $derived(round.stage === 'result' && resultStart !== null && now < resultStart + DUNGEON_SUSPENSE_MS);
-  const secondsLeft = $derived(round.stage === 'result' && round.nextAt !== null ? Math.max(0, Math.ceil((round.nextAt - now) / 1000)) : null);
-  const countdown = $derived(round.stage === 'result' && round.nextAt !== null && resultStart !== null ? Math.min(1, Math.max(0, (round.nextAt - now) / (round.nextAt - resultStart))) : null);
 
   /** Stand je Spieler, wie er gezeigt wird: während der Spannung noch vor dem Ergebnis. */
   function shown(id: string): DungeonPlayerView | undefined {
@@ -48,8 +46,6 @@
       status: 'in',
       exitRound: null,
       wrong: p.wrong - (r.correct ? 0 : 1),
-      key: r.key ? true : r.foundKey ? false : p.key,
-      keyFound: r.foundKey ? false : p.keyFound,
     };
   }
   const ids = $derived(round.turnOrder.filter((id) => round.players[id]));
@@ -98,17 +94,17 @@
     const res = round.stage === 'result' ? round.results?.[id] : undefined;
     if (res && suspense) return { text: 'Tür öffnet sich …', tone: 'busy' };
     if (res) {
-      if (p.status === 'out') return { text: res.key ? '🗝 draußen!' : 'draußen!', tone: 'gold' };
-      if (res.correct) return { text: res.key ? '🗝 aufgeschlossen' : 'richtig', tone: 'ok' };
+      if (p.status === 'out') return { text: 'draußen!', tone: 'gold' };
+      if (res.correct) return { text: 'richtig', tone: 'ok' };
       if (p.status === 'eliminated') return { text: 'sitzt fest', tone: 'bad' };
-      return { text: res.foundKey ? 'falsch · 🗝 gefunden' : 'falsch', tone: 'bad' };
+      return { text: 'falsch', tone: 'bad' };
     }
     if (p.status === 'out') return { text: `draußen · Platz ${placeOf(id)}`, tone: 'gold' };
     if (p.status === 'eliminated') return { text: 'sitzt fest', tone: 'off' };
     if (round.skipped.includes(id)) return { text: 'setzt aus', tone: 'off' };
     if (round.stage === 'choosing') {
       const w = round.walk[id];
-      if (w?.confirmed) return { text: w.key ? 'zückt den Schlüssel' : 'in der Tür', tone: 'ok' };
+      if (w?.confirmed) return { text: 'in der Tür', tone: 'ok' };
       return w?.doorId ? { text: 'geht zu einer Tür', tone: 'busy' } : { text: 'wählt …', tone: 'wait' };
     }
     if (round.stage === 'answering') return round.answered.includes(id) ? { text: '✓ geantwortet', tone: 'ok' } : { text: 'denkt nach …', tone: 'wait' };
@@ -128,7 +124,7 @@
       prevRound = next;
       if (fresh.length === 0) return;
       const t = performance.now();
-      const start = next.nextAt !== null ? next.nextAt - DUNGEON_RESULT_MS : client.serverNow();
+      const start = next.resultAt ?? client.serverNow();
       const wait = Math.max(0, start + DUNGEON_SUSPENSE_MS - client.serverNow());
       const items = fresh.map((f, i) => ({ ...f.event, id: nextId++, at: t, result: f.result, showAt: t + (f.result ? wait + 500 + i * DUNGEON_STAGGER_MS * 2 : 0) }));
       ticker = [...items, ...ticker].slice(0, 14);
@@ -226,16 +222,9 @@
           {#each waiting as id (id)}<span class="waiting rounded-full"><PlayerHead {view} {id} size={26} /></span>{/each}
         </span>
       {/if}
-      {#if round.stage === 'result' && !suspense && secondsLeft !== null}
-        <span class="ml-auto flex shrink-0 items-center gap-2 text-base font-bold text-stone-400">
-          {ids.some((id) => round.players[id]?.status === 'in') ? 'Nächste Türwahl in' : 'Auswertung in'}
-          <span class="relative grid h-10 w-10 place-items-center">
-            <svg viewBox="0 0 40 40" class="absolute inset-0 -rotate-90" aria-hidden="true">
-              <circle cx="20" cy="20" r="17" fill="none" stroke="rgb(255 255 255 / 0.1)" stroke-width="3.5" />
-              <circle cx="20" cy="20" r="17" fill="none" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round" stroke-dasharray={2 * Math.PI * 17} stroke-dashoffset={2 * Math.PI * 17 * (1 - (countdown ?? 0))} style="transition: stroke-dashoffset 200ms linear" />
-            </svg>
-            <span class="font-mono text-lg font-black text-amber-200">{secondsLeft}</span>
-          </span>
+      {#if round.stage === 'result' && !suspense}
+        <span class="ml-auto shrink-0 text-base font-bold text-stone-400">
+          {ids.some((id) => round.players[id]?.status === 'in') ? 'Gleich: nächste Türwahl' : 'Gleich: Auswertung'}
         </span>
       {/if}
     </div>
@@ -315,7 +304,6 @@
             {/each}
             <span class="pip exit {p.status === 'out' ? 'done' : ''}"></span>
           </span>
-          {#if p.key}<span class="shrink-0 text-sm leading-none" title="hat einen Schlüssel">🗝</span>{/if}
           {#if p.wrong > 0}<span class="shrink-0 text-xs font-black leading-none text-rose-400">✗{p.wrong}</span>{/if}
         </span>
       </li>
@@ -327,7 +315,7 @@
   <aside class="flex min-h-0 flex-col gap-2 overflow-hidden">
     <p class="text-xs font-extrabold uppercase tracking-[0.3em] text-stone-500">Live</p>
     {#if tickerShown.length === 0}
-      <p class="text-sm leading-snug text-stone-500">Hier erscheint, wer rauskommt, wer einen Schlüssel findet und an welchen Türen es knirscht.</p>
+      <p class="text-sm leading-snug text-stone-500">Hier erscheint, wer rauskommt, wer in Führung geht und an welchen Türen es knirscht.</p>
     {/if}
     <DungeonTickerFeed {view} items={tickerShown} />
   </aside>

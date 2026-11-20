@@ -1,4 +1,4 @@
-import { DUNGEON_RESULT_MS, type DungeonRoundView } from '@quiz/shared';
+import type { DungeonRoundView } from '@quiz/shared';
 import { client } from '../../lib/client.svelte.ts';
 import { DUNGEON_STAGGER_MS, DUNGEON_SUSPENSE_MS } from './dungeonFeedback.ts';
 
@@ -25,10 +25,10 @@ export function dungeonRevealAt(k: number): number {
   return DUNGEON_SUSPENSE_MS + k * DUNGEON_STAGGER_MS;
 }
 
-/** Wie lange das Ergebnis schon steht (lokale ms), aus `nextAt` und Serverzeit; null, wenn unbekannt. */
+/** Wie lange das Ergebnis schon steht (ms), aus `resultAt` und Serverzeit; null, wenn unbekannt. */
 export function dungeonResultElapsed(round: DungeonRoundView): number | null {
-  if (round.stage !== 'result' || round.nextAt === null) return null;
-  return client.serverNow() - (round.nextAt - DUNGEON_RESULT_MS);
+  if (round.stage !== 'result' || round.resultAt === null) return null;
+  return client.serverNow() - round.resultAt;
 }
 
 /**

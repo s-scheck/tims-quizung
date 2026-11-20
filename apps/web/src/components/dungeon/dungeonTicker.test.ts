@@ -9,8 +9,6 @@ const player = (id: string, over: Partial<DungeonPlayerView> = {}): DungeonPlaye
   exitRound: null,
   wrong: 0,
   locked: [],
-  key: false,
-  keyFound: false,
   ...over,
 });
 
@@ -36,7 +34,7 @@ function round(over: Partial<DungeonRoundView> = {}, tries: Record<string, Dunge
     walk: {},
     answered: [],
     skipped: [],
-    nextAt: null,
+    resultAt: null,
     ranking: [],
     ...over,
   } as DungeonRoundView;
@@ -49,19 +47,19 @@ describe('Dungeon-Ticker', () => {
     expect(dungeonTicker(null, round({ stage: 'result', results: { a: { doorId: 'd1', room: 0, correct: true } } }))).toEqual([]);
   });
 
-  test('Ergebnis: Schlüssel gefunden, berüchtigte Tür, als Erster im neuen Raum', () => {
+  test('Ergebnis: berüchtigte Tür, als Erster im neuen Raum', () => {
     const prev = round({ players: { a: player('a'), b: player('b', { wrong: 1 }), c: player('c', { wrong: 1 }) } });
     const next = round(
       {
         stage: 'result',
-        nextAt: 9000,
-        results: { a: { doorId: 'd2', room: 0, correct: true }, b: { doorId: 'd1', room: 0, correct: false, foundKey: true }, c: { doorId: 'd1', room: 0, correct: false } },
-        players: { a: player('a', { room: 1 }), b: player('b', { wrong: 2, key: true, keyFound: true, locked: ['d1'] }), c: player('c', { wrong: 2, locked: ['d1'] }) },
+        resultAt: 0,
+        results: { a: { doorId: 'd2', room: 0, correct: true }, b: { doorId: 'd1', room: 0, correct: false }, c: { doorId: 'd1', room: 0, correct: false } },
+        players: { a: player('a', { room: 1 }), b: player('b', { wrong: 2, locked: ['d1'] }), c: player('c', { wrong: 2, locked: ['d1'] }) },
       },
       { d1: [{ playerId: 'b', correct: false }, { playerId: 'c', correct: false }], d2: [{ playerId: 'a', correct: true }] },
     );
     const items = dungeonTicker(prev, next);
-    expect(kinds(items)).toEqual(['doorFails', 'first', 'keyFound']);
+    expect(kinds(items)).toEqual(['doorFails', 'first']);
     expect(items.every((x) => x.result)).toBe(true);
     expect(items.find((x) => x.event.kind === 'doorFails')!.event).toEqual({ kind: 'doorFails', door: 'Popkultur', fails: 2 });
     expect(items.find((x) => x.event.kind === 'first')!.event).toEqual({ kind: 'first', player: 'a', room: 1 });
@@ -69,11 +67,11 @@ describe('Dungeon-Ticker', () => {
     expect(dungeonTicker(next, next)).toEqual([]);
   });
 
-  test('draußen mit Platz, Schlüssel eingesetzt, ausgeschieden, alle falsch', () => {
-    const prev = round({ players: { a: player('a', { room: 1 }), b: player('b', { room: 1, key: true }), c: player('c', { room: 1 }) } });
+  test('draußen mit Platz, ausgeschieden, alle falsch', () => {
+    const prev = round({ players: { a: player('a', { room: 1 }), b: player('b', { room: 1 }), c: player('c', { room: 1 }) } });
     const next = round({
       stage: 'result',
-      results: { a: { doorId: 'd3', room: 1, correct: true }, b: { doorId: 'd4', room: 1, correct: true, key: true }, c: { doorId: 'd3', room: 1, correct: false } },
+      results: { a: { doorId: 'd3', room: 1, correct: true }, b: { doorId: 'd4', room: 1, correct: true }, c: { doorId: 'd3', room: 1, correct: false } },
       players: {
         a: player('a', { room: 2, status: 'out', exitRound: 1 }),
         b: player('b', { room: 2, status: 'out', exitRound: 1 }),
@@ -86,8 +84,7 @@ describe('Dungeon-Ticker', () => {
       ],
     });
     const items = dungeonTicker(prev, next);
-    expect(kinds(items)).toEqual(['eliminated', 'exit', 'exit', 'keyUsed']);
-    expect(items.find((x) => x.event.kind === 'keyUsed')!.event).toEqual({ kind: 'keyUsed', player: 'b', door: 'Musik' });
+    expect(kinds(items)).toEqual(['eliminated', 'exit', 'exit']);
 
     const wrong = round({
       stage: 'result',

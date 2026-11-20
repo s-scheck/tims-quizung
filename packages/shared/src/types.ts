@@ -1000,28 +1000,21 @@ export interface DungeonDoorView {
   tries: DungeonDoorTry[];
 }
 
-/** Ein Versuch an einer Tür, nur Ausgang: geschafft, gescheitert oder mit Schlüssel aufgeschlossen. */
+/** Ein Versuch an einer Tür, nur Ausgang: geschafft oder gescheitert. */
 export interface DungeonDoorTry {
   playerId: string;
   correct: boolean;
-  key?: boolean;
 }
 
 export interface DungeonPlayerView extends DungeonStanding {
   /** Verriegelte Türen im aktuellen Raum. */
   locked: string[];
-  /** Hält gerade einen Schlüssel (öffnet eine Tür ohne Frage). */
-  key: boolean;
-  /** Hat seinen einen Schlüssel schon gefunden (es gibt nur einen je Dungeon). */
-  keyFound: boolean;
 }
 
 /** Zu welcher Tür jemand läuft; nach dem Bestätigen steht er in der Tür. */
 export interface DungeonWalkView {
   doorId: string | null;
   confirmed: boolean;
-  /** Mit Schlüssel bestätigt: geht ohne Frage durch. */
-  key?: boolean;
 }
 
 /** Die Frage hinter der eigenen Tür, nur für den Spieler selbst. */
@@ -1038,10 +1031,6 @@ export interface DungeonResultView {
   /** Raum, in dem die Tür war (ab 0). */
   room: number;
   correct: boolean;
-  /** Mit Schlüssel aufgeschlossen statt beantwortet. */
-  key?: boolean;
-  /** Hat in dieser Runde (beim Scheitern) seinen Schlüssel gefunden. */
-  foundKey?: boolean;
 }
 
 /** Ein Versuch an einer Tür, für die Auswertung. */
@@ -1054,8 +1043,6 @@ export interface DungeonAttemptView {
   correct: boolean;
   /** Zusatz wie „230 km daneben“ oder „Platz 3“. */
   detail?: string;
-  /** Mit Schlüssel aufgeschlossen. */
-  key?: boolean;
 }
 
 /** Frage und Lösung einer Tür, erst in der Auswertung. */
@@ -1086,8 +1073,8 @@ export interface DungeonRoundView extends BaseRoundView {
   skipped: string[];
   /** Nur in `result`: richtig oder falsch je Spieler, ohne Lösung. */
   results?: Record<string, DungeonResultView>;
-  /** Nur in `result`: Serverzeit, zu der es von selbst weitergeht. */
-  nextAt: number | null;
+  /** Nur in `result`: Serverzeit, seit der das Ergebnis steht (Takt für den Spannungsmoment). */
+  resultAt: number | null;
   myQuestion?: DungeonQuestionView;
   myAnswer?: string;
   ranking: DungeonRankEntry[];
