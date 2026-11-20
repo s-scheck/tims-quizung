@@ -1,0 +1,33 @@
+{
+  "id": "map-hauptstaedte-2",
+  "title": "Hauptstädte 2 (schwerer)",
+  "question": "Wo liegt diese Hauptstadt?",
+  "games": ["map"],
+  "source": "gängige Koordinaten",
+  "places": [
+    { "name": "Thimphu", "lat": 27.4728, "lng": 89.6390 },
+    { "name": "Windhuk", "lat": -22.5609, "lng": 17.0658 },
+    { "name": "Montevideo", "lat": -34.9011, "lng": -56.1645 },
+    { "name": "Tiflis", "lat": 41.7151, "lng": 44.8271 },
+    { "name": "Antananarivo", "lat": -18.8792, "lng": 47.5079 },
+    { "name": "Bischkek", "lat": 42.8746, "lng": 74.5698 },
+    { "name": "Paramaribo", "lat": 5.8520, "lng": -55.2038 },
+    { "name": "Asunción", "lat": -25.2637, "lng": -57.5759 },
+    { "name": "Sucre (verfassungsmäßige Hauptstadt Boliviens)", "lat": -19.0196, "lng": -65.2619 },
+    { "name": "Accra", "lat": 5.6037, "lng": -0.1870 },
+    { "name": "Dakar", "lat": 14.7167, "lng": -17.4677 },
+    { "name": "Maputo", "lat": -25.9692, "lng": 32.5732 },
+    { "name": "Lusaka", "lat": -15.3875, "lng": 28.3228 },
+    { "name": "Taschkent", "lat": 41.2995, "lng": 69.2401 },
+    { "name": "Baku", "lat": 40.4093, "lng": 49.8671 },
+    { "name": "Jerewan", "lat": 40.1792, "lng": 44.4991 },
+    { "name": "Kathmandu", "lat": 27.7172, "lng": 85.3240 },
+    { "name": "Vientiane", "lat": 17.9757, "lng": 102.6331 },
+    { "name": "Phnom Penh", "lat": 11.5564, "lng": 104.9282 },
+    { "name": "Port Moresby", "lat": -9.4438, "lng": 147.1803 },
+    { "name": "Suva", "lat": -18.1416, "lng": 178.4419 },
+    { "name": "Ljubljana", "lat": 46.0569, "lng": 14.5058 },
+    { "name": "Chișinău", "lat": 47.0105, "lng": 28.8638 },
+    { "name": "Kigali", "lat": -1.9441, "lng": 30.0619 }
+  ]
+}

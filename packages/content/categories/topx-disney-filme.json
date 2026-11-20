@@ -1,0 +1,20 @@
+{
+  "id": "topx-disney-filme",
+  "title": "Top 7 erfolgreichste Disney-Filme",
+  "question": "Welche Disney-Filme haben weltweit am meisten eingespielt?",
+  "topLabel": "höchstes Einspiel",
+  "bottomLabel": "Platz 7",
+  "unit": "Mrd. $",
+  "source": "Box Office Mojo, weltweit, nicht inflationsbereinigt; Disney inkl. Pixar, ohne Marvel, Star Wars und 20th Century; Stand Herbst 2026 (gerundet)",
+  "order": "desc",
+  "games": ["topx"],
+  "items": [
+    { "name": "Zoomania 2", "value": 1.85, "label": "rund 1,85 Mrd. $", "aliases": ["Zootopia 2", "Zoomania"] },
+    { "name": "Alles steht Kopf 2", "value": 1.699, "aliases": ["Inside Out 2", "Alles steht Kopf"] },
+    { "name": "Der König der Löwen (2019)", "value": 1.657, "aliases": ["Der König der Löwen", "König der Löwen", "The Lion King", "Lion King"] },
+    { "name": "Die Eiskönigin 2", "value": 1.453, "aliases": ["Frozen 2", "Eiskönigin 2"] },
+    { "name": "Die Eiskönigin", "value": 1.306, "aliases": ["Frozen", "Eiskönigin", "Die Eiskönigin – Völlig unverfroren", "Völlig unverfroren"] },
+    { "name": "Die Schöne und das Biest (2017)", "value": 1.266, "aliases": ["Die Schöne und das Biest", "Beauty and the Beast"] },
+    { "name": "Die Unglaublichen 2", "value": 1.243, "aliases": ["Incredibles 2", "Die Unglaublichen"] }
+  ]
+}

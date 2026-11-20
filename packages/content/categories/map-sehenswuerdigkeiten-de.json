@@ -1,0 +1,32 @@
+{
+  "id": "map-sehenswuerdigkeiten-de",
+  "title": "Sehenswürdigkeiten in Deutschland",
+  "question": "Wo liegt diese Sehenswürdigkeit?",
+  "games": ["map"],
+  "source": "gängige Koordinaten",
+  "bounds": [[46.5, 4.5], [55.5, 16.5]],
+  "places": [
+    { "name": "Loreley", "lat": 50.1393, "lng": 7.7290 },
+    { "name": "Königssee (St. Bartholomä)", "lat": 47.5466, "lng": 12.9706 },
+    { "name": "Königsstuhl (Kreidefelsen Rügen)", "lat": 54.5747, "lng": 13.6650 },
+    { "name": "Brocken", "lat": 51.7991, "lng": 10.6156 },
+    { "name": "Hermannsdenkmal", "lat": 51.9116, "lng": 8.8397 },
+    { "name": "Porta Nigra", "lat": 49.7597, "lng": 6.6440 },
+    { "name": "Wartburg", "lat": 50.9663, "lng": 10.3062 },
+    { "name": "Externsteine", "lat": 51.8689, "lng": 8.9175 },
+    { "name": "Bastei", "lat": 50.9620, "lng": 14.0738 },
+    { "name": "Burg Hohenzollern", "lat": 48.3233, "lng": 8.9675 },
+    { "name": "Zeche Zollverein", "lat": 51.4862, "lng": 7.0447 },
+    { "name": "Völkerschlachtdenkmal", "lat": 51.3123, "lng": 12.4133 },
+    { "name": "Schloss Sanssouci", "lat": 52.4044, "lng": 13.0386 },
+    { "name": "Kyffhäuserdenkmal", "lat": 51.4130, "lng": 11.1050 },
+    { "name": "Deutsches Eck", "lat": 50.3644, "lng": 7.6060 },
+    { "name": "Moselschleife bei Bremm", "lat": 50.1053, "lng": 7.1083 },
+    { "name": "Eibsee", "lat": 47.4567, "lng": 10.9800 },
+    { "name": "Partnachklamm", "lat": 47.4697, "lng": 11.1167 },
+    { "name": "Burg Eltz", "lat": 50.2053, "lng": 7.3367 },
+    { "name": "Schloss Heidelberg", "lat": 49.4106, "lng": 8.7153 },
+    { "name": "Kaiserdom Speyer", "lat": 49.3172, "lng": 8.4428 },
+    { "name": "Wieskirche", "lat": 47.6809, "lng": 10.9003 }
+  ]
+}

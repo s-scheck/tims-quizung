@@ -1,0 +1,21 @@
+{
+  "id": "topx-planeten",
+  "title": "Top 8 Planeten nach Größe",
+  "question": "Welche Planeten sind am größten?",
+  "topLabel": "größter Durchmesser",
+  "bottomLabel": "kleinster Durchmesser",
+  "unit": "km",
+  "source": "NASA, mittlerer Durchmesser am Äquator (gerundet)",
+  "order": "desc",
+  "games": ["topx"],
+  "items": [
+    { "name": "Jupiter", "value": 139820 },
+    { "name": "Saturn", "value": 116460 },
+    { "name": "Uranus", "value": 50724 },
+    { "name": "Neptun", "value": 49244, "aliases": ["Neptune"] },
+    { "name": "Erde", "value": 12742, "aliases": ["Earth"] },
+    { "name": "Venus", "value": 12104 },
+    { "name": "Mars", "value": 6779 },
+    { "name": "Merkur", "value": 4879, "aliases": ["Mercury"] }
+  ]
+}

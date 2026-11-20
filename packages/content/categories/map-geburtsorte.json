@@ -1,0 +1,31 @@
+{
+  "id": "map-geburtsorte",
+  "title": "Wo wurde wer geboren?",
+  "question": "Wo wurde diese Person geboren?",
+  "games": ["map"],
+  "source": "gängige Biografien, Koordinaten des Geburtsorts",
+  "places": [
+    { "name": "Wolfgang Amadeus Mozart", "lat": 47.8095, "lng": 13.0550 },
+    { "name": "Ludwig van Beethoven", "lat": 50.7374, "lng": 7.0982 },
+    { "name": "Albert Einstein", "lat": 48.4011, "lng": 9.9876 },
+    { "name": "Freddie Mercury", "lat": -6.1622, "lng": 39.1921 },
+    { "name": "Lionel Messi", "lat": -32.9442, "lng": -60.6505 },
+    { "name": "Cristiano Ronaldo", "lat": 32.6669, "lng": -16.9241 },
+    { "name": "Rihanna", "lat": 13.0969, "lng": -59.6145 },
+    { "name": "Elvis Presley", "lat": 34.2576, "lng": -88.7034 },
+    { "name": "Johann Wolfgang von Goethe", "lat": 50.1109, "lng": 8.6821 },
+    { "name": "Napoleon Bonaparte", "lat": 41.9192, "lng": 8.7386 },
+    { "name": "Marie Curie", "lat": 52.2297, "lng": 21.0122 },
+    { "name": "Mahatma Gandhi", "lat": 21.6417, "lng": 69.6293 },
+    { "name": "Frida Kahlo", "lat": 19.3500, "lng": -99.1620 },
+    { "name": "Bob Marley", "lat": 18.3200, "lng": -77.1300 },
+    { "name": "Shakira", "lat": 10.9685, "lng": -74.7813 },
+    { "name": "Christoph Kolumbus", "lat": 44.4056, "lng": 8.9463 },
+    { "name": "Michael Jackson", "lat": 41.5934, "lng": -87.3464 },
+    { "name": "Martin Luther", "lat": 51.5280, "lng": 11.5450 },
+    { "name": "Karl Marx", "lat": 49.7499, "lng": 6.6371 },
+    { "name": "Taylor Swift", "lat": 40.3357, "lng": -75.9269 },
+    { "name": "William Shakespeare", "lat": 52.1917, "lng": -1.7083 },
+    { "name": "Pablo Picasso", "lat": 36.7213, "lng": -4.4214 }
+  ]
+}

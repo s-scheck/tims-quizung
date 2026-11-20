@@ -1,0 +1,20 @@
+{
+  "id": "topx-harry-potter",
+  "title": "Harry-Potter-Bände nach Länge",
+  "question": "Welche Harry-Potter-Bände sind am längsten?",
+  "topLabel": "längster Band",
+  "bottomLabel": "kürzester Band",
+  "unit": "Wörter",
+  "source": "Wortzahl des englischen Originals (gängige Angaben, gerundet)",
+  "order": "desc",
+  "games": ["topx"],
+  "items": [
+    { "name": "Harry Potter und der Orden des Phönix", "value": 257000, "aliases": ["Orden des Phönix", "Order of the Phoenix", "Band 5", "Phönix"] },
+    { "name": "Harry Potter und die Heiligtümer des Todes", "value": 198000, "aliases": ["Heiligtümer des Todes", "Deathly Hallows", "Band 7"] },
+    { "name": "Harry Potter und der Feuerkelch", "value": 191000, "aliases": ["Feuerkelch", "Goblet of Fire", "Band 4"] },
+    { "name": "Harry Potter und der Halbblutprinz", "value": 169000, "aliases": ["Halbblutprinz", "Half-Blood Prince", "Band 6"] },
+    { "name": "Harry Potter und der Gefangene von Askaban", "value": 107000, "aliases": ["Gefangene von Askaban", "Askaban", "Prisoner of Azkaban", "Band 3"] },
+    { "name": "Harry Potter und die Kammer des Schreckens", "value": 85000, "aliases": ["Kammer des Schreckens", "Chamber of Secrets", "Band 2"] },
+    { "name": "Harry Potter und der Stein der Weisen", "value": 77000, "aliases": ["Stein der Weisen", "Philosopher's Stone", "Sorcerer's Stone", "Band 1"] }
+  ]
+}

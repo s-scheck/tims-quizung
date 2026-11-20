@@ -1,0 +1,23 @@
+{
+  "id": "topx-laender-einwohner",
+  "title": "Top 10 Länder nach Einwohnern",
+  "question": "Welche Länder haben die meisten Einwohner?",
+  "topLabel": "meiste Einwohner",
+  "bottomLabel": "Platz 10",
+  "unit": "Mio.",
+  "source": "UN World Population Prospects 2024, Schätzung 2024 (gerundet)",
+  "order": "desc",
+  "games": ["topx"],
+  "items": [
+    { "name": "Indien", "value": 1450.9 },
+    { "name": "China", "value": 1419.3, "aliases": ["Volksrepublik China"] },
+    { "name": "USA", "value": 345.4, "aliases": ["Vereinigte Staaten", "Amerika", "US"] },
+    { "name": "Indonesien", "value": 283.5 },
+    { "name": "Pakistan", "value": 251.3 },
+    { "name": "Nigeria", "value": 232.7 },
+    { "name": "Brasilien", "value": 211.9 },
+    { "name": "Bangladesch", "value": 173.6 },
+    { "name": "Russland", "value": 144.8 },
+    { "name": "Äthiopien", "value": 132.1, "aliases": ["Aethiopien"] }
+  ]
+}

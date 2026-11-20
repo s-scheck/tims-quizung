@@ -1,0 +1,27 @@
+{
+  "id": "map-rekordorte",
+  "title": "Rekordorte der Erde",
+  "question": "Wo liegt dieser Rekordort?",
+  "games": ["map"],
+  "source": "gängige Koordinaten und Rekordangaben",
+  "places": [
+    { "name": "Oimjakon (kältester dauerhaft bewohnter Ort)", "lat": 63.4608, "lng": 142.7858 },
+    { "name": "Death Valley (heißeste gemessene Lufttemperatur)", "lat": 36.4622, "lng": -116.8669 },
+    { "name": "Ushuaia (südlichste Stadt)", "lat": -54.8019, "lng": -68.3030 },
+    { "name": "Longyearbyen (nördlichste Stadt)", "lat": 78.2232, "lng": 15.6267 },
+    { "name": "Challengertief (tiefste Stelle des Ozeans)", "lat": 11.3733, "lng": 142.5917 },
+    { "name": "Point Nemo (meerfernster Punkt)", "lat": -48.8767, "lng": -123.3933 },
+    { "name": "Greenwich (Nullmeridian)", "lat": 51.4779, "lng": -0.0015 },
+    { "name": "Kap Hoorn (Südspitze Südamerikas)", "lat": -55.9833, "lng": -67.2667 },
+    { "name": "Nordkap (nördlichster Punkt Europas mit Straße)", "lat": 71.1725, "lng": 25.7836 },
+    { "name": "Tristan da Cunha (abgelegenste bewohnte Insel)", "lat": -37.0667, "lng": -12.3167 },
+    { "name": "Atacama (trockenste Wüste)", "lat": -24.5000, "lng": -69.2500 },
+    { "name": "Mawsynram (regenreichster Ort)", "lat": 25.2975, "lng": 91.5826 },
+    { "name": "La Rinconada (höchstgelegene Stadt)", "lat": -14.6283, "lng": -69.4469 },
+    { "name": "Vatikanstadt (kleinster Staat)", "lat": 41.9029, "lng": 12.4534 },
+    { "name": "Chimborazo (Gipfel am weitesten vom Erdmittelpunkt)", "lat": -1.4693, "lng": -78.8175 },
+    { "name": "Kap Agulhas (Südspitze Afrikas)", "lat": -34.8331, "lng": 20.0028 },
+    { "name": "Wostok-Station (tiefste gemessene Temperatur)", "lat": -78.4645, "lng": 106.8372 },
+    { "name": "Amundsen-Scott-Station (Südpol)", "lat": -90.0000, "lng": 0.0000 }
+  ]
+}

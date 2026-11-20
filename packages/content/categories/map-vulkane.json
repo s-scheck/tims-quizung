@@ -1,0 +1,29 @@
+{
+  "id": "map-vulkane",
+  "title": "Berühmte Vulkane",
+  "question": "Wo liegt dieser Vulkan?",
+  "games": ["map"],
+  "source": "gängige Koordinaten der Gipfel",
+  "places": [
+    { "name": "Krakatau", "lat": -6.1020, "lng": 105.4230 },
+    { "name": "Pinatubo", "lat": 15.1429, "lng": 120.3496 },
+    { "name": "Mount St. Helens", "lat": 46.1914, "lng": -122.1956 },
+    { "name": "Eyjafjallajökull", "lat": 63.6314, "lng": -19.6083 },
+    { "name": "Stromboli", "lat": 38.7890, "lng": 15.2130 },
+    { "name": "Mauna Loa", "lat": 19.4721, "lng": -155.5922 },
+    { "name": "Kīlauea", "lat": 19.4069, "lng": -155.2834 },
+    { "name": "Popocatépetl", "lat": 19.0225, "lng": -98.6278 },
+    { "name": "Cotopaxi", "lat": -0.6838, "lng": -78.4378 },
+    { "name": "Merapi", "lat": -7.5407, "lng": 110.4457 },
+    { "name": "Tambora", "lat": -8.2475, "lng": 117.9928 },
+    { "name": "Hekla", "lat": 63.9920, "lng": -19.6656 },
+    { "name": "Mount Erebus", "lat": -77.5300, "lng": 167.1700 },
+    { "name": "Mount Rainier", "lat": 46.8529, "lng": -121.7604 },
+    { "name": "Sakurajima", "lat": 31.5853, "lng": 130.6572 },
+    { "name": "Nyiragongo", "lat": -1.5200, "lng": 29.2500 },
+    { "name": "Laacher See", "lat": 50.4130, "lng": 7.2700 },
+    { "name": "Santorin", "lat": 36.4040, "lng": 25.3960 },
+    { "name": "Ojos del Salado", "lat": -27.1092, "lng": -68.5414 },
+    { "name": "Pico (Azoren)", "lat": 38.4686, "lng": -28.3994 }
+  ]
+}

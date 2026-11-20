@@ -1,0 +1,23 @@
+{
+  "id": "topx-bundeslaender-einwohner",
+  "title": "Top 10 Bundesländer nach Einwohnern",
+  "question": "Welche Bundesländer haben die meisten Einwohner?",
+  "topLabel": "meiste Einwohner",
+  "bottomLabel": "Platz 10",
+  "unit": "Mio.",
+  "source": "Statistisches Bundesamt, Stand 31.12.2023 (gerundet)",
+  "order": "desc",
+  "games": ["topx"],
+  "items": [
+    { "name": "Nordrhein-Westfalen", "value": 18.19, "aliases": ["NRW"] },
+    { "name": "Bayern", "value": 13.44 },
+    { "name": "Baden-Württemberg", "value": 11.28, "aliases": ["BW", "BaWü"] },
+    { "name": "Niedersachsen", "value": 8.14 },
+    { "name": "Hessen", "value": 6.39 },
+    { "name": "Rheinland-Pfalz", "value": 4.16, "aliases": ["RLP"] },
+    { "name": "Sachsen", "value": 4.09 },
+    { "name": "Berlin", "value": 3.76 },
+    { "name": "Schleswig-Holstein", "value": 2.96, "aliases": ["SH"] },
+    { "name": "Brandenburg", "value": 2.57 }
+  ]
+}

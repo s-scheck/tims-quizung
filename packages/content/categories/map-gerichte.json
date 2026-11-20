@@ -1,0 +1,29 @@
+{
+  "id": "map-gerichte",
+  "title": "Woher kommt das Gericht?",
+  "question": "Wo kommt dieses Gericht her?",
+  "games": ["map"],
+  "source": "gängige Herkunftsangaben, Koordinaten der Stadtmitte",
+  "places": [
+    { "name": "Pizza Margherita", "lat": 40.8518, "lng": 14.2681 },
+    { "name": "Sachertorte", "lat": 48.2042, "lng": 16.3691 },
+    { "name": "Currywurst", "lat": 52.5200, "lng": 13.4050 },
+    { "name": "Paella", "lat": 39.4699, "lng": -0.3763 },
+    { "name": "Pastel de Nata", "lat": 38.6979, "lng": -9.2066 },
+    { "name": "Tiramisu", "lat": 45.6669, "lng": 12.2430 },
+    { "name": "Tagliatelle al ragù (Bolognese)", "lat": 44.4949, "lng": 11.3426 },
+    { "name": "Nürnberger Rostbratwurst", "lat": 49.4521, "lng": 11.0767 },
+    { "name": "Lübecker Marzipan", "lat": 53.8655, "lng": 10.6866 },
+    { "name": "Aachener Printen", "lat": 50.7753, "lng": 6.0839 },
+    { "name": "Dresdner Stollen", "lat": 51.0504, "lng": 13.7373 },
+    { "name": "Parmaschinken", "lat": 44.8015, "lng": 10.3279 },
+    { "name": "Champagner", "lat": 49.2583, "lng": 4.0317 },
+    { "name": "Cornish Pasty", "lat": 50.2660, "lng": -5.0527 },
+    { "name": "Gouda", "lat": 52.0115, "lng": 4.7105 },
+    { "name": "Weißwurst", "lat": 48.1374, "lng": 11.5755 },
+    { "name": "Baklava", "lat": 41.0082, "lng": 28.9784 },
+    { "name": "Bouillabaisse", "lat": 43.2965, "lng": 5.3698 },
+    { "name": "Linzer Torte", "lat": 48.3069, "lng": 14.2858 },
+    { "name": "Mozartkugel", "lat": 47.8095, "lng": 13.0550 }
+  ]
+}

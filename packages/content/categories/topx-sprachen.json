@@ -1,0 +1,21 @@
+{
+  "id": "topx-sprachen",
+  "title": "Top 8 Sprachen nach Sprechern",
+  "question": "Welche Sprachen werden weltweit am meisten gesprochen?",
+  "topLabel": "meiste Sprecher",
+  "bottomLabel": "Platz 8",
+  "unit": "Mio.",
+  "source": "Ethnologue, Erst- und Zweitsprecher, ohne arabische Dialekte, Stand 2024 (gerundet)",
+  "order": "desc",
+  "games": ["topx"],
+  "items": [
+    { "name": "Englisch", "value": 1515, "aliases": ["English"] },
+    { "name": "Mandarin", "value": 1140, "aliases": ["Chinesisch", "Hochchinesisch"] },
+    { "name": "Hindi", "value": 609 },
+    { "name": "Spanisch", "value": 560, "aliases": ["Español"] },
+    { "name": "Arabisch", "value": 332, "aliases": ["Hocharabisch"] },
+    { "name": "Französisch", "value": 312, "aliases": ["Franzoesisch"] },
+    { "name": "Bengalisch", "value": 278, "aliases": ["Bengali", "Bangla"] },
+    { "name": "Portugiesisch", "value": 264 }
+  ]
+}

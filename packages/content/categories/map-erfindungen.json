@@ -1,0 +1,29 @@
+{
+  "id": "map-erfindungen",
+  "title": "Wo wurde das erfunden?",
+  "question": "Wo wurde das erfunden oder entdeckt?",
+  "games": ["map"],
+  "source": "gängige Angaben zu Erfindungsort, Koordinaten der Stadt bzw. des Instituts",
+  "places": [
+    { "name": "Buchdruck mit beweglichen Lettern", "lat": 49.9929, "lng": 8.2473 },
+    { "name": "Automobil (Benz Patent-Motorwagen)", "lat": 49.4875, "lng": 8.4660 },
+    { "name": "Laufmaschine (Draisine)", "lat": 49.4875, "lng": 8.4660 },
+    { "name": "World Wide Web", "lat": 46.2338, "lng": 6.0533 },
+    { "name": "Glühbirne (Edison)", "lat": 40.5568, "lng": -74.3329 },
+    { "name": "Penicillin", "lat": 51.5174, "lng": -0.1745 },
+    { "name": "Dynamit", "lat": 53.4180, "lng": 10.4040 },
+    { "name": "Röntgenstrahlen", "lat": 49.7913, "lng": 9.9534 },
+    { "name": "Telefon (Bell)", "lat": 42.3601, "lng": -71.0589 },
+    { "name": "Erster Motorflug", "lat": 36.0144, "lng": -75.6680 },
+    { "name": "Blue Jeans", "lat": 37.7749, "lng": -122.4194 },
+    { "name": "Aspirin", "lat": 51.2562, "lng": 7.1508 },
+    { "name": "Zeppelin", "lat": 47.6500, "lng": 9.4800 },
+    { "name": "MP3", "lat": 49.5897, "lng": 11.0040 },
+    { "name": "Dieselmotor", "lat": 48.3705, "lng": 10.8978 },
+    { "name": "Kernspaltung", "lat": 52.4497, "lng": 13.2854 },
+    { "name": "Relativitätstheorie", "lat": 46.9480, "lng": 7.4474 },
+    { "name": "Coca-Cola", "lat": 33.7490, "lng": -84.3880 },
+    { "name": "Dampfmaschine (Watt)", "lat": 55.8724, "lng": -4.2900 },
+    { "name": "Porzellan in Europa", "lat": 51.1634, "lng": 13.4737 }
+  ]
+}
